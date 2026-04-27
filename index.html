@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3BRAIN — Artificial Intelligence Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --yellow: #FFE500;
+    --yellow-dim: #B8A800;
+    --black: #080808;
+    --dark: #0F0F0F;
+    --card: #141414;
+    --border: #222;
+    --text: #E8E8E8;
+    --muted: #666;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,229,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,229,0,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 48px;
+    background: rgba(8,8,8,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--yellow);
+  }
+
+  .nav-logo span { color: var(--text); }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--yellow); }
+
+  .nav-cta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--black);
+    background: var(--yellow);
+    padding: 10px 24px;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .nav-cta:hover { opacity: 0.85; }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 120px 48px 80px;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,229,0,0.08) 0%, transparent 70%);
+    top: 50%;
+    right: -100px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .hero-content { max-width: 700px; }
+
+  .hero-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--yellow);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 10vw, 130px);
+    line-height: 0.92;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 8px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+  }
+
+  .hero-title .accent { color: var(--yellow); }
+
+  .hero-sub {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 40px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.5s forwards;
+  }
+
+  .hero-desc {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #999;
+    max-width: 500px;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.7s forwards;
+  }
+
+  .btn-primary {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--black);
+    background: var(--yellow);
+    padding: 16px 36px;
+    text-decoration: none;
+    transition: transform 0.2s, opacity 0.2s;
+    display: inline-block;
+  }
+
+  .btn-primary:hover { transform: translateY(-2px); opacity: 0.9; }
+
+  .btn-ghost {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--yellow);
+    border: 1px solid var(--yellow);
+    padding: 16px 36px;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .btn-ghost:hover { background: var(--yellow); color: var(--black); }
+
+  /* TICKER */
+  .ticker {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--dark);
+    overflow: hidden;
+    padding: 14px 0;
+  }
+
+  .ticker-inner {
+    display: flex;
+    gap: 80px;
+    animation: ticker 20s linear infinite;
+    white-space: nowrap;
+  }
+
+  .ticker-item {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .ticker-item span { color: var(--yellow); margin-right: 16px; }
+
+  /* STATS */
+  .stats {
+    position: relative;
+    z-index: 1;
+    padding: 100px 48px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat {
+    background: var(--black);
+    padding: 60px 48px;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    line-height: 1;
+    color: var(--yellow);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* SECTION */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 100px 48px;
+  }
+
+  .section-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--yellow);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 6vw, 80px);
+    line-height: 1;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 60px;
+  }
+
+  /* SOLUTIONS */
+  .solutions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .solution-card {
+    background: var(--card);
+    padding: 48px;
+    transition: background 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .solution-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 0;
+    background: var(--yellow);
+    transition: height 0.3s;
+  }
+
+  .solution-card:hover { background: #181818; }
+  .solution-card:hover::before { height: 100%; }
+
+  .card-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    color: var(--border);
+    line-height: 1;
+    margin-bottom: 16px;
+    transition: color 0.3s;
+  }
+
+  .solution-card:hover .card-number { color: rgba(255,229,0,0.1); }
+
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .card-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  /* CASE STUDY */
+  .case {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 64px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .case-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--yellow);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .case-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 24px;
+    line-height: 1;
+  }
+
+  .case-desc {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #888;
+    margin-bottom: 40px;
+  }
+
+  .case-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .metric {
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .metric-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: var(--yellow);
+    line-height: 1;
+    display: block;
+  }
+
+  .metric-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* PRODUCTS */
+  .products {
+    background: var(--dark);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .products-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+
+  .product-card {
+    border: 1px solid var(--border);
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .product-card:hover { border-color: var(--yellow); }
+
+  .product-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--black);
+    background: var(--yellow);
+    padding: 4px 12px;
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+
+  .product-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 3px;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .product-desc {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .product-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .product-features li {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #777;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .product-features li::before {
+    content: '→';
+    color: var(--yellow);
+  }
+
+  /* TEAM */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .team-card {
+    background: var(--card);
+    padding: 48px;
+  }
+
+  .team-role {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--yellow);
+    margin-bottom: 12px;
+  }
+
+  .team-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .team-bio {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+
+  /* CTA */
+  .cta-section {
+    background: var(--yellow);
+    padding: 100px 48px;
+    text-align: center;
+  }
+
+  .cta-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 7vw, 96px);
+    letter-spacing: 3px;
+    color: var(--black);
+    line-height: 1;
+    margin-bottom: 24px;
+  }
+
+  .cta-sub {
+    font-size: 16px;
+    color: rgba(0,0,0,0.6);
+    margin-bottom: 48px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .btn-dark {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--yellow);
+    background: var(--black);
+    padding: 18px 48px;
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+
+  .btn-dark:hover { transform: translateY(-3px); }
+
+  /* FOOTER */
+  footer {
+    position: relative;
+    z-index: 1;
+    background: var(--dark);
+    border-top: 1px solid var(--border);
+    padding: 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 4px;
+    color: var(--yellow);
+  }
+
+  .footer-copy {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+  }
+
+  .footer-cnpj {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--border);
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">3<span>BRAIN</span></div>
+  <ul class="nav-links">
+    <li><a href="#solutions">Soluções</a></li>
+    <li><a href="#case">Cases</a></li>
+    <li><a href="#products">Produtos</a></li>
+    <li><a href="#team">Equipe</a></li>
+  </ul>
+  <a href="mailto:fabiocds.silva69brasil@gmail.com" class="nav-cta">Contato</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <p class="hero-tag">// Artificial Intelligence Solutions</p>
+    <h1 class="hero-title"><span class="accent">3</span>BRAIN</h1>
+    <p class="hero-sub">Inteligência que trabalha por você</p>
+    <p class="hero-desc">Desenvolvemos agentes de IA que automatizam processos operacionais dentro de empresas — eliminando tarefas manuais e devolvendo horas às equipes. Da saúde à estética, transformamos gargalos em eficiência.</p>
+    <div class="hero-actions">
+      <a href="#case" class="btn-primary">Ver Cases</a>
+      <a href="mailto:fabiocds.silva69brasil@gmail.com" class="btn-ghost">Falar Conosco</a>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item"><span>●</span>Inteligência Artificial</span>
+    <span class="ticker-item"><span>●</span>Automação de Processos</span>
+    <span class="ticker-item"><span>●</span>Saúde Digital</span>
+    <span class="ticker-item"><span>●</span>BarberGO App</span>
+    <span class="ticker-item"><span>●</span>Firebase Real-Time</span>
+    <span class="ticker-item"><span>●</span>Agentes de IA</span>
+    <span class="ticker-item"><span>●</span>Claude API</span>
+    <span class="ticker-item"><span>●</span>Gemini API</span>
+    <span class="ticker-item"><span>●</span>Inteligência Artificial</span>
+    <span class="ticker-item"><span>●</span>Automação de Processos</span>
+    <span class="ticker-item"><span>●</span>Saúde Digital</span>
+    <span class="ticker-item"><span>●</span>BarberGO App</span>
+    <span class="ticker-item"><span>●</span>Firebase Real-Time</span>
+    <span class="ticker-item"><span>●</span>Agentes de IA</span>
+    <span class="ticker-item"><span>●</span>Claude API</span>
+    <span class="ticker-item"><span>●</span>Gemini API</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <span class="stat-number">4H</span>
+    <span class="stat-label">Economizadas por profissional/dia</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number">15</span>
+    <span class="stat-label">Dias para implementação</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number">3</span>
+    <span class="stat-label">APIs integradas por produto</span>
+  </div>
+</div>
+
+<!-- SOLUTIONS -->
+<section id="solutions">
+  <p class="section-tag">// O que fazemos</p>
+  <h2 class="section-title">Nossas Soluções</h2>
+  <div class="solutions-grid">
+    <div class="solution-card">
+      <div class="card-number">01</div>
+      <h3 class="card-title">Agentes Clínicos</h3>
+      <p class="card-desc">Sistemas inteligentes para registro automatizado de evoluções de pacientes, sincronização em tempo real entre dispositivos e gestão de dados clínicos — sem papel, sem retrabalho.</p>
+    </div>
+    <div class="solution-card">
+      <div class="card-number">02</div>
+      <h3 class="card-title">Automação Empresarial</h3>
+      <p class="card-desc">Mapeamos os gargalos operacionais de qualquer setor e entregamos agentes de IA customizados que executam tarefas repetitivas, liberando as equipes para o que realmente importa.</p>
+    </div>
+    <div class="solution-card">
+      <div class="card-number">03</div>
+      <h3 class="card-title">Apps com IA Integrada</h3>
+      <p class="card-desc">Desenvolvemos aplicativos mobile e web com inteligência artificial nativa — conectando APIs de última geração para criar experiências que aprendem e evoluem com o uso.</p>
+    </div>
+    <div class="solution-card">
+      <div class="card-number">04</div>
+      <h3 class="card-title">Consultoria de Processos</h3>
+      <p class="card-desc">Com experiência operacional real em saúde, contabilidade e gestão de negócios, identificamos onde sua empresa perde tempo e entregamos soluções que funcionam desde o primeiro dia.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CASE STUDY -->
+<section id="case" style="padding-top: 0;">
+  <p class="section-tag">// Resultado comprovado</p>
+  <h2 class="section-title">Case Real</h2>
+  <div class="case">
+    <div>
+      <p class="case-label">// Instituição de Longa Permanência — Santa Catarina, Brasil</p>
+      <h3 class="case-title">Agente Clínico em 15 dias</h3>
+      <p class="case-desc">Implementamos um sistema de IA capaz de registrar e evoluir dados individuais de 38 pacientes de forma automatizada, com banco de dados Firebase sincronizado em tempo real entre computadores e dispositivos móveis.</p>
+      <p class="case-desc">Resultado imediato: horas de trabalho manual eliminadas, zero erros de transcrição, informação clínica disponível em qualquer dispositivo da equipe — instantaneamente.</p>
+    </div>
+    <div class="case-metrics">
+      <div class="metric">
+        <span class="metric-value">38</span>
+        <span class="metric-label">Pacientes gerenciados</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">4H</span>
+        <span class="metric-label">Economizadas por turno</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">15</span>
+        <span class="metric-label">Dias de implementação</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value">0</span>
+        <span class="metric-label">Erros de transcrição</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="products" class="products">
+  <p class="section-tag">// Nossos produtos</p>
+  <h2 class="section-title">Tecnologia em Produção</h2>
+  <div class="products-grid">
+    <div class="product-card">
+      <span class="product-tag">Em lançamento</span>
+      <h3 class="product-name">BARBERGO</h3>
+      <p class="product-desc">O LinkedIn da barbearia. Conecta barbeiros, barbearias e clientes numa plataforma única — com matchmaking inteligente, perfis assistidos por IA e informações de mercado em tempo real.</p>
+      <ul class="product-features">
+        <li>Busca por especialidade e estilo</li>
+        <li>Sistema de vagas para barbearias</li>
+        <li>Assinaturas Silver e Gold com IA</li>
+        <li>Chatbot com tendências e preços</li>
+        <li>Integrado: Claude + Gemini APIs</li>
+      </ul>
+    </div>
+    <div class="product-card">
+      <span class="product-tag">Em produção</span>
+      <h3 class="product-name">CLINICAL AGENT</h3>
+      <p class="product-desc">Sistema inteligente de gestão clínica para instituições de saúde — registro automatizado, evoluções de enfermagem, sincronização real-time e alertas inteligentes.</p>
+      <ul class="product-features">
+        <li>Registro automático de evoluções</li>
+        <li>Firebase real-time multi-device</li>
+        <li>Alertas clínicos personalizados</li>
+        <li>Passagem de turno automatizada</li>
+        <li>Integrado: Claude API</li>
+      </ul>
+    </div>
+  </div>
+    <div class="product-card">
+      <span class="product-tag">Em desenvolvimento</span>
+      <h3 class="product-name">HUNTAI</h3>
+      <p class="product-desc">Agente autônomo de candidaturas em massa — absorve vagas em tempo real de portais de emprego portugueses e envia candidaturas personalizadas por email, com até 600 disparos por dia.</p>
+      <ul class="product-features">
+        <li>Integração com Net-Empregos Portugal</li>
+        <li>Candidaturas personalizadas por IA</li>
+        <li>300 a 600 envios automáticos/dia</li>
+        <li>Matching inteligente perfil × vaga</li>
+        <li>Integrado: Claude API</li>
+      </ul>
+    </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <p class="section-tag">// Fundadores</p>
+  <h2 class="section-title">A Equipe</h2>
+  <div class="team-grid">
+    <div class="team-card">
+      <p class="team-role">// Co-fundador & CEO</p>
+      <h3 class="team-name">Fábio Carlos da Silva</h3>
+      <p class="team-bio">Técnico de Enfermagem com 8 anos de experiência em ambientes hospitalares, laboratoriais e instituições de longa permanência. Especialista em implementação de sistemas de IA em ambientes clínicos reais — com cases comprovados em produção.</p>
+    </div>
+    <div class="team-card">
+      <p class="team-role">// Co-fundador & COO</p>
+      <h3 class="team-name">Bruno (Nobru)</h3>
+      <p class="team-bio">Técnico em Contabilidade com 5 anos de experiência no setor contábil. Empreendedor e administrador há 6 anos à frente da Nobru's Barbershop. Responsável pelo desenvolvimento e operação do BarberGO — com visão de negócio construída na prática da gestão real.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2 class="cta-title">Pronto para automatizar?</h2>
+  <p class="cta-sub">Vamos mapear os gargalos da sua operação e entregar inteligência real — em menos de 15 dias.</p>
+  <a href="mailto:fabiocds.silva69brasil@gmail.com" class="btn-dark">Falar com a 3brain</a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">3BRAIN</div>
+  <p class="footer-cnpj">CNPJ 66.447.959/0001-88 — Inova Simples</p>
+  <p class="footer-copy">© 2026 3brain Artificial Intelligence Solutions</p>
+</footer>
+
+</body>
+</html>
