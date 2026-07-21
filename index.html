@@ -1,823 +1,644 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3BRAIN — Artificial Intelligence Solutions</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>3BRAIN — AI-first studio · Florianópolis, Brazil</title>
+<meta name="description" content="3BRAIN is a two-person AI-first studio from Santa Catarina, Brazil, shipping clinical, commercial and autonomous AI." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caladea:ital,wght@0,400;0,700;1,400&family=Carlito:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
 <style>
-  :root {
-    --yellow: #FFE500;
-    --yellow-dim: #B8A800;
-    --black: #080808;
-    --dark: #0F0F0F;
-    --card: #141414;
-    --border: #222;
-    --text: #E8E8E8;
-    --muted: #666;
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--black);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 300;
-    overflow-x: hidden;
-    cursor: crosshair;
-  }
-
-  /* GRID BACKGROUND */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,229,0,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,229,0,0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* NAV */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 48px;
-    background: rgba(8,8,8,0.85);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .nav-logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 4px;
-    color: var(--yellow);
-  }
-
-  .nav-logo span { color: var(--text); }
-
-  .nav-links {
-    display: flex;
-    gap: 36px;
-    list-style: none;
-  }
-
-  .nav-links a {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .nav-links a:hover { color: var(--yellow); }
-
-  .nav-cta {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--black);
-    background: var(--yellow);
-    padding: 10px 24px;
-    text-decoration: none;
-    transition: opacity 0.2s;
-  }
-
-  .nav-cta:hover { opacity: 0.85; }
-
-  /* HERO */
-  .hero {
-    position: relative;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    padding: 120px 48px 80px;
-    z-index: 1;
-    overflow: hidden;
-  }
-
-  .hero-glow {
-    position: absolute;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(255,229,0,0.08) 0%, transparent 70%);
-    top: 50%;
-    right: -100px;
-    transform: translateY(-50%);
-    pointer-events: none;
-  }
-
-  .hero-content { max-width: 700px; }
-
-  .hero-tag {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 4px;
-    color: var(--yellow);
-    text-transform: uppercase;
-    margin-bottom: 24px;
-    opacity: 0;
-    animation: fadeUp 0.8s 0.2s forwards;
-  }
-
-  .hero-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(72px, 10vw, 130px);
-    line-height: 0.92;
-    letter-spacing: 2px;
-    color: var(--text);
-    margin-bottom: 8px;
-    opacity: 0;
-    animation: fadeUp 0.8s 0.4s forwards;
-  }
-
-  .hero-title .accent { color: var(--yellow); }
-
-  .hero-sub {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(36px, 5vw, 64px);
-    line-height: 1;
-    letter-spacing: 2px;
-    color: var(--muted);
-    margin-bottom: 40px;
-    opacity: 0;
-    animation: fadeUp 0.8s 0.5s forwards;
-  }
-
-  .hero-desc {
-    font-size: 16px;
-    line-height: 1.7;
-    color: #999;
-    max-width: 500px;
-    margin-bottom: 48px;
-    opacity: 0;
-    animation: fadeUp 0.8s 0.6s forwards;
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    opacity: 0;
-    animation: fadeUp 0.8s 0.7s forwards;
-  }
-
-  .btn-primary {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--black);
-    background: var(--yellow);
-    padding: 16px 36px;
-    text-decoration: none;
-    transition: transform 0.2s, opacity 0.2s;
-    display: inline-block;
-  }
-
-  .btn-primary:hover { transform: translateY(-2px); opacity: 0.9; }
-
-  .btn-ghost {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--yellow);
-    border: 1px solid var(--yellow);
-    padding: 16px 36px;
-    text-decoration: none;
-    transition: background 0.2s, color 0.2s;
-  }
-
-  .btn-ghost:hover { background: var(--yellow); color: var(--black); }
-
-  /* TICKER */
-  .ticker {
-    position: relative;
-    z-index: 1;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: var(--dark);
-    overflow: hidden;
-    padding: 14px 0;
-  }
-
-  .ticker-inner {
-    display: flex;
-    gap: 80px;
-    animation: ticker 20s linear infinite;
-    white-space: nowrap;
-  }
-
-  .ticker-item {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-    flex-shrink: 0;
-  }
-
-  .ticker-item span { color: var(--yellow); margin-right: 16px; }
-
-  /* STATS */
-  .stats {
-    position: relative;
-    z-index: 1;
-    padding: 100px 48px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .stat {
-    background: var(--black);
-    padding: 60px 48px;
-    text-align: center;
-  }
-
-  .stat-number {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 80px;
-    line-height: 1;
-    color: var(--yellow);
-    display: block;
-    margin-bottom: 8px;
-  }
-
-  .stat-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  /* SECTION */
-  section {
-    position: relative;
-    z-index: 1;
-    padding: 100px 48px;
-  }
-
-  .section-tag {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 4px;
-    color: var(--yellow);
-    text-transform: uppercase;
-    margin-bottom: 20px;
-  }
-
-  .section-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(48px, 6vw, 80px);
-    line-height: 1;
-    letter-spacing: 2px;
-    color: var(--text);
-    margin-bottom: 60px;
-  }
-
-  /* SOLUTIONS */
-  .solutions-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-  }
-
-  .solution-card {
-    background: var(--card);
-    padding: 48px;
-    transition: background 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .solution-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px;
-    height: 0;
-    background: var(--yellow);
-    transition: height 0.3s;
-  }
-
-  .solution-card:hover { background: #181818; }
-  .solution-card:hover::before { height: 100%; }
-
-  .card-number {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 80px;
-    color: var(--border);
-    line-height: 1;
-    margin-bottom: 16px;
-    transition: color 0.3s;
-  }
-
-  .solution-card:hover .card-number { color: rgba(255,229,0,0.1); }
-
-  .card-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 2px;
-    color: var(--text);
-    margin-bottom: 16px;
-  }
-
-  .card-desc {
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--muted);
-  }
-
-  /* CASE STUDY */
-  .case {
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 64px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    align-items: center;
-  }
-
-  .case-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 4px;
-    color: var(--yellow);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-
-  .case-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 48px;
-    letter-spacing: 2px;
-    color: var(--text);
-    margin-bottom: 24px;
-    line-height: 1;
-  }
-
-  .case-desc {
-    font-size: 15px;
-    line-height: 1.8;
-    color: #888;
-    margin-bottom: 40px;
-  }
-
-  .case-metrics {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-
-  .metric {
-    border: 1px solid var(--border);
-    padding: 24px;
-  }
-
-  .metric-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 48px;
-    color: var(--yellow);
-    line-height: 1;
-    display: block;
-  }
-
-  .metric-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
-
-  /* PRODUCTS */
-  .products {
-    background: var(--dark);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .products-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 48px;
-  }
-
-  .product-card {
-    border: 1px solid var(--border);
-    padding: 48px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.3s;
-  }
-
-  .product-card:hover { border-color: var(--yellow); }
-
-  .product-tag {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--black);
-    background: var(--yellow);
-    padding: 4px 12px;
-    display: inline-block;
-    margin-bottom: 24px;
-  }
-
-  .product-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 52px;
-    letter-spacing: 3px;
-    color: var(--text);
-    line-height: 1;
-    margin-bottom: 16px;
-  }
-
-  .product-desc {
-    font-size: 14px;
-    line-height: 1.8;
-    color: var(--muted);
-    margin-bottom: 32px;
-  }
-
-  .product-features {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .product-features li {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 1px;
-    color: #777;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .product-features li::before {
-    content: '→';
-    color: var(--yellow);
-  }
-
-  /* TEAM */
-  .team-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-  }
-
-  .team-card {
-    background: var(--card);
-    padding: 48px;
-  }
-
-  .team-role {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--yellow);
-    margin-bottom: 12px;
-  }
-
-  .team-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 40px;
-    letter-spacing: 2px;
-    color: var(--text);
-    margin-bottom: 16px;
-  }
-
-  .team-bio {
-    font-size: 13px;
-    line-height: 1.8;
-    color: var(--muted);
-  }
-
-  /* CTA */
-  .cta-section {
-    background: var(--yellow);
-    padding: 100px 48px;
-    text-align: center;
-  }
-
-  .cta-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(48px, 7vw, 96px);
-    letter-spacing: 3px;
-    color: var(--black);
-    line-height: 1;
-    margin-bottom: 24px;
-  }
-
-  .cta-sub {
-    font-size: 16px;
-    color: rgba(0,0,0,0.6);
-    margin-bottom: 48px;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .btn-dark {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--yellow);
-    background: var(--black);
-    padding: 18px 48px;
-    text-decoration: none;
-    display: inline-block;
-    transition: transform 0.2s;
-  }
-
-  .btn-dark:hover { transform: translateY(-3px); }
-
-  /* FOOTER */
-  footer {
-    position: relative;
-    z-index: 1;
-    background: var(--dark);
-    border-top: 1px solid var(--border);
-    padding: 48px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .footer-logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    letter-spacing: 4px;
-    color: var(--yellow);
-  }
-
-  .footer-copy {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--muted);
-  }
-
-  .footer-cnpj {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 1px;
-    color: var(--border);
-  }
-
-  /* ANIMATIONS */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes ticker {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
-
-  /* DIVIDER */
-  .divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 0;
-  }
+:root{
+  --bg:#0B0B0B; --surface:#111111; --card:#1A1A1A; --line:#2A2A2A;
+  --yellow:#F5C518; --yellow-hi:#FFDE5C; --yellow-dk:#C99A0F;
+  --text:#ECECEC; --mute:#9A9A9A; --white:#FFFFFF; --red:#E0574F;
+  --serif:"Caladea",Georgia,serif; --sans:"Carlito","Segoe UI",system-ui,sans-serif;
+  --maxw:1200px; --pad:clamp(20px,5vw,64px);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:17px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:700;line-height:1.12;margin:0;color:var(--white);}
+p{margin:0;}
+a{color:var(--yellow);text-decoration:none;transition:color .18s ease;}
+a:hover{color:var(--yellow-hi);}
+:focus-visible{outline:2px solid var(--yellow);outline-offset:3px;border-radius:3px;}
+
+/* ---------- Bilingual ---------- */
+body.lang-en [data-lang="pt"]{display:none;}
+body.lang-pt [data-lang="en"]{display:none;}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad);}
+section{padding-block:clamp(64px,9vw,120px);}
+.eyebrow{
+  font-family:var(--sans);font-size:.78rem;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--yellow);margin:0 0 18px;display:block;
+}
+.section-sub{color:var(--mute);font-size:1.12rem;max-width:60ch;margin-top:16px;text-wrap:pretty;}
+
+/* ---------- Nav ---------- */
+header.nav{
+  position:sticky;top:0;z-index:50;background:rgba(11,11,11,.82);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
+}
+.nav-inner{display:flex;align-items:center;gap:24px;height:68px;}
+.brand{font-family:var(--serif);font-weight:700;font-size:1.32rem;letter-spacing:.02em;color:var(--white);}
+.brand b{color:var(--yellow);}
+.nav-links{display:flex;gap:26px;margin-left:auto;align-items:center;}
+.nav-links a{color:var(--text);font-size:.95rem;font-weight:400;}
+.nav-links a:hover{color:var(--yellow);}
+.lang-btn{
+  font-family:var(--sans);font-size:.82rem;font-weight:700;letter-spacing:.08em;
+  background:transparent;color:var(--text);border:1px solid var(--line);
+  border-radius:999px;padding:7px 14px;cursor:pointer;transition:all .18s ease;
+  display:inline-flex;align-items:center;gap:7px;
+}
+.lang-btn:hover{border-color:var(--yellow);color:var(--yellow);}
+.lang-btn .dot{width:6px;height:6px;border-radius:50%;background:var(--yellow);}
+.nav-toggle{display:none;margin-left:auto;background:none;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 11px;cursor:pointer;font-size:1.1rem;}
+@media (max-width:860px){
+  .nav-links{
+    position:fixed;inset:68px 0 auto 0;flex-direction:column;align-items:flex-start;
+    gap:0;background:var(--surface);border-bottom:1px solid var(--line);margin:0;
+    padding:8px var(--pad) 20px;transform:translateY(-120%);transition:transform .28s ease;
+  }
+  .nav-links.open{transform:translateY(0);}
+  .nav-links a{padding:12px 0;width:100%;border-bottom:1px solid var(--line);font-size:1.05rem;}
+  .nav-links .lang-btn{margin-top:14px;}
+  .nav-toggle{display:inline-block;}
+}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:9px;font-family:var(--sans);
+  font-weight:700;font-size:1rem;border-radius:10px;padding:14px 24px;cursor:pointer;
+  border:1px solid transparent;transition:all .18s ease;text-align:center;
+}
+.btn-primary{background:var(--yellow);color:#0B0B0B;}
+.btn-primary:hover{background:var(--yellow-hi);color:#0B0B0B;transform:translateY(-1px);}
+.btn-ghost{background:transparent;color:var(--text);border-color:var(--line);}
+.btn-ghost:hover{border-color:var(--yellow);color:var(--yellow);}
+
+/* ---------- Hero ---------- */
+.hero{padding-top:clamp(48px,7vw,88px);}
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(32px,5vw,64px);align-items:center;}
+.hero h1{font-size:clamp(2.3rem,5.4vw,4rem);letter-spacing:-.01em;text-wrap:balance;}
+.hero h1 em{font-style:italic;color:var(--yellow);}
+.hero-sub{color:var(--mute);font-size:clamp(1.05rem,1.7vw,1.28rem);margin-top:22px;max-width:52ch;text-wrap:pretty;}
+.hero-cta{display:flex;gap:14px;margin-top:34px;flex-wrap:wrap;}
+.radar-wrap{display:flex;justify-content:center;}
+@media (max-width:860px){
+  .hero-grid{grid-template-columns:1fr;}
+  .radar-wrap{order:-1;max-width:340px;margin:0 auto;}
+}
+
+/* ---------- Radar ---------- */
+.radar{width:min(100%,420px);height:auto;}
+.radar .grid-c{fill:none;stroke:var(--yellow);stroke-opacity:.22;}
+.radar .grid-line{stroke:var(--yellow);stroke-opacity:.13;}
+.radar .center{fill:var(--yellow);}
+.radar .blip{fill:var(--yellow);}
+.sweep{transform-origin:210px 210px;animation:sweep 6s linear infinite;}
+.pulse{fill:none;stroke:var(--yellow);stroke-width:1.5;transform-origin:210px 210px;opacity:0;animation:pulse 4.2s ease-out infinite;}
+.pulse.p2{animation-delay:1.4s;} .pulse.p3{animation-delay:2.8s;}
+.blip{animation:blink 3.4s ease-in-out infinite;}
+.blip.b2{animation-delay:.9s;} .blip.b3{animation-delay:1.7s;} .blip.b4{animation-delay:2.5s;}
+@keyframes sweep{to{transform:rotate(360deg);}}
+@keyframes pulse{0%{transform:scale(.12);opacity:.85;}80%{opacity:0;}100%{transform:scale(1);opacity:0;}}
+@keyframes blink{0%,100%{opacity:.25;}50%{opacity:1;}}
+@media (prefers-reduced-motion:reduce){
+  .sweep,.pulse,.blip{animation:none;} .pulse{opacity:.2;transform:scale(.6);} .blip{opacity:.9;}
+}
+
+/* ---------- Stats band ---------- */
+.stats{background:var(--surface);border-block:1px solid var(--line);}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.stat{background:var(--surface);padding:26px 22px;}
+.stat .n{font-family:var(--serif);font-size:1.9rem;color:var(--yellow);font-weight:700;line-height:1;}
+.stat .l{color:var(--mute);font-size:.92rem;margin-top:10px;}
+@media (max-width:760px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+
+/* ---------- Intro ---------- */
+.intro p{font-size:clamp(1.15rem,2vw,1.5rem);line-height:1.5;max-width:34ch;font-family:var(--serif);color:var(--text);text-wrap:pretty;}
+.intro-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:clamp(28px,5vw,60px);align-items:start;}
+.intro-body{color:var(--mute);font-size:1.08rem;line-height:1.7;max-width:62ch;text-wrap:pretty;}
+.intro-body strong{color:var(--text);font-weight:700;}
+@media (max-width:760px){.intro-grid{grid-template-columns:1fr;}.intro p{max-width:none;}}
+
+/* ---------- Products ---------- */
+.prod-head{margin-bottom:44px;}
+.prod-head h2{font-size:clamp(1.9rem,3.6vw,2.9rem);max-width:20ch;text-wrap:balance;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:clamp(24px,3.4vw,44px);}
+.card + .card{margin-top:24px;}
+.tag{display:inline-block;font-size:.74rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--yellow);border:1px solid var(--yellow-dk);border-radius:999px;padding:5px 12px;white-space:nowrap;}
+.chip{white-space:nowrap;}
+.chip{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;font-weight:700;color:var(--text);background:#0B0B0B;border:1px solid var(--line);border-radius:999px;padding:6px 13px;}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);box-shadow:0 0 0 3px rgba(245,197,24,.18);}
+.chip.live .dot{background:#5CD37E;box-shadow:0 0 0 3px rgba(92,211,126,.18);}
+
+/* SAVI */
+.savi{border-color:var(--yellow-dk);box-shadow:0 0 0 1px rgba(245,197,24,.08),0 30px 60px -40px rgba(245,197,24,.25);}
+.savi-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;}
+.savi-top-l{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.savi h3{font-size:clamp(1.8rem,3.4vw,2.6rem);margin:22px 0 0;}
+.savi h3 .brand-mark{color:var(--yellow);}
+.savi-desc{color:var(--mute);font-size:1.12rem;line-height:1.65;max-width:64ch;margin-top:14px;text-wrap:pretty;}
+
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px;}
+.stage{background:#0F0F0F;border:1px solid var(--line);border-radius:14px;padding:22px;position:relative;}
+.stage .step{font-family:var(--serif);font-size:1.25rem;color:var(--white);font-weight:700;}
+.stage .state{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:6px;}
+.stage.live .state{color:#5CD37E;} .stage.dev .state{color:var(--yellow);} .stage.vision .state{color:var(--mute);}
+.stage p{color:var(--mute);font-size:.96rem;margin-top:12px;line-height:1.55;}
+@media (max-width:760px){.stages{grid-template-columns:1fr;}}
+
+.block-title{font-size:1.34rem;margin:0 0 20px;font-family:var(--serif);color:var(--white);text-wrap:balance;}
+.subsection{margin-top:44px;padding-top:38px;border-top:1px solid var(--line);}
+
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.metric{background:#0F0F0F;border:1px solid var(--line);border-radius:12px;padding:20px;}
+.metric .mn{font-family:var(--serif);font-size:1.5rem;color:var(--yellow);font-weight:700;line-height:1;}
+.metric .ml{color:var(--mute);font-size:.9rem;margin-top:9px;line-height:1.45;}
+@media (max-width:760px){.metrics{grid-template-columns:1fr 1fr;}}
+@media (max-width:460px){.metrics{grid-template-columns:1fr;}}
+
+.layers{display:flex;flex-direction:column;gap:10px;}
+.layer{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;background:#0F0F0F;border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
+.layer .lnum{display:flex;align-items:center;justify-content:center;min-width:40px;height:40px;border-radius:9px;background:#0B0B0B;border:1px solid var(--yellow-dk);color:var(--yellow);font-family:var(--serif);font-weight:700;font-size:1.1rem;}
+.layer.foundation .lnum{border-color:var(--line);color:var(--mute);font-size:.7rem;letter-spacing:.06em;}
+.layer .lname{font-weight:700;color:var(--white);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.layer .ltext{color:var(--mute);font-size:.98rem;margin-top:5px;line-height:1.55;}
+.badge-samd{font-size:.64rem;font-weight:700;letter-spacing:.1em;color:#fff;background:var(--red);border-radius:5px;padding:3px 7px;text-transform:uppercase;}
+
+.pills{display:flex;flex-wrap:wrap;gap:10px;}
+.pill{font-size:.92rem;font-weight:700;color:var(--text);background:#0F0F0F;border:1px solid var(--line);border-radius:999px;padding:9px 16px;}
+.pill::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--yellow);margin-right:9px;vertical-align:1px;}
+
+.meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.meta{background:#0F0F0F;border:1px solid var(--line);border-radius:12px;padding:22px;}
+.meta h4{font-size:1rem;letter-spacing:.06em;text-transform:uppercase;color:var(--yellow);font-family:var(--sans);font-weight:700;}
+.meta p{color:var(--mute);font-size:.96rem;margin-top:12px;line-height:1.6;}
+@media (max-width:760px){.meta-grid{grid-template-columns:1fr;}}
+
+/* small product cards */
+.mini-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;}
+.card h3.mini-title{font-size:clamp(1.5rem,2.8vw,2rem);margin-top:20px;}
+.mini-desc{color:var(--mute);font-size:1.06rem;line-height:1.6;max-width:64ch;margin-top:12px;text-wrap:pretty;}
+.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:26px;}
+@media (max-width:600px){.mini-stats{grid-template-columns:1fr;}}
+.mini-foot{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:24px;}
+
+/* ---------- Approach ---------- */
+.approach{background:var(--surface);border-block:1px solid var(--line);}
+.approach-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:40px;}
+.appr{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px;}
+.appr h4{font-family:var(--serif);font-size:1.3rem;color:var(--white);}
+.appr p{color:var(--mute);font-size:1rem;margin-top:10px;line-height:1.6;}
+.appr .ai{font-size:.72rem;font-weight:700;letter-spacing:.14em;color:var(--yellow);text-transform:uppercase;display:block;margin-bottom:12px;}
+@media (max-width:700px){.approach-grid{grid-template-columns:1fr;}}
+
+/* ---------- Team ---------- */
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:40px;}
+.member{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:30px;display:flex;gap:22px;align-items:flex-start;}
+.avatar{min-width:64px;height:64px;border-radius:14px;background:linear-gradient(145deg,#1f1f1f,#0d0d0d);border:1px solid var(--yellow-dk);color:var(--yellow);font-family:var(--serif);font-weight:700;font-size:1.5rem;display:flex;align-items:center;justify-content:center;letter-spacing:.02em;}
+.member h4{font-family:var(--serif);font-size:1.4rem;color:var(--white);}
+.member .role{color:var(--yellow);font-size:.86rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;}
+.member p{color:var(--mute);font-size:.98rem;margin-top:14px;line-height:1.6;text-wrap:pretty;}
+@media (max-width:700px){.team-grid{grid-template-columns:1fr;}}
+
+/* ---------- Contact ---------- */
+.contact{background:var(--surface);border-top:1px solid var(--line);}
+.contact h2{font-size:clamp(2rem,4vw,3.2rem);max-width:18ch;text-wrap:balance;}
+.contact-links{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px;}
+.clink{display:inline-flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;color:var(--text);font-weight:700;font-size:.98rem;transition:all .18s ease;}
+.clink:hover{border-color:var(--yellow);color:var(--yellow);transform:translateY(-1px);}
+.clink .ic{width:22px;height:22px;display:inline-flex;color:var(--yellow);}
+.clink small{display:block;font-weight:400;color:var(--mute);font-size:.8rem;margin-top:2px;}
+.clink .txt{line-height:1.2;}
+
+/* ---------- Footer ---------- */
+footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:40px;}
+.foot-inner{color:var(--mute);font-size:.9rem;line-height:1.8;}
+.foot-inner b{color:var(--text);font-family:var(--serif);}
+
+.divider-note{color:var(--mute);font-size:.9rem;margin-top:26px;font-style:italic;}
 </style>
 </head>
-<body>
+<body class="lang-en">
 
-<!-- NAV -->
-<nav>
-  <div class="nav-logo">3<span>BRAIN</span></div>
-  <ul class="nav-links">
-    <li><a href="#solutions">Soluções</a></li>
-    <li><a href="#case">Cases</a></li>
-    <li><a href="#products">Produtos</a></li>
-    <li><a href="#team">Equipe</a></li>
-  </ul>
-  <a href="https://wa.me/5548988487280" target="_blank" class="nav-cta">Contato</a>
-</nav>
+<!-- ================= NAV ================= -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a href="#top" class="brand">3<b>BRAIN</b></a>
+    <button class="nav-toggle" aria-label="Menu" aria-expanded="false" id="navToggle">☰</button>
+    <nav class="nav-links" id="navLinks">
+      <a href="#products"><span data-lang="en">What we build</span><span data-lang="pt">O que construímos</span></a>
+      <a href="#approach"><span data-lang="en">Approach</span><span data-lang="pt">Abordagem</span></a>
+      <a href="#team"><span data-lang="en">Team</span><span data-lang="pt">Time</span></a>
+      <a href="#contact"><span data-lang="en">Get in touch</span><span data-lang="pt">Fale conosco</span></a>
+      <button class="lang-btn" id="langBtn" aria-label="Switch language">
+        <span class="dot"></span>
+        <span data-lang="en">PT</span><span data-lang="pt">EN</span>
+      </button>
+    </nav>
+  </div>
+</header>
 
-<!-- HERO -->
+<main id="top">
+
+<!-- ================= HERO ================= -->
 <section class="hero">
-  <div class="hero-glow"></div>
-  <div class="hero-content">
-    <p class="hero-tag">// Artificial Intelligence Solutions</p>
-    <h1 class="hero-title"><span class="accent">3</span>BRAIN</h1>
-    <p class="hero-sub">Inteligência que trabalha por você</p>
-    <p class="hero-desc">Desenvolvemos agentes de IA que automatizam processos operacionais dentro de empresas — eliminando tarefas manuais e devolvendo horas às equipes. Da saúde à estética, transformamos gargalos em eficiência.</p>
-    <div class="hero-actions">
-      <a href="#case" class="btn-primary">Ver Cases</a>
-      <a href="https://wa.me/5548988487280" target="_blank" class="btn-ghost">Falar Conosco</a>
-    </div>
-  </div>
-</section>
-
-<!-- TICKER -->
-<div class="ticker">
-  <div class="ticker-inner">
-    <span class="ticker-item"><span>●</span>Inteligência Artificial</span>
-    <span class="ticker-item"><span>●</span>Automação de Processos</span>
-    <span class="ticker-item"><span>●</span>Saúde Digital</span>
-    <span class="ticker-item"><span>●</span>BarberGO App</span>
-    <span class="ticker-item"><span>●</span>Firebase Real-Time</span>
-    <span class="ticker-item"><span>●</span>Agentes de IA</span>
-    <span class="ticker-item"><span>●</span>Claude API</span>
-    <span class="ticker-item"><span>●</span>Gemini API</span>
-    <span class="ticker-item"><span>●</span>Inteligência Artificial</span>
-    <span class="ticker-item"><span>●</span>Automação de Processos</span>
-    <span class="ticker-item"><span>●</span>Saúde Digital</span>
-    <span class="ticker-item"><span>●</span>BarberGO App</span>
-    <span class="ticker-item"><span>●</span>Firebase Real-Time</span>
-    <span class="ticker-item"><span>●</span>Agentes de IA</span>
-    <span class="ticker-item"><span>●</span>Claude API</span>
-    <span class="ticker-item"><span>●</span>Gemini API</span>
-  </div>
-</div>
-
-<!-- STATS -->
-<div class="stats">
-  <div class="stat">
-    <span class="stat-number">4H</span>
-    <span class="stat-label">Economizadas por profissional/dia</span>
-  </div>
-  <div class="stat">
-    <span class="stat-number">15</span>
-    <span class="stat-label">Dias para implementação</span>
-  </div>
-  <div class="stat">
-    <span class="stat-number">3</span>
-    <span class="stat-label">APIs integradas por produto</span>
-  </div>
-</div>
-
-<!-- SOLUTIONS -->
-<section id="solutions">
-  <p class="section-tag">// O que fazemos</p>
-  <h2 class="section-title">Nossas Soluções</h2>
-  <div class="solutions-grid">
-    <div class="solution-card">
-      <div class="card-number">01</div>
-      <h3 class="card-title">Agentes Clínicos</h3>
-      <p class="card-desc">Sistemas inteligentes para registro automatizado de evoluções de pacientes, sincronização em tempo real entre dispositivos e gestão de dados clínicos — sem papel, sem retrabalho.</p>
-    </div>
-    <div class="solution-card">
-      <div class="card-number">02</div>
-      <h3 class="card-title">Automação Empresarial</h3>
-      <p class="card-desc">Mapeamos os gargalos operacionais de qualquer setor e entregamos agentes de IA customizados que executam tarefas repetitivas, liberando as equipes para o que realmente importa.</p>
-    </div>
-    <div class="solution-card">
-      <div class="card-number">03</div>
-      <h3 class="card-title">Apps com IA Integrada</h3>
-      <p class="card-desc">Desenvolvemos aplicativos mobile e web com inteligência artificial nativa — conectando APIs de última geração para criar experiências que aprendem e evoluem com o uso.</p>
-    </div>
-    <div class="solution-card">
-      <div class="card-number">04</div>
-      <h3 class="card-title">Consultoria de Processos</h3>
-      <p class="card-desc">Com experiência operacional real em saúde, contabilidade e gestão de negócios, identificamos onde sua empresa perde tempo e entregamos soluções que funcionam desde o primeiro dia.</p>
-    </div>
-  </div>
-</section>
-
-<!-- CASE STUDY -->
-<section id="case" style="padding-top: 0;">
-  <p class="section-tag">// Resultado comprovado</p>
-  <h2 class="section-title">Case Real</h2>
-  <div class="case">
+  <div class="wrap hero-grid">
     <div>
-      <p class="case-label">// Instituição de Longa Permanência — Santa Catarina, Brasil</p>
-      <h3 class="case-title">Agente Clínico em 15 dias</h3>
-      <p class="case-desc">Implementamos um sistema de IA capaz de registrar e evoluir dados individuais de 38 pacientes de forma automatizada, com banco de dados Firebase sincronizado em tempo real entre computadores e dispositivos móveis.</p>
-      <p class="case-desc">Resultado imediato: horas de trabalho manual eliminadas, zero erros de transcrição, informação clínica disponível em qualquer dispositivo da equipe — instantaneamente.</p>
+      <span class="eyebrow">3BRAIN · AI-first studio · Florianópolis, Brazil</span>
+      <h1>
+        <span data-lang="en">AI that does the work — <em>built by people who lived it.</em></span>
+        <span data-lang="pt">IA que faz o trabalho — <em>feita por quem viveu o problema.</em></span>
+      </h1>
+      <p class="hero-sub">
+        <span data-lang="en">A two-person studio shipping clinical, commercial and autonomous AI. Our flagship watches over those who can't watch over themselves.</span>
+        <span data-lang="pt">Um estúdio de duas pessoas entregando IA clínica, comercial e autônoma. Nosso carro-chefe cuida de quem não pode cuidar de si.</span>
+      </p>
+      <div class="hero-cta">
+        <a href="#products" class="btn btn-primary">
+          <span data-lang="en">Explore the products</span><span data-lang="pt">Ver os produtos</span>
+        </a>
+        <a href="#contact" class="btn btn-ghost">
+          <span data-lang="en">Get in touch</span><span data-lang="pt">Fale conosco</span>
+        </a>
+      </div>
     </div>
-    <div class="case-metrics">
-      <div class="metric">
-        <span class="metric-value">38</span>
-        <span class="metric-label">Pacientes gerenciados</span>
+    <div class="radar-wrap" aria-hidden="true">
+      <svg class="radar" viewBox="0 0 420 420" role="img">
+        <line class="grid-line" x1="210" y1="10" x2="210" y2="410"/>
+        <line class="grid-line" x1="10" y1="210" x2="410" y2="210"/>
+        <circle class="grid-c" cx="210" cy="210" r="55"/>
+        <circle class="grid-c" cx="210" cy="210" r="110"/>
+        <circle class="grid-c" cx="210" cy="210" r="165"/>
+        <circle class="grid-c" cx="210" cy="210" r="198"/>
+        <circle class="pulse p1" cx="210" cy="210" r="198"/>
+        <circle class="pulse p2" cx="210" cy="210" r="198"/>
+        <circle class="pulse p3" cx="210" cy="210" r="198"/>
+        <defs>
+          <radialGradient id="sweepG" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stop-color="#F5C518" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#F5C518" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <g class="sweep">
+          <path d="M210 210 L210 12 A198 198 0 0 1 388 150 Z" fill="url(#sweepG)"/>
+          <line x1="210" y1="210" x2="210" y2="12" stroke="#F5C518" stroke-opacity="0.6" stroke-width="1.5"/>
+        </g>
+        <circle class="blip b1" cx="286" cy="150" r="5"/>
+        <circle class="blip b2" cx="150" cy="272" r="4"/>
+        <circle class="blip b3" cx="300" cy="286" r="4.5"/>
+        <circle class="blip b4" cx="132" cy="140" r="3.5"/>
+        <circle class="center" cx="210" cy="210" r="7"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STATS ================= -->
+<section class="stats" style="padding-block:clamp(40px,6vw,64px);">
+  <div class="wrap">
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="n">3</div>
+        <div class="l"><span data-lang="en">AI products shipped</span><span data-lang="pt">produtos de IA no ar</span></div>
       </div>
-      <div class="metric">
-        <span class="metric-value">4H</span>
-        <span class="metric-label">Economizadas por turno</span>
+      <div class="stat">
+        <div class="n">2</div>
+        <div class="l"><span data-lang="en">Founders</span><span data-lang="pt">fundadores</span></div>
       </div>
-      <div class="metric">
-        <span class="metric-value">15</span>
-        <span class="metric-label">Dias de implementação</span>
+      <div class="stat">
+        <div class="n">Google-native</div>
+        <div class="l">Firebase · Cloud · Gemini · Claude</div>
       </div>
-      <div class="metric">
-        <span class="metric-value">0</span>
-        <span class="metric-label">Erros de transcrição</span>
+      <div class="stat">
+        <div class="n">2026</div>
+        <div class="l"><span data-lang="en">Founded · pre-seed</span><span data-lang="pt">Fundada · pré-seed</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- PRODUCTS -->
-<section id="products" class="products">
-  <p class="section-tag">// Nossos produtos</p>
-  <h2 class="section-title">Tecnologia em Produção</h2>
-  <div class="products-grid">
-    <div class="product-card">
-      <span class="product-tag">Em lançamento</span>
-      <h3 class="product-name">BARBERGO</h3>
-      <p class="product-desc">O LinkedIn da barbearia. Conecta barbeiros, barbearias e clientes numa plataforma única — com matchmaking inteligente, perfis assistidos por IA e informações de mercado em tempo real.</p>
-      <ul class="product-features">
-        <li>Busca por especialidade e estilo</li>
-        <li>Sistema de vagas para barbearias</li>
-        <li>Assinaturas Silver e Gold com IA</li>
-        <li>Chatbot com tendências e preços</li>
-        <li>Integrado: Claude + Gemini APIs</li>
-      </ul>
+<!-- ================= INTRO ================= -->
+<section class="intro">
+  <div class="wrap intro-grid">
+    <div>
+      <span class="eyebrow"><span data-lang="en">Built from the front line</span><span data-lang="pt">Feito na linha de frente</span></span>
+      <p>
+        <span data-lang="en">Products built by someone who lived the problems they solve.</span>
+        <span data-lang="pt">Produtos feitos por quem viveu os problemas que resolvem.</span>
+      </p>
     </div>
-    <div class="product-card">
-      <span class="product-tag">Em produção</span>
-      <h3 class="product-name">CLINICAL AGENT</h3>
-      <p class="product-desc">Sistema inteligente de gestão clínica para instituições de saúde — registro automatizado, evoluções de enfermagem, sincronização real-time e alertas inteligentes.</p>
-      <ul class="product-features">
-        <li>Registro automático de evoluções</li>
-        <li>Firebase real-time multi-device</li>
-        <li>Alertas clínicos personalizados</li>
-        <li>Passagem de turno automatizada</li>
-        <li>Integrado: Claude API</li>
-      </ul>
-    </div>
-  </div>
-    <div class="product-card">
-      <span class="product-tag">Em desenvolvimento</span>
-      <h3 class="product-name">HUNTAI</h3>
-      <p class="product-desc">Agente autônomo de candidaturas em massa — absorve vagas em tempo real de portais de emprego portugueses e envia candidaturas personalizadas por email, com até 600 disparos por dia.</p>
-      <ul class="product-features">
-        <li>Integração com Net-Empregos Portugal</li>
-        <li>Candidaturas personalizadas por IA</li>
-        <li>300 a 600 envios automáticos/dia</li>
-        <li>Matching inteligente perfil × vaga</li>
-        <li>Integrado: Claude API</li>
-      </ul>
-    </div>
-</section>
-
-<!-- TEAM -->
-<section id="team">
-  <p class="section-tag">// Fundadores</p>
-  <h2 class="section-title">A Equipe</h2>
-  <div class="team-grid">
-    <div class="team-card">
-      <p class="team-role">// Co-fundador & CEO</p>
-      <h3 class="team-name">Fábio Carlos da Silva</h3>
-      <p class="team-bio">Técnico de Enfermagem com 8 anos de experiência em ambientes hospitalares, laboratoriais e instituições de longa permanência. Especialista em implementação de sistemas de IA em ambientes clínicos reais — com cases comprovados em produção.</p>
-    </div>
-    <div class="team-card">
-      <p class="team-role">// Co-fundador & COO</p>
-      <h3 class="team-name">Bruno (Nobru)</h3>
-      <p class="team-bio">Técnico em Contabilidade com 5 anos de experiência no setor contábil. Empreendedor e administrador há 6 anos à frente da Nobru's Barbershop. Responsável pelo desenvolvimento e operação do BarberGO — com visão de negócio construída na prática da gestão real.</p>
+    <div>
+      <p class="intro-body" data-lang="en">3BRAIN is an AI-first studio from Santa Catarina, Brazil. Our edge is unusual: our products are built by someone who lived the problems they solve. <strong>Fábio "Binho" da Silva</strong> spent eight years as a frontline nurse, then taught himself to build software — and now writes every product himself. The result is AI that reflects real work, shipped fast by a lean team.</p>
+      <p class="intro-body" data-lang="pt">A 3BRAIN é um estúdio AI-first de Santa Catarina, Brasil. Nossa vantagem é incomum: os produtos são feitos por quem viveu os problemas que resolvem. <strong>Fábio "Binho" da Silva</strong> passou oito anos como técnico de enfermagem na linha de frente, aprendeu sozinho a programar — e hoje escreve cada produto. O resultado é uma IA que reflete o trabalho real, entregue rápido por um time enxuto.</p>
     </div>
   </div>
 </section>
 
-<!-- CTA -->
-<div class="cta-section">
-  <h2 class="cta-title">Pronto para automatizar?</h2>
-  <p class="cta-sub">Vamos mapear os gargalos da sua operação e entregar inteligência real — em menos de 15 dias.</p>
-  <a href="https://wa.me/5548988487280" target="_blank" class="btn-dark">Falar com a 3brain</a>
-</div>
+<!-- ================= PRODUCTS ================= -->
+<section class="products" id="products">
+  <div class="wrap">
+    <div class="prod-head">
+      <span class="eyebrow"><span data-lang="en">What we build</span><span data-lang="pt">O que construímos</span></span>
+      <h2><span data-lang="en">Three products. One engine philosophy.</span><span data-lang="pt">Três produtos. Uma só filosofia de motor.</span></h2>
+      <p class="section-sub"><span data-lang="en">A shared, Google-native AI stack powering health, commerce and autonomous agents.</span><span data-lang="pt">Uma stack de IA Google-native compartilhada, movendo saúde, comércio e agentes autônomos.</span></p>
+    </div>
 
-<!-- FOOTER -->
-<footer>
-  <div class="footer-logo">3BRAIN</div>
-  <p class="footer-cnpj">CNPJ 66.447.959/0001-88 — Inova Simples</p>
-  <p class="footer-copy">© 2026 3brain Artificial Intelligence Solutions</p>
+    <!-- SAVI -->
+    <div class="card savi">
+      <div class="savi-top">
+        <div class="savi-top-l">
+          <span class="tag"><span data-lang="en">Healthtech · flagship</span><span data-lang="pt">Healthtech · carro-chefe</span></span>
+        </div>
+        <span class="chip"><span class="dot"></span><span data-lang="en">Proof of concept · in development</span><span data-lang="pt">Prova de conceito · em desenvolvimento</span></span>
+      </div>
+      <h3><span class="brand-mark">SAVI</span> Saúde</h3>
+      <p class="savi-desc" data-lang="en">An anti-forgetting system for care. SAVI reads each shift — vitals and nursing notes — and flags what matters, with a nurse always in the loop. It never lets the AI invent a clinical fact.</p>
+      <p class="savi-desc" data-lang="pt">Um sistema anti-esquecimento para o cuidado. O SAVI lê cada plantão — sinais vitais e evoluções — e sinaliza o que importa, com o enfermeiro sempre no circuito. A IA nunca inventa um fato clínico.</p>
+
+      <div class="stages">
+        <div class="stage live">
+          <div class="step">Document</div>
+          <div class="state">Live</div>
+          <p><span data-lang="en">Structures vitals and notes into clean clinical data.</span><span data-lang="pt">Estrutura vitais e notas em dado clínico limpo.</span></p>
+        </div>
+        <div class="stage dev">
+          <div class="step">Predict</div>
+          <div class="state"><span data-lang="en">In development</span><span data-lang="pt">Em desenvolvimento</span></div>
+          <p><span data-lang="en">Surfaces early-warning patterns — falls, sepsis, avoidable admissions.</span><span data-lang="pt">Traz padrões de alerta precoce — quedas, sepse, internações evitáveis.</span></p>
+        </div>
+        <div class="stage vision">
+          <div class="step">Prevent</div>
+          <div class="state">Vision</div>
+          <p><span data-lang="en">Closes the loop into timely action at the bedside.</span><span data-lang="pt">Fecha o ciclo em ação oportuna à beira do leito.</span></p>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="metrics">
+          <div class="metric"><div class="mn">452</div><div class="ml"><span data-lang="en">clinical trigger patterns</span><span data-lang="pt">padrões-gatilho clínicos</span></div></div>
+          <div class="metric"><div class="mn">~1,233</div><div class="ml"><span data-lang="en">automated tests, green</span><span data-lang="pt">testes automatizados, verdes</span></div></div>
+          <div class="metric"><div class="mn">27,894</div><div class="ml"><span data-lang="en">real measurements audited</span><span data-lang="pt">aferições reais auditadas</span></div></div>
+          <div class="metric"><div class="mn">FHIR R4</div><div class="ml"><span data-lang="en">native · RNDS-ready</span><span data-lang="pt">nativo · pronto p/ RNDS</span></div></div>
+          <div class="metric"><div class="mn">ICP-Brasil</div><div class="ml"><span data-lang="en">digital signature</span><span data-lang="pt">assinatura digital</span></div></div>
+          <div class="metric"><div class="mn">120+</div><div class="ml"><span data-lang="en">API operations built</span><span data-lang="pt">operações de API</span></div></div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h4 class="block-title"><span data-lang="en">The full architecture — six layers on a solid foundation</span><span data-lang="pt">A arquitetura completa — seis camadas sobre uma fundação sólida</span></h4>
+        <div class="layers">
+          <div class="layer foundation">
+            <div class="lnum"><span data-lang="en">BASE</span><span data-lang="pt">BASE</span></div>
+            <div>
+              <div class="lname"><span data-lang="en">Foundation</span><span data-lang="pt">Fundação</span></div>
+              <div class="ltext"><span data-lang="en">FHIR R4 data model, access by ward link, immutable audit trail, ICP-Brasil signature.</span><span data-lang="pt">Modelo FHIR R4, acesso por vínculo de setor, auditoria imutável, assinatura ICP-Brasil.</span></div>
+            </div>
+          </div>
+          <div class="layer">
+            <div class="lnum">1</div>
+            <div>
+              <div class="lname"><span data-lang="en">Capture</span><span data-lang="pt">Capturar</span></div>
+              <div class="ltext"><span data-lang="en">Voice, photo/OCR, wound-timeline imaging, speech-to-text and external results — the best record is the one nobody typed.</span><span data-lang="pt">Voz, foto/OCR, linha do tempo de feridas, voz-para-texto e resultados externos — o melhor registro é o que ninguém digitou.</span></div>
+            </div>
+          </div>
+          <div class="layer">
+            <div class="lnum">2</div>
+            <div>
+              <div class="lname"><span data-lang="en">Structure</span><span data-lang="pt">Estruturar</span></div>
+              <div class="ltext"><span data-lang="en">An AI scribe drafts the head-to-toe nursing evolution; the nurse reviews and signs. Vitals are deterministic — never written by the model.</span><span data-lang="pt">Uma escriba de IA monta a evolução cefalocaudal; o enfermeiro revisa e assina. Os vitais são determinísticos — nunca escritos pelo modelo.</span></div>
+            </div>
+          </div>
+          <div class="layer">
+            <div class="lnum">3</div>
+            <div>
+              <div class="lname"><span data-lang="en">Connect</span><span data-lang="pt">Conectar</span></div>
+              <div class="ltext"><span data-lang="en">Each patient's individual baseline, an auto-assembled shift handover, cross-discipline reading and episode memory.</span><span data-lang="pt">A linha de base individual, passagem de plantão montada sozinha, leitura entre categorias e memória de episódios.</span></div>
+            </div>
+          </div>
+          <div class="layer">
+            <div class="lnum">4</div>
+            <div>
+              <div class="lname"><span data-lang="en">Watch</span><span data-lang="pt">Vigiar</span> <span class="badge-samd">SaMD</span></div>
+              <div class="ltext"><span data-lang="en">Permanent safety flags, a medication interceptor, a multi-check prescription-safety layer and a 10-control nurse cockpit.</span><span data-lang="pt">Alertas permanentes, interceptor de medicação, conferente de prescrição multi-checagem e cockpit do enfermeiro (10 controles).</span></div>
+            </div>
+          </div>
+          <div class="layer">
+            <div class="lnum">5</div>
+            <div>
+              <div class="lname"><span data-lang="en">Predict</span><span data-lang="pt">Prever</span> <span class="badge-samd">SaMD</span></div>
+              <div class="ltext"><span data-lang="en">452 observed-trend patterns surface early warnings — always "worth checking", never a diagnosis. Statistical prophecy stays off until locally validated.</span><span data-lang="pt">452 padrões de tendência observada trazem avisos precoces — sempre "vale avaliar", nunca diagnóstico. A profecia estatística fica desligada até validação local.</span></div>
+            </div>
+          </div>
+          <div class="layer">
+            <div class="lnum">6</div>
+            <div>
+              <div class="lname"><span data-lang="en">Distribute</span><span data-lang="pt">Distribuir</span></div>
+              <div class="ltext"><span data-lang="en">A smart institutional feed on a priority ladder — bell → essential → bonus — so the right thing reaches the right eyes without anyone searching.</span><span data-lang="pt">Um feed institucional inteligente em escada de prioridade — sino → essencial → brinde — pra coisa certa chegar aos olhos certos sem ninguém procurar.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h4 class="block-title"><span data-lang="en">Principles</span><span data-lang="pt">Princípios</span></h4>
+        <div class="pills">
+          <span class="pill"><span data-lang="en">Human always in the loop</span><span data-lang="pt">Humano sempre no circuito</span></span>
+          <span class="pill"><span data-lang="en">A clinical fact is never generated by the AI</span><span data-lang="pt">Fato clínico nunca vem da IA</span></span>
+          <span class="pill"><span data-lang="en">Conservative first, learns with data</span><span data-lang="pt">Nasce conservador, aprende com dado</span></span>
+          <span class="pill"><span data-lang="en">The alert informs, it doesn't handcuff</span><span data-lang="pt">O alerta informa, não algema</span></span>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="meta-grid">
+          <div class="meta">
+            <h4><span data-lang="en">Proof</span><span data-lang="pt">Prova</span></h4>
+            <p><span data-lang="en">Built and validated on years of real pilot data at a 38-resident care home (Lar do Seu Doca, Biguaçu/SC). Validation on the ground — not yet commercial.</span><span data-lang="pt">Construído e validado sobre anos de dado real num lar de 38 residentes (Lar do Seu Doca, Biguaçu/SC). Validação no chão — ainda não comercial.</span></p>
+          </div>
+          <div class="meta">
+            <h4><span data-lang="en">IP &amp; regulatory</span><span data-lang="pt">PI &amp; regulatório</span></h4>
+            <p><span data-lang="en">INPI classes 9, 42, 44 (pending). Prescription-safety module: SaMD Class II candidate (ANVISA RDC 657/751). Aligned to COFEN 736/2024 and ANVISA RDC 502/2021; LGPD by design.</span><span data-lang="pt">INPI classes 9, 42, 44 (em andamento). Módulo de prescrição: candidato a SaMD Classe II (ANVISA RDC 657/751). Alinhado à COFEN 736/2024 e RDC 502/2021; LGPD desde a fundação.</span></p>
+          </div>
+          <div class="meta">
+            <h4><span data-lang="en">Market</span><span data-lang="pt">Mercado</span></h4>
+            <p><span data-lang="en">Care homes (ILPIs), clinics and labs — Brazil and Portugal.</span><span data-lang="pt">ILPIs, clínicas e laboratórios — Brasil e Portugal.</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BARBERGO -->
+    <div class="card">
+      <div class="mini-top">
+        <span class="tag"><span data-lang="en">Marketplace · live</span><span data-lang="pt">Marketplace · no ar</span></span>
+        <span class="chip live"><span class="dot"></span><span data-lang="en">Live · beta + first real match</span><span data-lang="pt">No ar · beta + 1º match real</span></span>
+      </div>
+      <h3 class="mini-title">BarberGO</h3>
+      <p class="mini-desc" data-lang="en">A three-sided marketplace connecting barbers, shops and clients — built in Flutter, powered by triple-AI orchestration.</p>
+      <p class="mini-desc" data-lang="pt">Um marketplace de três lados conectando barbeiros, barbearias e clientes — feito em Flutter, movido por orquestração triple-AI.</p>
+      <div class="mini-stats">
+        <div class="metric"><div class="mn">3</div><div class="ml"><span data-lang="en">AI models · Claude/Gemini/Perplexity</span><span data-lang="pt">modelos de IA · Claude/Gemini/Perplexity</span></div></div>
+        <div class="metric"><div class="mn">12</div><div class="ml"><span data-lang="en">AI features</span><span data-lang="pt">recursos de IA</span></div></div>
+        <div class="metric"><div class="mn">2</div><div class="ml"><span data-lang="en">app stores, live</span><span data-lang="pt">lojas, no ar</span></div></div>
+      </div>
+      <div class="mini-foot">
+        <a href="https://play.google.com/store/apps/details?id=com.barbergo.app" class="btn btn-ghost" target="_blank" rel="noopener">
+          <span data-lang="en">Get it on Google Play</span><span data-lang="pt">Baixar no Google Play</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- HUNTAI -->
+    <div class="card">
+      <div class="mini-top">
+        <span class="tag"><span data-lang="en">Autonomous agent · running</span><span data-lang="pt">Agente autônomo · rodando</span></span>
+        <span class="chip live"><span class="dot"></span><span data-lang="en">Running · 300–600/day · 24/7</span><span data-lang="pt">Rodando · 300–600/dia · 24/7</span></span>
+      </div>
+      <h3 class="mini-title">HuntAI</h3>
+      <p class="mini-desc" data-lang="en">An autonomous job-application agent in Python. It maps 40+ job platforms and integrates 7 ATS (Workday, Greenhouse, Lever, SmartRecruiters, Teamtailor, Recruitee) — parsing roles and applying at scale by email, native form and ATS alike.</p>
+      <p class="mini-desc" data-lang="pt">Um agente autônomo de candidaturas em Python. Mapeia 40+ plataformas e integra 7 ATS (Workday, Greenhouse, Lever, SmartRecruiters, Teamtailor, Recruitee) — lendo vagas e se candidatando em escala por email, formulário nativo e ATS.</p>
+      <div class="mini-stats">
+        <div class="metric"><div class="mn">~78k</div><div class="ml"><span data-lang="en">roles parsed / cycle</span><span data-lang="pt">vagas lidas / ciclo</span></div></div>
+        <div class="metric"><div class="mn">20k+</div><div class="ml"><span data-lang="en">applications sent</span><span data-lang="pt">candidaturas enviadas</span></div></div>
+        <div class="metric"><div class="mn">60k+</div><div class="ml"><span data-lang="en">live roles reachable (est.)</span><span data-lang="pt">vagas ativas alcançáveis (est.)</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= APPROACH ================= -->
+<section class="approach" id="approach">
+  <div class="wrap">
+    <span class="eyebrow"><span data-lang="en">Approach</span><span data-lang="pt">Abordagem</span></span>
+    <h2 style="font-size:clamp(1.9rem,3.6vw,2.9rem);max-width:20ch;text-wrap:balance;"><span data-lang="en">AI-first, and careful where it counts.</span><span data-lang="pt">AI-first, e cuidadosos onde importa.</span></h2>
+    <div class="approach-grid">
+      <div class="appr">
+        <span class="ai">01</span>
+        <h4>Google-native</h4>
+        <p><span data-lang="en">Firebase for realtime, auth and sync; Google Cloud for compute and APIs.</span><span data-lang="pt">Firebase para realtime, auth e sync; Google Cloud para compute e APIs.</span></p>
+      </div>
+      <div class="appr">
+        <span class="ai">02</span>
+        <h4><span data-lang="en">Multi-model orchestration</span><span data-lang="pt">Orquestração multi-modelo</span></h4>
+        <p><span data-lang="en">Routes between Gemini and Claude — the right model for each job.</span><span data-lang="pt">Roteia entre Gemini e Claude — o modelo certo para cada tarefa.</span></p>
+      </div>
+      <div class="appr">
+        <span class="ai">03</span>
+        <h4><span data-lang="en">Human in the loop</span><span data-lang="pt">Humano no circuito</span></h4>
+        <p><span data-lang="en">AI drafts, the professional decides; a fact is never generated by the model.</span><span data-lang="pt">A IA rascunha, o profissional decide; o fato nunca é gerado pelo modelo.</span></p>
+      </div>
+      <div class="appr">
+        <span class="ai">04</span>
+        <h4><span data-lang="en">Conservative, then learns</span><span data-lang="pt">Conservador, depois aprende</span></h4>
+        <p><span data-lang="en">Ships cautious by default, and earns more autonomy as data validates it.</span><span data-lang="pt">Nasce cauteloso por padrão e ganha autonomia à medida que o dado valida.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TEAM ================= -->
+<section class="team" id="team">
+  <div class="wrap">
+    <span class="eyebrow">Team / Time</span>
+    <h2 style="font-size:clamp(1.9rem,3.6vw,2.9rem);max-width:22ch;text-wrap:balance;"><span data-lang="en">Lean by design: a builder and an operator.</span><span data-lang="pt">Enxutos por escolha: um construtor e um operador.</span></h2>
+    <div class="team-grid">
+      <div class="member">
+        <div class="avatar">FS</div>
+        <div>
+          <h4>Fábio "Binho" da Silva</h4>
+          <div class="role">CEO &amp; Engineer</div>
+          <p><span data-lang="en">Eight years as a frontline nurse (COREN-SC) — ICU, emergency, eldercare, lab and prehospital rescue. Sole developer of every 3BRAIN product.</span><span data-lang="pt">Oito anos como técnico de enfermagem (COREN-SC) — UTI, emergência, ILPI, laboratório e resgate pré-hospitalar. Único desenvolvedor de todos os produtos da 3BRAIN.</span></p>
+        </div>
+      </div>
+      <div class="member">
+        <div class="avatar">BN</div>
+        <div>
+          <h4>Bruno "Nobru"</h4>
+          <div class="role">COO</div>
+          <p><span data-lang="en">Relationships and finance. An operator and business owner who keeps the company lean and grounded.</span><span data-lang="pt">Relacionamento e finanças. Um operador e dono de negócio que mantém a empresa enxuta e com o pé no chão.</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section class="contact" id="contact">
+  <div class="wrap">
+    <span class="eyebrow"><span data-lang="en">Get in touch</span><span data-lang="pt">Fale conosco</span></span>
+    <h2><span data-lang="en">Let's build something that watches over people.</span><span data-lang="pt">Vamos construir algo que cuida das pessoas.</span></h2>
+    <div class="contact-links">
+      <a class="clink" href="mailto:fabiocds@barbergo.app">
+        <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
+        <span class="txt">Email<small>fabiocds@barbergo.app</small></span>
+      </a>
+      <a class="clink" href="https://www.linkedin.com/company/3brain-ai-solutions/" target="_blank" rel="noopener">
+        <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5A2.5 2.5 0 1 0 5 8.5a2.5 2.5 0 0 0-.02-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C20.4 8.65 21 11 21 14.1V21h-4v-6.1c0-1.45-.03-3.3-2-3.3s-2.3 1.57-2.3 3.2V21H9z"/></svg></span>
+        <span class="txt">LinkedIn<small>3BRAIN</small></span>
+      </a>
+      <a class="clink" href="https://www.linkedin.com/in/fábio-silva-3b73b020b/" target="_blank" rel="noopener">
+        <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5A2.5 2.5 0 1 0 5 8.5a2.5 2.5 0 0 0-.02-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C20.4 8.65 21 11 21 14.1V21h-4v-6.1c0-1.45-.03-3.3-2-3.3s-2.3 1.57-2.3 3.2V21H9z"/></svg></span>
+        <span class="txt">LinkedIn<small>Fábio Silva</small></span>
+      </a>
+      <a class="clink" href="https://github.com/fabiocdssilva69-prog" target="_blank" rel="noopener">
+        <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49l-.01-1.9c-2.78.62-3.37-1.22-3.37-1.22-.46-1.18-1.11-1.5-1.11-1.5-.9-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.9 1.57 2.35 1.11 2.92.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9l-.01 2.82c0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.25C22 6.58 17.52 2 12 2z"/></svg></span>
+        <span class="txt">GitHub<small>fabiocdssilva69-prog</small></span>
+      </a>
+      <a class="clink" href="https://play.google.com/store/apps/details?id=com.barbergo.app" target="_blank" rel="noopener">
+        <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3 13 12 3.6 21.7c-.35-.2-.6-.6-.6-1.05V3.35c0-.45.25-.85.6-1.05zM14.4 13.4l2.55 2.55-9.2 5.3 6.65-7.85zM17.9 9.4l3.1 1.78c.66.38.66 1.3 0 1.68l-3.1 1.78-2.9-2.9 2.9-2.34zM7.75 2.45l9.2 5.3-2.55 2.55-6.65-7.85z"/></svg></span>
+        <span class="txt">BarberGO<small><span data-lang="en">on Google Play</span><span data-lang="pt">no Google Play</span></small></span>
+      </a>
+    </div>
+    <p class="divider-note"><span data-lang="en">Based in Biguaçu / Florianópolis, SC, Brazil — building for Brazil and Portugal.</span><span data-lang="pt">Baseados em Biguaçu / Florianópolis, SC, Brasil — construindo para Brasil e Portugal.</span></p>
+  </div>
+</section>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <b>3BRAIN INOVA SIMPLES</b> · CNPJ 66.447.959/0001-88 · Biguaçu / Florianópolis, SC, Brazil · © 2026
+  </div>
 </footer>
 
+<script>
+(function(){
+  // ----- Language toggle -----
+  var body = document.body;
+  var langBtn = document.getElementById('langBtn');
+  langBtn.addEventListener('click', function(){
+    var toPT = body.classList.contains('lang-en');
+    body.classList.toggle('lang-en', !toPT);
+    body.classList.toggle('lang-pt', toPT);
+    document.documentElement.lang = toPT ? 'pt' : 'en';
+  });
+
+  // ----- Mobile nav -----
+  var toggle = document.getElementById('navToggle');
+  var links = document.getElementById('navLinks');
+  toggle.addEventListener('click', function(){
+    var open = links.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  links.addEventListener('click', function(e){
+    if(e.target.closest('a')){ links.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); }
+  });
+})();
+</script>
 </body>
 </html>
