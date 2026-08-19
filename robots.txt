@@ -1,0 +1,5 @@
+# A demonstração do SAVI é NÃO LISTADA: ela é aberta por link, e não deve aparecer em busca.
+# O sinal forte é o <meta name="robots" content="noindex"> dentro da própria página; isto
+# aqui é o segundo sinal, para quem passa pela raiz do domínio antes de chegar lá.
+User-agent: *
+Disallow: /savi/
