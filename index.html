@@ -45,7 +45,7 @@
 *,*::before,*::after{box-sizing:border-box;}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
 body{
-  margin:0;background:var(--bg);color:var(--txt);
+  margin:0;background:transparent;color:var(--txt);
   font-family:var(--s);font-size:clamp(1rem,.96rem + .2vw,1.09rem);
   font-weight:300;line-height:1.62;letter-spacing:-.005em;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
@@ -69,6 +69,10 @@ body.lang-en [data-l="pt"]{display:none;}
    ============================================================ */
 .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad);}
 section{padding-block:var(--sp);position:relative;}
+/* secoes que deixam o campo vivo aparecer por tras, sem perder leitura */
+#savi,.motor,#time,#receita{background:rgba(8,8,10,.80);}
+.hero{background:transparent;}
+main,header.nav,footer.foot{position:relative;}
 .sec-num{
   font-family:var(--m);font-size:.7rem;font-weight:500;letter-spacing:.22em;
   color:var(--gold);text-transform:uppercase;display:flex;align-items:center;gap:14px;margin-bottom:26px;
@@ -151,10 +155,11 @@ header.nav.stuck{border-bottom-color:var(--line);}
   padding-block:clamp(60px,10vh,120px) clamp(60px,10vh,110px);
   position:relative;overflow:hidden;isolation:isolate;
 }
-#gl{position:absolute;inset:0;width:100%;height:100%;z-index:-3;opacity:0;transition:opacity 1.4s ease;}
+html{background:var(--bg);}
+#gl{position:fixed;inset:0;width:100%;height:100%;z-index:-1;opacity:0;transition:opacity 1.4s ease;pointer-events:none;}
 #gl.on{opacity:1;}
-.hero::before{ /* fallback + reforço */
-  content:"";position:absolute;inset:0;z-index:-4;
+.hero::before{ /* reforco de brilho no topo */
+  content:"";position:absolute;inset:0;z-index:-2;
   background:
     radial-gradient(120% 78% at 50% -12%,rgba(242,194,48,.12),transparent 62%),
     radial-gradient(80% 60% at 82% 8%,rgba(242,194,48,.06),transparent 60%),
@@ -603,6 +608,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
     <nav class="nav-links" id="links">
       <a href="#dano"><span data-l="pt">O custo</span><span data-l="en">The cost</span></a>
       <a href="#savi">SAVI</a>
+      <a href="#receita"><span data-l="pt">Receita</span><span data-l="en">Revenue</span></a>
       <a href="#barbergo">BarberGO</a>
       <a href="#motor"><span data-l="pt">O canal</span><span data-l="en">The channel</span></a>
       <a href="#porque"><span data-l="pt">Por que agora</span><span data-l="en">Why now</span></a>
@@ -613,11 +619,12 @@ table.fontes i{font-style:italic;color:var(--txt);}
   </div>
 </header>
 
+<canvas id="gl" aria-hidden="true"></canvas>
+
 <main id="top">
 
 <!-- ═══════════════ ABERTURA ═══════════════ -->
 <section class="hero">
-  <canvas id="gl" aria-hidden="true"></canvas>
   <div class="hero-veil" aria-hidden="true"></div>
   <div class="wrap">
     <span class="eyebrow rv"><span class="pip"></span>3BRAIN · <span data-l="pt">Florianópolis, Brasil</span><span data-l="en">Florianópolis, Brazil</span></span>
@@ -634,7 +641,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
 
     <div class="hero-cta rv d3">
       <a href="#dano" class="btn btn-p"><span data-l="pt">Ver de onde saem os 15 reais</span><span data-l="en">See where the 15 reais come from</span> <span class="ar">→</span></a>
-      <a href="#porque" class="btn btn-g"><span data-l="pt">Por que agora</span><span data-l="en">Why now</span></a>
+      <a href="#receita" class="btn btn-g"><span data-l="pt">Ver a conta do primeiro milhão</span><span data-l="en">See the first-million math</span></a>
     </div>
 
     <div class="hero-stats rv d4">
@@ -651,10 +658,10 @@ table.fontes i{font-style:italic;color:var(--txt);}
         <div class="s">CNES/DATASUS · jul/2026 · 6.612 + 92.356</div>
       </div>
       <div class="hs">
-        <div class="k"><span data-l="pt">Crescimento</span><span data-l="en">Growth</span></div>
-        <div class="n">+119,2%</div>
-        <div class="l"><span data-l="pt">de clínicas especializadas em dez anos, contra +8,3% de hospitais — um comprador novo, já digital</span><span data-l="en">growth in specialised clinics over ten years, against +8.3% in hospitals — a new buyer, born digital</span></div>
-        <div class="s"><span data-l="pt">CNES/DATASUS · dez/2015–dez/2025 · contado, não projetado</span><span data-l="en">CNES/DATASUS · Dec 2015–Dec 2025 · counted, not projected</span></div>
+        <div class="k"><span data-l="pt">Lucro</span><span data-l="en">Profit</span></div>
+        <div class="n">140 <span class="un" data-l="pt">assinaturas</span><span class="un" data-l="en">subscriptions</span></div>
+        <div class="l"><span data-l="pt">para R$ 1 milhão de receita recorrente — 1,4 de cada 1.000 estabelecimentos do registro oficial</span><span data-l="en">for R$1 million in recurring revenue — 1.4 of every 1,000 facilities in the official registry</span></div>
+        <div class="s"><span data-l="pt">a R$ 7.200/ano, 51,2% de margem depois do imposto · preço em estudo</span><span data-l="en">at R$7,200/year, 51.2% margin after tax · price under study</span></div>
       </div>
     </div>
   </div>
@@ -841,6 +848,43 @@ table.fontes i{font-style:italic;color:var(--txt);}
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════ RECEITA: AS DUAS LINHAS ═══════════════ -->
+<section id="receita">
+  <div class="wrap">
+    <div class="sec-num rv"><span data-l="pt">Receita</span><span data-l="en">Revenue</span></div>
+    <h2 class="big rv">
+      <span data-l="pt">Duas linhas de receita — e elas <em>não valem a mesma coisa.</em></span>
+      <span data-l="en">Two revenue lines — and they <em>are not worth the same.</em></span>
+    </h2>
+    <p class="lede rv d1">
+      <span data-l="pt">Software clínico não se vende só por mensalidade. Toda instalação séria tem uma etapa paga antes da primeira cobrança recorrente, e as duas entram no caixa de formas diferentes. <strong>Separá-las é disciplina, não detalhe contábil:</strong> somar implantação dentro do ARR infla a métrica que o investidor usa para avaliar a empresa — e é o primeiro item que a diligência confere.</span>
+      <span data-l="en">Clinical software is not sold on a subscription alone. Every serious deployment has a paid stage before the first recurring charge, and the two hit the books differently. <strong>Keeping them apart is discipline, not bookkeeping trivia:</strong> folding setup into ARR inflates the very metric an investor values the company on — and it is the first line diligence checks.</span>
+    </p>
+
+    <div class="prin" style="margin-top:56px;">
+      <div class="pr rv">
+        <div class="pi"><span data-l="pt">Recorrente · compõe ARR</span><span data-l="en">Recurring · builds ARR</span></div>
+        <h4><span data-l="pt">Assinatura</span><span data-l="en">Subscription</span></h4>
+        <p><span data-l="pt">Cobrada todo mês enquanto a instituição usa. É a linha que se multiplica na avaliação da empresa, a que sustenta previsibilidade, e a única que cresce sozinha à medida que a base aumenta. <strong>140 assinaturas fecham R$ 1 milhão de receita recorrente</strong> — 1,4 de cada 1.000 estabelecimentos do registro oficial.</span><span data-l="en">Charged monthly for as long as the institution uses it. This is the line that gets multiplied when the company is valued, the one that creates predictability, and the only one that compounds as the base grows. <strong>140 subscriptions close R$1 million in recurring revenue</strong> — 1.4 of every 1,000 facilities in the official registry.</span></p>
+        <div class="cite"><span data-l="pt">R$ 7.200 por instituição/ano, 51,2% de margem depois do imposto (Simples Nacional, Anexo V). <strong>Preço em estudo</strong> — a ser fechado contra âncora de mercado e proposta assinada.</span><span data-l="en">R$7,200 per institution/year, 51.2% margin after tax (Simples Nacional, Annex V). <strong>Price under study</strong> — to be settled against market anchors and a signed proposal.</span></div>
+      </div>
+      <div class="pr rv d1">
+        <div class="pi"><span data-l="pt">Uma vez · não compõe ARR</span><span data-l="en">One-off · not ARR</span></div>
+        <h4><span data-l="pt">Implantação</span><span data-l="en">Deployment</span></h4>
+        <p><span data-l="pt">Cobrada uma vez, na entrada. Cobre o levantamento da casa, a organização do que já existe em papel e em sistema, a configuração das regras daquela instituição, o treinamento da equipe e o acompanhamento do primeiro mês. <strong>É a linha que paga o custo de conquistar o cliente</strong> — e é justamente por isso que ela não pode ser subestimada nem diluída na mensalidade.</span><span data-l="en">Charged once, up front. It covers surveying the site, organising what already exists on paper and in systems, configuring that institution's own rules, training the team and shadowing the first month. <strong>This is the line that pays the cost of winning the customer</strong> — which is exactly why it must not be underpriced or buried inside the monthly fee.</span></p>
+        <div class="cite"><span data-l="pt">Taxa de implantação é prática corrente em software clínico. <strong>Valor em definição no mesmo estudo de precificação</strong>, ancorado no que o setor já cobra.</span><span data-l="en">A deployment fee is standard practice in clinical software. <strong>The figure is being set in the same pricing study</strong>, anchored to what the sector already charges.</span></div>
+      </div>
+    </div>
+
+    <div class="note rv">
+      <div class="nt"><span data-l="pt">Por que isto está escrito aqui</span><span data-l="en">Why this is written here</span></div>
+      <p><span data-l="pt">Um investidor avalia empresa de software pelo múltiplo da receita <em>recorrente</em>. Receita de serviço — implantação, treinamento, customização — vale menos por real, porque não se repete e não escala sozinha. Empresas que misturam as duas conseguem um número maior no slide e um problema maior na mesa de negociação. <strong>Preferimos o número menor e verdadeiro.</strong></span>
+      <span data-l="en">An investor values a software company on a multiple of <em>recurring</em> revenue. Services revenue — deployment, training, customisation — is worth less per real, because it does not repeat and does not scale by itself. Companies that blend the two get a bigger number on the slide and a bigger problem at the negotiating table. <strong>We would rather have the smaller number that is true.</strong></span></p>
     </div>
   </div>
 </section>
@@ -1321,7 +1365,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
     var uR = gl.getUniformLocation(pr, 'r'), uT = gl.getUniformLocation(pr, 't');
-    var SCALE = 0.62, running = true, start = performance.now();
+    var SCALE = 0.55, running = true, start = performance.now();
 
     function resize(){
       var w = Math.max(1, Math.round(cv.clientWidth  * SCALE));
@@ -1335,12 +1379,11 @@ table.fontes i{font-style:italic;color:var(--txt);}
     window.addEventListener('resize', resize, {passive:true});
     resize();
 
-    // pausa quando o herói sai da tela — não gasta bateria rolando a página
-    var vio = new IntersectionObserver(function(e){
-      running = e[0].isIntersecting;
+    // o campo cobre a página inteira: pausa só quando a aba sai de vista
+    document.addEventListener('visibilitychange', function(){
+      running = !document.hidden;
       if (running) requestAnimationFrame(loop);
-    }, {threshold:0});
-    vio.observe(cv);
+    });
 
     var last = 0;
     function loop(now){
