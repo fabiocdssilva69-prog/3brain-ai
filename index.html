@@ -70,7 +70,8 @@ body.lang-en [data-l="pt"]{display:none;}
 .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad);}
 section{padding-block:var(--sp);position:relative;}
 /* secoes que deixam o campo vivo aparecer por tras, sem perder leitura */
-#savi,.motor,#time,#receita{background:rgba(8,8,10,.80);}
+#savi,.motor,#time,#receita{background:rgba(8,8,10,.70);}
+.discover,.bg-sec{background:rgba(11,11,15,.90);}
 .hero{background:transparent;}
 main,header.nav,footer.foot{position:relative;}
 .sec-num{
@@ -153,7 +154,7 @@ header.nav.stuck{border-bottom-color:var(--line);}
 .hero{
   min-height:100svh;display:flex;align-items:center;
   padding-block:clamp(60px,10vh,120px) clamp(60px,10vh,110px);
-  position:relative;overflow:hidden;isolation:isolate;
+  position:relative;overflow:hidden;
 }
 html{background:var(--bg);}
 #gl{position:fixed;inset:0;width:100%;height:100%;z-index:-1;opacity:0;transition:opacity 1.4s ease;pointer-events:none;}
@@ -161,14 +162,13 @@ html{background:var(--bg);}
 .hero::before{ /* reforco de brilho no topo */
   content:"";position:absolute;inset:0;z-index:-2;
   background:
-    radial-gradient(120% 78% at 50% -12%,rgba(242,194,48,.12),transparent 62%),
-    radial-gradient(80% 60% at 82% 8%,rgba(242,194,48,.06),transparent 60%),
-    var(--bg);
+    radial-gradient(120% 78% at 50% -12%,rgba(242,194,48,.10),transparent 62%),
+    radial-gradient(80% 60% at 82% 8%,rgba(242,194,48,.05),transparent 60%);
 }
 .hero .wrap{position:relative;z-index:2;}
 .hero-veil{
   position:absolute;inset:0;z-index:0;pointer-events:none;
-  background:linear-gradient(100deg,rgba(8,8,10,.94) 0%,rgba(8,8,10,.82) 34%,rgba(8,8,10,.34) 62%,rgba(8,8,10,.06) 100%);
+  background:linear-gradient(90deg,rgba(8,8,10,.94) 0%,rgba(8,8,10,.88) 26%,rgba(8,8,10,.55) 45%,rgba(8,8,10,.14) 66%,rgba(8,8,10,0) 88%);
 }
 @media (max-width:820px){.hero-veil{background:linear-gradient(180deg,rgba(8,8,10,.72),rgba(8,8,10,.92) 55%);}}
 .hero::after{ /* grade blueprint */
@@ -180,7 +180,7 @@ html{background:var(--bg);}
   mask-image:radial-gradient(ellipse 74% 56% at 50% 0%,#000 26%,transparent 78%);
 }
 .grain{
-  position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.055;mix-blend-mode:overlay;
+  position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;mix-blend-mode:soft-light;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 .eyebrow{
@@ -437,7 +437,8 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
 .bg-sec::before{content:"";position:absolute;inset:0;background:radial-gradient(70% 50% at 78% 12%,rgba(178,101,245,.09),transparent 62%);pointer-events:none;}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(36px,6vw,80px);align-items:center;margin-top:60px;}
 @media (max-width:940px){.two{grid-template-columns:1fr;}}
-.stores{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px;}
+.stores{display:flex;gap:12px;flex-wrap:nowrap;margin-top:32px;}
+@media (max-width:520px){.stores{flex-wrap:wrap;}}
 .store{
   display:inline-flex;align-items:center;gap:11px;border:1px solid var(--line2);border-radius:11px;
   padding:11px 18px;transition:all .22s var(--ease);background:var(--card);
@@ -447,7 +448,11 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
 .store .st{line-height:1.15;}
 .store .st small{display:block;font-size:.64rem;color:var(--dim);font-family:var(--m);letter-spacing:.06em;}
 .store .st b{font-size:.92rem;font-weight:500;}
-.price{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px;}
+.price{display:flex;gap:10px;flex-wrap:nowrap;margin-top:26px;}
+.price .pz{flex:0 1 auto;padding:14px 18px;}
+.price .pn{white-space:nowrap;}
+.price .pv{white-space:nowrap;}
+@media (max-width:620px){.price{flex-wrap:wrap;}.price .pz{flex:1 1 44%;}}
 .pz{border:1px solid var(--line);border-radius:12px;padding:14px 20px;background:var(--card);}
 .pz .pn{font-family:var(--m);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);}
 .pz .pv{font-family:var(--m);font-weight:700;font-size:1.15rem;color:var(--violet);margin-top:6px;font-variant-numeric:tabular-nums;}
@@ -595,6 +600,38 @@ table.fontes i{font-style:italic;color:var(--txt);}
   border:1px dashed var(--line2);border-radius:11px;padding:18px 20px;
   font-size:.9rem;color:var(--mute);line-height:1.55;background:#0d0d12;
 }
+
+/* ---------- cartao na linguagem visual do painel do SAVI ---------- */
+.savicard{
+  border:1px solid #17414d;border-radius:14px;padding:20px 22px 18px;
+  background:linear-gradient(160deg,#0d1a21,#0a1218);
+  box-shadow:0 0 0 1px rgba(45,212,232,.07) inset;
+}
+.sc-top{display:flex;align-items:flex-start;gap:13px;}
+.sc-ic{
+  flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid #1d5a68;background:#0b1a20;font-size:1rem;
+}
+.sc-t{font-family:var(--d);font-size:1.08rem;color:#dff4f8;line-height:1.25;}
+.sc-sub{font-family:var(--m);font-size:.66rem;color:#6d8f99;letter-spacing:.05em;margin-top:4px;line-height:1.4;}
+.sc-tag{
+  margin-left:auto;flex:none;font-family:var(--m);font-size:.55rem;font-weight:600;letter-spacing:.16em;
+  color:var(--cyan);border:1px solid #1d5a68;border-radius:5px;padding:4px 8px;white-space:nowrap;
+}
+.sc-body{color:#a8c2ca;font-size:.92rem;line-height:1.55;margin-top:16px;}
+.sc-body strong{color:#dff4f8;font-weight:600;}
+.sc-list{list-style:none;padding:0;margin:16px 0 0;display:flex;flex-direction:column;gap:11px;}
+.sc-list li{position:relative;padding-left:20px;color:#a8c2ca;font-size:.9rem;line-height:1.5;}
+.sc-list li::before{
+  content:"";position:absolute;left:0;top:.55em;width:7px;height:7px;border-radius:50%;
+  background:var(--cyan);box-shadow:0 0 0 3px rgba(45,212,232,.14);
+}
+.sc-list strong{color:#dff4f8;font-weight:600;}
+.sc-foot{
+  font-family:var(--m);font-size:.62rem;color:#5d7f89;letter-spacing:.05em;
+  margin-top:18px;padding-top:13px;border-top:1px solid #12333c;
+}
+@media (max-width:520px){.sc-tag{display:none;}}
 </style>
 </head>
 <body class="lang-pt">
@@ -659,9 +696,9 @@ table.fontes i{font-style:italic;color:var(--txt);}
       </div>
       <div class="hs">
         <div class="k"><span data-l="pt">Lucro</span><span data-l="en">Profit</span></div>
-        <div class="n">59% <span class="un" data-l="pt">de margem</span><span class="un" data-l="en">margin</span></div>
-        <div class="l"><span data-l="pt">por cliente, depois do imposto — no preço ancorado no que contrato público já paga</span><span data-l="en">per client, after tax — at a price anchored to what public contracts already pay</span></div>
-        <div class="s"><span data-l="pt">modelo próprio · Simples Nacional Anexo V · âncora: R$ 166,13/leito/mês</span><span data-l="en">our own model · Simples Nacional Annex V · anchor: R$166.13/bed/month</span></div>
+        <div class="n">140 <span class="un" data-l="pt">assinaturas</span><span class="un" data-l="en">subscriptions</span></div>
+        <div class="l"><span data-l="pt">para R$ 1 milhão de receita recorrente — 1,4 de cada 1.000 estabelecimentos do registro oficial</span><span data-l="en">for R$1 million in recurring revenue — 1.4 of every 1,000 facilities in the official registry</span></div>
+        <div class="s"><span data-l="pt">R$ 7.200 por instituição/ano · 59% de margem depois do imposto · valor em ajuste</span><span data-l="en">R$7,200 per institution/year · 59% margin after tax · figure being finalised</span></div>
       </div>
     </div>
   </div>
@@ -677,7 +714,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
       </div>
       <div class="si">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-        <span><span data-l="pt">BarberGO nas duas lojas · SAVI em piloto · HuntAI operando como canal</span><span data-l="en">BarberGO on both stores · SAVI in pilot · HuntAI running as the channel</span></span>
+        <span><span data-l="pt">BarberGO nas duas lojas · HuntAI operando como canal da casa</span><span data-l="en">BarberGO on both stores · HuntAI running as the in-house channel</span></span>
       </div>
       <a class="si link" href="https://apps.apple.com/br/app/barbergo-barbearias/id6770361213" target="_blank" rel="noopener">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.9c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8c-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.2 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.3-2.5 1.3-2.6-.1 0-2.5-1-2.5-3.5zM14.2 5.9c.6-.8 1.1-1.9 1-3-1 0-2.2.7-2.8 1.4-.6.7-1.2 1.8-1 2.9 1.1.1 2.2-.6 2.8-1.3z"/></svg>
@@ -842,9 +879,22 @@ table.fontes i{font-style:italic;color:var(--txt);}
           <p class="pb"><span data-l="pt">Celular na mão durante o cuidado é a queixa mais antiga de qualquer gestor — e a regra que proíbe é a mais descumprida, porque não há como verificar. O SAVI não pede que o profissional use mais o telefone: usa o aparelho que já está no bolso, em segundo plano, e devolve ao empregador o registro do que foi feito e quando.</span><span data-l="en">A phone in hand during care is the oldest complaint any manager has — and the rule against it is the most broken, because there is no way to check. SAVI does not ask the professional to use the phone more: it uses the device already in their pocket, in the background, and hands the employer back a record of what was done and when.</span></p>
         </div>
         <div class="pimg" style="padding-bottom:26px;">
-          <div class="mini-note">
-            <span data-l="pt"><strong>O que a norma exige, o registro passa a provar.</strong> O uso de telefone pessoal durante a assistência é restrito por norma interna em praticamente toda instituição, e o descumprimento hoje só aparece por observação direta. Com a captação em segundo plano, o mesmo aparelho passa a produzir evidência de cuidado prestado — e o gestor deixa de depender de flagrante para saber o que aconteceu no turno.</span>
-            <span data-l="en"><strong>What policy demands, the record starts to prove.</strong> Personal phone use during care is restricted by internal policy in practically every institution, and breaches surface today only through direct observation. With background capture, the same device begins producing evidence of care delivered — and the manager stops depending on catching someone in the act to know what happened on the shift.</span>
+          <div class="savicard">
+            <div class="sc-top">
+              <span class="sc-ic">📵</span>
+              <div>
+                <div class="sc-t"><span data-l="pt">O telefone pessoal e o momento do cuidado</span><span data-l="en">The personal phone and the moment of care</span></div>
+                <div class="sc-sub"><span data-l="pt">onde cada casa traça o limite, e por que ele existe</span><span data-l="en">where each home draws the line, and why it exists</span></div>
+              </div>
+              <span class="sc-tag">PRIVACIDADE</span>
+            </div>
+            <p class="sc-body"><span data-l="pt">Praticamente toda instituição restringe o telefone pessoal durante a assistência — e é a regra mais descumprida que existe, porque <strong>não há como verificar</strong>. O flagrante é a única prova disponível hoje.</span><span data-l="en">Practically every institution restricts personal phone use during care — and it is the most broken rule there is, because <strong>there is no way to verify it</strong>. Catching someone in the act is the only proof available today.</span></p>
+            <ul class="sc-list">
+              <li><span data-l="pt">O SAVI <strong>não pede mais tempo de tela</strong>: usa o aparelho que já está no bolso, em segundo plano.</span><span data-l="en">SAVI <strong>asks for no extra screen time</strong>: it uses the device already in the pocket, in the background.</span></li>
+              <li><span data-l="pt">O que era distração vira <strong>registro do cuidado prestado</strong>, com hora e autoria.</span><span data-l="en">What was a distraction becomes a <strong>record of care delivered</strong>, with time and authorship.</span></li>
+              <li><span data-l="pt">O gestor deixa de depender de flagrante para saber o que aconteceu no turno.</span><span data-l="en">The manager stops depending on catching someone to know what happened on the shift.</span></li>
+            </ul>
+            <div class="sc-foot"><span data-l="pt">a norma já existe · o que faltava era a verificação</span><span data-l="en">the policy already exists · what was missing was the verification</span></div>
           </div>
         </div>
       </div>
@@ -870,7 +920,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
       <div class="pr rv">
         <div class="pi"><span data-l="pt">Recorrente · compõe ARR</span><span data-l="en">Recurring · builds ARR</span></div>
         <h4><span data-l="pt">Assinatura</span><span data-l="en">Subscription</span></h4>
-        <p><span data-l="pt">Cobrada todo mês enquanto a instituição usa. É a linha que se multiplica na avaliação da empresa e a única que cresce sozinha à medida que a base aumenta. Cobramos <strong>por vida sob vigilância ativa</strong>, com piso mensal por unidade — não por usuário do sistema. Cobrar por usuário faz a instituição racionar login, e um sistema de vigilância só vale se a equipe inteira registrar.</span><span data-l="en">Charged monthly for as long as the institution uses it. It is the line that gets multiplied when the company is valued, and the only one that compounds as the base grows. We charge <strong>per life under active watch</strong>, with a monthly floor per site — not per system user. Charging per user makes the institution ration logins, and a watch system is only worth anything if the whole team records.</span></p>
+        <p><span data-l="pt">Cobrada todo mês enquanto a instituição usa. É a linha que se multiplica na avaliação da empresa e a única que cresce sozinha à medida que a base aumenta. <strong>A R$ 7.200 por instituição/ano, são 140 assinaturas para o primeiro milhão de receita recorrente.</strong> Cobramos <strong>por vida sob vigilância ativa</strong>, com piso mensal por unidade — não por usuário do sistema. Cobrar por usuário faz a instituição racionar login, e um sistema de vigilância só vale se a equipe inteira registrar.</span><span data-l="en">Charged monthly for as long as the institution uses it. It is the line that gets multiplied when the company is valued, and the only one that compounds as the base grows. We charge <strong>per life under active watch</strong>, with a monthly floor per site — not per system user. Charging per user makes the institution ration logins, and a watch system is only worth anything if the whole team records.</span></p>
         <div class="cite"><span data-l="pt">Âncoras públicas: o contrato federal de vigilância clínica mais recente paga <strong>R$ 166,13 por leito/mês</strong> (INTO-MS, 5 anos, sem disputa de preço); o Reino Unido paga R$ 55 a R$ 61 por leito/mês em escopo clínico equivalente. <strong>A tabela final está em fechamento</strong> — contra essas âncoras e contra a primeira proposta assinada.</span><span data-l="en">Public anchors: the most recent federal clinical-surveillance contract pays <strong>R$166.13 per bed per month</strong> (INTO-MS, 5 years, no price competition); the UK pays R$55 to R$61 per bed per month for equivalent clinical scope. <strong>The final table is being settled</strong> — against those anchors and against the first signed proposal.</span></div>
       </div>
       <div class="pr rv d1">
@@ -885,7 +935,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
       <div class="nt"><span data-l="pt">Por que isto está escrito aqui</span><span data-l="en">Why this is written here</span></div>
       <p><span data-l="pt">Um investidor avalia empresa de software pelo múltiplo da receita <em>recorrente</em>. Receita de serviço — implantação, treinamento, customização — vale menos por real, porque não se repete e não escala sozinha. Empresas que misturam as duas conseguem um número maior no slide e um problema maior na mesa de negociação. <strong>Preferimos o número menor e verdadeiro.</strong></span>
       <span data-l="en">An investor values a software company on a multiple of <em>recurring</em> revenue. Services revenue — deployment, training, customisation — is worth less per real, because it does not repeat and does not scale by itself. Companies that blend the two get a bigger number on the slide and a bigger problem at the negotiating table. <strong>We would rather have the smaller number that is true.</strong></span></p>
-      <p><span data-l="pt">E há um segundo motivo para a unidade de cobrança importar tanto: <strong>o custo é da vida vigiada, não do preço cobrado.</strong> Dobrar o preço não dobra o custo de servir. É a diferença entre a mesma operação rodar com 24% ou com 54% de custo sobre a receita — e ela não está no produto, está na tabela.</span><span data-l="en">And there is a second reason the billing unit matters this much: <strong>cost follows the life being watched, not the price being charged.</strong> Doubling the price does not double the cost to serve. That is the difference between the same operation running at 24% or 54% cost-to-revenue — and it is not in the product, it is in the price list.</span></p>
+      <p><span data-l="pt">E o custo segue a <strong>vida vigiada, não o preço cobrado</strong>: dobrar o preço não dobra o custo de servir. É a diferença entre a mesma operação rodar com 24% ou 54% de custo sobre a receita.</span><span data-l="en">And cost follows the <strong>life being watched, not the price charged</strong>: doubling the price does not double the cost to serve. That is the difference between the same operation running at 24% or 54% cost-to-revenue.</span></p>
     </div>
   </div>
 </section>
@@ -911,7 +961,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
         </p>
 
         <div class="price rv d3">
-          <div class="pz"><div class="pn"><span data-l="pt">Mercado endereçável</span><span data-l="en">Addressable market</span></div><div class="pv">900.868<span style="color:var(--dim);font-size:.72rem;"> CNPJ</span></div></div><div class="pz"><div class="pn"><span data-l="pt">Disposição a pagar, comprovada</span><span data-l="en">Proven willingness to pay</span></div><div class="pv">R$ 79,90<span style="color:var(--dim);font-size:.72rem;">/mês</span></div></div>
+          <div class="pz"><div class="pn"><span data-l="pt">Mercado</span><span data-l="en">Market</span></div><div class="pv">900.868 <span style="color:var(--dim);font-size:.72rem;">CNPJ</span></div></div><div class="pz"><div class="pn"><span data-l="pt">Já paga</span><span data-l="en">Already pays</span></div><div class="pv">R$ 79,90<span style="color:var(--dim);font-size:.72rem;">/mês</span></div></div>
           <div class="pz"><div class="pn"><span data-l="pt">Distribuição</span><span data-l="en">Distribution</span></div><div class="pv"><span data-l="pt">2 lojas</span><span data-l="en">2 stores</span></div></div>
         </div>
 
@@ -954,9 +1004,9 @@ table.fontes i{font-style:italic;color:var(--txt);}
         <p><span data-l="pt">Alguém tem de puxar assunto. O ajudante de conversa e o suporte por IA dentro do app cobrem o momento exato em que a maioria dos marketplaces perde o par.</span><span data-l="en">Someone has to start talking. The conversation helper and the in-app AI support cover the exact moment where most marketplaces lose the pair.</span></p>
       </div>
       <div class="pr rv d3">
-        <div class="pi"><span data-l="pt">Enche a agenda</span><span data-l="en">Doesn'Fills the diary</span></div>
-        <h4><span data-l="pt">Diz o que esperar do movimento amanhã</span><span data-l="en">Tells him what tomorrow will look like</span></h4>
-        <p><span data-l="pt">Um aviso diário cruza a previsão do tempo com o padrão de movimento e sugere o que fazer com a agenda: quando abrir horário, quando empurrar promoção, quando não adianta. Barbearia vive de cadeira ocupada, e chuva no sábado é prejuízo que dá para antecipar.</span><span data-l="en">A daily briefing crosses the weather forecast with footfall patterns and suggests what to do with the diary: when to open slots, when to push a promotion, when not to bother. A barbershop lives on an occupied chair, and rain on a Saturday is a loss you can see coming.</span></p>
+        <div class="pi"><span data-l="pt">Diz quanto cobrar</span><span data-l="en">Tells him what to charge</span></div>
+        <h4><span data-l="pt">Clima de mercado e insights de preço</span><span data-l="en">Market weather and pricing insights</span></h4>
+        <p><span data-l="pt">Todo dia o app entrega ao barbeiro o que está em alta no nicho e <strong>quanto aquilo vale</strong>: qual corte subiu em procura, de quanto foi a alta, a faixa de preço praticada e onde a margem é maior. Dono de barbearia não tem departamento de inteligência de mercado — passa a ter um.</span><span data-l="en">Every day the app hands the barber what is trending in the trade and <strong>what it is worth</strong>: which cut is rising in demand, by how much, the price range being charged, and where the margin is best. A barbershop owner has no market-intelligence department — now he has one.</span></p>
       </div>
     </div>
 
@@ -1053,9 +1103,9 @@ table.fontes i{font-style:italic;color:var(--txt);}
         <div class="cite"><span data-l="pt">Operação própria sobre a base CNES/DATASUS, 2026 · referência de mercado: Belkins 2025, 7.530.489 envios</span><span data-l="en">Own operation over the CNES/DATASUS registry, 2026 · market benchmark: Belkins 2025, 7,530,489 sends</span></div>
       </div>
       <div class="pr rv d3">
-        <div class="pi"><span data-l="pt">dois produtos entregues</span><span data-l="en">two products delivered</span></div>
+        <div class="pi"><span data-l="pt">1 contratação real, ponta a ponta</span><span data-l="en">1 real hire, end to end</span></div>
         <h4><span data-l="pt">Publicado, não prometido</span><span data-l="en">Shipped, not promised</span></h4>
-        <p><span data-l="pt">O BarberGO está publicado nas duas lojas, com assinatura e compra funcionando dentro do app, e o SAVI já roda de ponta a ponta. Dois produtos entregues por dois fundadores, sem funcionário e sem capital externo. O risco que sobra não é se o time constrói: <strong>é quantos compram e a que preço — e esse é o risco que dinheiro resolve.</strong></span><span data-l="en">BarberGO is published on both stores, with subscriptions and in-app purchase working, and SAVI already runs end to end. Two products delivered by two founders, with no employees and no outside capital. The remaining risk is not whether the team can build: <strong>it is how many buy and at what price — and that is the risk money solves.</strong></span></p>
+        <p><span data-l="pt">O BarberGO está publicado nas duas lojas, com assinatura e compra funcionando dentro do app. E o motor de aquisição já operou de ponta a ponta: da vaga extraída à candidatura enviada, <strong>com uma contratação real concretizada</strong>, além dos contatos e leads que ele gerou. Tudo isso por dois fundadores, sem funcionário e sem capital externo. O risco que sobra não é se o time constrói: <strong>é quantos compram e a que preço — e esse é o risco que dinheiro resolve.</strong></span><span data-l="en">BarberGO is published on both stores, with subscriptions and in-app purchase working. And the acquisition engine has already run end to end: from the job posting extracted to the application sent, <strong>with one real hire closed</strong>, on top of the contacts and leads it produced. All of it from two founders, with no employees and no outside capital. The remaining risk is not whether the team can build: <strong>it is how many buy and at what price — and that is the risk money solves.</strong></span></p>
       </div>
     </div>
   </div>
@@ -1336,13 +1386,13 @@ table.fontes i{font-style:italic;color:var(--txt);}
       ' float f=fbm(uv*3.4+q*1.25+T*.55);',
       // bandas finas de iso-valor = filamento, não mancha
       ' float band=abs(fract(f*6.5)-.5);',
-      ' float fil=smoothstep(.042,0.,band);',
+      ' float fil=smoothstep(.085,0.,band);',
       // brilha no topo-centro e some antes de chegar no texto e nas bordas
-      ' float vig=smoothstep(1.05,.18,length((uv-vec2(0.,.30))*vec2(.62,1.25)));',
+      ' float vig=smoothstep(1.30,.02,length((uv-vec2(0.,.06))*vec2(.52,1.0)));',
       ' vec3 gold=vec3(.95,.76,.19);',
       ' vec3 col=vec3(.031,.031,.039);',
-      ' col+=gold*fil*.26*vig;',
-      ' col+=gold*.028*smoothstep(1.0,0.,length(uv-vec2(0.,.34)))*(.6+.4*sin(t*.22));',
+      ' col+=gold*fil*.46*vig;',
+      ' col+=gold*.045*smoothstep(1.2,0.,length(uv*vec2(.6,1.)))*(.6+.4*sin(t*.22));',
       ' gl_FragColor=vec4(col,1.);',
       '}'
     ].join('\n');
@@ -1367,7 +1417,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
     var uR = gl.getUniformLocation(pr, 'r'), uT = gl.getUniformLocation(pr, 't');
-    var SCALE = 0.55, running = true, start = performance.now();
+    var SCALE = 0.62, running = true, start = performance.now();
 
     function resize(){
       var w = Math.max(1, Math.round(cv.clientWidth  * SCALE));
