@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>3BRAIN — IA construída por quem viveu o problema</title>
-<meta name="description" content="Estúdio de IA de Florianópolis. SAVI Saúde: 27.928 aferições reais, 452 padrões clínicos, 1.260 testes verdes. BarberGO nas duas lojas. E um motor de aquisição próprio." />
+<title>3BRAIN — construído por quem viveu o problema</title>
+<meta name="description" content="Estúdio de IA de Florianópolis. 92 de cada 100 estabelecimentos de saúde já têm sistema — e 85 dos que internam ainda produzem papel. SAVI Saúde para instituição de saúde; BarberGO nas duas lojas. Todo número com fonte e denominador." />
 <meta name="theme-color" content="#08080A" />
 <meta name="color-scheme" content="dark" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0C'/%3E%3Crect x='.5' y='.5' width='31' height='31' rx='6.5' fill='none' stroke='%237E6210'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='14' font-weight='700' text-anchor='middle' fill='%23F2C230'%3E3B%3C/text%3E%3C/svg%3E" />
 
 <meta property="og:type" content="website" />
-<meta property="og:title" content="3BRAIN — IA construída por quem viveu o problema" />
-<meta property="og:description" content="Em sete anos de prontuário real, 90% das pressões arteriais terminam em 0 ou 5. Um aparelho digital produziria 20%. Construímos a IA que percebe o que o registro perdeu." />
+<meta property="og:title" content="3BRAIN — construído por quem viveu o problema" />
+<meta property="og:description" content="Quem escreveu o código passou oito anos preenchendo o prontuário. 6 de cada 100 pacientes sofrem dano evitável; 85 de cada 100 estabelecimentos com internação ainda produzem papel." />
 <meta property="og:url" content="https://fabiocdssilva69-prog.github.io/3brain-ai/" />
 <meta property="og:image" content="https://fabiocdssilva69-prog.github.io/3brain-ai/img/og.png" />
 <meta property="og:image:width" content="1200" />
@@ -532,6 +532,28 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
   a[href^="http"]::after{content:" (" attr(href) ")";font-size:9pt;color:#555;}
   .rv{opacity:1!important;transform:none!important;}
 }
+
+/* ---------- sufixo de unidade em numero ("de cada 100") ---------- */
+.hs .n .un,.mc .n .un,.fnode .fn .un{
+  font-size:.44em;font-weight:500;color:var(--mute);letter-spacing:0;margin-left:.2em;
+  font-family:var(--s);white-space:nowrap;
+}
+/* ---------- tabela de fontes ---------- */
+.tw{overflow-x:auto;margin-top:40px;border:1px solid var(--line);border-radius:14px;background:var(--card);}
+table.fontes{border-collapse:collapse;width:100%;min-width:660px;font-size:.88rem;}
+table.fontes th{
+  font-family:var(--m);font-size:.63rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);text-align:left;padding:16px 20px;border-bottom:1px solid var(--line2);white-space:nowrap;
+}
+table.fontes td{padding:15px 20px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--mute);line-height:1.5;}
+table.fontes tbody tr:last-child td{border-bottom:0;}
+table.fontes tbody tr:hover td{background:#ffffff05;}
+table.fontes td.num{
+  font-family:var(--m);font-weight:700;color:var(--gold);white-space:nowrap;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+}
+table.fontes i{font-style:italic;color:var(--txt);}
+@media (max-width:700px){table.fontes th,table.fontes td{padding:12px 14px;}}
 </style>
 </head>
 <body class="lang-pt">
@@ -544,12 +566,12 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
     <a href="#top" class="brand"><span class="mk">3B</span>3BRAIN</a>
     <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
     <nav class="nav-links" id="links">
-      <a href="#descoberta"><span data-l="pt">A descoberta</span><span data-l="en">The finding</span></a>
+      <a href="#dor"><span data-l="pt">A dor</span><span data-l="en">The pain</span></a>
       <a href="#savi">SAVI</a>
       <a href="#barbergo">BarberGO</a>
       <a href="#motor"><span data-l="pt">O motor</span><span data-l="en">The engine</span></a>
       <a href="#time"><span data-l="pt">Time</span><span data-l="en">Team</span></a>
-      <a href="#contato"><span data-l="pt">Contato</span><span data-l="en">Contact</span></a>
+      <a href="#fontes"><span data-l="pt">Fontes</span><span data-l="en">Sources</span></a>
       <button class="lang" id="langBtn" aria-label="Trocar idioma / Switch language"><span data-l="pt">EN</span><span data-l="en">PT</span></button>
     </nav>
   </div>
@@ -565,35 +587,35 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
     <span class="eyebrow rv"><span class="pip"></span>3BRAIN · <span data-l="pt">Florianópolis, Brasil</span><span data-l="en">Florianópolis, Brazil</span></span>
 
     <h1 class="hero-h rv d1">
-      <span data-l="pt">O prontuário registra o ritual, <em>não o paciente.</em></span>
-      <span data-l="en">The medical record documents the ritual, <em>not the patient.</em></span>
+      <span data-l="pt">Quem escreveu o código passou <em>oito anos preenchendo o prontuário.</em></span>
+      <span data-l="en">The person who wrote the code spent <em>eight years filling in the chart.</em></span>
     </h1>
 
     <p class="hero-lede rv d2">
-      <span data-l="pt">Descobrimos isso em <b>27.928 aferições</b> de um prontuário real de sete anos: <b>90% das pressões arteriais terminam em 0 ou 5.</b> Um aparelho digital produziria 20%. Construímos o SAVI para capturar o dado onde ele nasce — e mais dois produtos, que já estão no ar.</span>
-      <span data-l="en">We found it in <b>27,928 vital-sign readings</b> from seven years of a real medical record: <b>90% of blood pressures end in 0 or 5.</b> A digital device would produce 20%. We built SAVI to capture data where it is born — plus two other products already shipped.</span>
+      <span data-l="pt">Técnico de enfermagem, COREN-SC 1305197: oito anos de UTI, emergência, longa permanência e resgate antes da primeira linha de código. A 3BRAIN constrói para o trabalho que ainda é registrado no papel e no WhatsApp. <b>Nos dois mercados o comprador já paga por software — e nos dois, o registro do trabalho continua fora dele.</b></span>
+      <span data-l="en">Nursing technician, COREN-SC 1305197: eight years across ICU, emergency, long-term care and rescue before the first line of code. 3BRAIN builds for work that is still recorded on paper and over WhatsApp. <b>In both markets the buyer already pays for software — and in both, the record of the work still sits outside it.</b></span>
     </p>
 
     <div class="hero-cta rv d3">
-      <a href="#descoberta" class="btn btn-p"><span data-l="pt">Ver a descoberta</span><span data-l="en">See the finding</span> <span class="ar">→</span></a>
-      <a href="#contato" class="btn btn-g"><span data-l="pt">Falar com os fundadores</span><span data-l="en">Talk to the founders</span></a>
+      <a href="#contato" class="btn btn-p"><span data-l="pt">Conversar com o fundador — 20 min</span><span data-l="en">Talk to the founder — 20 min</span> <span class="ar">→</span></a>
+      <a href="#fontes" class="btn btn-g"><span data-l="pt">Ver cada número: denominador e fonte</span><span data-l="en">See every number: denominator and source</span></a>
     </div>
 
     <div class="hero-stats rv d4">
       <div class="hs">
-        <div class="n" data-count="27928">27.928</div>
-        <div class="l"><span data-l="pt">aferições reais processadas</span><span data-l="en">real readings processed</span></div>
-        <div class="s"><span data-l="pt">prontuário 2020–2026</span><span data-l="en">record 2020–2026</span></div>
+        <div class="n"><span data-count="6">6</span> <span class="un" data-l="pt">de cada 100</span><span class="un" data-l="en">of every 100</span></div>
+        <div class="l"><span data-l="pt">pacientes sofrem dano que não precisava ter acontecido</span><span data-l="en">patients suffer harm that did not have to happen</span></div>
+        <div class="s">Panagioti, <i>BMJ</i> 2019 · 337.028 <span data-l="pt">pacientes, 70 estudos</span><span data-l="en">patients, 70 studies</span></div>
       </div>
       <div class="hs">
-        <div class="n" data-count="452">452</div>
-        <div class="l"><span data-l="pt">padrões clínicos-gatilho</span><span data-l="en">clinical trigger patterns</span></div>
-        <div class="s"><span data-l="pt">19 sistemas · 0 órfãos</span><span data-l="en">19 systems · 0 orphans</span></div>
+        <div class="n"><span data-count="85">85</span> <span class="un" data-l="pt">de cada 100</span><span class="un" data-l="en">of every 100</span></div>
+        <div class="l"><span data-l="pt">estabelecimentos com internação ainda produzem papel — e 92 em cada 100 já têm sistema eletrônico</span><span data-l="en">inpatient facilities still produce paper — while 92 of every 100 already run an electronic record</span></div>
+        <div class="s">TIC Saúde 2025 · Cetic.br/NIC.br · 3.270 <span data-l="pt">gestores</span><span data-l="en">managers</span></div>
       </div>
       <div class="hs">
-        <div class="n" data-count="1260">1.260</div>
-        <div class="l"><span data-l="pt">testes automatizados verdes</span><span data-l="en">automated tests, green</span></div>
-        <div class="s"><span data-l="pt">execução de 20/08/2026</span><span data-l="en">run of 2026-08-20</span></div>
+        <div class="n">R$ 79,90</div>
+        <div class="l"><span data-l="pt">é a mediana do que uma barbearia já paga por um software que só faz agenda</span><span data-l="en">is the median a barbershop already pays for software that only books appointments</span></div>
+        <div class="s"><span data-l="pt">4 planos de entrada públicos</span><span data-l="en">4 public entry plans</span> · ago/2026</div>
       </div>
     </div>
   </div>
@@ -627,76 +649,81 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
   </div>
 </section>
 
-<!-- ═══════════════ 01 — A DESCOBERTA ═══════════════ -->
-<section class="discover" id="descoberta">
+<!-- ═══════════════ A DOR ═══════════════ -->
+<section class="discover" id="dor">
   <div class="wrap">
-    <div class="sec-num rv">01 — <span data-l="pt">A descoberta</span><span data-l="en">The finding</span></div>
+    <div class="sec-num rv">01 — <span data-l="pt">A dor</span><span data-l="en">The pain</span></div>
     <h2 class="big rv">
-      <span data-l="pt">O número não foi medido. Foi <em>lembrado.</em></span>
-      <span data-l="en">The number wasn't measured. It was <em>remembered.</em></span>
+      <span data-l="pt">O comprador já comprou o sistema. <em>E continua imprimindo.</em></span>
+      <span data-l="en">The buyer already bought the system. <em>And still prints.</em></span>
     </h2>
     <p class="lede rv d1">
-      <span data-l="pt">Um esfigmomanômetro digital devolve qualquer valor: 138, 142, 137. Se o registro fosse a leitura do aparelho, o último dígito se distribuiria por igual — <strong>cerca de 20% cairiam em 0 ou 5.</strong> Não é o que acontece.</span>
-      <span data-l="en">A digital cuff returns any value: 138, 142, 137. If the record were the device reading, the final digit would spread evenly — <strong>about 20% would land on 0 or 5.</strong> That is not what happens.</span>
+      <span data-l="pt">Informatizar não é mais o problema: <strong>92 de cada 100 estabelecimentos de saúde já têm sistema eletrônico</strong>. Vender informatização é vender o que o comprador já comprou. O problema é o que o sistema não recebe.</span>
+      <span data-l="en">Digitising is no longer the problem: <strong>92 of every 100 health facilities already run an electronic record</strong>. Selling digitisation means selling what the buyer already bought. The problem is what the system never receives.</span>
     </p>
 
     <div class="disc-grid">
       <div class="chart rv" id="chart">
-        <div class="chart-h"><span data-l="pt">Último dígito terminando em 0 ou 5</span><span data-l="en">Final digit ending in 0 or 5</span></div>
-
-        <div class="bar-row">
-          <div class="bar-lab">
-            <span class="t"><span data-l="pt">Pressão sistólica</span><span data-l="en">Systolic pressure</span></span>
-            <span class="v">90,0%</span>
-          </div>
-          <div class="bar-track"><div class="bar-fill" style="--w:.900"></div></div>
-          <div class="bar-n">n = 25.039</div>
-        </div>
-
-        <div class="bar-row">
-          <div class="bar-lab">
-            <span class="t"><span data-l="pt">Pressão diastólica</span><span data-l="en">Diastolic pressure</span></span>
-            <span class="v">90,6%</span>
-          </div>
-          <div class="bar-track"><div class="bar-fill" style="--w:.906"></div></div>
-          <div class="bar-n">n = 25.039</div>
-        </div>
+        <div class="chart-h"><span data-l="pt">Estabelecimentos de saúde no Brasil</span><span data-l="en">Health facilities in Brazil</span></div>
 
         <div class="bar-row ok">
           <div class="bar-lab">
-            <span class="t"><span data-l="pt">Frequência cardíaca</span><span data-l="en">Heart rate</span></span>
-            <span class="v">23,2%</span>
+            <span class="t"><span data-l="pt">Já têm sistema eletrônico</span><span data-l="en">Already run an electronic record</span></span>
+            <span class="v">92%</span>
           </div>
-          <div class="bar-track"><div class="bar-fill" style="--w:.232"></div></div>
-          <div class="bar-n">n = 27.583 · <span data-l="pt">143 valores distintos</span><span data-l="en">143 distinct values</span></div>
+          <div class="bar-track"><div class="bar-fill" style="--w:.92"></div></div>
+          <div class="bar-n"><span data-l="pt">indicador B0</span><span data-l="en">indicator B0</span></div>
+        </div>
+
+        <div class="bar-row">
+          <div class="bar-lab">
+            <span class="t"><span data-l="pt">Com internação: ainda produzem papel</span><span data-l="en">With inpatient care: still produce paper</span></span>
+            <span class="v">85%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="--w:.85"></div></div>
+          <div class="bar-n"><span data-l="pt">sem internação: 59%</span><span data-l="en">without inpatient care: 59%</span></div>
+        </div>
+
+        <div class="bar-row">
+          <div class="bar-lab">
+            <span class="t"><span data-l="pt">Mantêm o mesmo registro no papel <em>e</em> na tela</span><span data-l="en">Keep the same record on paper <em>and</em> on screen</span></span>
+            <span class="v">55%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="--w:.55"></div></div>
+          <div class="bar-n"><span data-l="pt">é a medida direta do retrabalho</span><span data-l="en">the direct measure of rework</span></div>
         </div>
 
         <div class="chart-ref">
           <span class="dash"></span>
-          <span><span data-l="pt">Referência: um aparelho digital produziria <strong style="color:var(--txt)">~20%</strong></span><span data-l="en">Reference: a digital device would produce <strong style="color:var(--txt)">~20%</strong></span></span>
+          <span><span data-l="pt">O corte que separa é <strong style="color:var(--txt)">internação</strong>, não porte.</span><span data-l="en">What separates is <strong style="color:var(--txt)">inpatient care</strong>, not size.</span></span>
         </div>
-        <p class="src"><span data-l="pt">Recomputado em 20/08/2026 sobre o prontuário do piloto (2020–2026).</span><span data-l="en">Recomputed 2026-08-20 over the pilot's record (2020–2026).</span></p>
+        <p class="src">TIC Saúde 2025 · Cetic.br/NIC.br · <span data-l="pt">3.270 gestores entrevistados, fev–nov/2025 · indicadores B0 e B1. Amostra só de estabelecimentos com internet nos 12 meses, o que puxa o 92 para cima.</span><span data-l="en">3,270 facility managers surveyed, Feb–Nov 2025 · indicators B0 and B1. Sample limited to facilities with internet in the last 12 months, which pushes the 92 up.</span></p>
       </div>
 
       <div>
         <p class="lede rv d1" style="margin-top:0;">
-          <span data-l="pt">A frequência cardíaca é o único sinal que <strong>passa no teste</strong> — e é justamente o único que o oxímetro entrega pronto na tela. O profissional lê e transcreve. Nos outros, ele mede, guarda de cabeça, atende outra coisa e escreve depois.</span>
-          <span data-l="en">Heart rate is the one vital that <strong>passes the test</strong> — and it is exactly the one the pulse oximeter hands over ready on screen. The professional reads and transcribes it. For the others, they measure, hold it in their head, get pulled away, and write it later.</span>
+          <span data-l="pt">De cada 100 consultas, <strong>14 acontecem com informação clínica faltando</strong> — e em 44 dessas 14 o próprio clínico julgou provável que o paciente fosse prejudicado.</span>
+          <span data-l="en">Of every 100 consultations, <strong>14 happen with clinical information missing</strong> — and in 44 of those 14 the clinician judged it likely the patient would be harmed.</span>
         </p>
         <p class="lede rv d2">
-          <span data-l="pt">Isso não é falha de quem cuida. É falha de <strong>interface</strong>. E é um problema que nenhum prontuário eletrônico resolve, porque todos eles começam depois — no campo em branco esperando alguém digitar.</span>
-          <span data-l="en">This is not a failure of the people giving care. It is an <strong>interface</strong> failure. And no electronic health record fixes it, because every one of them starts too late — at a blank field waiting for someone to type.</span>
+          <span data-l="pt">No Brasil, de cada 3 danos ao paciente, <strong>2 não precisavam ter acontecido</strong>. O dado é de 2003 e ninguém repetiu a medição em 23 anos — dizer isso é o próprio motivo de agora.</span>
+          <span data-l="en">In Brazil, of every 3 patient harms, <strong>2 did not have to happen</strong>. The data is from 2003 and nobody has repeated the measurement in 23 years — saying so is itself the reason for now.</span>
+        </p>
+        <p class="lede rv d2">
+          <span data-l="pt">De cada 100 minutos que o enfermeiro passa registrando, <strong>48 não chegam ao prontuário</strong>.</span>
+          <span data-l="en">Of every 100 minutes a nurse spends recording, <strong>48 never reach the chart</strong>.</span>
         </p>
         <div class="pull rv d3">
-          <span data-l="pt">O sinal que mais pesa nos escores de alerta precoce é justamente o que menos é medido.</span>
-          <span data-l="en">The vital that weighs most in early-warning scores is precisely the one least measured.</span>
+          <span data-l="pt">Estruturar a passagem de plantão derrubou o evento adverso evitável de 4,7 para 3,3 por 100 admissões — sem acrescentar um minuto ao turno.</span>
+          <span data-l="en">Structuring the handover cut preventable adverse events from 4.7 to 3.3 per 100 admissions — without adding a minute to the shift.</span>
         </div>
+        <p class="src rv d3">Starmer et al., <i>NEJM</i> 2014;371:1803-1812 (I-PASS) · 10.740 <span data-l="pt">admissões, 9 programas. Antes-e-depois sem controle concomitante. A favor: o evento não evitável ficou parado (3,0→2,8) e a passagem não ficou mais longa (2,4→2,5 min).</span><span data-l="en">admissions, 9 programmes. Before-and-after without concurrent control. In its favour: non-preventable events stayed flat (3.0→2.8) and the handover did not get longer (2.4→2.5 min).</span></p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════ 02 — SAVI ═══════════════ -->
+<!-- ═══════════════ SAVI ═══════════════ -->
 <section id="savi">
   <div class="wrap">
     <div class="sec-num rv">02 — <span data-l="pt">Carro-chefe</span><span data-l="en">Flagship</span></div>
@@ -704,34 +731,32 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
       <div>
         <div class="tagline rv">
           <span class="tag cy">Healthtech</span>
-          <span class="tag hi"><span data-l="pt">Piloto em campo</span><span data-l="en">Pilot in the field</span></span>
+          <span class="tag hi"><span data-l="pt">Hospital · clínica · ILPI</span><span data-l="en">Hospital · clinic · care home</span></span>
           <span class="tag">FHIR R4</span>
-          <span class="tag">LGPD by design</span>
         </div>
         <h2 class="big rv">SAVI <em>Saúde</em></h2>
       </div>
       <p class="lede rv d1" style="margin-top:0;">
-        <span data-l="pt">Captura o dado onde ele nasce, calcula a faixa normal <strong>de cada pessoa</strong> — não a da tabela — e roda 452 padrões clínicos sobre a série temporal. O enfermeiro revisa e assina. <strong>A IA nunca escreve um fato clínico.</strong></span>
-        <span data-l="en">Captures data where it is born, computes the normal range <strong>of each person</strong> — not the textbook's — and runs 452 clinical patterns over the time series. The nurse reviews and signs. <strong>The AI never writes a clinical fact.</strong></span>
+        <span data-l="pt">Captura o dado no momento do trabalho e vigia <strong>o que ficou em branco</strong>. Serve qualquer instituição que precise registrar — porque todas precisam. O enfermeiro revisa e assina; <strong>a IA nunca escreve um fato clínico.</strong></span>
+        <span data-l="en">Captures data at the moment of work and watches <strong>what was left blank</strong>. It serves any institution that has to keep records — because all of them do. The nurse reviews and signs; <strong>the AI never writes a clinical fact.</strong></span>
       </p>
     </div>
 
-    <!-- painel -->
     <div class="shot rv">
       <div class="stage">
         <div class="browser tilt" data-tilt>
           <div class="browser-bar">
             <i></i><i></i><i></i>
-            <span class="url">savi · <span data-l="pt">painel do turno</span><span data-l="en">shift dashboard</span> — casa modelo · 36 <span data-l="pt">residentes</span><span data-l="en">residents</span></span>
+            <span class="url">savi · <span data-l="pt">painel do turno</span><span data-l="en">shift dashboard</span></span>
           </div>
           <img src="img/savi-painel.webp" width="1180" height="413" loading="lazy" decoding="async"
-               alt="Painel do SAVI mostrando o núcleo crítico do turno com 36 residentes, faixa de sinais vitais e cartões de indicadores." />
+               alt="Painel do SAVI mostrando o núcleo crítico do turno, faixa de sinais vitais e cartões de indicadores." />
         </div>
       </div>
       <p class="shot-cap"><span data-l="pt">Painel real do produto · casa de demonstração, sem dado de paciente</span><span data-l="en">Real product dashboard · demo house, no patient data</span></p>
     </div>
 
-    <!-- arquitetura -->
+    <!-- arquitetura: o que o produto faz, em camadas -->
     <div class="arch">
       <div class="tower rv" aria-hidden="true">
         <div class="tower-in">
@@ -741,7 +766,6 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
           <div class="slab" style="--i:3" data-slab="3"><span class="sn">03</span></div>
           <div class="slab" style="--i:4" data-slab="4"><span class="sn">04</span></div>
           <div class="slab" style="--i:5" data-slab="5"><span class="sn">05</span></div>
-          <div class="slab" style="--i:6" data-slab="6"><span class="sn">06</span></div>
         </div>
       </div>
 
@@ -749,53 +773,62 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
         <div class="lay base" data-lay="0" tabindex="0">
           <span class="ln">BASE</span>
           <div>
-            <div class="lt"><span data-l="pt">Fundação</span><span data-l="en">Foundation</span></div>
-            <div class="lb"><span data-l="pt">Modelo FHIR R4 com 23 tipos de recurso, acesso por vínculo de setor, trilha de auditoria imutável e verificação de assinatura ICP-Brasil ponta a ponta.</span><span data-l="en">FHIR R4 model across 23 resource types, ward-link access control, immutable audit trail and end-to-end ICP-Brasil signature verification.</span></div>
+            <div class="lt"><span data-l="pt">O registro que resiste a auditoria</span><span data-l="en">A record that survives an audit</span></div>
+            <div class="lb"><span data-l="pt">Modelo FHIR R4, acesso por vinculo de setor, trilha imutavel e assinatura digital verificada ponta a ponta. E o piso sem o qual nada acima vale numa fiscalizacao.</span><span data-l="en">FHIR R4 model, ward-link access control, immutable trail and end-to-end verified digital signature. The floor without which nothing above it survives an inspection.</span></div>
           </div>
         </div>
         <div class="lay" data-lay="1" tabindex="0">
           <span class="ln">01</span>
           <div>
-            <div class="lt"><span data-l="pt">Capturar</span><span data-l="en">Capture</span></div>
-            <div class="lb"><span data-l="pt">Voz, foto com OCR, aparelho conectado e resultado externo. O melhor registro é o que ninguém digitou.</span><span data-l="en">Voice, photo with OCR, connected devices and external results. The best record is the one nobody typed.</span></div>
+            <div class="lt"><span data-l="pt">Captura onde o trabalho acontece</span><span data-l="en">Captures where the work happens</span></div>
+            <div class="lb"><span data-l="pt">Voz, foto com leitura de texto, aparelho conectado e resultado externo. De cada 100 minutos que o enfermeiro passa registrando, 48 nao chegam ao prontuario — o melhor registro e o que ninguem digitou.</span><span data-l="en">Voice, photo with text extraction, connected devices and external results. Of every 100 minutes a nurse spends recording, 48 never reach the chart — the best record is the one nobody typed.</span></div>
           </div>
         </div>
         <div class="lay" data-lay="2" tabindex="0">
           <span class="ln">02</span>
           <div>
-            <div class="lt"><span data-l="pt">Estruturar</span><span data-l="en">Structure</span></div>
-            <div class="lb"><span data-l="pt">Uma escriba de IA monta o rascunho da evolução; o enfermeiro revisa e assina. Os sinais vitais são determinísticos — nunca escritos pelo modelo.</span><span data-l="en">An AI scribe drafts the nursing note; the nurse reviews and signs. Vitals are deterministic — never written by the model.</span></div>
+            <div class="lt"><span data-l="pt">Monta o rascunho; o profissional assina</span><span data-l="en">Drafts it; the professional signs</span></div>
+            <div class="lb"><span data-l="pt">Uma escriba de IA monta a evolucao a partir do que foi capturado. O enfermeiro revisa e assina. Os sinais vitais sao deterministicos — nunca escritos pelo modelo.</span><span data-l="en">An AI scribe assembles the note from what was captured. The nurse reviews and signs. Vitals are deterministic — never written by the model.</span></div>
           </div>
         </div>
         <div class="lay" data-lay="3" tabindex="0">
           <span class="ln">03</span>
           <div>
-            <div class="lt"><span data-l="pt">Conectar</span><span data-l="en">Connect</span></div>
-            <div class="lb"><span data-l="pt">Linha de base individual, passagem de plantão montada sozinha e memória de episódios que atravessa turnos e categorias.</span><span data-l="en">Individual baseline, a handover that assembles itself, and episode memory that crosses shifts and disciplines.</span></div>
+            <div class="lt"><span data-l="pt">Monta a passagem de plantao sozinho</span><span data-l="en">Assembles the handover by itself</span></div>
+            <div class="lb"><span data-l="pt">Estruturar a passagem derrubou o evento adverso evitavel de 4,7 para 3,3 por 100 admissoes, sem alongar o turno — e e a parte do dia em que a informacao mais se perde.</span><span data-l="en">Structuring the handover cut preventable adverse events from 4.7 to 3.3 per 100 admissions without lengthening the shift — and it is the moment of the day when information is most often lost.</span></div>
           </div>
         </div>
         <div class="lay" data-lay="4" tabindex="0">
           <span class="ln">04</span>
           <div>
-            <div class="lt"><span data-l="pt">Vigiar</span><span data-l="en">Watch</span> <span class="samd">SaMD</span></div>
-            <div class="lb"><span data-l="pt">Alertas permanentes, interceptor de medicação e conferente de prescrição com 10 checagens definidas — 8 rodando, e o sistema declara as 2 que ainda não faz.</span><span data-l="en">Standing safety flags, a medication interceptor and a prescription checker with 10 defined checks — 8 running, and the system declares the 2 it does not yet do.</span></div>
+            <div class="lt"><span data-l="pt">Vigia o que ficou em branco</span><span data-l="en">Watches what was left blank</span></div>
+            <div class="lb"><span data-l="pt">O que nao foi aferido, o que venceu, o que ninguem reavaliou. Uma ficha sozinha sempre parece preenchida; a falta so aparece quando se olha todas ao mesmo tempo.</span><span data-l="en">What was not measured, what expired, what nobody reassessed. A single chart always looks complete; the gap only shows when you look at all of them at once.</span></div>
           </div>
         </div>
         <div class="lay" data-lay="5" tabindex="0">
           <span class="ln">05</span>
           <div>
-            <div class="lt"><span data-l="pt">Prever</span><span data-l="en">Predict</span> <span class="samd">SaMD</span></div>
-            <div class="lb"><span data-l="pt">452 padrões de tendência observada trazem avisos precoces — sempre “vale avaliar”, nunca diagnóstico. A profecia estatística fica desligada até validação local.</span><span data-l="en">452 observed-trend patterns raise early warnings — always “worth checking”, never a diagnosis. Statistical prophecy stays off until locally validated.</span></div>
-          </div>
-        </div>
-        <div class="lay" data-lay="6" tabindex="0">
-          <span class="ln">06</span>
-          <div>
-            <div class="lt"><span data-l="pt">Distribuir</span><span data-l="en">Distribute</span></div>
-            <div class="lb"><span data-l="pt">Um feed institucional em escada de prioridade, para a coisa certa chegar aos olhos certos sem ninguém precisar procurar.</span><span data-l="en">An institutional feed on a priority ladder, so the right thing reaches the right eyes without anyone searching.</span></div>
+            <div class="lt"><span data-l="pt">Entrega a quem precisa ver</span><span data-l="en">Delivers it to whoever needs to see</span></div>
+            <div class="lb"><span data-l="pt">Um feed institucional em escada de prioridade, para a coisa certa chegar aos olhos certos sem ninguem precisar procurar.</span><span data-l="en">An institutional feed on a priority ladder, so the right thing reaches the right eyes without anyone having to search.</span></div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- o mercado, com a hierarquia certa -->
+    <div class="mgrid rv">
+      <div class="mc cy"><div class="n" data-count="6612">6.612</div><div class="l"><span data-l="pt">hospitais no registro oficial</span><span data-l="en">hospitals in the official registry</span></div><div class="s">CNES/DATASUS · jul/2026</div></div>
+      <div class="mc cy"><div class="n" data-count="92356">92.356</div><div class="l"><span data-l="pt">clínicas especializadas — o alvo maior em volume</span><span data-l="en">specialised clinics — the largest target by volume</span></div><div class="s">CNES/DATASUS · jul/2026</div></div>
+      <div class="mc cy"><div class="n">+119,2%</div><div class="l"><span data-l="pt">de clínicas especializadas em 10 anos, contra +8,3% de hospitais</span><span data-l="en">growth in specialised clinics over 10 years, against +8.3% in hospitals</span></div><div class="s"><span data-l="pt">CNES, série de dezembro 2015–2025 — contado, não projetado</span><span data-l="en">CNES, December series 2015–2025 — counted, not projected</span></div></div>
+      <div class="mc cy"><div class="n">5 <span class="un">/ 66</span></div><div class="l"><span data-l="pt">certificados SBIS/CFM vigentes cobrem internação</span><span data-l="en">valid SBIS/CFM certificates cover inpatient care</span></div><div class="s"><span data-l="pt">os únicos com amparo legal para dispensar o papel</span><span data-l="en">the only ones legally able to retire paper</span></div></div>
+    </div>
+
+    <div class="note rv">
+      <div class="nt"><span data-l="pt">Onde começamos, e por quê</span><span data-l="en">Where we start, and why</span></div>
+      <p><span data-l="pt"><strong>Cabeça de ponte: a instituição de longa permanência.</strong> Não porque o mercado seja grande — não é. É porque o cheque é assinado por uma pessoa só, sem comitê nem licitação, e porque <strong>nenhum dos 66 certificados vigentes do país é voltado a cuidado continuado</strong>. É onde a prova sai mais rápido e mais barata.</span>
+      <span data-l="en"><strong>Beachhead: the long-term care home.</strong> Not because the market is large — it is not. Because one person signs the cheque, with no committee and no tender, and because <strong>none of the country's 66 valid certificates targets continued care</strong>. It is where proof comes fastest and cheapest.</span></p>
+      <p><span data-l="pt"><strong>Teto: clínica especializada em volume, hospital em ticket.</strong> São vendas diferentes: no hospital, o que dá o ticket alto é exatamente o que alonga a venda — mais leitos, mais decisores, integração com o sistema instalado. Uma empresa que só venda para lares tem teto duro antes de qualquer coisa dar errado.</span>
+      <span data-l="en"><strong>Ceiling: specialised clinics by volume, hospitals by ticket.</strong> They are different sales: in a hospital, what makes the ticket large is exactly what makes the sale slow — more beds, more decision-makers, integration with the installed system. A company that sells only to care homes hits a hard ceiling before anything else goes wrong.</span></p>
     </div>
 
     <!-- provas -->
@@ -805,39 +838,29 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
           <div class="pt"><span data-l="pt">Ele escuta o que ninguém está no quarto para ouvir</span><span data-l="en">It hears what nobody is in the room to hear</span></div>
           <p class="pb"><span data-l="pt">O microfone do quarto não transcreve nada à noite — só conta eventos acústicos. Tosse é um deles. Três noites de subida viram um aviso antes de qualquer febre.</span><span data-l="en">The room microphone transcribes nothing at night — it only counts acoustic events. Coughing is one of them. Three rising nights become a warning before any fever.</span></p>
         </div>
-        <div class="pimg"><img src="img/savi-tosse.webp" width="1180" height="846" loading="lazy" decoding="async" alt="Cartão do SAVI: tosse noturna contada pelo microfone do quarto, 23 episódios contra média de 6." /></div>
+        <div class="pimg"><img src="img/savi-tosse.webp" width="1180" height="846" loading="lazy" decoding="async" alt="Cartão do SAVI: tosse noturna contada pelo microfone do quarto." /></div>
       </div>
       <div class="proof rv d1">
         <div class="ph">
           <div class="pt"><span data-l="pt">Ele vê o que uma ficha sozinha esconde</span><span data-l="en">It sees what a single chart hides</span></div>
           <p class="pb"><span data-l="pt">35 avaliações de autonomia no prontuário, todas com a mesma data de 324 dias atrás. Cada ficha, sozinha, parece preenchida. A defasagem só aparece quando se olha as 35 ao mesmo tempo.</span><span data-l="en">35 autonomy assessments in the record, all carrying the same date from 324 days ago. Each chart alone looks complete. The gap only shows when you look at all 35 at once.</span></p>
         </div>
-        <div class="pimg"><img src="img/savi-defasagem.webp" width="1180" height="572" loading="lazy" decoding="async" alt="Cartão do SAVI: 35 avaliações de autonomia no prontuário compartilhando a mesma data de 324 dias atrás." /></div>
+        <div class="pimg"><img src="img/savi-defasagem.webp" width="1180" height="572" loading="lazy" decoding="async" alt="Cartão do SAVI: 35 avaliações de autonomia compartilhando a mesma data." /></div>
       </div>
     </div>
 
-    <!-- métricas -->
-    <div class="mgrid rv">
-      <div class="mc cy"><div class="n" data-count="95482">95.482</div><div class="l"><span data-l="pt">evoluções clínicas reais lidas</span><span data-l="en">real clinical notes ingested</span></div><div class="s"><span data-l="pt">98,4% de enfermagem</span><span data-l="en">98.4% from nursing</span></div></div>
-      <div class="mc cy"><div class="n" data-count="6001">6.001</div><div class="l"><span data-l="pt">casos rodados em modo sombra</span><span data-l="en">cases run in shadow mode</span></div><div class="s"><span data-l="pt">antes de qualquer alerta chegar a alguém</span><span data-l="en">before any alert reached a human</span></div></div>
-      <div class="mc cy"><div class="n" data-count="127">127</div><div class="l"><span data-l="pt">operações de API em 122 rotas</span><span data-l="en">API operations across 122 routes</span></div><div class="s">OpenAPI</div></div>
-      <div class="mc cy"><div class="n">0,6%</div><div class="l"><span data-l="pt">das medições barradas no portão de qualidade</span><span data-l="en">of readings blocked at the quality gate</span></div><div class="s"><span data-l="pt">465 casos · nunca interpolados</span><span data-l="en">465 cases · never interpolated</span></div></div>
-    </div>
-
     <div class="note rv">
-      <div class="nt"><span data-l="pt">O que ainda não fazemos</span><span data-l="en">What we do not do yet</span></div>
-      <p><span data-l="pt">As camadas 4 e 5 são candidatas a <strong>SaMD Classe II</strong> (ANVISA RDC 657/751; regra 11 do MDR europeu). O registro <strong>não foi iniciado</strong>, e o plano escrito é registrar antes de comercializar. Enquanto isso, a predição estatística fica desligada por trava no código.</span>
-      <span data-l="en">Layers 4 and 5 are <strong>Class II SaMD</strong> candidates (ANVISA RDC 657/751; Rule 11 of the EU MDR). Registration <strong>has not started</strong>, and the written plan is to register before commercialising. Meanwhile, statistical prediction stays off by a hard assert in the code.</span></p>
-      <p><span data-l="pt">Não afirmamos conformidade regulatória nem certificação. O que existe é o modelo FHIR R4 como saída, verificação de assinatura ICP-Brasil implementada, e as resoluções do COFEN codificadas como regra de sistema.</span>
-      <span data-l="en">We claim neither regulatory compliance nor certification. What exists is FHIR R4 as an output model, implemented ICP-Brasil signature verification, and Brazilian nursing-council resolutions encoded as system rules.</span></p>
+      <div class="nt"><span data-l="pt">A trava que define o produto</span><span data-l="en">The lock that defines the product</span></div>
+      <p><span data-l="pt">Em nenhuma linha desta página aparece “prevê deterioração”. Pela RDC 657/2022 da ANVISA, o enquadramento decorre da <strong>finalidade declarada</strong> — a fronteira entre software isento e dispositivo médico regulado se atravessa com uma frase de marketing, não com uma linha de código. O SAVI captura, registra e vigia o que falta. Não sugere conduta.</span>
+      <span data-l="en">Nowhere on this page does it say “predicts deterioration”. Under ANVISA's RDC 657/2022, classification follows the <strong>declared intended use</strong> — the line between exempt software and regulated medical device is crossed with a marketing sentence, not a line of code. SAVI captures, records and watches what is missing. It does not suggest treatment.</span></p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════ 03 — BARBERGO ═══════════════ -->
+<!-- ═══════════════ BARBERGO ═══════════════ -->
 <section class="bg-sec" id="barbergo">
   <div class="wrap">
-    <div class="sec-num rv">03 — <span data-l="pt">No ar</span><span data-l="en">Shipped</span></div>
+    <div class="sec-num rv">03 — <span data-l="pt">No ar nas duas lojas</span><span data-l="en">Live on both stores</span></div>
     <div class="two">
       <div>
         <div class="tagline rv">
@@ -847,18 +870,18 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
         </div>
         <h2 class="big rv" style="max-width:13ch;">BarberGO</h2>
         <p class="lede rv d1">
-          <span data-l="pt">Barbearia contrata por indicação e WhatsApp. O BarberGO é o encontro entre barbeiro e barbearia com a mecânica de swipe — e o perfil só vale depois que a <strong>identidade é conferida por um modelo de visão, que compara a foto do documento com uma selfie</strong>.</span>
-          <span data-l="en">Barbershops still hire by word of mouth and WhatsApp. BarberGO is barber-meets-shop with swipe mechanics — and a profile only counts once <strong>identity is checked by a vision model that compares the ID photo against a selfie</strong>.</span>
+          <span data-l="pt">O Brasil inteiro contratou <strong>210 barbeiros com carteira assinada</strong> em doze meses. No mesmo país, <strong>768.830 pessoas</strong> mantêm um MEI de cabeleireiro, barbeiro ou manicure.</span>
+          <span data-l="en">All of Brazil hired <strong>210 barbers on formal contracts</strong> in twelve months. In the same country, <strong>768,830 people</strong> keep an active sole-trader registration in hairdressing, barbering or manicure.</span>
         </p>
         <p class="lede rv d2">
-          <span data-l="pt">Três provedores de IA de fabricantes diferentes, em cascata de fallback: se um cai, o próximo assume. É o produto que responde à pergunta “vocês conseguem entregar até a loja?”.</span>
-          <span data-l="en">Three AI providers from different vendors, in a fallback cascade: if one goes down, the next takes over. This is the product that answers “can you actually ship?”.</span>
+          <span data-l="pt">Os canais de contratação que existem pressupõem vaga, currículo e contrato — apontados para um mercado que <strong>não emprega</strong>. O vínculo que o setor de fato usa é a parceria, e é ele que não tem ferramenta.</span>
+          <span data-l="en">The hiring channels that exist assume a vacancy, a CV and an employment contract — pointed at a market that <strong>does not employ</strong>. The relationship the trade actually uses is partnership, and that is what has no tool.</span>
         </p>
 
         <div class="price rv d3">
-          <div class="pz"><div class="pn">Silver</div><div class="pv">R$ 14,90<span style="color:var(--dim);font-size:.72rem;">/mês</span></div></div>
-          <div class="pz"><div class="pn">Gold</div><div class="pv">R$ 29,90<span style="color:var(--dim);font-size:.72rem;">/mês</span></div></div>
-          <div class="pz"><div class="pn"><span data-l="pt">Consumíveis</span><span data-l="en">Consumables</span></div><div class="pv">15 SKUs</div></div>
+          <div class="pz"><div class="pn"><span data-l="pt">Já paga hoje</span><span data-l="en">Already pays today</span></div><div class="pv">R$ 79,90<span style="color:var(--dim);font-size:.72rem;">/mês</span></div></div>
+          <div class="pz"><div class="pn"><span data-l="pt">Teto do MEI</span><span data-l="en">Sole-trader cap</span></div><div class="pv">R$ 6.750<span style="color:var(--dim);font-size:.72rem;">/mês</span></div></div>
+          <div class="pz"><div class="pn"><span data-l="pt">Grande Florianópolis</span><span data-l="en">Greater Florianópolis</span></div><div class="pv">1.251</div></div>
         </div>
 
         <div class="stores rv d3">
@@ -876,22 +899,47 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
       <div class="stage rv d2">
         <div class="phones tilt" data-tilt>
           <div class="phone l"><div class="scr"><img src="img/bg-perfil.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Tela de edição de perfil do BarberGO com o botão Melhorar com IA." /></div></div>
-          <div class="phone c"><div class="notch"></div><div class="scr"><img src="img/bg-swipe.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Cartão de descoberta do BarberGO mostrando o perfil de um barbeiro autenticado em Florianópolis." /></div></div>
-          <div class="phone r"><div class="scr"><img src="img/bg-receita.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Tela de monetização do BarberGO com assinatura Silver, consumíveis e anunciantes." /></div></div>
+          <div class="phone c"><div class="notch"></div><div class="scr"><img src="img/bg-swipe.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Cartão de descoberta do BarberGO mostrando o perfil de um barbeiro autenticado." /></div></div>
+          <div class="phone r"><div class="scr"><img src="img/bg-receita.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Tela de monetização do BarberGO com assinatura, consumíveis e anunciantes." /></div></div>
         </div>
       </div>
     </div>
 
+    <!-- o que a IA faz, pelo que ela faz -->
+    <h3 class="block-title rv" style="margin-top:80px;"><span data-l="pt">O que a IA faz aqui — descrita pelo que ela resolve</span><span data-l="en">What the AI does here — described by what it solves</span></h3>
+    <div class="prin" style="margin-top:26px;">
+      <div class="pr rv">
+        <div class="pi"><span data-l="pt">O que muda o produto</span><span data-l="en">What changes the product</span></div>
+        <h4><span data-l="pt">Confere quem é a pessoa</span><span data-l="en">Checks who the person is</span></h4>
+        <p><span data-l="pt">O perfil só vale depois que um modelo de visão compara a foto do documento com uma selfie. Num mercado onde a barbearia contrata um desconhecido pela indicação de um terceiro, isso não é recurso — é a confiança que o WhatsApp não dá.</span><span data-l="en">A profile only counts once a vision model compares the ID photo against a selfie. In a market where a shop hires a stranger on someone else's word, that is not a feature — it is the trust WhatsApp cannot give.</span></p>
+      </div>
+      <div class="pr rv d1">
+        <div class="pi"><span data-l="pt">O que tira atrito</span><span data-l="en">What removes friction</span></div>
+        <h4><span data-l="pt">Escreve a apresentação por ele</span><span data-l="en">Writes his pitch for him</span></h4>
+        <p><span data-l="pt">A bio sai dos serviços que o barbeiro já cadastrou. Quem passa o dia com a tesoura na mão não para para escrever sobre si — e perfil vazio não recebe proposta.</span><span data-l="en">The bio is generated from the services the barber already listed. Someone who spends the day with scissors in hand does not stop to write about himself — and an empty profile gets no offers.</span></p>
+      </div>
+      <div class="pr rv d2">
+        <div class="pi"><span data-l="pt">O que sustenta a conversa</span><span data-l="en">What sustains the conversation</span></div>
+        <h4><span data-l="pt">Sugere o que dizer</span><span data-l="en">Suggests what to say</span></h4>
+        <p><span data-l="pt">Depois do match, alguém tem de puxar assunto. O ajudante de conversa e o suporte por IA dentro do app cobrem o momento em que a maioria dos marketplaces perde o par para o silêncio.</span><span data-l="en">After the match, someone has to start talking. The conversation helper and the in-app AI support cover the moment where most marketplaces lose the pair to silence.</span></p>
+      </div>
+      <div class="pr rv d3">
+        <div class="pi"><span data-l="pt">O que não cai</span><span data-l="en">What doesn't go down</span></div>
+        <h4><span data-l="pt">Três fabricantes, em cascata</span><span data-l="en">Three vendors, in cascade</span></h4>
+        <p><span data-l="pt">Claude, Gemini e Perplexity com fallback encadeado: se um provedor cai, o próximo assume sem o usuário perceber. É decisão de arquitetura, não de vitrine.</span><span data-l="en">Claude, Gemini and Perplexity with chained fallback: if one provider goes down, the next takes over without the user noticing. An architecture decision, not a showcase one.</span></p>
+      </div>
+    </div>
+
     <div class="mgrid rv">
-      <div class="mc vi"><div class="n">3 / 4</div><div class="l"><span data-l="pt">provedores de IA e modelos, em cascata</span><span data-l="en">AI providers and models, in cascade</span></div><div class="s">Claude · Gemini · Perplexity</div></div>
-      <div class="mc vi"><div class="n" data-count="88">88</div><div class="l"><span data-l="pt">telas em 55 módulos de produto</span><span data-l="en">screens across 55 product modules</span></div><div class="s">50 <span data-l="pt">rotas</span><span data-l="en">routes</span></div></div>
-      <div class="mc vi"><div class="n" data-count="113419">113.419</div><div class="l"><span data-l="pt">linhas de Dart escritas à mão</span><span data-l="en">hand-written lines of Dart</span></div><div class="s">463 <span data-l="pt">arquivos</span><span data-l="en">files</span></div></div>
-      <div class="mc vi"><div class="n" data-count="11">11</div><div class="l"><span data-l="pt">recursos de IA ligados a tela</span><span data-l="en">AI features wired to a screen</span></div><div class="s"><span data-l="pt">de 13 implementados</span><span data-l="en">of 13 implemented</span></div></div>
+      <div class="mc vi"><div class="n" data-count="900868">900.868</div><div class="l"><span data-l="pt">CNPJs ativos na atividade — a 2ª maior do Brasil em número de empresas</span><span data-l="en">active registrations in the trade — Brazil's 2nd largest by company count</span></div><div class="s"><span data-l="pt">Mapa de Empresas · 2º quad./2025 · inclui salão e manicure</span><span data-l="en">Mapa de Empresas · Q2 2025 · includes salons and nail bars</span></div></div>
+      <div class="mc vi"><div class="n">85 <span class="un" data-l="pt">de cada 100</span><span class="un" data-l="en">of every 100</span></div><div class="l"><span data-l="pt">CNPJs da atividade são MEI — indivíduos formalizados, não empresas</span><span data-l="en">registrations in the trade are sole traders — formalised individuals, not firms</span></div><div class="s">Mapa de Empresas · 2025</div></div>
+      <div class="mc vi"><div class="n">+36,0%</div><div class="l"><span data-l="pt">preço de cabeleireiro e barbeiro em 2022–2025, contra +20,97% do IPCA cheio</span><span data-l="en">price of hairdressing and barbering 2022–2025, against +20.97% headline inflation</span></div><div class="s">IBGE/IPCA · SIDRA 7060 · <span data-l="pt">subitem 7101011</span><span data-l="en">sub-item 7101011</span></div></div>
+      <div class="mc vi"><div class="n">−522</div><div class="l"><span data-l="pt">vínculos formais de cabeleireiro em doze meses — o setor perde emprego, não ganha</span><span data-l="en">net formal jobs in twelve months — the trade sheds employment</span></div><div class="s">Novo CAGED/MTE · CBO 516110 · jul/25–jun/26</div></div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════ 04 — O MOTOR ═══════════════ -->
+<!-- ═══════════════ MOTOR ═══════════════ -->
 <section class="motor" id="motor">
   <div class="wrap">
     <div class="sec-num rv">04 — <span data-l="pt">Aquisição</span><span data-l="en">Acquisition</span></div>
@@ -900,58 +948,52 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
         <div class="tagline rv">
           <span class="tag gr"><span data-l="pt">Infraestrutura interna</span><span data-l="en">Internal infrastructure</span></span>
           <span class="tag">Python</span>
-          <span class="tag">HTTP puro</span>
         </div>
         <h2 class="big rv">
-          <span data-l="pt">Não temos time de vendas. <em>Temos um motor.</em></span>
-          <span data-l="en">We have no sales team. <em>We have an engine.</em></span>
+          <span data-l="pt">Não temos time de vendas. <em>Temos um canal.</em></span>
+          <span data-l="en">We have no sales team. <em>We have a channel.</em></span>
         </h2>
       </div>
       <p class="lede rv d1" style="margin-top:0;">
-        <span data-l="pt">O HuntAI nasceu como agente de candidaturas por HTTP puro, sem navegador. Hoje o que ele é de fato para a 3BRAIN é outra coisa: <strong>a máquina que descobre e contata em escala</strong>. Foi ele que colheu a base do CNES e disparou a campanha que vende o SAVI.</span>
-        <span data-l="en">HuntAI began as a job-application agent speaking raw HTTP, with no browser. What it actually is for 3BRAIN today is something else: <strong>the machine that discovers and reaches out at scale</strong>. It harvested the national health-facility registry and ran the campaign that sells SAVI.</span>
+        <span data-l="pt">O HuntAI não é o terceiro produto: é o motor por onde os outros dois são vendidos. Uma ferramenta de prospecção se vende prospectando — e o que se aprende operando o canal é o que separa quem opera de quem some.</span>
+        <span data-l="en">HuntAI is not the third product: it is the engine through which the other two are sold. A prospecting tool sells itself by prospecting — and what you learn running the channel is what separates those who operate from those who vanish.</span>
       </p>
     </div>
 
     <div class="flow">
       <div class="fnode rv">
-        <div class="fi"><span data-l="pt">Descobre</span><span data-l="en">Discovers</span></div>
-        <div class="fn">518.604</div>
-        <div class="fl"><span data-l="pt">estabelecimentos de saúde varridos no CNES</span><span data-l="en">health facilities swept from the national registry</span></div>
+        <div class="fi"><span data-l="pt">O denominador</span><span data-l="en">The denominator</span></div>
+        <div class="fn">4,5 <span class="un">/ 1.000</span></div>
+        <div class="fl"><span data-l="pt">respostas de e-mail frio, contadas sobre quem <strong>recebeu</strong></span><span data-l="en">cold e-mail replies, counted over who <strong>received</strong></span></div>
       </div>
       <div class="fnode rv d1">
-        <div class="fi"><span data-l="pt">Qualifica</span><span data-l="en">Qualifies</span></div>
-        <div class="fn">277.645</div>
-        <div class="fl"><span data-l="pt">e-mails únicos extraídos — 69,1% de cobertura</span><span data-l="en">unique e-mails extracted — 69.1% coverage</span></div>
+        <div class="fi"><span data-l="pt">O preço do canal</span><span data-l="en">The price of the channel</span></div>
+        <div class="fn">1 <span class="un">/ 6.275</span></div>
+        <div class="fl"><span data-l="pt">uma reunião a cada 6.275 e-mails — o custo real, em volume</span><span data-l="en">one meeting per 6,275 e-mails — the real cost, in volume</span></div>
       </div>
       <div class="fnode rv d2">
-        <div class="fi"><span data-l="pt">Entrega</span><span data-l="en">Delivers</span></div>
-        <div class="fn">24.515</div>
-        <div class="fl"><span data-l="pt">enviados na campanha fechada em 15/08/2026</span><span data-l="en">sent in the campaign closed on 2026-08-15</span></div>
+        <div class="fi"><span data-l="pt">O portão</span><span data-l="en">The gate</span></div>
+        <div class="fn">10%</div>
+        <div class="fl"><span data-l="pt">acima disso a AWS pausa o envio e o canal fecha sozinho</span><span data-l="en">above this AWS pauses sending and the channel closes itself</span></div>
       </div>
       <div class="fnode rv d3">
-        <div class="fi"><span data-l="pt">Mede</span><span data-l="en">Measures</span></div>
-        <div class="fn">0,000%</div>
-        <div class="fl"><span data-l="pt">de reclamação de spam · devolução em 7,78%</span><span data-l="en">spam complaint rate · bounce at 7.78%</span></div>
+        <div class="fi"><span data-l="pt">A validade</span><span data-l="en">Shelf life</span></div>
+        <div class="fn">22–30%</div>
+        <div class="fl"><span data-l="pt">dos contatos B2B mudam de cargo ou empresa em 12 meses</span><span data-l="en">of B2B contacts change role or company within 12 months</span></div>
       </div>
-    </div>
-
-    <div class="mgrid rv" style="margin-top:22px;">
-      <div class="mc gr"><div class="n" data-count="19">19</div><div class="l"><span data-l="pt">sistemas de recrutamento integrados</span><span data-l="en">recruitment systems integrated</span></div><div class="s">Workday · Greenhouse · Lever · +16</div></div>
-      <div class="mc gr"><div class="n" data-count="78413">78.413</div><div class="l"><span data-l="pt">vagas colhidas numa recoleta de 3 portais</span><span data-l="en">roles harvested in one sweep of 3 portals</span></div><div class="s">07/07/2026</div></div>
-      <div class="mc gr"><div class="n" data-count="7283">7.283</div><div class="l"><span data-l="pt">candidaturas no maior disparo único</span><span data-l="en">applications in the largest single run</span></div><div class="s"><span data-l="pt">custo de LLM: zero</span><span data-l="en">LLM cost: zero</span></div></div>
-      <div class="mc gr"><div class="n" data-count="240">240</div><div class="l"><span data-l="pt">pedidos/hora — o limite da plataforma, medido</span><span data-l="en">requests/hour — the platform limit, measured</span></div><div class="s"><span data-l="pt">260 estrangula · não é estimativa</span><span data-l="en">260 throttles · not an estimate</span></div></div>
     </div>
 
     <div class="note rv">
-      <div class="nt"><span data-l="pt">Governança, não truque</span><span data-l="en">Governance, not tricks</span></div>
-      <p><span data-l="pt">O motor opera dentro do que a plataforma permite: o limite de 240 pedidos por hora foi <strong>medido, não chutado</strong>, e portais que exigiam contornar antifraude foram <strong>desligados por decisão</strong>, não por incapacidade. O portão de envio está fechado desde agosto, com a devolução acima do teto interno de 8% — e fica fechado até voltar.</span>
-      <span data-l="en">The engine operates inside what each platform allows: the 240 requests-per-hour ceiling was <strong>measured, not guessed</strong>, and portals that would have required circumventing anti-fraud were <strong>switched off by decision</strong>, not by inability. The sending gate has been closed since August, with bounce above our internal 8% ceiling — and stays closed until it returns.</span></p>
+      <div class="nt"><span data-l="pt">Por que isto está numa página de captação</span><span data-l="en">Why this is on a fundraising page</span></div>
+      <p><span data-l="pt">A mesma campanha responde <strong>5% ou 0,45%</strong> — só muda o denominador, de “quem abriu” para “quem recebeu”. Onze vezes de diferença sem nenhum fato novo. É por isso que todo número desta página traz o denominador colado nele.</span>
+      <span data-l="en">The same campaign replies at <strong>5% or 0.45%</strong> — only the denominator changes, from “who opened” to “who received”. An eleven-fold difference with no new fact. That is why every number on this page carries its denominator right next to it.</span></p>
+      <p><span data-l="pt">Base parada não é ativo, é passivo com prazo de validade. E acima de 10% de devolução nenhum preço e nenhum texto abrem uma conta pausada.</span>
+      <span data-l="en">A static list is not an asset, it is a liability with an expiry date. And above 10% bounce, no price and no copy will reopen a paused account.</span></p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════ 05 — MÉTODO ═══════════════ -->
+<!-- ═══════════════ MÉTODO ═══════════════ -->
 <section class="bg-sec" id="metodo">
   <div class="wrap">
     <div class="sec-num rv">05 — <span data-l="pt">Como construímos</span><span data-l="en">How we build</span></div>
@@ -968,51 +1010,30 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
       </div>
       <div class="pr rv d1">
         <div class="pi">02</div>
-        <h4><span data-l="pt">Modo sombra antes de alertar</span><span data-l="en">Shadow mode before alerting</span></h4>
-        <p><span data-l="pt">6.001 casos rodaram em paralelo sobre dado real antes de qualquer alerta chegar a um enfermeiro. 2.701 dispararam. É como se descobre que um alerta é útil sem usar gente como cobaia — a lição que o mercado aprendeu caro com modelos de sepse.</span><span data-l="en">6,001 cases ran in parallel over real data before a single alert reached a nurse. 2,701 fired. That is how you learn whether an alert is useful without using people as test subjects — the lesson the market paid dearly for with sepsis models.</span></p>
+        <h4><span data-l="pt">Roda em paralelo antes de valer</span><span data-l="en">It runs in parallel before it counts</span></h4>
+        <p><span data-l="pt">Nenhum alerta chega a um enfermeiro antes de rodar em modo sombra sobre dado real. É como se descobre que um alerta é útil sem usar gente como cobaia — a lição que o mercado aprendeu caro com modelos de sepse.</span><span data-l="en">No alert reaches a nurse before running in shadow mode over real data. That is how you learn whether an alert is useful without using people as test subjects — the lesson the market paid dearly for with sepsis models.</span></p>
       </div>
       <div class="pr rv d2">
         <div class="pi">03</div>
         <h4><span data-l="pt">O sistema declara o que não faz</span><span data-l="en">The system declares what it doesn't do</span></h4>
-        <p><span data-l="pt">O conferente de prescrição tem 10 checagens definidas e 8 em operação. As outras 2 aparecem na tela como pendentes. Um sistema clínico que esconde o próprio buraco é mais perigoso que um que não tem a função.</span><span data-l="en">The prescription checker defines 10 checks and runs 8. The other 2 show on screen as pending. A clinical system that hides its own gap is more dangerous than one that lacks the feature.</span></p>
+        <p><span data-l="pt">O conferente de prescrição mostra na tela as checagens que ainda não executa. Um sistema clínico que esconde o próprio buraco é mais perigoso que um que não tem a função.</span><span data-l="en">The prescription checker shows on screen the checks it does not yet run. A clinical system that hides its own gap is more dangerous than one that lacks the feature.</span></p>
       </div>
       <div class="pr rv d3">
         <div class="pi">04</div>
-        <h4><span data-l="pt">Construído por quem viveu o problema</span><span data-l="en">Built by someone who lived it</span></h4>
-        <p><span data-l="pt">Oito anos de linha de frente em UTI, emergência, ILPI, laboratório e resgate pré-hospitalar — e depois o software escrito pela mesma pessoa que preenchia aquele prontuário. É a parte que não se copia.</span><span data-l="en">Eight years on the front line across ICU, emergency, eldercare, lab and prehospital rescue — then the software written by the same person who used to fill in that record. That is the part nobody can copy.</span></p>
-      </div>
-    </div>
-
-    <div class="two" style="margin-top:80px;align-items:center;">
-      <div class="rv">
-        <h3 style="font-size:clamp(1.6rem,1.2rem + 1.6vw,2.5rem);max-width:16ch;text-wrap:balance;">
-          <span data-l="pt">O agente diz o que <em style="font-style:italic;color:var(--gold);">não</em> sabe.</span>
-          <span data-l="en">The agent says what it <em style="font-style:italic;color:var(--gold);">doesn't</em> know.</span>
-        </h3>
-        <p class="lede" style="margin-top:22px;">
-          <span data-l="pt">Perguntas do plantão são respondidas por busca direta no prontuário, não por geração. Todo número que ele devolve está registrado, e o que não estiver, ele declara que não tem. É o contrário do que um chatbot costuma entregar — e é a razão de um enfermeiro poder confiar na resposta.</span>
-          <span data-l="en">Shift questions are answered by direct lookup in the record, not by generation. Every number it returns is on file, and what isn't, it says isn't. That is the opposite of what a chatbot usually gives you — and the reason a nurse can trust the answer.</span>
-        </p>
-        <p class="src"><span data-l="pt">Residentes sempre por código (R03, R14, R21) — nunca por nome.</span><span data-l="en">Residents always by code (R03, R14, R21) — never by name.</span></p>
-      </div>
-      <div class="stage rv d1">
-        <div class="browser tilt" data-tilt style="max-width:520px;margin-inline:auto;">
-          <div class="browser-bar"><i></i><i></i><i></i><span class="url">savi · <span data-l="pt">agente do plantão</span><span data-l="en">shift agent</span></span></div>
-          <img src="img/savi-agente.webp" width="1100" height="1313" loading="lazy" decoding="async"
-               alt="Agente do SAVI respondendo perguntas do plantão por busca direta no prontuário, identificando residentes por código." />
-        </div>
+        <h4><span data-l="pt">Todo número traz o denominador</span><span data-l="en">Every number carries its denominator</span></h4>
+        <p><span data-l="pt">Nesta página e no estudo que a sustenta, nenhum número aparece sem sobre o que ele incide, de quando é e de onde veio. Número sem denominador é o que faz uma mesma campanha “responder 5%” ou “responder 0,45%”.</span><span data-l="en">On this page and in the study behind it, no number appears without what it applies to, when it is from and where it came from. A number without a denominator is what makes the same campaign “reply at 5%” or “reply at 0.45%”.</span></p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════ 06 — TIME ═══════════════ -->
+<!-- ═══════════════ TIME ═══════════════ -->
 <section id="time">
   <div class="wrap">
     <div class="sec-num rv">06 — <span data-l="pt">Time</span><span data-l="en">Team</span></div>
     <h2 class="big rv">
-      <span data-l="pt">Duas pessoas. <em>Três motores rodando.</em></span>
-      <span data-l="en">Two people. <em>Three engines running.</em></span>
+      <span data-l="pt">Duas pessoas. <em>Um mercado que cada uma conhece por dentro.</em></span>
+      <span data-l="en">Two people. <em>One market each of them knows from the inside.</em></span>
     </h2>
     <p class="lede rv d1">
       <span data-l="pt">Não estamos captando para descobrir se funciona. Estamos captando para vender o que já roda.</span>
@@ -1025,7 +1046,7 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
         <div>
           <h4>Fábio “Binho” da Silva</h4>
           <div class="role"><span data-l="pt">Fundador · Engenharia</span><span data-l="en">Founder · Engineering</span></div>
-          <p><span data-l="pt">Técnico de enfermagem com oito anos de linha de frente, depois autodidata em software. Escreve sozinho todo o código dos três produtos.</span><span data-l="en">Nurse technician with eight years on the front line, then self-taught in software. Sole author of the code in all three products.</span></p>
+          <p><span data-l="pt">Oito anos de plantão em UTI, emergência, longa permanência e resgate antes da primeira linha de código. Escreve sozinho todo o código dos produtos — e o SAVI nasceu do prontuário que ele mesmo preenchia.</span><span data-l="en">Eight years on shift across ICU, emergency, long-term care and rescue before the first line of code. Sole author of all the code — and SAVI came out of the chart he used to fill in himself.</span></p>
           <div class="cred">COREN-SC 1305197 · Biguaçu, SC</div>
         </div>
       </div>
@@ -1034,18 +1055,68 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
         <div>
           <h4>Bruno “Nobru”</h4>
           <div class="role"><span data-l="pt">Fundador · Operação</span><span data-l="en">Founder · Operations</span></div>
-          <p><span data-l="pt">Técnico em contabilidade e dono de barbearia. Relacionamento, finanças e o cliente do BarberGO visto de dentro — é ele quem mantém a empresa com o pé no chão.</span><span data-l="en">Accounting technician and barbershop owner. Relationships, finance, and the BarberGO customer seen from the inside — he is what keeps the company grounded.</span></p>
-          <div class="cred"><span data-l="pt">Nobru's Barbershop · Santa Catarina</span><span data-l="en">Nobru's Barbershop · Santa Catarina</span></div>
+          <p><span data-l="pt">Técnico em contabilidade e dono de barbearia. É o cliente do BarberGO visto de dentro: contrata, faz o rateio da parceria e sabe por que a cadeira fica vazia.</span><span data-l="en">Accounting technician and barbershop owner. He is the BarberGO customer seen from the inside: he hires, splits the partnership revenue, and knows why a chair sits empty.</span></p>
+          <div class="cred">Nobru's Barbershop · Santa Catarina</div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════ CONTATO ═══════════════ -->
-<section class="contact" id="contato">
+<!-- ═══════════════ FONTES ═══════════════ -->
+<section class="contact" id="fontes">
   <div class="wrap">
-    <div class="sec-num rv">07 — <span data-l="pt">Contato</span><span data-l="en">Contact</span></div>
+    <div class="sec-num rv">07 — <span data-l="pt">Fontes</span><span data-l="en">Sources</span></div>
+    <h2 class="big rv" style="max-width:22ch;">
+      <span data-l="pt">Cada número desta página, com <em>denominador e ressalva.</em></span>
+      <span data-l="en">Every number on this page, with <em>denominator and caveat.</em></span>
+    </h2>
+    <p class="lede rv d1">
+      <span data-l="pt">Nenhum número aqui vem de relatório de consultoria sem metodologia pública. Onde a medição tem fragilidade conhecida, ela está escrita — porque quem descobre depois cobra caro.</span>
+      <span data-l="en">No number here comes from a paid research report without public methodology. Where a measurement has a known weakness, it is written down — because whoever finds it later charges dearly for it.</span>
+    </p>
+
+    <div class="tw rv d2">
+      <table class="fontes">
+        <thead>
+          <tr>
+            <th><span data-l="pt">Número</span><span data-l="en">Number</span></th>
+            <th><span data-l="pt">Sobre o que incide</span><span data-l="en">What it applies to</span></th>
+            <th><span data-l="pt">Fonte</span><span data-l="en">Source</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">6 / 100</td><td><span data-l="pt">pacientes com dano evitável · IC95% 5–7; destes, 12 em 100 graves ou letais</span><span data-l="en">patients with preventable harm · 95%CI 5–7; of these, 12 in 100 severe or lethal</span></td><td>Panagioti et al., <i>BMJ</i> 2019;366:l4185 — 337.028 <span data-l="pt">pacientes, 70 estudos</span><span data-l="en">patients, 70 studies</span></td></tr>
+          <tr><td class="num">92 / 85 / 55</td><td><span data-l="pt">têm sistema · com internação ainda produzem papel · mantêm o registro nos dois</span><span data-l="en">have a system · with inpatient care still produce paper · keep the record in both</span></td><td>TIC Saúde 2025, Cetic.br/NIC.br — 3.270 <span data-l="pt">gestores, fev–nov/2025, ind. B0 e B1</span><span data-l="en">managers, Feb–Nov 2025, ind. B0 and B1</span></td></tr>
+          <tr><td class="num">14 / 100</td><td><span data-l="pt">consultas com informação faltando · autorrelato: é piso, não teto</span><span data-l="en">consultations with missing information · self-reported: a floor, not a ceiling</span></td><td>Smith et al., <i>JAMA</i> 2005;293(5):565-571 — 1.614 <span data-l="pt">consultas</span><span data-l="en">consultations</span></td></tr>
+          <tr><td class="num">2 / 3</td><td><span data-l="pt">danos evitáveis no Brasil · dado de 2003, sem repetição em 23 anos</span><span data-l="en">preventable harms in Brazil · 2003 data, not repeated in 23 years</span></td><td>Mendes et al., <i>Int J Qual Health Care</i> 2009 — 1.103 <span data-l="pt">pacientes, 3 hospitais</span><span data-l="en">patients, 3 hospitals</span></td></tr>
+          <tr><td class="num">48 / 100</td><td><span data-l="pt">minutos de registro do enfermeiro que não chegam ao prontuário</span><span data-l="en">minutes of nurse recording that never reach the chart</span></td><td>Diniz et al., <i>Rev Enferm UERJ</i> 2021 — 216 h <span data-l="pt">de observação direta</span><span data-l="en">of direct observation</span></td></tr>
+          <tr><td class="num">4,7 → 3,3</td><td><span data-l="pt">evento adverso evitável por 100 admissões · antes-e-depois, sem controle concomitante</span><span data-l="en">preventable adverse events per 100 admissions · before-and-after, no concurrent control</span></td><td>Starmer et al., <i>NEJM</i> 2014;371:1803-1812 — 10.740 <span data-l="pt">admissões</span><span data-l="en">admissions</span></td></tr>
+          <tr><td class="num">6.612 / 92.356</td><td><span data-l="pt">hospitais e clínicas especializadas · estabelecimentos, não decisores</span><span data-l="en">hospitals and specialised clinics · facilities, not decision-makers</span></td><td>CNES/DATASUS, TabNet — <span data-l="pt">competência</span><span data-l="en">reference month</span> jul/2026</td></tr>
+          <tr><td class="num">+119,2% / +8,3%</td><td><span data-l="pt">clínicas especializadas × hospitais, 10 anos · contado no registro</span><span data-l="en">specialised clinics × hospitals, 10 years · counted in the registry</span></td><td>CNES/DATASUS, <span data-l="pt">série de dezembro</span><span data-l="en">December series</span> 2015–2025</td></tr>
+          <tr><td class="num">5 / 66</td><td><span data-l="pt">certificados vigentes que cobrem internação</span><span data-l="en">valid certificates covering inpatient care</span></td><td>SBIS/CFM, <span data-l="pt">lista pública, consulta</span><span data-l="en">public list, accessed</span> ago/2026</td></tr>
+          <tr><td class="num">210 / 768.830</td><td><span data-l="pt">contratações CLT de barbeiro × MEIs ativos de beleza · CBO e CNAE são universos distintos</span><span data-l="en">formal barber hires × active sole traders in beauty · different universes</span></td><td>Novo CAGED/MTE, CBO 516105, jul/25–jun/26 · Mapa de Empresas, 2º quad./2025</td></tr>
+          <tr><td class="num">R$ 79,90</td><td><span data-l="pt">mediana de 4 planos · faixa de R$ 39,95 a R$ 189,00</span><span data-l="en">median of 4 plans · range R$39.95 to R$189.00</span></td><td>Trinks, AppBarber, Avec, Belasis — <span data-l="pt">páginas oficiais</span><span data-l="en">official pricing pages</span>, ago/2026</td></tr>
+          <tr><td class="num">R$ 6.750</td><td><span data-l="pt">teto legal mensal do MEI — a caixa em que qualquer preço tem de caber</span><span data-l="en">monthly legal cap for sole traders — the box any price must fit</span></td><td>LC 123/2006 · R$ 81.000/<span data-l="pt">ano</span><span data-l="en">year</span>, 2026</td></tr>
+          <tr><td class="num">900.868</td><td><span data-l="pt">CNPJs ativos na atividade · inclui salão e manicure</span><span data-l="en">active registrations in the trade · includes salons and nail bars</span></td><td>Mapa de Empresas, <span data-l="pt">Bol. 2º quad./2025, Tab. 7</span><span data-l="en">Q2 2025 bulletin, Tab. 7</span></td></tr>
+          <tr><td class="num">1.251</td><td><span data-l="pt">barbearias e salões formais na Grande Florianópolis · exclui MEI</span><span data-l="en">formal shops in Greater Florianópolis · excludes sole traders</span></td><td>IBGE/CEMPRE, SIDRA 9528, 2024 — 9 <span data-l="pt">municípios</span><span data-l="en">municipalities</span></td></tr>
+          <tr><td class="num">4,5 / 1.000</td><td><span data-l="pt">respostas sobre quem recebeu · 5% se o denominador for “quem abriu”</span><span data-l="en">replies over who received · 5% if the denominator is “who opened”</span></td><td>Belkins, 2025 — 7.530.489 <span data-l="pt">envios</span><span data-l="en">sends</span></td></tr>
+          <tr><td class="num">10%</td><td><span data-l="pt">devolução em que a AWS pausa o envio · 5% já põe sob revisão</span><span data-l="en">bounce at which AWS pauses sending · 5% already triggers review</span></td><td><span data-l="pt">Documentação AWS SES, consulta primária</span><span data-l="en">AWS SES documentation, primary source</span>, 2026</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="src rv d2" style="margin-top:22px;max-width:80ch;">
+      <span data-l="pt">Números que a literatura consagrou mas que <strong>não usamos</strong>, por fragilidade metodológica documentada: as 44.000–98.000 mortes do <i>To Err Is Human</i> (1999), as 251.454 do <i>BMJ</i> 2016 e as 210.000–400.000 de <i>J Patient Saf</i> 2013. Se for preciso um número de mortalidade evitável, o defensável é o de Rodwin et al., <i>J Gen Intern Med</i> 2020: 3,1% (IC95% 2,2–4,1) — cerca de onze vezes menos que o mais citado.</span>
+      <span data-l="en">Numbers the literature made famous that we <strong>do not use</strong>, because of documented methodological weakness: the 44,000–98,000 deaths in <i>To Err Is Human</i> (1999), the 251,454 in <i>BMJ</i> 2016 and the 210,000–400,000 in <i>J Patient Saf</i> 2013. If a preventable-mortality figure is needed, the defensible one is Rodwin et al., <i>J Gen Intern Med</i> 2020: 3.1% (95%CI 2.2–4.1) — about eleven times smaller than the most cited.</span>
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════ CONTATO ═══════════════ -->
+<section class="contact" id="contato" style="border-top:1px solid var(--line);">
+  <div class="wrap">
+    <div class="sec-num rv">08 — <span data-l="pt">Contato</span><span data-l="en">Contact</span></div>
     <h2 class="big rv" style="max-width:20ch;">
       <span data-l="pt">A demonstração do SAVI roda no navegador. <em>Peça o link.</em></span>
       <span data-l="en">The SAVI demo runs in the browser. <em>Ask for the link.</em></span>
@@ -1056,7 +1127,7 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
     </p>
 
     <div class="clinks rv d2">
-      <a class="cl" href="mailto:fabiocds.silva69@gmail.com?subject=3BRAIN%20—%20demonstra%C3%A7%C3%A3o%20do%20SAVI">
+      <a class="cl" href="mailto:fabiocds.silva69@gmail.com?subject=3BRAIN%20—%20conversa%20de%2020%20min">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7.5 8.5 6 8.5-6"/></svg>
         <span class="ct"><b><span data-l="pt">E-mail</span><span data-l="en">E-mail</span></b><small>fabiocds.silva69@gmail.com</small></span>
       </a>
@@ -1081,7 +1152,7 @@ footer.foot{background:var(--bg);border-top:1px solid var(--line);padding-block:
 <footer class="foot">
   <div class="wrap foot-in">
     <div><b>3BRAIN INOVA SIMPLES</b> · CNPJ 66.447.959/0001-88 · Biguaçu / Florianópolis, SC</div>
-    <div><span data-l="pt">© 2026 · Todos os números desta página têm fonte no código ou no prontuário do piloto.</span><span data-l="en">© 2026 · Every number on this page traces to code or to the pilot's record.</span></div>
+    <div><span data-l="pt">© 2026 · Todo número desta página tem fonte, denominador e ano declarados.</span><span data-l="en">© 2026 · Every number on this page carries a stated source, denominator and year.</span></div>
   </div>
 </footer>
 
