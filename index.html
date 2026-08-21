@@ -397,7 +397,11 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
 }
 
 /* provas */
-.proofs{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:90px;align-items:start;}
+.proofs{display:grid;grid-template-columns:repeat(2,1fr);gap:26px;margin-top:90px;align-items:start;}
+.proof.larga{grid-column:1 / -1;}
+.proof.larga .ph{max-width:64ch;}
+.proof.larga .pimg{display:flex;justify-content:center;}
+.proof.larga .pimg img{max-width:820px;width:100%;}
 @media (max-width:860px){.proofs{grid-template-columns:1fr;}}
 .proof{
   background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;
@@ -866,36 +870,22 @@ table.fontes i{font-style:italic;color:var(--txt);}
     </div>
 
     <div class="proofs" style="margin-top:80px;">
-      <div class="proof rv">
+      <div class="proof larga rv">
         <div class="ph">
           <div class="pt"><span data-l="pt">Ele escuta o que ninguém está no quarto para ouvir</span><span data-l="en">It hears what nobody is in the room to hear</span></div>
           <p class="pb"><span data-l="pt">O microfone do quarto não transcreve nada à noite — só conta eventos acústicos. Três noites de subida viram um aviso antes de qualquer febre.</span><span data-l="en">The room microphone transcribes nothing at night — it only counts acoustic events. Three rising nights become a warning before any fever.</span></p>
         </div>
         <div class="pimg"><img src="img/savi-tosse.webp" width="1180" height="846" loading="lazy" decoding="async" alt="Cartão do SAVI: tosse noturna contada pelo microfone do quarto." /></div>
       </div>
-      <div class="proof rv d1">
+      <div class="proof larga rv d1">
         <div class="ph">
           <div class="pt"><span data-l="pt">O celular deixa de ser o problema e vira o controle</span><span data-l="en">The phone stops being the problem and becomes the control</span></div>
-          <p class="pb"><span data-l="pt">Celular na mão durante o cuidado é a queixa mais antiga de qualquer gestor — e a regra que proíbe é a mais descumprida, porque não há como verificar. O SAVI não pede que o profissional use mais o telefone: usa o aparelho que já está no bolso, em segundo plano, e devolve ao empregador o registro do que foi feito e quando.</span><span data-l="en">A phone in hand during care is the oldest complaint any manager has — and the rule against it is the most broken, because there is no way to check. SAVI does not ask the professional to use the phone more: it uses the device already in their pocket, in the background, and hands the employer back a record of what was done and when.</span></p>
+          <p class="pb"><span data-l="pt">“Vou dar desculpa para o funcionário ficar no telefone” é a primeira objeção de todo gestor. A resposta não é promessa: o aparelho fica <strong>necessário para o trabalho e contado quando sai dele</strong> — em três estados separados, inclusive o tempo dentro do SAVI, que conta a favor de quem abriu o app para cuidar melhor.</span><span data-l="en">“I would just be giving staff an excuse to be on their phone” is every manager’s first objection. The answer is not a promise: the device becomes <strong>necessary for the work and counted when it leaves it</strong> — across three separate states, including time inside SAVI, which counts in favour of whoever opened the app to care better.</span></p>
         </div>
         <div class="pimg" style="padding-bottom:26px;">
-          <div class="savicard">
-            <div class="sc-top">
-              <span class="sc-ic">📵</span>
-              <div>
-                <div class="sc-t"><span data-l="pt">O telefone pessoal e o momento do cuidado</span><span data-l="en">The personal phone and the moment of care</span></div>
-                <div class="sc-sub"><span data-l="pt">onde cada casa traça o limite, e por que ele existe</span><span data-l="en">where each home draws the line, and why it exists</span></div>
-              </div>
-              <span class="sc-tag">PRIVACIDADE</span>
-            </div>
-            <p class="sc-body"><span data-l="pt">Praticamente toda instituição restringe o telefone pessoal durante a assistência — e é a regra mais descumprida que existe, porque <strong>não há como verificar</strong>. O flagrante é a única prova disponível hoje.</span><span data-l="en">Practically every institution restricts personal phone use during care — and it is the most broken rule there is, because <strong>there is no way to verify it</strong>. Catching someone in the act is the only proof available today.</span></p>
-            <ul class="sc-list">
-              <li><span data-l="pt">O SAVI <strong>não pede mais tempo de tela</strong>: usa o aparelho que já está no bolso, em segundo plano.</span><span data-l="en">SAVI <strong>asks for no extra screen time</strong>: it uses the device already in the pocket, in the background.</span></li>
-              <li><span data-l="pt">O que era distração vira <strong>registro do cuidado prestado</strong>, com hora e autoria.</span><span data-l="en">What was a distraction becomes a <strong>record of care delivered</strong>, with time and authorship.</span></li>
-              <li><span data-l="pt">O gestor deixa de depender de flagrante para saber o que aconteceu no turno.</span><span data-l="en">The manager stops depending on catching someone to know what happened on the shift.</span></li>
-            </ul>
-            <div class="sc-foot"><span data-l="pt">a norma já existe · o que faltava era a verificação</span><span data-l="en">the policy already exists · what was missing was the verification</span></div>
-          </div>
+          <img src="img/savi-celular.webp" width="1128" height="1828" loading="lazy" decoding="async"
+               style="border-radius:12px;border:1px solid var(--line);"
+               alt="Cartão do painel do SAVI: o aparelho vira ferramenta de trabalho e medidor de si mesmo, com os três estados de uso do celular e a base legal do poder diretivo do empregador." />
         </div>
       </div>
     </div>
