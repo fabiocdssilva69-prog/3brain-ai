@@ -636,6 +636,117 @@ table.fontes i{font-style:italic;color:var(--txt);}
   margin-top:18px;padding-top:13px;border-top:1px solid #12333c;
 }
 @media (max-width:520px){.sc-tag{display:none;}}
+
+/* ═══════════ ASSISTENTE LATERAL ═══════════ */
+.as-abre{
+  position:fixed;right:22px;bottom:22px;z-index:130;
+  display:inline-flex;align-items:center;gap:9px;
+  font-family:var(--s);font-size:.88rem;font-weight:500;letter-spacing:-.01em;
+  color:#0A0A0A;background:var(--gold);border:0;border-radius:999px;
+  padding:13px 20px;cursor:pointer;
+  box-shadow:0 12px 34px -12px rgba(242,194,48,.65),0 2px 10px rgba(0,0,0,.4);
+  transition:transform .22s var(--ease),background .22s;
+}
+.as-abre:hover{background:var(--gold-hi);transform:translateY(-2px);}
+.as-abre svg{flex:none;}
+.as-abre[aria-expanded="true"]{opacity:0;pointer-events:none;transform:translateY(8px);}
+
+.as-painel{
+  position:fixed;top:0;right:0;bottom:0;width:min(410px,100vw);z-index:140;
+  display:flex;flex-direction:column;
+  background:#0C0C11;border-left:1px solid var(--line2);
+  box-shadow:-30px 0 70px -30px rgba(0,0,0,.9);
+  transform:translateX(100%);transition:transform .38s var(--ease),visibility .38s;
+  visibility:hidden;
+}
+.as-painel.on{transform:translateX(0);visibility:visible;}
+
+.as-topo{
+  display:flex;align-items:flex-start;gap:12px;padding:20px 18px 16px;
+  border-bottom:1px solid var(--line);flex:none;
+}
+.as-marca{display:flex;align-items:flex-start;gap:11px;flex:1;min-width:0;}
+.as-pip{
+  flex:none;width:9px;height:9px;border-radius:50%;background:var(--gold);margin-top:6px;
+  box-shadow:0 0 0 4px rgba(242,194,48,.16);animation:pip 2.6s ease-in-out infinite;
+}
+.as-nome{font-family:var(--d);font-size:1.06rem;color:#fff;line-height:1.2;}
+.as-sub{font-family:var(--m);font-size:.6rem;color:var(--dim);letter-spacing:.05em;margin-top:5px;}
+.as-fecha{
+  flex:none;background:none;border:1px solid var(--line2);border-radius:8px;color:var(--mute);
+  width:30px;height:30px;display:grid;place-items:center;cursor:pointer;transition:all .2s;
+}
+.as-fecha:hover{border-color:var(--gold-dk);color:var(--gold);}
+
+.as-fluxo{
+  flex:1;overflow-y:auto;padding:20px 18px;display:flex;flex-direction:column;gap:14px;
+  scrollbar-width:thin;scrollbar-color:var(--line2) transparent;
+}
+.as-fluxo::-webkit-scrollbar{width:7px;}
+.as-fluxo::-webkit-scrollbar-thumb{background:var(--line2);border-radius:99px;}
+
+.as-msg{max-width:92%;font-size:.92rem;line-height:1.6;animation:asEntra .3s var(--ease) both;}
+@keyframes asEntra{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce){
+  .as-msg{animation:none;} .as-painel{transition:none;} .as-abre{transition:none;}
+}
+.as-msg.eu{
+  align-self:flex-end;background:var(--gold);color:#0A0A0A;font-weight:500;
+  border-radius:14px 14px 4px 14px;padding:10px 14px;
+}
+.as-msg.ela{
+  align-self:flex-start;background:var(--card2);border:1px solid var(--line);color:var(--txt);
+  border-radius:14px 14px 14px 4px;padding:13px 15px;
+}
+.as-msg.ela strong{color:#fff;font-weight:600;}
+.as-fonte{
+  font-family:var(--m);font-size:.62rem;color:var(--dim);letter-spacing:.03em;line-height:1.5;
+  margin-top:10px;padding-top:9px;border-top:1px solid var(--line);
+}
+.as-ir{
+  display:inline-flex;align-items:center;gap:6px;margin-top:11px;
+  font-family:var(--m);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--gold);border:1px solid var(--gold-dk);border-radius:7px;padding:6px 11px;
+  cursor:pointer;background:rgba(242,194,48,.06);transition:all .2s;
+}
+.as-ir:hover{background:rgba(242,194,48,.14);}
+
+.as-chips{display:flex;flex-wrap:wrap;gap:7px;padding:0 18px 14px;flex:none;}
+.as-chip{
+  font-size:.78rem;color:var(--mute);background:var(--card);border:1px solid var(--line2);
+  border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .2s;text-align:left;
+}
+.as-chip:hover{border-color:var(--gold-dk);color:var(--gold);}
+
+.as-form{display:flex;gap:8px;padding:0 18px 12px;flex:none;}
+.as-campo{
+  flex:1;min-width:0;background:var(--card);border:1px solid var(--line2);border-radius:11px;
+  color:var(--txt);font-family:var(--s);font-size:.9rem;padding:12px 14px;
+}
+.as-campo::placeholder{color:var(--dim);}
+.as-campo:focus{outline:none;border-color:var(--gold-dk);}
+.as-envia{
+  flex:none;width:44px;border:0;border-radius:11px;background:var(--gold);color:#0A0A0A;
+  cursor:pointer;display:grid;place-items:center;transition:background .2s;
+}
+.as-envia:hover{background:var(--gold-hi);}
+
+.as-rodape{
+  font-family:var(--m);font-size:.58rem;color:var(--dim);line-height:1.55;
+  padding:0 18px 16px;flex:none;letter-spacing:.02em;
+}
+
+.as-veu{
+  position:fixed;inset:0;z-index:135;background:rgba(4,4,6,.55);
+  opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(2px);
+}
+.as-veu.on{opacity:1;pointer-events:auto;}
+
+@media (max-width:640px){
+  .as-painel{width:100vw;border-left:0;}
+  .as-abre{right:14px;bottom:14px;padding:12px 17px;font-size:.84rem;}
+}
+@media print{ .as-abre,.as-painel,.as-veu{display:none!important;} }
 </style>
 </head>
 <body class="lang-pt">
@@ -1443,5 +1554,45 @@ table.fontes i{font-style:italic;color:var(--txt);}
   })();
 })();
 </script>
+<!-- ═══════════════ ASSISTENTE LATERAL ═══════════════ -->
+<button class="as-abre" id="asAbre" aria-expanded="false" aria-controls="asPainel">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+    <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.3-.6L3 21l1.7-5.1A8.3 8.3 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/>
+  </svg>
+  <span data-l="pt">Tirar uma dúvida</span><span data-l="en">Ask a question</span>
+</button>
+
+<aside class="as-painel" id="asPainel" role="dialog" aria-modal="false" aria-labelledby="asTitulo">
+  <header class="as-topo">
+    <div class="as-marca"><span class="as-pip"></span>
+      <div>
+        <div class="as-nome" id="asTitulo"><span data-l="pt">Dúvidas sobre a 3BRAIN</span><span data-l="en">Questions about 3BRAIN</span></div>
+        <div class="as-sub"><span data-l="pt">respostas com fonte · sem inventar número</span><span data-l="en">sourced answers · no invented numbers</span></div>
+      </div>
+    </div>
+    <button class="as-fecha" id="asFecha" aria-label="Fechar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"/></svg>
+    </button>
+  </header>
+
+  <div class="as-fluxo" id="asFluxo" role="log" aria-live="polite"></div>
+
+  <div class="as-chips" id="asChips"></div>
+
+  <form class="as-form" id="asForm" autocomplete="off">
+    <input class="as-campo" id="asCampo" type="text" maxlength="220"
+           placeholder="Escreva sua dúvida" aria-label="Escreva sua dúvida" />
+    <button class="as-envia" type="submit" aria-label="Enviar">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </form>
+
+  <p class="as-rodape">
+    <span data-l="pt">Base própria, sem modelo de linguagem. O que ela não souber, encaminhamos para uma conversa.</span>
+    <span data-l="en">Own knowledge base, no language model. What it does not know, we route to a conversation.</span>
+  </p>
+</aside>
+
+<script src="assistente.js" defer></script>
 </body>
 </html>
