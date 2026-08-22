@@ -224,7 +224,8 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
   flex:0 0 auto;padding:19px 16px;display:flex;align-items:center;gap:9px;white-space:nowrap;
   border-right:1px solid var(--line);font-size:.75rem;color:var(--mute);
 }
-.si .duplo{display:flex;align-items:center;gap:12px;}
+.si .duplo{display:flex;align-items:center;gap:11px;}
+.si .duplo .dn{color:var(--mute);}   /* nome apagado, loja acesa — igual aos vizinhos */
 .si .duplo a{display:inline-flex;align-items:center;gap:7px;color:inherit;}
 .si .duplo a:hover{color:var(--txt);}
 .si:last-child{border-right:0;}
@@ -531,6 +532,12 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
   border-radius:13px;padding:17px 22px;transition:all .22s var(--ease);
 }
 .cl:hover{border-color:var(--gold-dk);transform:translateY(-2px);}
+/* o unico botao dourado da pagina: e a acao que a secao inteira pede */
+.cl.pri{background:var(--gold);border-color:var(--gold);color:#0A0A0A;}
+.cl.pri svg{color:#0A0A0A;}
+.cl.pri .ct b{font-weight:600;}
+.cl.pri .ct small{color:rgba(10,10,10,.66);}
+.cl.pri:hover{background:var(--gold-hi);border-color:var(--gold-hi);}
 .cl svg{color:var(--gold);flex:none;}
 .cl .ct{line-height:1.2;}
 .cl .ct b{font-size:.95rem;font-weight:500;}
@@ -719,7 +726,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
 }
 .mito-perg{
   font-family:var(--d);font-size:clamp(1.05rem,.9rem + .55vw,1.35rem);line-height:1.25;
-  color:#fff;max-width:30ch;text-wrap:balance;
+  color:#fff;max-width:46ch;text-wrap:balance;
 }
 .mito-perg em{font-style:italic;color:var(--mute);}
 
@@ -737,58 +744,6 @@ table.fontes i{font-style:italic;color:var(--txt);}
   50%    {height:var(--h,20px);opacity:1;}
 }
 
-.mito-vered{
-  margin:26px 30px 0;padding:16px 20px;border-radius:11px;
-  background:rgba(242,194,48,.07);border:1px solid rgba(242,194,48,.22);
-  font-size:.98rem;line-height:1.5;color:var(--txt);
-}
-.mito-vered strong{color:var(--gold-hi);}
-
-.mito-cols{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:26px;border-top:1px solid var(--line);}
-.mito-cols>div{padding:26px 30px 28px;min-width:0;}
-.mito-cols>div+div{border-left:1px solid var(--line);}
-.mito-h{
-  font-family:var(--m);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;
-  margin-bottom:14px;display:flex;align-items:center;gap:8px;
-}
-.mito-h.nao{color:var(--dim);}
-.mito-h.sim{color:var(--green);}
-.mito-h::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto;}
-.mito-cols p{color:var(--mute);font-size:.9rem;line-height:1.62;}
-.mito-cols p+p{margin-top:11px;}
-.mito-cols strong{color:var(--txt);font-weight:600;}
-
-.mito-prova{border-top:1px solid var(--line);padding:26px 30px 4px;}
-.mito-prova>.mito-h{margin-bottom:18px;}
-.mito-item{display:flex;gap:16px;padding-bottom:22px;}
-.mito-item b{
-  flex:0 0 auto;font-family:var(--m);font-size:.62rem;color:var(--gold);
-  letter-spacing:.1em;padding-top:3px;width:76px;text-transform:uppercase;
-}
-.mito-item div{min-width:0;color:var(--mute);font-size:.9rem;line-height:1.62;}
-.mito-item strong{color:var(--txt);font-weight:600;}
-.mito-item i{display:block;font-family:var(--m);font-size:.58rem;color:var(--dim);
-  font-style:normal;margin-top:7px;letter-spacing:.02em;line-height:1.5;}
-@media (max-width:760px){
-  .mito-prova{padding:22px 22px 2px;}
-  .mito-item{flex-direction:column;gap:6px;}
-  .mito-item b{width:auto;padding-top:0;}
-}
-.mito-nums{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--line);
-}
-.mito-nums>div{padding:22px 24px 24px;min-width:0;}
-.mito-nums>div+div{border-left:1px solid var(--line);}
-.mito-nums b{
-  display:block;font-family:var(--d);font-size:clamp(1.35rem,1rem + 1.1vw,1.85rem);
-  color:#fff;line-height:1;margin-bottom:9px;
-}
-.mito-nums>div>span{display:block;color:var(--mute);font-size:.82rem;line-height:1.5;}
-.mito-nums b span{display:inline;color:inherit;font-size:inherit;line-height:inherit;}
-.mito-nums i{
-  display:block;font-family:var(--m);font-size:.58rem;color:var(--dim);
-  letter-spacing:.03em;margin-top:9px;font-style:normal;line-height:1.5;
-}
 .mito-pe{
   padding:14px 24px 20px;margin-top:14px;border-top:1px solid var(--line);
   background:rgba(0,0,0,.22);color:var(--txt);font-size:.95rem;line-height:1.58;
@@ -799,65 +754,64 @@ table.fontes i{font-style:italic;color:var(--txt);}
   .mito-top{flex-direction:column;gap:6px;padding:24px 22px 0;}
   .onda{height:34px;padding-top:2px;gap:3px;}
   .onda i{width:3px;}
-  .mito-vered{margin:20px 22px 0;}
-  .mito-cols,.mito-nums{grid-template-columns:1fr;}
-  .mito-cols>div+div,.mito-nums>div+div{border-left:0;border-top:1px solid var(--line);}
-  .mito-cols>div,.mito-nums>div{padding:22px;}
   .mito-pe{padding:20px 22px 24px;}
 }
 @media (prefers-reduced-motion:reduce){
   .mito.viva .onda i{animation:none;height:14px;}
 }
-/* ── cursor proprio ─────────────────────────────────────────────
-   So em aparelho com ponteiro fino de verdade. Em toque, nada disso existe. */
+/* ── mira (cursor proprio) ───────────────────────────────────────
+   Desenhada NA posicao do ponteiro, sem interpolacao: o que anima e o tamanho da
+   moldura, nunca a posicao. So em aparelho com ponteiro fino; em toque nao existe. */
 @media (hover:hover) and (pointer:fine){
-  html.cur body,
-  html.cur a, html.cur button, html.cur [role="button"], html.cur summary,
-  html.cur .proof, html.cur .mc, html.cur .card, html.cur .as-chip{cursor:none;}
-  /* onde esconder o cursor atrapalha, ele volta */
-  html.cur input, html.cur textarea, html.cur select{cursor:auto;}
+  html.mira-on *{cursor:none;}
+  /* onde esconder o ponteiro atrapalha de verdade, ele volta */
+  html.mira-on input,html.mira-on textarea,html.mira-on select,
+  html.mira-on [contenteditable]{cursor:auto;}
 
-  .cur-anel,.cur-ponto{
-    position:fixed;top:0;left:0;pointer-events:none;z-index:9999;
-    will-change:transform;
+  .mira{
+    position:fixed;top:0;left:0;width:20px;height:20px;margin:-10px 0 0 -10px;
+    z-index:9999;pointer-events:none;will-change:transform;
+    transition:width .16s var(--ease),height .16s var(--ease),
+               margin .16s var(--ease),opacity .18s var(--ease);
   }
-  .cur-ponto{
-    width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
-    background:var(--gold);
-    transition:opacity .2s var(--ease),transform .12s var(--ease);
+  .mira i{
+    position:absolute;width:6px;height:6px;border:1.4px solid var(--gold-dk);
+    transition:width .16s var(--ease),height .16s var(--ease),
+               border-color .16s var(--ease),opacity .16s var(--ease);
   }
-  .cur-anel{
-    width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;
-    border:1px solid var(--gold-dk);
-    transition:width .22s var(--ease),height .22s var(--ease),
-               margin .22s var(--ease),border-radius .22s var(--ease),
-               background .22s var(--ease),border-color .22s var(--ease),opacity .2s var(--ease);
+  .mira i:nth-child(1){top:0;left:0;border-right:0;border-bottom:0;}
+  .mira i:nth-child(2){top:0;right:0;border-left:0;border-bottom:0;}
+  .mira i:nth-child(3){bottom:0;left:0;border-right:0;border-top:0;}
+  .mira i:nth-child(4){bottom:0;right:0;border-left:0;border-top:0;}
+  .mira b{
+    position:absolute;top:50%;left:50%;width:3px;height:3px;margin:-1.5px 0 0 -1.5px;
+    border-radius:50%;background:var(--gold);
+    transition:opacity .16s var(--ease),transform .16s var(--ease);
   }
-  /* sobre algo clicavel: cresce e acende */
-  html.cur-on .cur-anel{
-    width:44px;height:44px;margin:-22px 0 0 -22px;
-    border-color:var(--gold);background:rgba(242,194,48,.10);
+  .mira u{
+    position:absolute;top:50%;left:50%;width:1.5px;height:22px;margin:-11px 0 0 -.75px;
+    background:var(--gold);opacity:0;transition:opacity .16s var(--ease);
   }
-  html.cur-on .cur-ponto{transform:scale(.4);}
-  /* sobre texto: vira barra, que e o que se espera ali */
-  html.cur-txt .cur-anel{
-    width:2px;height:26px;margin:-13px 0 0 -1px;border-radius:1px;
-    border-color:transparent;background:var(--gold);
-  }
-  html.cur-txt .cur-ponto{opacity:0;}
-  /* sobre imagem: cresce mais */
-  html.cur-img .cur-anel{
-    width:58px;height:58px;margin:-29px 0 0 -29px;
-    border-color:var(--gold);background:rgba(242,194,48,.06);
-  }
-  /* botao do mouse apertado */
-  html.cur-press .cur-anel{transform:scale(.82);}
+
+  /* clicavel: a moldura abre e acende — le como foco, nao como enfeite */
+  html.mira-clic .mira{width:34px;height:34px;margin:-17px 0 0 -17px;}
+  html.mira-clic .mira i{width:9px;height:9px;border-color:var(--gold);}
+  html.mira-clic .mira b{transform:scale(0);}
+  /* texto: vira barra, que e o que se espera ali */
+  html.mira-txt .mira i{opacity:0;}
+  html.mira-txt .mira b{opacity:0;}
+  html.mira-txt .mira u{opacity:1;}
+  /* imagem: abre mais */
+  html.mira-img .mira{width:54px;height:54px;margin:-27px 0 0 -27px;}
+  html.mira-img .mira i{width:13px;height:13px;border-color:var(--gold);}
+  /* botao apertado: fecha um pouco */
+  html.mira-press .mira{width:15px;height:15px;margin:-7.5px 0 0 -7.5px;}
+  html.mira-press.mira-clic .mira{width:27px;height:27px;margin:-13.5px 0 0 -13.5px;}
   /* fora da janela */
-  html.cur-out .cur-anel,html.cur-out .cur-ponto{opacity:0;}
+  html.mira-fora .mira{opacity:0;}
 }
 @media (prefers-reduced-motion:reduce){
-  .cur-anel{transition:none;}
-  .cur-ponto{transition:none;}
+  .mira,.mira i,.mira b,.mira u{transition:none;}
 }
 .brand .ais{
   font-family:var(--m);font-size:.52rem;letter-spacing:.16em;color:var(--gold);
@@ -989,8 +943,8 @@ table.fontes i{font-style:italic;color:var(--txt);}
       </div>
       <div class="hs">
         <div class="k"><span data-l="pt">Lucro</span><span data-l="en">Profit</span></div>
-        <div class="n">140 <span class="un" data-l="pt">assinaturas</span><span class="un" data-l="en">subscriptions</span></div>
-        <div class="l"><span data-l="pt">hospitais para R$ 1 milhão de receita recorrente — 2 de cada 1.000 do registro oficial</span><span data-l="en">hospitals for US$ 193k in recurring revenue — 2 of every 1,000 in the official registry</span></div>
+        <div class="n">13 <span class="un" data-l="pt">hospitais</span><span class="un" data-l="en">hospitals</span></div>
+        <div class="l"><span data-l="pt">para R$ 1 milhão de receita recorrente — 2 de cada 1.000 hospitais do registro oficial</span><span data-l="en">for US$ 193k in recurring revenue — 2 of every 1,000 hospitals in the official registry</span></div>
         <div class="s"><span data-l="pt">R$ 99 por leito/mês · R$ 79 mil por hospital/ano · 77% de margem de contribuição</span><span data-l="en">US$ 19 per bed/month · US$ 15.3k per hospital/year · 77% contribution margin</span></div>
       </div>
     </div>
@@ -1015,6 +969,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
       </div>
       <div class="si">
         <span class="duplo">
+          <span class="dn">BarberGO ·</span>
           <a href="https://apps.apple.com/br/app/barbergo-barbearias/id6770361213" target="_blank" rel="noopener">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.9c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8c-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.2 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.3-2.5 1.3-2.6-.1 0-2.5-1-2.5-3.5zM14.2 5.9c.6-.8 1.1-1.9 1-3-1 0-2.2.7-2.8 1.4-.6.7-1.2 1.8-1 2.9 1.1.1 2.2-.6 2.8-1.3z"/></svg><b>App Store</b></a>
           <a href="https://play.google.com/store/apps/details?id=com.barbergo.app" target="_blank" rel="noopener">
@@ -1175,7 +1130,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
         <div class="mito-top">
           <div class="mito-q">
             <div class="mito-tag"><span data-l="pt">Curiosidade</span><span data-l="en">Aside</span></div>
-            <div class="mito-perg"><span data-l="pt">E a história do anúncio de tênis?</span><span data-l="en">What about the sneaker-ad story?</span></div>
+            <div class="mito-perg"><span data-l="pt">Tá, mas escutar em segundo plano funciona mesmo?</span><span data-l="en">But does background listening actually work?</span></div>
           </div>
           <div class="onda" aria-hidden="true">
             <i style="--h:14px"></i><i style="--h:26px"></i><i style="--h:9px"></i><i style="--h:34px"></i>
@@ -1183,85 +1138,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
             <i style="--h:22px"></i><i style="--h:38px"></i><i style="--h:10px"></i><i style="--h:24px"></i>
           </div>
         </div>
-        <div class="mito-pe"><span data-l="pt">O anúncio aparece mesmo — mas a empresa que vendia essa escuta fechou acordo de <strong>US$ 930 mil</strong> com a FTC justamente porque <strong>o produto não escutava nada</strong>. Ele chegava porque você se parece, para o sistema, com quem já comprou.<br>Escutar de verdade e a favor de quem fala é outra coisa — e é o que está acima.</span><span data-l="en">The ad really does show up — but the company selling that listening settled with the FTC for <strong>US$930,000</strong> precisely because <strong>the product never listened at all</strong>. It arrived because you look, to the system, like someone who already bought.<br>Listening for real, on the side of whoever is speaking, is a different thing — and it is what sits above.</span></div>
-      </div>
-          <div class="onda" aria-hidden="true">
-            <i style="--h:14px"></i><i style="--h:26px"></i><i style="--h:9px"></i><i style="--h:34px"></i>
-            <i style="--h:18px"></i><i style="--h:42px"></i><i style="--h:12px"></i><i style="--h:30px"></i>
-            <i style="--h:22px"></i><i style="--h:38px"></i><i style="--h:10px"></i><i style="--h:24px"></i>
-            <i style="--h:16px"></i><i style="--h:32px"></i><i style="--h:8px"></i>
-          </div>
-        </div>
-
-        <div class="mito-vered"><span data-l="pt"><strong>O anúncio aparece mesmo.</strong> Quem já viveu isso não está imaginando, e o direcionamento é bom a ponto de assustar. O que quase todo mundo erra é <em>de onde ele veio</em> — e a resposta verdadeira é mais incômoda que a lenda.</span><span data-l="en"><strong>The ad really does show up.</strong> Anyone who has lived it is not imagining things, and the targeting is good enough to unsettle. What almost everyone gets wrong is <em>where it came from</em> — and the true answer is more unsettling than the myth.</span></div>
-
-        <div class="mito-cols">
-          <div>
-            <div class="mito-h nao"><span data-l="pt">O que não acontece</span><span data-l="en">What does not happen</span></div>
-            <p><span data-l="pt">A maior investigação independente já feita sobre isso analisou <strong>17.260 aplicativos</strong> de Android e rodou <strong>9.100 deles ao vivo</strong> — e não achou <strong>um único</strong> mandando áudio para fora do aparelho.</span><span data-l="en">The largest independent investigation into this examined <strong>17,260 Android apps</strong> and ran <strong>9,100 of them live</strong> — and found <strong>not one</strong> sending audio off the device.</span></p>
-            <p><span data-l="pt">E a empresa que <em>vendia</em> essa capacidade — a americana Cox Media Group, com um material de venda que prometia captar “conversas do dia a dia” — fechou com a FTC, em maio de 2026, um acordo de <strong>US$ 930 mil</strong>. E o motivo do acordo é o detalhe que ninguém conhece: <strong>o produto não escutava nada.</strong> Nas palavras da própria FTC, era “revenda — com margem significativa — de listas de e-mail obtidas de outros corretores de dado”.</span><span data-l="en">And the company that <em>sold</em> that capability — Cox Media Group, whose pitch deck promised to capture “everyday conversations” — settled with the FTC in May 2026 for <strong>US$930,000</strong>. And the reason behind that settlement is the part nobody knows: <strong>the product never listened to anything.</strong> In the FTC’s own words, it was “reselling — at a significant markup — email lists obtained from other data brokers”.</span></p>
-          </div>
-          <div>
-            <div class="mito-h sim"><span data-l="pt">O que acontece de verdade</span><span data-l="en">What actually happens</span></div>
-            <p><span data-l="pt">O tráfego pago não precisa do seu microfone porque o que ele já tem é <strong>mais barato, funciona sobre o passado e cola numa identidade real</strong> — três coisas que áudio solto nunca daria.</span><span data-l="en">Paid advertising does not need your microphone, because what it already holds is <strong>cheaper, works over the past and attaches to a real identity</strong> — three things loose audio could never give.</span></p>
-            <p><span data-l="pt">E a prova mais elegante disso é a própria Cox Media Group: a única empresa que <em>vendeu</em> escuta acabou entregando corretagem de dado. <strong>A lenda do microfone não era o mecanismo — era a embalagem do mecanismo.</strong></span><span data-l="en">And the neatest proof is Cox Media Group itself: the one company that <em>sold</em> listening ended up delivering data brokerage. <strong>The microphone myth was never the mechanism — it was the packaging for it.</strong></span></p>
-          </div>
-        </div>
-
-
-        <div class="mito-prova">
-          <div class="mito-h sim"><span data-l="pt">Então de onde vem o anúncio</span><span data-l="en">So where the ad comes from</span></div>
-
-          <div class="mito-item">
-            <b><span data-l="pt">O sósia</span><span data-l="en">The lookalike</span></b>
-            <div><span data-l="pt">A BetterHelp, de terapia on-line, entregou ao Facebook os e-mails de quem fazia terapia e pediu — nas palavras da queixa da FTC — que ele <strong>“identificasse consumidores semelhantes”</strong>. Quem recebeu aquele anúncio nunca pesquisou terapia nem falou de terapia: apenas <strong>se parecia, para o sistema, com quem já fazia</strong>.</span><span data-l="en">BetterHelp, the online therapy company, handed Facebook the e-mails of people in therapy and asked it — in the words of the FTC complaint — to <strong>“identify similar consumers”</strong>. The people who got that ad never searched for therapy and never talked about therapy: they simply <strong>looked, to the system, like someone who already had</strong>.</span>
-              <i><span data-l="pt">FTC × BetterHelp, mar/2023 · US$ 7,8 mi de restituição a quem pagou</span><span data-l="en">FTC v. BetterHelp, Mar 2023 · US$7.8M in refunds to paying customers</span></i>
-            </div>
-          </div>
-
-          <div class="mito-item">
-            <b><span data-l="pt">O leilão</span><span data-l="en">The auction</span></b>
-            <div><span data-l="pt">Toda vez que um espaço de anúncio abre na sua tela, seus dados são enviados a dezenas de compradores para que decidam quanto pagar por você. <strong>Um vence. Todos recebem.</strong> A FTC agiu contra a Mobilewalla porque ela guardava o dado <strong>mesmo quando perdia o leilão</strong> — 500 milhões de identificadores pareados com localização precisa. Não é preciso clicar. Não é preciso nem ver o anúncio.</span><span data-l="en">Every time an ad slot opens on your screen, your data goes out to dozens of buyers so they can decide what to pay for you. <strong>One wins. All of them receive it.</strong> The FTC acted against Mobilewalla because it kept the data <strong>even when it lost the auction</strong> — 500 million identifiers paired with precise location. No click needed. You do not even need to see the ad.</span>
-              <i><span data-l="pt">FTC × Mobilewalla, dez/2024 · ordem final jan/2025</span><span data-l="en">FTC v. Mobilewalla, Dec 2024 · final order Jan 2025</span></i>
-            </div>
-          </div>
-
-          <div class="mito-item">
-            <b><span data-l="pt">E eles dizem</span><span data-l="en">And they say it</span></b>
-            <div><span data-l="pt">Não é acusação de ativista. A Meta escreveu no formulário que arquiva na SEC, sob responsabilidade legal, referente a 2025: <em>“dependemos de ferramentas de direcionamento e medição que incorporam sinais de dados da atividade do usuário <strong>em sites e serviços que não controlamos</strong>”</em>.</span><span data-l="en">This is not an activist’s accusation. Meta wrote it in the form it files with the SEC, under legal liability, covering 2025: <em>“we rely on targeting and measurement tools that incorporate data signals from user activity on <strong>sites and services we do not control</strong>”</em>.</span>
-              <i><span data-l="pt">Meta Platforms, Formulário 10-K de 2025 · arquivado na SEC</span><span data-l="en">Meta Platforms, FY2025 Form 10-K · filed with the SEC</span></i>
-            </div>
-          </div>
-
-          <div class="mito-item">
-            <b><span data-l="pt">Na saúde</span><span data-l="en">In healthcare</span></b>
-            <div><span data-l="pt">E isso já entrou no setor: <strong>98,6% dos sites de hospital dos Estados Unidos</strong> — de 3.747 analisados — transferiam dado do visitante a terceiros. Quem procura sintoma no site do hospital já está, hoje, alimentando o mesmo circuito.</span><span data-l="en">And it has already reached the sector: <strong>98.6% of US hospital websites</strong> — of 3,747 analysed — transferred visitor data to third parties. Someone looking up a symptom on a hospital site is already feeding the same circuit.</span>
-              <i><span data-l="pt">Friedman et al., Health Affairs, abr/2023 · coleta de ago/2021 · qualquer transferência a terceiro</span><span data-l="en">Friedman et al., Health Affairs, Apr 2023 · collected Aug 2021 · any third-party transfer</span></i>
-            </div>
-          </div>
-        </div>
-
-        <div class="mito-h sim" style="padding:22px 30px 0;"><span data-l="pt">E a escuta, essa existe — e já tem preço</span><span data-l="en">And listening does exist — and it has a price</span></div>
-        <div style="padding:10px 30px 20px;color:var(--mute);font-size:.9rem;line-height:1.62;max-width:76ch;"><span data-l="pt">Áudio em segundo plano é tecnologia banal: o <strong>“Ok Google”</strong> e o <strong>“E aí, Siri”</strong> rodam num processador dedicado que analisa <strong>0,2 segundo de som por vez</strong>, o dia inteiro, no bolso de todo mundo — a própria Apple publicou a engenharia. O que mudou é que esse som virou <strong>diagnóstico com preço de mercado</strong>.</span><span data-l="en">Background audio is mundane technology: <strong>“Hey Google”</strong> and <strong>“Hey Siri”</strong> run on a dedicated coprocessor analysing <strong>0.2 seconds of sound at a time</strong>, all day, in everyone’s pocket — Apple published the engineering. What changed is that this sound became <strong>diagnosis with a market price</strong>.</span></div>
-        <div class="mito-nums">
-          <div>
-            <b><span data-l="pt">A$ 179 mi</span><span data-l="en">A$179M</span></b>
-            <span><span data-l="pt">foi quanto a <strong>Pfizer</strong> pagou por um aplicativo cujo único sensor é o microfone — ele identifica doença respiratória pelo som da tosse</span><span data-l="en">is what <strong>Pfizer</strong> paid for an app whose only sensor is the microphone — it identifies respiratory disease from the sound of a cough</span></span>
-            <i><span data-l="pt">aquisição da ResApp Health, set/2022</span><span data-l="en">ResApp Health acquisition, Sep 2022</span></i>
-          </div>
-          <div>
-            <b><span data-l="pt">300 mi</span><span data-l="en">300M</span></b>
-            <span><span data-l="pt">de trechos de áudio de saúde treinaram o modelo do <strong>Google</strong> para triagem — <strong>100 milhões deles são tosse</strong></span><span data-l="en">health audio clips trained <strong>Google</strong>’s screening model — <strong>100 million of them are coughs</strong></span></span>
-            <i><span data-l="pt">Google HeAR, ago/2024 · tuberculose e DPOC</span><span data-l="en">Google HeAR, Aug 2024 · tuberculosis and COPD</span></i>
-          </div>
-          <div>
-            <b><span data-l="pt">150+</span><span data-l="en">150+</span></b>
-            <span><span data-l="pt"><strong>sistemas de saúde</strong> já compram escuta clínica ambiental de um único fornecedor americano, avaliado em US$ 5,3 bi</span><span data-l="en"><strong>health systems</strong> already buy ambient clinical listening from a single US vendor, valued at US$5.3B</span></span>
-            <i><span data-l="pt">Abridge · rodada de US$ 300 mi liderada pela a16z, jun/2025</span><span data-l="en">Abridge · US$300M round led by a16z, Jun 2025</span></i>
-          </div>
-        </div>
-
-        <div class="mito-pe"><span data-l="pt">A diferença que define o SAVI não é técnica, é de <strong>lado</strong> — e ela cabe em três palavras. O que o tráfego pago faz é <em>indireto</em> (chega a você por semelhança com estranhos), <em>não pedido</em> e trabalha <em>contra</em> quem é observado. O SAVI é o oposto exato nos três: é <strong>direto</strong>, é <strong>consentido</strong>, e trabalha <strong>a favor</strong> de quem está sendo ouvido — o que ele devolve é o registro que a enfermeira ia digitar de memória, duas horas depois, no fim do plantão.</span><span data-l="en">What sets SAVI apart is not technical — it is <strong>whose side it is on</strong>, and it fits in three words. What paid advertising does is <em>indirect</em> (it reaches you through resemblance to strangers), <em>unasked</em>, and works <em>against</em> the person observed. SAVI is the exact opposite on all three: <strong>direct</strong>, <strong>consented</strong>, and working <strong>for</strong> the person being heard — what it hands back is the record the nurse was going to type from memory, two hours later, at the end of the shift.</span></div>
+        <div class="mito-pe"><span data-l="pt">O tráfego pago já funciona assim. Basta comentar em voz normal sobre um tênis ou um remédio perto do aparelho: cinco minutos depois, no Instagram, no YouTube ou no Facebook, o anúncio está lá. Se a escuta em segundo plano já sustenta um mercado de publicidade, ela sustenta um plantão — a diferença é <strong>a favor de quem ela trabalha</strong>.</span><span data-l="en">Paid advertising already works this way. Say a word out loud about a pair of sneakers or a medication near the device: five minutes later the ad is waiting on Instagram, YouTube or Facebook. If background listening already carries an advertising market, it can carry a nursing shift — the difference is <strong>whose side it works for</strong>.</span></div>
       </div>
       <div class="proof larga rv d1">
         <div class="ph">
@@ -1296,13 +1173,13 @@ table.fontes i{font-style:italic;color:var(--txt);}
       <div class="pr rv">
         <div class="pi"><span data-l="pt">Recorrente · compõe ARR</span><span data-l="en">Recurring · builds ARR</span></div>
         <h4><span data-l="pt">Assinatura</span><span data-l="en">Subscription</span></h4>
-        <p><span data-l="pt">Cobrada todo mês enquanto a instituição usa. É a linha que se multiplica na avaliação da empresa e a única que cresce sozinha à medida que a base aumenta. <strong>A R$ 99 por leito/mês, um hospital médio paga R$ 79 mil por ano — e o primeiro milhão de receita recorrente sai com <strong>13 contratos</strong>.</strong> Cobramos <strong>por leito</strong>, com piso mensal por unidade — não por usuário do sistema. Cobrar por usuário faz a instituição racionar login, e um sistema de vigilância só vale se a equipe inteira registrar.</span><span data-l="en">Charged monthly for as long as the institution uses it. It is the line that gets multiplied when the company is valued, and the only one that compounds as the base grows. We charge <strong>per bed</strong>, with a monthly floor per site — not per system user. Charging per user makes the institution ration logins, and a watch system is only worth anything if the whole team records.</span></p>
-        <div class="cite"><span data-l="pt">Âncoras públicas: o contrato federal de vigilância clínica mais recente paga <strong>R$ 166,13 por leito/mês</strong> (INTO-MS, 5 anos, sem disputa de preço); o Reino Unido paga R$ 55 a R$ 61 por leito/mês em escopo clínico equivalente. <strong>A tabela final está em fechamento</strong> — contra essas âncoras e contra a primeira proposta assinada.</span><span data-l="en">Public anchors: the most recent federal clinical-surveillance contract pays <strong>US$ 32.13 per bed per month</strong> (INTO-MS, 5 years, no price competition); the UK pays US$ 11 to US$ 12 per bed per month for equivalent clinical scope. <strong>The final table is being settled</strong> — against those anchors and against the first signed proposal.</span></div>
+        <p><span data-l="pt">Cobrada todo mês enquanto a instituição usa. É a linha que se multiplica na avaliação da empresa e a única que cresce sozinha à medida que a base aumenta. A <strong>R$ 99 por leito/mês</strong>, um hospital médio paga <strong>R$ 79 mil por ano</strong> — e o primeiro milhão de receita recorrente sai com <strong>13 contratos</strong>. Cobramos <strong>por leito</strong>, com piso mensal por unidade — não por usuário do sistema. Cobrar por usuário faz a instituição racionar login, e um sistema de vigilância só vale se a equipe inteira registrar.</span><span data-l="en">Charged monthly for as long as the institution uses it. It is the line that gets multiplied when the company is valued, and the only one that compounds as the base grows. At <strong>US$ 19 per bed/month</strong>, an average hospital pays <strong>US$ 15.3k a year</strong> — and the first million reais of recurring revenue takes <strong>13 contracts</strong>. We charge <strong>per bed</strong>, with a monthly floor per site — not per system user. Charging per user makes the institution ration logins, and a watch system is only worth anything if the whole team records.</span></p>
+        <div class="cite"><span data-l="pt">Âncoras públicas: o contrato federal de vigilância clínica mais recente paga <strong>R$ 166,13 por leito/mês</strong> (INTO-MS, 5 anos, sem disputa de preço); o Reino Unido paga R$ 55 a R$ 61 por leito/mês em escopo clínico equivalente. Contra essas âncoras, <strong>a tabela fechou em R$ 99</strong>, com piso de R$ 3.000 por contrato — 40% abaixo do que o Estado já paga. O que ainda falta não é preço, é a primeira proposta assinada.</span><span data-l="en">Public anchors: the most recent federal clinical-surveillance contract pays <strong>US$ 32.13 per bed per month</strong> (INTO-MS, 5 years, no price competition); the UK pays US$ 11 to US$ 12 per bed per month for equivalent clinical scope. Against those anchors, <strong>the table settled at US$ 19</strong>, with a US$ 580 floor per contract — 40% below what the State already pays. What is still missing is not a price, it is the first signed proposal.</span></div>
       </div>
       <div class="pr rv d1">
         <div class="pi"><span data-l="pt">Uma vez · não compõe ARR</span><span data-l="en">One-off · not ARR</span></div>
         <h4><span data-l="pt">Implantação</span><span data-l="en">Deployment</span></h4>
-        <p><span data-l="pt">Cobrada uma vez, na entrada. Cobre o levantamento da casa, a organização do que já existe em papel e em sistema, a configuração das regras daquela instituição, o treinamento da equipe e o acompanhamento do primeiro mês. <strong>É a linha que paga o custo de conquistar o cliente</strong> — e é justamente por isso que ela não pode ser subestimada nem diluída na mensalidade.</span><span data-l="en">Charged once, up front. It covers surveying the site, organising what already exists on paper and in systems, configuring that institution's own rules, training the team and shadowing the first month. <strong>This is the line that pays the cost of winning the customer</strong> — which is exactly why it must not be underpriced or buried inside the monthly fee.</span></p>
+        <p><span data-l="pt">Cobrada uma vez, na entrada. Cobre o levantamento da casa, a organização do que já existe em papel e em sistema, a configuração das regras daquela instituição, o treinamento da equipe e o acompanhamento do primeiro mês. <strong>É a linha que paga o custo de conquistar o cliente</strong> — e é justamente por isso que ela não pode ser subestimada nem diluída na mensalidade. Quando a avaliação da casa indica, ela cobre também o <strong>equipamento de ambiente</strong> — microfones de sala e pulseiras de sinais vitais —, dimensionado por leito e por área de risco. Não é obrigatório: o SAVI opera com o que a instituição já tem, e o aparelho entra onde ele paga a própria conta.</span><span data-l="en">Charged once, up front. It covers surveying the site, organising what already exists on paper and in systems, configuring that institution's own rules, training the team and shadowing the first month. <strong>This is the line that pays the cost of winning the customer</strong> — which is exactly why it must not be underpriced or buried inside the monthly fee. Where the site survey calls for it, it also covers the <strong>ambient equipment</strong> — room microphones and vital-sign wristbands — sized per bed and per risk area. It is not mandatory: SAVI runs on what the institution already has, and hardware goes in only where it pays for itself.</span></p>
         <div class="cite"><span data-l="pt">Faixa praticada, medida em contrato público: de <strong>1,6%</strong> do contrato anual quando é só configuração (Epimed, R$ 1.500) a <strong>298%</strong> quando é reescrita de processo com consultoria por hora (Philips Tasy, R$ 498 mil). Nossa régua: <strong>1 a 2 mensalidades</strong> em clínica, ILPI e home care; <strong>3 a 6</strong> em hospital.</span><span data-l="en">Range measured in public contracts: from <strong>1.6%</strong> of the annual contract when it is configuration only (Epimed, US$ 290) to <strong>298%</strong> when it is a process rewrite billed by the hour (Philips Tasy, US$ 96k). Our rule: <strong>1 to 2 monthly fees</strong> for clinics, care homes and home care; <strong>3 to 6</strong> for hospitals.</span></div>
       </div>
     </div>
@@ -1357,7 +1234,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
         <div class="phones tilt" data-tilt>
           <div class="phone l"><div class="scr"><img src="img/bg-perfil.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Tela de edição de perfil do BarberGO com o botão Melhorar com IA." /></div></div>
           <div class="phone c"><div class="notch"></div><div class="scr"><img src="img/bg-swipe.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Cartão de descoberta do BarberGO mostrando o perfil de um barbeiro autenticado." /></div></div>
-          <div class="phone r"><div class="scr"><img src="img/bg-receita.webp" width="1272" height="1672" loading="lazy" decoding="async" alt="Tela inicial do BarberGO com consumíveis e a vitrine de anunciantes da semana." /></div></div>
+          <div class="phone r"><div class="scr"><img src="img/bg-receita.webp" width="1272" height="2002" loading="lazy" decoding="async" alt="Tela inicial do BarberGO, rolada até os consumíveis e a vitrine de anunciantes da semana." /></div></div>
         </div>
       </div>
     </div>
@@ -1433,15 +1310,15 @@ table.fontes i{font-style:italic;color:var(--txt);}
       </div>
       <div class="fnode rv d3">
         <div class="fi"><span data-l="pt">Segundo mercado</span><span data-l="en">Second market</span></div>
-        <div class="fn"><span data-l="pt">R$ 3.564</span><span data-l="en">US$ 690</span></div>
-        <div class="fl"><span data-l="pt">por cliente/ano em prospecção B2B, com 34,7% de margem depois do imposto — o mesmo motor, vendido</span><span data-l="en">per client/year in B2B prospecting, at 34.7% margin after tax — the same engine, sold</span></div>
+        <div class="fn"><span data-l="pt">R$ 15.480</span><span data-l="en">US$ 3.0k</span></div>
+        <div class="fl"><span data-l="pt">por cliente/ano em prospecção B2B, com 70,4% de margem de contribuição — o mesmo motor, vendido</span><span data-l="en">per client/year in B2B prospecting, at 70.4% contribution margin — the same engine, sold</span></div>
       </div>
     </div>
 
     <div class="note rv">
       <div class="nt"><span data-l="pt">Duas leituras para o investidor</span><span data-l="en">Two readings for an investor</span></div>
-      <p><span data-l="pt">Na primeira leitura, o canal de aquisição do SAVI e do BarberGO <strong>já está construído</strong>, e não é despesa comprada de fora a cada envio. Na segunda, o mesmo motor é produto: prospecção B2B a <strong>R$ 3.564 por cliente/ano com 34,7% de margem depois do imposto</strong>, o que põe R$ 1 milhão de receita recorrente a 278 clientes de distância.</span>
-      <span data-l="en">On the first reading, the acquisition channel for SAVI and BarberGO is <strong>already built</strong>, and is not a cost bought from outside on every send. On the second, the same engine is a product: B2B prospecting at <strong>US$ 690 per client/year with a 34.7% margin after tax</strong>, putting US$ 193k in recurring revenue 278 clients away.</span></p>
+      <p><span data-l="pt">Na primeira leitura, o canal de aquisição do SAVI e do BarberGO <strong>já está construído</strong>, e não é despesa comprada de fora a cada envio. Na segunda, o mesmo motor é produto: prospecção B2B a <strong>R$ 15.480 por cliente/ano com 70,4% de margem de contribuição</strong> — cobrada por <strong>contato verificado</strong>, não por envio —, o que põe R$ 1 milhão de receita recorrente a <strong>65 clientes</strong> de distância.</span>
+      <span data-l="en">On the first reading, the acquisition channel for SAVI and BarberGO is <strong>already built</strong>, and is not a cost bought from outside on every send. On the second, the same engine is a product: B2B prospecting at <strong>US$ 3.0k per client/year with a 70.4% contribution margin</strong> — billed per <strong>verified contact</strong>, not per send — putting US$ 193k in recurring revenue <strong>65 clients</strong> away.</span></p>
     </div>
   </div>
 </section>
@@ -1554,7 +1431,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
           <tr><td class="num">98.968</td><td><span data-l="pt">6.612 hospitais + 92.356 clínicas especializadas · estabelecimentos, não decisores</span><span data-l="en">6,612 hospitals + 92,356 specialised clinics · facilities, not decision-makers</span></td><td>CNES/DATASUS, TabNet — jul/2026</td></tr>
           <tr><td class="num">+119,2% / +8,3%</td><td><span data-l="pt">clínicas especializadas × hospitais, dez anos · contado no registro</span><span data-l="en">specialised clinics × hospitals, ten years · counted in the registry</span></td><td>CNES/DATASUS, <span data-l="pt">série de dezembro</span><span data-l="en">December series</span> 2015–2025</td></tr>
           <tr><td class="num"><span data-l="pt">R$ 166,13</span><span data-l="en">US$ 32.13</span></td><td><span data-l="pt">por leito/mês em vigilância clínica, contrato federal de 5 anos por inexigibilidade de licitação — é a âncora superior do mercado brasileiro</span><span data-l="en">per bed per month for clinical surveillance, a 5-year federal contract awarded without price competition — the upper anchor of the Brazilian market</span></td><td><span data-l="pt">Contrato 200/2024 · INTO-MS · Epimed Monitor</span><span data-l="en">Contract 200/2024 · INTO-MS · Epimed Monitor</span></td></tr>
-          <tr><td class="num">278 · 937</td><td><span data-l="pt">clientes para R$ 1 milhão de ARR no HuntAI B2B e no BarberGO. <strong>O preço do SAVI ainda não está definido</strong> — está em estudo, e por isso nenhuma projeção de receita dele aparece nesta página</span><span data-l="en">clients for US$ 193k ARR in HuntAI B2B and BarberGO. <strong>SAVI pricing is not yet set</strong> — it is under study, which is why no revenue projection for it appears on this page</span></td><td><span data-l="pt">Conta própria · Simples Nacional Anexo V (15,5%)</span><span data-l="en">Our own model · Simples Nacional Annex V (15.5%)</span></td></tr>
+          <tr><td class="num">13 · 65</td><td><span data-l="pt">hospitais no SAVI e clientes no HuntAI para R$ 1 milhão de receita recorrente por ano, aos preços decididos em ago/2026: <strong>R$ 99 por leito/mês</strong> e <strong>R$ 1.290 por base de 8.000 contatos verificados</strong>. Continua sendo aritmética de preço com premissas declaradas — nenhum dos dois foi aceito por um comprador ainda</span><span data-l="en">hospitals on SAVI and clients on HuntAI for US$ 193k of annual recurring revenue, at the prices settled in Aug/2026: <strong>US$ 19 per bed/month</strong> and <strong>US$ 250 per 8,000-verified-contact base</strong>. It is still price arithmetic with stated assumptions — neither has been accepted by a buyer yet</span></td><td><span data-l="pt">Conta própria · Simples Nacional Anexo V (15,5%)</span><span data-l="en">Our own model · Simples Nacional Annex V (15.5%)</span></td></tr>
           <tr><td class="num">210 / 768.830</td><td><span data-l="pt">contratações CLT de barbeiro × MEIs ativos de beleza · CBO e CNAE são universos distintos, não se dividem um pelo outro</span><span data-l="en">formal barber hires × active sole traders in beauty · different universes; do not divide one by the other</span></td><td>Novo CAGED/MTE, CBO 516105 · Mapa de Empresas, 2º quad./2025</td></tr>
           <tr><td class="num"><span data-l="pt">R$ 79,90</span><span data-l="en">US$ 15</span></td><td><span data-l="pt">mediana de 4 planos de entrada · faixa de R$ 39,95 a R$ 189,00</span><span data-l="en">median of 4 entry plans · range US$ 7.70 to US$ 36.55</span></td><td>Trinks, AppBarber, Avec, Belasis — <span data-l="pt">páginas oficiais</span><span data-l="en">official pricing pages</span>, ago/2026</td></tr>
           <tr><td class="num">900.868</td><td><span data-l="pt">CNPJs ativos na atividade · inclui salão e manicure</span><span data-l="en">active registrations in the trade · includes salons and nail bars</span></td><td>Mapa de Empresas, <span data-l="pt">2º quad./2025, Tab. 7</span><span data-l="en">Q2 2025, Tab. 7</span></td></tr>
@@ -1588,6 +1465,14 @@ table.fontes i{font-style:italic;color:var(--txt);}
     </p>
 
     <div class="clinks rv d2">
+      <a class="cl pri" data-l="pt" href="https://wa.me/5548988487280?text=Ol%C3%A1%21%20Vim%20pela%20p%C3%A1gina%20da%203BRAIN%20e%20gostaria%20de%20receber%20o%20link%20da%20demonstra%C3%A7%C3%A3o%20do%20SAVI." target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.06c-.25.69-1.441.32-1.99 1.4-.51.08-1.15.11-1.86-.12-.43-.14-.98-.32-1.69-.62-2.97-1.28-4.91-4.27-5.06-4.47-.15-.2-1.21-1.61-1.21-3.07s.77-2.18 1.04-2.48c.27-.3.59-.37.79-.37.2 0 .39 0 .57.01.18.01.43-.07.67.51.25.6.84 2.06.91 2.21.07.15.12.32.02.52-.1.2-.15.32-.3.49-.15.17-.31.38-.45.51-.15.15-.3.31-.13.6.17.3.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.15.47.12.64-.07.17-.2.74-.86.94-1.16.2-.3.39-.25.66-.15.27.1 1.72.81 2.01.96.3.15.5.22.57.35.07.12.07.72-.18 1.41z"/></svg>
+        <span class="ct"><b>Pedir o link do SAVI</b><small>WhatsApp · a mensagem já vai escrita</small></span>
+      </a>
+      <a class="cl pri" data-l="en" href="https://wa.me/5548988487280?text=Hi%21%20I%20came%20from%20the%203BRAIN%20page%20and%20I%20would%20like%20the%20link%20to%20the%20SAVI%20demo." target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.8 14.06c-.25.69-1.441.32-1.99 1.4-.51.08-1.15.11-1.86-.12-.43-.14-.98-.32-1.69-.62-2.97-1.28-4.91-4.27-5.06-4.47-.15-.2-1.21-1.61-1.21-3.07s.77-2.18 1.04-2.48c.27-.3.59-.37.79-.37.2 0 .39 0 .57.01.18.01.43-.07.67.51.25.6.84 2.06.91 2.21.07.15.12.32.02.52-.1.2-.15.32-.3.49-.15.17-.31.38-.45.51-.15.15-.3.31-.13.6.17.3.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.15.47.12.64-.07.17-.2.74-.86.94-1.16.2-.3.39-.25.66-.15.27.1 1.72.81 2.01.96.3.15.5.22.57.35.07.12.07.72-.18 1.41z"/></svg>
+        <span class="ct"><b>Ask for the SAVI link</b><small>WhatsApp · the message is pre-written</small></span>
+      </a>
       <a class="cl" href="mailto:fabiocds.silva69@gmail.com?subject=3BRAIN%20—%20conversa%20de%2020%20min">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7.5 8.5 6 8.5-6"/></svg>
         <span class="ct"><b>E-mail</b><small>fabiocds.silva69@gmail.com</small></span>
@@ -1695,50 +1580,41 @@ table.fontes i{font-style:italic;color:var(--txt);}
     }, {threshold:.22}).observe(mito);
   }
 
-  /* ---------- cursor proprio ----------
-     O anel persegue o ponto com interpolacao (lerp): a cada quadro ele anda uma
-     fracao da distancia que falta. E isso, e nao uma transicao de CSS, que da o
-     atraso elastico -- transicao reinicia a cada movimento e engasga. */
+  /* ---------- mira (cursor proprio) ----------
+     A posicao e escrita direto no evento, sem requestAnimationFrame e sem lerp:
+     e isso que tira o atraso. O navegador ja agrupa pointermove por quadro, entao
+     escrever aqui nao custa mais do que escrever num loop. */
   (function(){
     if (!matchMedia('(hover:hover) and (pointer:fine)').matches) return;
     var raiz = document.documentElement;
-    raiz.classList.add('cur');
 
-    var anel = document.createElement('div'); anel.className = 'cur-anel';
-    var ponto = document.createElement('div'); ponto.className = 'cur-ponto';
-    document.body.appendChild(anel); document.body.appendChild(ponto);
+    var m = document.createElement('div');
+    m.className = 'mira';
+    m.setAttribute('aria-hidden', 'true');
+    m.innerHTML = '<i></i><i></i><i></i><i></i><b></b><u></u>';
+    document.body.appendChild(m);
+    raiz.classList.add('mira-on');
 
-    var ax = 0, ay = 0, px = 0, py = 0, temPos = false;
-    var lento = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var CLIC = 'a,button,[role="button"],summary,label,select,.proof,.mc,.as-chip,.bl,.cl,.store,input[type="submit"]';
+    var IMG  = 'img,svg,.browser,.phone,.pimg,.shot';
+    var TXT  = 'p,h1,h2,h3,h4,h5,li,td,th,blockquote,.lede,.ptxt,.cite,input,textarea';
 
     addEventListener('pointermove', function (e) {
-      px = e.clientX; py = e.clientY;
-      if (!temPos) { ax = px; ay = py; temPos = true; }
-      raiz.classList.remove('cur-out');
-      /* o alvo decide a forma. closest() sobe a arvore, entao pega o filho de um botao. */
-      var t = e.target;
-      var clic = t.closest('a,button,[role="button"],summary,.proof,.mc,.as-chip,.bl,input[type="submit"]');
-      var img  = t.closest('img,.browser,.phone,.pimg');
-      var txt  = t.closest('p,h1,h2,h3,h4,li,td,.lede,.ptxt,input,textarea');
-      raiz.classList.toggle('cur-on',  !!clic);
-      raiz.classList.toggle('cur-img', !clic && !!img);
-      raiz.classList.toggle('cur-txt', !clic && !img && !!txt);
+      m.style.transform = 'translate3d(' + e.clientX + 'px,' + e.clientY + 'px,0)';
+      raiz.classList.remove('mira-fora');
+      /* closest() sobe a arvore, entao o filho de um botao ainda conta como botao.
+         A ordem importa: clicavel ganha de imagem, que ganha de texto. */
+      var t = e.target, clic = !!t.closest(CLIC);
+      var img = !clic && !!t.closest(IMG);
+      raiz.classList.toggle('mira-clic', clic);
+      raiz.classList.toggle('mira-img', img);
+      raiz.classList.toggle('mira-txt', !clic && !img && !!t.closest(TXT));
     }, {passive:true});
 
-    addEventListener('pointerdown', function(){ raiz.classList.add('cur-press'); }, {passive:true});
-    addEventListener('pointerup',   function(){ raiz.classList.remove('cur-press'); }, {passive:true});
-    document.addEventListener('mouseleave', function(){ raiz.classList.add('cur-out'); });
-    addEventListener('blur', function(){ raiz.classList.add('cur-out'); });
-
-    (function quadro(){
-      var k = lento ? 1 : 0.19;          /* sem movimento reduzido, o anel cola no ponto */
-      ax += (px - ax) * k;
-      ay += (py - ay) * k;
-      anel.style.transform  = 'translate3d(' + ax + 'px,' + ay + 'px,0)';
-      ponto.style.transform = 'translate3d(' + px + 'px,' + py + 'px,0)' +
-                              (raiz.classList.contains('cur-on') ? ' scale(.4)' : '');
-      requestAnimationFrame(quadro);
-    })();
+    addEventListener('pointerdown', function(){ raiz.classList.add('mira-press'); }, {passive:true});
+    addEventListener('pointerup',   function(){ raiz.classList.remove('mira-press'); }, {passive:true});
+    document.addEventListener('mouseleave', function(){ raiz.classList.add('mira-fora'); });
+    addEventListener('blur', function(){ raiz.classList.add('mira-fora'); });
   })();
 
   /* ---------- contadores ---------- */
