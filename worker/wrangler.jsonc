@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "3brain-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-01",
+  "observability": { "enabled": true },
+
+  // Fallback sem chave nenhuma: o binding e injetado no runtime.
+  "ai": { "binding": "AI" },
+
+  // period so aceita 10 ou 60 segundos. Dois baldes: rajada e volume.
+  "ratelimits": [
+    { "name": "LIM_RAJADA", "namespace_id": "3001", "simple": { "limit": 3,  "period": 10 } },
+    { "name": "LIM_MINUTO", "namespace_id": "3002", "simple": { "limit": 10, "period": 60 } }
+  ],
+
+  // Descomente quando 3brain.com.br estiver na Cloudflare com a zona Active.
+  // Custom Domain, nao route: casa o hostname exato e cria DNS + certificado sozinho.
+  // "routes": [ { "pattern": "api.3brain.com.br", "custom_domain": true } ],
+
+  "vars": {
+    "MODELO_GROQ": "openai/gpt-oss-120b",
+    "MODELO_CF": "@cf/meta/llama-3.1-8b-instruct-fast",
+    "ORIGENS": "https://fabiocdssilva69-prog.github.io,https://3brain.com.br,https://www.3brain.com.br"
+  }
+}
