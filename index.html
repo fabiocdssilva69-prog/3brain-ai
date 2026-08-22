@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>3BRAIN — construído por quem viveu o problema</title>
+<title>3BRAIN — Artificial Intelligence Solutions</title>
 <meta name="description" content="Estúdio de IA de Florianópolis. 92 de cada 100 estabelecimentos de saúde já têm sistema — e 85 dos que internam ainda produzem papel. SAVI Saúde para instituição de saúde; BarberGO nas duas lojas. Todo número com fonte e denominador." />
 <meta name="theme-color" content="#08080A" />
 <meta name="color-scheme" content="dark" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0A0C'/%3E%3Crect x='.5' y='.5' width='31' height='31' rx='6.5' fill='none' stroke='%237E6210'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='14' font-weight='700' text-anchor='middle' fill='%23F2C230'%3E3B%3C/text%3E%3C/svg%3E" />
 
 <meta property="og:type" content="website" />
-<meta property="og:title" content="3BRAIN — construído por quem viveu o problema" />
+<meta property="og:title" content="3BRAIN — Artificial Intelligence Solutions" />
 <meta property="og:description" content="Quem escreveu o código passou oito anos preenchendo o prontuário. 6 de cada 100 pacientes sofrem dano evitável; 85 de cada 100 estabelecimentos com internação ainda produzem papel." />
 <meta property="og:url" content="https://fabiocdssilva69-prog.github.io/3brain-ai/" />
 <meta property="og:image" content="https://fabiocdssilva69-prog.github.io/3brain-ai/img/og.png" />
@@ -711,21 +711,21 @@ table.fontes i{font-style:italic;color:var(--txt);}
   background:linear-gradient(180deg,rgba(242,194,48,.045),rgba(0,0,0,0) 55%),var(--card);
   overflow:hidden;
 }
-.mito-top{padding:30px 30px 0;display:flex;gap:22px;align-items:flex-start;}
+.mito-top{padding:20px 24px 0;display:flex;gap:18px;align-items:center;}
 .mito-q{flex:1;min-width:0;}
 .mito-tag{
   font-family:var(--m);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
   color:var(--gold);margin-bottom:12px;
 }
 .mito-perg{
-  font-family:var(--d);font-size:clamp(1.2rem,.85rem + 1.35vw,1.85rem);line-height:1.22;
+  font-family:var(--d);font-size:clamp(1.05rem,.9rem + .55vw,1.35rem);line-height:1.25;
   color:#fff;max-width:30ch;text-wrap:balance;
 }
 .mito-perg em{font-style:italic;color:var(--mute);}
 
 /* a onda: morta enquanto e lenda, viva quando vira fato.
    a animacao carrega o argumento — nao e enfeite */
-.onda{display:flex;align-items:center;gap:4px;height:64px;flex:0 0 auto;padding-top:10px;}
+.onda{display:flex;align-items:center;gap:3px;height:34px;flex:0 0 auto;}
 .onda i{
   display:block;width:4px;border-radius:3px;background:var(--line2);
   height:calc(var(--h,20px) * .34);          /* repouso proporcional ao pico: ja le como onda */
@@ -790,7 +790,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
   letter-spacing:.03em;margin-top:9px;font-style:normal;line-height:1.5;
 }
 .mito-pe{
-  padding:22px 30px 28px;border-top:1px solid var(--line);
+  padding:14px 24px 20px;margin-top:14px;border-top:1px solid var(--line);
   background:rgba(0,0,0,.22);color:var(--txt);font-size:.95rem;line-height:1.58;
 }
 .mito-pe strong{color:#fff;}
@@ -808,6 +808,63 @@ table.fontes i{font-style:italic;color:var(--txt);}
 @media (prefers-reduced-motion:reduce){
   .mito.viva .onda i{animation:none;height:14px;}
 }
+/* ── cursor proprio ─────────────────────────────────────────────
+   So em aparelho com ponteiro fino de verdade. Em toque, nada disso existe. */
+@media (hover:hover) and (pointer:fine){
+  html.cur body,
+  html.cur a, html.cur button, html.cur [role="button"], html.cur summary,
+  html.cur .proof, html.cur .mc, html.cur .card, html.cur .as-chip{cursor:none;}
+  /* onde esconder o cursor atrapalha, ele volta */
+  html.cur input, html.cur textarea, html.cur select{cursor:auto;}
+
+  .cur-anel,.cur-ponto{
+    position:fixed;top:0;left:0;pointer-events:none;z-index:9999;
+    will-change:transform;
+  }
+  .cur-ponto{
+    width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
+    background:var(--gold);
+    transition:opacity .2s var(--ease),transform .12s var(--ease);
+  }
+  .cur-anel{
+    width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;
+    border:1px solid var(--gold-dk);
+    transition:width .22s var(--ease),height .22s var(--ease),
+               margin .22s var(--ease),border-radius .22s var(--ease),
+               background .22s var(--ease),border-color .22s var(--ease),opacity .2s var(--ease);
+  }
+  /* sobre algo clicavel: cresce e acende */
+  html.cur-on .cur-anel{
+    width:44px;height:44px;margin:-22px 0 0 -22px;
+    border-color:var(--gold);background:rgba(242,194,48,.10);
+  }
+  html.cur-on .cur-ponto{transform:scale(.4);}
+  /* sobre texto: vira barra, que e o que se espera ali */
+  html.cur-txt .cur-anel{
+    width:2px;height:26px;margin:-13px 0 0 -1px;border-radius:1px;
+    border-color:transparent;background:var(--gold);
+  }
+  html.cur-txt .cur-ponto{opacity:0;}
+  /* sobre imagem: cresce mais */
+  html.cur-img .cur-anel{
+    width:58px;height:58px;margin:-29px 0 0 -29px;
+    border-color:var(--gold);background:rgba(242,194,48,.06);
+  }
+  /* botao do mouse apertado */
+  html.cur-press .cur-anel{transform:scale(.82);}
+  /* fora da janela */
+  html.cur-out .cur-anel,html.cur-out .cur-ponto{opacity:0;}
+}
+@media (prefers-reduced-motion:reduce){
+  .cur-anel{transition:none;}
+  .cur-ponto{transition:none;}
+}
+.brand .ais{
+  font-family:var(--m);font-size:.52rem;letter-spacing:.16em;color:var(--gold);
+  border:1px solid var(--gold-dk);border-radius:4px;padding:2px 4px;margin-left:7px;
+  vertical-align:middle;line-height:1;
+}
+@media (max-width:520px){ .brand .ais{display:none;} }
 .as-pensa{display:flex;gap:5px;align-items:center;padding:16px 15px;}
 .as-pensa span{
   width:6px;height:6px;border-radius:50%;background:var(--dim);
@@ -876,7 +933,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
 
 <header class="nav" id="nav">
   <div class="wrap nav-in">
-    <a href="#top" class="brand"><span class="mk">3B</span>3BRAIN</a>
+    <a href="#top" class="brand" title="3BRAIN — Artificial Intelligence Solutions"><span class="mk">3B</span>3BRAIN<span class="ais">AIS</span></a>
     <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
     <nav class="nav-links" id="links">
       <a href="#dano"><span data-l="pt">O custo</span><span data-l="en">The cost</span></a>
@@ -920,9 +977,9 @@ table.fontes i{font-style:italic;color:var(--txt);}
     <div class="hero-stats rv d4">
       <div class="hs">
         <div class="k"><span data-l="pt">Impacto no setor</span><span data-l="en">Sector impact</span></div>
-        <div class="n"><span data-l="pt">R$ 15</span><span data-l="en">US$ 15</span> <span class="un" data-l="pt">em cada R$ 100</span><span class="un" data-l="en">in every US$ 100</span></div>
-        <div class="l"><span data-l="pt">da despesa hospitalar tratam dano que nasceu dentro do próprio hospital</span><span data-l="en">of hospital spending treats harm born inside the hospital itself</span></div>
-        <div class="s">OCDE, <span data-l="pt">Health Working Paper 145 · piso: exclui reinternação</span><span data-l="en">Health Working Paper 145 · a floor: excludes readmission</span></div>
+        <div class="n">18,4% <span class="un" data-l="pt">do turno</span><span class="un" data-l="en">of the shift</span></div>
+        <div class="l"><span data-l="pt">o enfermeiro passa documentando — numa unidade que <strong>já era informatizada</strong>. Informatizar não devolveu o tempo</span><span data-l="en">the nurse spends documenting — in a unit that <strong>already had a system</strong>. Computerising did not give the time back</span></div>
+        <div class="s">Bordin &amp; Fugulin, <span data-l="pt">Rev Esc Enferm USP 2009 · 1.032 amostras de atividade</span><span data-l="en">Rev Esc Enferm USP 2009 · 1,032 work-sampling observations</span></div>
       </div>
       <div class="hs">
         <div class="k"><span data-l="pt">Alcance</span><span data-l="en">Reach</span></div>
@@ -933,8 +990,8 @@ table.fontes i{font-style:italic;color:var(--txt);}
       <div class="hs">
         <div class="k"><span data-l="pt">Lucro</span><span data-l="en">Profit</span></div>
         <div class="n">140 <span class="un" data-l="pt">assinaturas</span><span class="un" data-l="en">subscriptions</span></div>
-        <div class="l"><span data-l="pt">para R$ 1 milhão de receita recorrente — 1,4 de cada 1.000 estabelecimentos do registro oficial</span><span data-l="en">for US$ 193k in recurring revenue — 1.4 of every 1,000 facilities in the official registry</span></div>
-        <div class="s"><span data-l="pt">R$ 7.200 por instituição/ano · 59% de margem depois do imposto · valor em ajuste</span><span data-l="en">US$ 1,390 per institution/year · 59% margin after tax · figure being finalised</span></div>
+        <div class="l"><span data-l="pt">hospitais para R$ 1 milhão de receita recorrente — 2 de cada 1.000 do registro oficial</span><span data-l="en">hospitals for US$ 193k in recurring revenue — 2 of every 1,000 in the official registry</span></div>
+        <div class="s"><span data-l="pt">R$ 99 por leito/mês · R$ 79 mil por hospital/ano · 77% de margem de contribuição</span><span data-l="en">US$ 19 per bed/month · US$ 15.3k per hospital/year · 77% contribution margin</span></div>
       </div>
     </div>
   </div>
@@ -1007,8 +1064,8 @@ table.fontes i{font-style:italic;color:var(--txt);}
     </div>
 
     <div class="pull rv d3" style="margin-top:52px;">
-      <span data-l="pt">E nada disso pede orçamento novo. <strong>15 de cada 100 reais</strong> que um hospital gasta já tratam dano nascido ali dentro, e cada evento adverso acrescenta <strong>4,6 dias de internação</strong> à conta — um paciente com evento custa <strong>3 vezes</strong> o de um sem. O dinheiro que paga o SAVI <strong>já está sendo gasto</strong>: só está sendo gasto no dano, e não em evitá-lo.</span>
-      <span data-l="en">And none of this asks for new budget. <strong>15 of every 100 reais</strong> a hospital spends already treat harm born inside it, and every adverse event adds <strong>4.6 inpatient days</strong> to the bill — a patient with an event costs <strong>3 times</strong> one without. The money that pays for SAVI <strong>is already being spent</strong>: it is just being spent on the harm instead of on preventing it.</span>
+      <span data-l="pt">E nada disso pede orçamento novo — a linha já existe e já está assinada. O próprio governo federal contratou vigilância clínica a <strong>R$ 166,13 por leito por mês</strong>, em contrato de cinco anos, sem disputa de preço. <strong>O SAVI custa R$ 99</strong>: quarenta por cento abaixo do que o Estado já paga, no mesmo orçamento que hoje trata o dano em vez de evitá-lo.</span>
+      <span data-l="en">And none of this asks for new budget — the line already exists and is already under contract. The Brazilian federal government contracted clinical surveillance at <strong>US$ 32.13 per bed per month</strong>, on a five-year contract, with no price competition. <strong>SAVI costs US$ 19</strong>: forty per cent below what the State already pays, out of the same budget that today treats the harm instead of preventing it.</span>
     </div>
   </div>
 </section>
@@ -1117,9 +1174,17 @@ table.fontes i{font-style:italic;color:var(--txt);}
       <div class="mito rv" id="mito">
         <div class="mito-top">
           <div class="mito-q">
-            <div class="mito-tag"><span data-l="pt">A pergunta que todo mundo faz</span><span data-l="en">The question everyone asks</span></div>
-            <div class="mito-perg"><span data-l="pt">Tá, mas escutar mesmo, o tempo todo, <em>isso existe?</em></span><span data-l="en">Fine — but really listening, all the time: <em>does that exist?</em></span></div>
+            <div class="mito-tag"><span data-l="pt">Curiosidade</span><span data-l="en">Aside</span></div>
+            <div class="mito-perg"><span data-l="pt">E a história do anúncio de tênis?</span><span data-l="en">What about the sneaker-ad story?</span></div>
           </div>
+          <div class="onda" aria-hidden="true">
+            <i style="--h:14px"></i><i style="--h:26px"></i><i style="--h:9px"></i><i style="--h:34px"></i>
+            <i style="--h:18px"></i><i style="--h:42px"></i><i style="--h:12px"></i><i style="--h:30px"></i>
+            <i style="--h:22px"></i><i style="--h:38px"></i><i style="--h:10px"></i><i style="--h:24px"></i>
+          </div>
+        </div>
+        <div class="mito-pe"><span data-l="pt">O anúncio aparece mesmo — mas a empresa que vendia essa escuta fechou acordo de <strong>US$ 930 mil</strong> com a FTC justamente porque <strong>o produto não escutava nada</strong>. Ele chegava porque você se parece, para o sistema, com quem já comprou.<br>Escutar de verdade e a favor de quem fala é outra coisa — e é o que está acima.</span><span data-l="en">The ad really does show up — but the company selling that listening settled with the FTC for <strong>US$930,000</strong> precisely because <strong>the product never listened at all</strong>. It arrived because you look, to the system, like someone who already bought.<br>Listening for real, on the side of whoever is speaking, is a different thing — and it is what sits above.</span></div>
+      </div>
           <div class="onda" aria-hidden="true">
             <i style="--h:14px"></i><i style="--h:26px"></i><i style="--h:9px"></i><i style="--h:34px"></i>
             <i style="--h:18px"></i><i style="--h:42px"></i><i style="--h:12px"></i><i style="--h:30px"></i>
@@ -1231,7 +1296,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
       <div class="pr rv">
         <div class="pi"><span data-l="pt">Recorrente · compõe ARR</span><span data-l="en">Recurring · builds ARR</span></div>
         <h4><span data-l="pt">Assinatura</span><span data-l="en">Subscription</span></h4>
-        <p><span data-l="pt">Cobrada todo mês enquanto a instituição usa. É a linha que se multiplica na avaliação da empresa e a única que cresce sozinha à medida que a base aumenta. <strong>A R$ 7.200 por instituição/ano, são 140 assinaturas para o primeiro milhão de receita recorrente.</strong> Cobramos <strong>por vida sob vigilância ativa</strong>, com piso mensal por unidade — não por usuário do sistema. Cobrar por usuário faz a instituição racionar login, e um sistema de vigilância só vale se a equipe inteira registrar.</span><span data-l="en">Charged monthly for as long as the institution uses it. It is the line that gets multiplied when the company is valued, and the only one that compounds as the base grows. We charge <strong>per life under active watch</strong>, with a monthly floor per site — not per system user. Charging per user makes the institution ration logins, and a watch system is only worth anything if the whole team records.</span></p>
+        <p><span data-l="pt">Cobrada todo mês enquanto a instituição usa. É a linha que se multiplica na avaliação da empresa e a única que cresce sozinha à medida que a base aumenta. <strong>A R$ 99 por leito/mês, um hospital médio paga R$ 79 mil por ano — e o primeiro milhão de receita recorrente sai com <strong>13 contratos</strong>.</strong> Cobramos <strong>por leito</strong>, com piso mensal por unidade — não por usuário do sistema. Cobrar por usuário faz a instituição racionar login, e um sistema de vigilância só vale se a equipe inteira registrar.</span><span data-l="en">Charged monthly for as long as the institution uses it. It is the line that gets multiplied when the company is valued, and the only one that compounds as the base grows. We charge <strong>per bed</strong>, with a monthly floor per site — not per system user. Charging per user makes the institution ration logins, and a watch system is only worth anything if the whole team records.</span></p>
         <div class="cite"><span data-l="pt">Âncoras públicas: o contrato federal de vigilância clínica mais recente paga <strong>R$ 166,13 por leito/mês</strong> (INTO-MS, 5 anos, sem disputa de preço); o Reino Unido paga R$ 55 a R$ 61 por leito/mês em escopo clínico equivalente. <strong>A tabela final está em fechamento</strong> — contra essas âncoras e contra a primeira proposta assinada.</span><span data-l="en">Public anchors: the most recent federal clinical-surveillance contract pays <strong>US$ 32.13 per bed per month</strong> (INTO-MS, 5 years, no price competition); the UK pays US$ 11 to US$ 12 per bed per month for equivalent clinical scope. <strong>The final table is being settled</strong> — against those anchors and against the first signed proposal.</span></div>
       </div>
       <div class="pr rv d1">
@@ -1292,7 +1357,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
         <div class="phones tilt" data-tilt>
           <div class="phone l"><div class="scr"><img src="img/bg-perfil.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Tela de edição de perfil do BarberGO com o botão Melhorar com IA." /></div></div>
           <div class="phone c"><div class="notch"></div><div class="scr"><img src="img/bg-swipe.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Cartão de descoberta do BarberGO mostrando o perfil de um barbeiro autenticado." /></div></div>
-          <div class="phone r"><div class="scr"><img src="img/bg-receita.webp" width="1272" height="2752" loading="lazy" decoding="async" alt="Tela de monetização do BarberGO com assinatura, consumíveis e anunciantes." /></div></div>
+          <div class="phone r"><div class="scr"><img src="img/bg-receita.webp" width="1272" height="1672" loading="lazy" decoding="async" alt="Tela inicial do BarberGO com consumíveis e a vitrine de anunciantes da semana." /></div></div>
         </div>
       </div>
     </div>
@@ -1402,9 +1467,9 @@ table.fontes i{font-style:italic;color:var(--txt);}
         <div class="cite">CNES/DATASUS · dez/2015–dez/2025 · <span data-l="pt">contado, não projetado</span><span data-l="en">counted, not projected</span></div>
       </div>
       <div class="pr rv d1">
-        <div class="pi">1,4 <span class="un" data-l="pt">de cada 1.000</span><span class="un" data-l="en">of every 1,000</span></div>
+        <div class="pi">13 <span class="un" data-l="pt">hospitais</span><span class="un" data-l="en">hospitals</span></div>
         <h4><span data-l="pt">Não precisa virar líder</span><span data-l="en">No need to lead the category</span></h4>
-        <p><span data-l="pt">São 140 contratos para R$ 1 milhão de receita recorrente anual — 1,4 de cada 1.000 estabelecimentos do registro oficial. É aritmética de preço com premissas declaradas, <strong>não previsão de venda</strong>.</span><span data-l="en">That is 140 contracts for US$ 193k in annual recurring revenue — 1.4 of every 1,000 facilities in the official registry. This is price arithmetic with stated assumptions, <strong>not a sales forecast</strong>.</span></p>
+        <p><span data-l="pt">São <strong>13 contratos</strong> para R$ 1 milhão de receita recorrente anual — dois de cada mil hospitais do registro oficial. É aritmética de preço com premissas declaradas, <strong>não previsão de venda</strong>.</span><span data-l="en">That is <strong>13 contracts</strong> for US$ 193k in annual recurring revenue — two of every thousand hospitals in the official registry. This is price arithmetic with stated assumptions, <strong>not a sales forecast</strong>.</span></p>
         <div class="cite"><span data-l="pt">Conta própria · Simples Nacional Anexo V · CNES/DATASUS jul/2026</span><span data-l="en">Our own model · Simples Nacional Annex V · CNES/DATASUS Jul 2026</span></div>
       </div>
       <div class="pr rv d2">
@@ -1629,6 +1694,52 @@ table.fontes i{font-style:italic;color:var(--txt);}
       ens.forEach(function(en){ mito.classList.toggle('viva', en.isIntersecting); });
     }, {threshold:.22}).observe(mito);
   }
+
+  /* ---------- cursor proprio ----------
+     O anel persegue o ponto com interpolacao (lerp): a cada quadro ele anda uma
+     fracao da distancia que falta. E isso, e nao uma transicao de CSS, que da o
+     atraso elastico -- transicao reinicia a cada movimento e engasga. */
+  (function(){
+    if (!matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+    var raiz = document.documentElement;
+    raiz.classList.add('cur');
+
+    var anel = document.createElement('div'); anel.className = 'cur-anel';
+    var ponto = document.createElement('div'); ponto.className = 'cur-ponto';
+    document.body.appendChild(anel); document.body.appendChild(ponto);
+
+    var ax = 0, ay = 0, px = 0, py = 0, temPos = false;
+    var lento = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    addEventListener('pointermove', function (e) {
+      px = e.clientX; py = e.clientY;
+      if (!temPos) { ax = px; ay = py; temPos = true; }
+      raiz.classList.remove('cur-out');
+      /* o alvo decide a forma. closest() sobe a arvore, entao pega o filho de um botao. */
+      var t = e.target;
+      var clic = t.closest('a,button,[role="button"],summary,.proof,.mc,.as-chip,.bl,input[type="submit"]');
+      var img  = t.closest('img,.browser,.phone,.pimg');
+      var txt  = t.closest('p,h1,h2,h3,h4,li,td,.lede,.ptxt,input,textarea');
+      raiz.classList.toggle('cur-on',  !!clic);
+      raiz.classList.toggle('cur-img', !clic && !!img);
+      raiz.classList.toggle('cur-txt', !clic && !img && !!txt);
+    }, {passive:true});
+
+    addEventListener('pointerdown', function(){ raiz.classList.add('cur-press'); }, {passive:true});
+    addEventListener('pointerup',   function(){ raiz.classList.remove('cur-press'); }, {passive:true});
+    document.addEventListener('mouseleave', function(){ raiz.classList.add('cur-out'); });
+    addEventListener('blur', function(){ raiz.classList.add('cur-out'); });
+
+    (function quadro(){
+      var k = lento ? 1 : 0.19;          /* sem movimento reduzido, o anel cola no ponto */
+      ax += (px - ax) * k;
+      ay += (py - ay) * k;
+      anel.style.transform  = 'translate3d(' + ax + 'px,' + ay + 'px,0)';
+      ponto.style.transform = 'translate3d(' + px + 'px,' + py + 'px,0)' +
+                              (raiz.classList.contains('cur-on') ? ' scale(.4)' : '');
+      requestAnimationFrame(quadro);
+    })();
+  })();
 
   /* ---------- contadores ---------- */
   var fmt = function(n){ return n.toLocaleString(root.classList.contains('lang-en') ? 'en-US' : 'pt-BR'); };
