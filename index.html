@@ -322,9 +322,9 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
 .phones:hover .phone.l{transform:rotateY(12deg) translateX(7%) translateY(1%) translateZ(-40px) scale(.92);}
 .phones:hover .phone.r{transform:rotateY(-12deg) translateX(-7%) translateY(1%) translateZ(-40px) scale(.92);}
 @media (max-width:700px){
-  .phone{width:min(46vw,190px);}
-  .phone.l{transform:rotateY(15deg) translateX(20%) translateY(2%) translateZ(-60px) scale(.84);}
-  .phone.r{transform:rotateY(-15deg) translateX(-20%) translateY(2%) translateZ(-60px) scale(.84);}
+  .phones{padding:18px 0 28px;}
+  .phone.l,.phone.r{display:none;}
+  .phone.c{width:min(64vw,270px);transform:none;}
 }
 
 /* ============================================================
@@ -443,6 +443,9 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
 .bg-sec{background:var(--bg2);border-block:1px solid var(--line);position:relative;overflow:hidden;}
 .bg-sec::before{content:"";position:absolute;inset:0;background:radial-gradient(70% 50% at 78% 12%,rgba(178,101,245,.09),transparent 62%);pointer-events:none;}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(36px,6vw,80px);align-items:center;margin-top:60px;}
+/* item de grade nao encolhe abaixo do conteudo por padrao; sem isto o trio de
+   celulares estica a coluna inteira e o texto ao lado sai da tela */
+.two>*,.savi-hd>*,.arch>*,.disc-grid>*,.proofs>*,.prin>*,.team>*,.flow>*,.mgrid>*,.three>*{min-width:0;}
 @media (max-width:940px){.two{grid-template-columns:1fr;}}
 .stores{display:flex;gap:12px;flex-wrap:nowrap;margin-top:32px;}
 @media (max-width:520px){.stores{flex-wrap:wrap;}}
@@ -747,7 +750,10 @@ table.fontes i{font-style:italic;color:var(--txt);}
 
 @media (max-width:640px){
   .as-painel{width:100vw;border-left:0;}
-  .as-abre{right:14px;bottom:14px;padding:12px 17px;font-size:.84rem;}
+  /* so o icone: o botao flutuante cobria os botoes de loja */
+  .as-abre{right:14px;bottom:14px;padding:0;width:52px;height:52px;justify-content:center;gap:0;}
+  .as-abre span{display:none;}
+  .as-abre svg{width:21px;height:21px;}
 }
 @media print{ .as-abre,.as-painel,.as-veu{display:none!important;} }
 </style>
