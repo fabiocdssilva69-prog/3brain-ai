@@ -758,6 +758,22 @@ table.fontes i{font-style:italic;color:var(--txt);}
 .mito-cols p+p{margin-top:11px;}
 .mito-cols strong{color:var(--txt);font-weight:600;}
 
+.mito-prova{border-top:1px solid var(--line);padding:26px 30px 4px;}
+.mito-prova>.mito-h{margin-bottom:18px;}
+.mito-item{display:flex;gap:16px;padding-bottom:22px;}
+.mito-item b{
+  flex:0 0 auto;font-family:var(--m);font-size:.62rem;color:var(--gold);
+  letter-spacing:.1em;padding-top:3px;width:76px;text-transform:uppercase;
+}
+.mito-item div{min-width:0;color:var(--mute);font-size:.9rem;line-height:1.62;}
+.mito-item strong{color:var(--txt);font-weight:600;}
+.mito-item i{display:block;font-family:var(--m);font-size:.58rem;color:var(--dim);
+  font-style:normal;margin-top:7px;letter-spacing:.02em;line-height:1.5;}
+@media (max-width:760px){
+  .mito-prova{padding:22px 22px 2px;}
+  .mito-item{flex-direction:column;gap:6px;}
+  .mito-item b{width:auto;padding-top:0;}
+}
 .mito-nums{
   display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--line);
 }
@@ -1112,21 +1128,56 @@ table.fontes i{font-style:italic;color:var(--txt);}
           </div>
         </div>
 
-        <div class="mito-vered"><span data-l="pt">Quase todo mundo responde com a mesma história: <em>“falei de tênis perto do celular e apareceu anúncio de tênis”</em>. Essa história é <strong>falsa</strong> — e a verdade que está no lugar dela é bem maior.</span><span data-l="en">Almost everyone answers with the same story: <em>“I mentioned sneakers near my phone and got sneaker ads”</em>. That story is <strong>false</strong> — and what actually stands in its place is far bigger.</span></div>
+        <div class="mito-vered"><span data-l="pt"><strong>O anúncio aparece mesmo.</strong> Quem já viveu isso não está imaginando, e o direcionamento é bom a ponto de assustar. O que quase todo mundo erra é <em>de onde ele veio</em> — e a resposta verdadeira é mais incômoda que a lenda.</span><span data-l="en"><strong>The ad really does show up.</strong> Anyone who has lived it is not imagining things, and the targeting is good enough to unsettle. What almost everyone gets wrong is <em>where it came from</em> — and the true answer is more unsettling than the myth.</span></div>
 
         <div class="mito-cols">
           <div>
             <div class="mito-h nao"><span data-l="pt">O que não acontece</span><span data-l="en">What does not happen</span></div>
             <p><span data-l="pt">A maior investigação independente já feita sobre isso analisou <strong>17.260 aplicativos</strong> de Android e rodou <strong>9.100 deles ao vivo</strong> — e não achou <strong>um único</strong> mandando áudio para fora do aparelho.</span><span data-l="en">The largest independent investigation into this examined <strong>17,260 Android apps</strong> and ran <strong>9,100 of them live</strong> — and found <strong>not one</strong> sending audio off the device.</span></p>
-            <p><span data-l="pt">E a empresa que <em>vendia</em> essa capacidade — a americana Cox Media Group, com um material de venda que prometia captar “conversas do dia a dia” — foi multada em maio de 2026. O motivo da multa é o detalhe que ninguém conhece: <strong>o produto não escutava nada.</strong> Era revenda de lista de e-mail com remarcação.</span><span data-l="en">And the company that <em>sold</em> that capability — Cox Media Group, whose pitch deck promised to capture “everyday conversations” — was fined in May 2026. The reason behind the fine is the part nobody knows: <strong>the product never listened to anything.</strong> It was resold e-mail lists with a markup.</span></p>
+            <p><span data-l="pt">E a empresa que <em>vendia</em> essa capacidade — a americana Cox Media Group, com um material de venda que prometia captar “conversas do dia a dia” — fechou com a FTC, em maio de 2026, um acordo de <strong>US$ 930 mil</strong>. E o motivo do acordo é o detalhe que ninguém conhece: <strong>o produto não escutava nada.</strong> Nas palavras da própria FTC, era “revenda — com margem significativa — de listas de e-mail obtidas de outros corretores de dado”.</span><span data-l="en">And the company that <em>sold</em> that capability — Cox Media Group, whose pitch deck promised to capture “everyday conversations” — settled with the FTC in May 2026 for <strong>US$930,000</strong>. And the reason behind that settlement is the part nobody knows: <strong>the product never listened to anything.</strong> In the FTC’s own words, it was “reselling — at a significant markup — email lists obtained from other data brokers”.</span></p>
           </div>
           <div>
-            <div class="mito-h sim"><span data-l="pt">O que acontece — e é maior</span><span data-l="en">What does happen — and it is bigger</span></div>
-            <p><span data-l="pt">Áudio em segundo plano é tecnologia banal: o <strong>“Ok Google”</strong> e o <strong>“E aí, Siri”</strong> rodam num processador dedicado que analisa <strong>0,2 segundo de som por vez</strong>, o dia inteiro, no bolso de todo mundo. A própria Apple publicou a engenharia disso.</span><span data-l="en">Background audio is mundane technology: <strong>“Hey Google”</strong> and <strong>“Hey Siri”</strong> run on a dedicated coprocessor analysing <strong>0.2 seconds of sound at a time</strong>, all day, in everyone’s pocket. Apple published the engineering behind it.</span></p>
-            <p><span data-l="pt">E som já virou <strong>diagnóstico com preço de mercado</strong>. A questão nunca foi se a máquina consegue ouvir. É <strong>para quem ela ouve</strong> — e é aí que o SAVI é outra categoria.</span><span data-l="en">And sound has already become <strong>diagnosis with a market price</strong>. The question was never whether machines can hear. It is <strong>who they hear for</strong> — and that is where SAVI is a different category.</span></p>
+            <div class="mito-h sim"><span data-l="pt">O que acontece de verdade</span><span data-l="en">What actually happens</span></div>
+            <p><span data-l="pt">O tráfego pago não precisa do seu microfone porque o que ele já tem é <strong>mais barato, funciona sobre o passado e cola numa identidade real</strong> — três coisas que áudio solto nunca daria.</span><span data-l="en">Paid advertising does not need your microphone, because what it already holds is <strong>cheaper, works over the past and attaches to a real identity</strong> — three things loose audio could never give.</span></p>
+            <p><span data-l="pt">E a prova mais elegante disso é a própria Cox Media Group: a única empresa que <em>vendeu</em> escuta acabou entregando corretagem de dado. <strong>A lenda do microfone não era o mecanismo — era a embalagem do mecanismo.</strong></span><span data-l="en">And the neatest proof is Cox Media Group itself: the one company that <em>sold</em> listening ended up delivering data brokerage. <strong>The microphone myth was never the mechanism — it was the packaging for it.</strong></span></p>
           </div>
         </div>
 
+
+        <div class="mito-prova">
+          <div class="mito-h sim"><span data-l="pt">Então de onde vem o anúncio</span><span data-l="en">So where the ad comes from</span></div>
+
+          <div class="mito-item">
+            <b><span data-l="pt">O sósia</span><span data-l="en">The lookalike</span></b>
+            <div><span data-l="pt">A BetterHelp, de terapia on-line, entregou ao Facebook os e-mails de quem fazia terapia e pediu — nas palavras da queixa da FTC — que ele <strong>“identificasse consumidores semelhantes”</strong>. Quem recebeu aquele anúncio nunca pesquisou terapia nem falou de terapia: apenas <strong>se parecia, para o sistema, com quem já fazia</strong>.</span><span data-l="en">BetterHelp, the online therapy company, handed Facebook the e-mails of people in therapy and asked it — in the words of the FTC complaint — to <strong>“identify similar consumers”</strong>. The people who got that ad never searched for therapy and never talked about therapy: they simply <strong>looked, to the system, like someone who already had</strong>.</span>
+              <i><span data-l="pt">FTC × BetterHelp, mar/2023 · US$ 7,8 mi de restituição a quem pagou</span><span data-l="en">FTC v. BetterHelp, Mar 2023 · US$7.8M in refunds to paying customers</span></i>
+            </div>
+          </div>
+
+          <div class="mito-item">
+            <b><span data-l="pt">O leilão</span><span data-l="en">The auction</span></b>
+            <div><span data-l="pt">Toda vez que um espaço de anúncio abre na sua tela, seus dados são enviados a dezenas de compradores para que decidam quanto pagar por você. <strong>Um vence. Todos recebem.</strong> A FTC agiu contra a Mobilewalla porque ela guardava o dado <strong>mesmo quando perdia o leilão</strong> — 500 milhões de identificadores pareados com localização precisa. Não é preciso clicar. Não é preciso nem ver o anúncio.</span><span data-l="en">Every time an ad slot opens on your screen, your data goes out to dozens of buyers so they can decide what to pay for you. <strong>One wins. All of them receive it.</strong> The FTC acted against Mobilewalla because it kept the data <strong>even when it lost the auction</strong> — 500 million identifiers paired with precise location. No click needed. You do not even need to see the ad.</span>
+              <i><span data-l="pt">FTC × Mobilewalla, dez/2024 · ordem final jan/2025</span><span data-l="en">FTC v. Mobilewalla, Dec 2024 · final order Jan 2025</span></i>
+            </div>
+          </div>
+
+          <div class="mito-item">
+            <b><span data-l="pt">E eles dizem</span><span data-l="en">And they say it</span></b>
+            <div><span data-l="pt">Não é acusação de ativista. A Meta escreveu no formulário que arquiva na SEC, sob responsabilidade legal, referente a 2025: <em>“dependemos de ferramentas de direcionamento e medição que incorporam sinais de dados da atividade do usuário <strong>em sites e serviços que não controlamos</strong>”</em>.</span><span data-l="en">This is not an activist’s accusation. Meta wrote it in the form it files with the SEC, under legal liability, covering 2025: <em>“we rely on targeting and measurement tools that incorporate data signals from user activity on <strong>sites and services we do not control</strong>”</em>.</span>
+              <i><span data-l="pt">Meta Platforms, Formulário 10-K de 2025 · arquivado na SEC</span><span data-l="en">Meta Platforms, FY2025 Form 10-K · filed with the SEC</span></i>
+            </div>
+          </div>
+
+          <div class="mito-item">
+            <b><span data-l="pt">Na saúde</span><span data-l="en">In healthcare</span></b>
+            <div><span data-l="pt">E isso já entrou no setor: <strong>98,6% dos sites de hospital dos Estados Unidos</strong> — de 3.747 analisados — transferiam dado do visitante a terceiros. Quem procura sintoma no site do hospital já está, hoje, alimentando o mesmo circuito.</span><span data-l="en">And it has already reached the sector: <strong>98.6% of US hospital websites</strong> — of 3,747 analysed — transferred visitor data to third parties. Someone looking up a symptom on a hospital site is already feeding the same circuit.</span>
+              <i><span data-l="pt">Friedman et al., Health Affairs, abr/2023 · coleta de ago/2021 · qualquer transferência a terceiro</span><span data-l="en">Friedman et al., Health Affairs, Apr 2023 · collected Aug 2021 · any third-party transfer</span></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="mito-h sim" style="padding:22px 30px 0;"><span data-l="pt">E a escuta, essa existe — e já tem preço</span><span data-l="en">And listening does exist — and it has a price</span></div>
+        <div style="padding:10px 30px 20px;color:var(--mute);font-size:.9rem;line-height:1.62;max-width:76ch;"><span data-l="pt">Áudio em segundo plano é tecnologia banal: o <strong>“Ok Google”</strong> e o <strong>“E aí, Siri”</strong> rodam num processador dedicado que analisa <strong>0,2 segundo de som por vez</strong>, o dia inteiro, no bolso de todo mundo — a própria Apple publicou a engenharia. O que mudou é que esse som virou <strong>diagnóstico com preço de mercado</strong>.</span><span data-l="en">Background audio is mundane technology: <strong>“Hey Google”</strong> and <strong>“Hey Siri”</strong> run on a dedicated coprocessor analysing <strong>0.2 seconds of sound at a time</strong>, all day, in everyone’s pocket — Apple published the engineering. What changed is that this sound became <strong>diagnosis with a market price</strong>.</span></div>
         <div class="mito-nums">
           <div>
             <b><span data-l="pt">A$ 179 mi</span><span data-l="en">A$179M</span></b>
@@ -1145,7 +1196,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
           </div>
         </div>
 
-        <div class="mito-pe"><span data-l="pt">A diferença que define o SAVI não é técnica, é de <strong>lado</strong>. A lenda do anúncio incomoda porque a escuta seria secreta e trabalharia contra quem fala. Aqui ela é <strong>declarada, consentida e instalada pela própria instituição</strong> — e o que ela devolve é o registro que a enfermeira ia digitar de memória, duas horas depois, no fim do plantão.</span><span data-l="en">What sets SAVI apart is not technical — it is <strong>whose side it is on</strong>. The advertising myth unsettles people because that listening would be secret and would work against the speaker. Here it is <strong>declared, consented and installed by the institution itself</strong> — and what it hands back is the record the nurse was going to type from memory, two hours later, at the end of the shift.</span></div>
+        <div class="mito-pe"><span data-l="pt">A diferença que define o SAVI não é técnica, é de <strong>lado</strong> — e ela cabe em três palavras. O que o tráfego pago faz é <em>indireto</em> (chega a você por semelhança com estranhos), <em>não pedido</em> e trabalha <em>contra</em> quem é observado. O SAVI é o oposto exato nos três: é <strong>direto</strong>, é <strong>consentido</strong>, e trabalha <strong>a favor</strong> de quem está sendo ouvido — o que ele devolve é o registro que a enfermeira ia digitar de memória, duas horas depois, no fim do plantão.</span><span data-l="en">What sets SAVI apart is not technical — it is <strong>whose side it is on</strong>, and it fits in three words. What paid advertising does is <em>indirect</em> (it reaches you through resemblance to strangers), <em>unasked</em>, and works <em>against</em> the person observed. SAVI is the exact opposite on all three: <strong>direct</strong>, <strong>consented</strong>, and working <strong>for</strong> the person being heard — what it hands back is the record the nurse was going to type from memory, two hours later, at the end of the shift.</span></div>
       </div>
       <div class="proof larga rv d1">
         <div class="ph">
