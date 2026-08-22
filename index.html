@@ -218,17 +218,20 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
    FAIXA DE PROVA
    ============================================================ */
 .strip{border-block:1px solid var(--line);background:var(--bg2);padding-block:0;}
-.strip-in{display:flex;flex-wrap:wrap;align-items:center;gap:0;}
+.strip-in{display:flex;flex-wrap:nowrap;align-items:stretch;gap:0;overflow-x:auto;scrollbar-width:none;}
+.strip-in::-webkit-scrollbar{display:none;}
 .si{
-  flex:1 1 auto;min-width:0;padding:22px 26px;display:flex;align-items:center;gap:12px;
-  border-right:1px solid var(--line);font-size:.84rem;color:var(--mute);
+  flex:0 0 auto;padding:19px 16px;display:flex;align-items:center;gap:9px;white-space:nowrap;
+  border-right:1px solid var(--line);font-size:.75rem;color:var(--mute);
 }
+.si .duplo{display:flex;align-items:center;gap:12px;}
+.si .duplo a{display:inline-flex;align-items:center;gap:7px;color:inherit;}
+.si .duplo a:hover{color:var(--txt);}
 .si:last-child{border-right:0;}
 .si b{color:var(--txt);font-weight:500;font-family:var(--m);font-size:.78rem;letter-spacing:.02em;}
 .si svg{flex:none;color:var(--gold);}
 .si.link:hover{background:#ffffff06;color:var(--txt);}
-@media (max-width:900px){.si{flex:1 1 50%;border-bottom:1px solid var(--line);}}
-@media (max-width:560px){.si{flex:1 1 100%;border-right:0;}}
+@media (max-width:900px){.si{padding:16px 18px;font-size:.74rem;}}
 
 /* ============================================================
    REVELAÇÃO
@@ -824,24 +827,28 @@ table.fontes i{font-style:italic;color:var(--txt);}
   <div class="wrap" style="padding-inline:0;">
     <div class="strip-in">
       <div class="si" style="padding-left:var(--pad);">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
-        <span><span data-l="pt">CNPJ</span><span data-l="en">Company ID</span> <b>66.447.959/0001-88</b></span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+        <span>CNPJ <b>66.447.959/0001-88</b></span>
       </div>
       <div class="si">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-        <span><span data-l="pt">BarberGO nas duas lojas · HuntAI operando como canal da casa</span><span data-l="en">BarberGO on both stores · HuntAI running as the in-house channel</span></span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span>SAVI · <b><span data-l="pt">pronto para a primeira implantação</span><span data-l="en">ready for the first deployment</span></b></span>
       </div>
-      <a class="si link" href="https://apps.apple.com/br/app/barbergo-barbearias/id6770361213" target="_blank" rel="noopener">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.9c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8c-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.2 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.3-2.5 1.3-2.6-.1 0-2.5-1-2.5-3.5zM14.2 5.9c.6-.8 1.1-1.9 1-3-1 0-2.2.7-2.8 1.4-.6.7-1.2 1.8-1 2.9 1.1.1 2.2-.6 2.8-1.3z"/></svg>
-        <span>BarberGO · <b>App Store</b></span>
-      </a>
-      <a class="si link" href="https://play.google.com/store/apps/details?id=com.barbergo.app" target="_blank" rel="noopener">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3 13 12l-9.4 9.7c-.35-.2-.6-.6-.6-1.05V3.35c0-.45.25-.85.6-1.05zM14.4 13.4l2.55 2.55-9.2 5.3zM17.9 9.4l3.1 1.78c.66.38.66 1.3 0 1.68l-3.1 1.78-2.9-2.9zM7.75 2.45l9.2 5.3-2.55 2.55z"/></svg>
-        <span>BarberGO · <b>Google Play</b></span>
-      </a>
-      <div class="si" style="padding-right:var(--pad);">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-        <span>Biguaçu / Florianópolis · <b>SC</b></span>
+      <div class="si">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        <span>HuntAI · <b><span data-l="pt">operando</span><span data-l="en">running</span></b></span>
+      </div>
+      <div class="si">
+        <span class="duplo">
+          <a href="https://apps.apple.com/br/app/barbergo-barbearias/id6770361213" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.9c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8c-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.2 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.3-2.5 1.3-2.6-.1 0-2.5-1-2.5-3.5zM14.2 5.9c.6-.8 1.1-1.9 1-3-1 0-2.2.7-2.8 1.4-.6.7-1.2 1.8-1 2.9 1.1.1 2.2-.6 2.8-1.3z"/></svg><b>App Store</b></a>
+          <a href="https://play.google.com/store/apps/details?id=com.barbergo.app" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3 13 12l-9.4 9.7c-.35-.2-.6-.6-.6-1.05V3.35c0-.45.25-.85.6-1.05zM14.4 13.4l2.55 2.55-9.2 5.3zM17.9 9.4l3.1 1.78c.66.38.66 1.3 0 1.68l-3.1 1.78-2.9-2.9zM7.75 2.45l9.2 5.3-2.55 2.55z"/></svg><b>Google Play</b></a>
+        </span>
+      </div>
+      <div class="si" style="padding-right:var(--pad);border-right:0;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        <span>Florianópolis · <b>SC</b></span>
       </div>
     </div>
   </div>
