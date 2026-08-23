@@ -470,6 +470,45 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
 
 .motor{position:relative;overflow:hidden;}
 .motor::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 46% at 20% 4%,rgba(63,214,154,.07),transparent 60%);pointer-events:none;}
+.fnode .fs{
+  font-family:var(--m);font-size:.58rem;color:var(--dim);letter-spacing:.03em;
+  line-height:1.5;margin-top:11px;padding-top:9px;border-top:1px solid var(--line);
+}
+/* ── os canais e a comparacao ── */
+.cnl-wrap{margin-top:58px;}
+.cnl-h{
+  font-family:var(--m);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--green);margin-bottom:6px;
+}
+.cnl-t{font-family:var(--d);font-size:clamp(1.15rem,.95rem + .7vw,1.5rem);color:#fff;
+  max-width:52ch;text-wrap:balance;line-height:1.25;}
+.cnl-box{
+  margin-top:20px;border:1px solid var(--line);border-radius:14px;
+  background:var(--card);overflow-x:auto;
+}
+table.cnl{border-collapse:collapse;width:100%;min-width:600px;font-size:.87rem;}
+table.cnl th{
+  font-family:var(--m);font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--dim);text-align:left;padding:14px 18px;border-bottom:1px solid var(--line);
+  font-weight:500;white-space:nowrap;
+}
+table.cnl td{padding:14px 18px;border-bottom:1px solid var(--line);color:var(--mute);
+  line-height:1.5;vertical-align:top;}
+table.cnl tbody tr:last-child td{border-bottom:0;}
+table.cnl tbody tr:hover td{background:#ffffff05;}
+table.cnl td.k{color:#fff;font-weight:500;white-space:nowrap;}
+table.cnl td.v{
+  font-family:var(--m);color:var(--green);font-variant-numeric:tabular-nums;
+  white-space:nowrap;font-size:.9rem;
+}
+table.cnl td.v.caro{color:var(--gold);}
+table.cnl td.v.perde{color:var(--dim);}
+.cnl-pe{
+  padding:15px 18px;border-top:1px solid var(--line);background:rgba(0,0,0,.22);
+  color:var(--txt);font-size:.9rem;line-height:1.55;
+}
+.cnl-pe strong{color:#fff;}
+@media (max-width:760px){ .cnl-box{border-radius:12px;} table.cnl th,table.cnl td{padding:12px 14px;} }
 .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:60px;}
 @media (max-width:880px){.flow{grid-template-columns:repeat(2,1fr);}}
 @media (max-width:480px){.flow{grid-template-columns:1fr;}}
@@ -499,6 +538,96 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
 /* ============================================================
    TIME
    ============================================================ */
+/* ── a metrica discreta no cartao de cada fundador ── */
+.mem .mtr{
+  font-family:var(--m);font-size:.6rem;line-height:1.6;letter-spacing:.02em;
+  color:var(--dim);margin-top:12px;padding-top:11px;border-top:1px dashed var(--line2);
+}
+.mem .mtr b{font-weight:500;font-size:.66rem;}
+.mem.sa .mtr b{color:var(--green);}
+.mem.be .mtr b{color:var(--violet);}
+
+/* ── Bisturi e Navalha: o bloco dos dois setores ────────────────────
+   A tesoura fecha e a fagulha sai no cruzamento. Verde = saude, violeta = beleza,
+   dourado = a marca que nasce do encontro. */
+.dupla{
+  margin-top:20px;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  background:
+    radial-gradient(120% 100% at 0% 0%,rgba(63,214,154,.07),transparent 55%),
+    radial-gradient(120% 100% at 100% 0%,rgba(178,101,245,.07),transparent 55%),
+    var(--card);
+}
+.dp-top{padding:22px 26px 0;display:flex;gap:22px;align-items:center;}
+.dp-q{flex:1;min-width:0;}
+.dp-tag{
+  font-family:var(--m);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:10px;
+}
+.dp-titulo{
+  font-family:var(--d);font-size:clamp(1.5rem,1.1rem + 1.5vw,2.2rem);line-height:1.1;
+  color:#fff;letter-spacing:-.01em;
+}
+.dp-titulo em{font-style:italic;color:var(--gold);}
+.dp-sub{color:var(--mute);font-size:.92rem;line-height:1.55;margin-top:9px;max-width:62ch;}
+
+.laminas{position:relative;width:122px;height:64px;flex:0 0 auto;}
+.laminas i{
+  position:absolute;left:50%;top:50%;width:108px;height:2.5px;margin:-1.25px 0 0 -54px;
+  border-radius:2px;transform-origin:50% 50%;
+}
+.laminas .la{background:linear-gradient(90deg,transparent,var(--green) 38%,var(--green) 62%,transparent);transform:rotate(-28deg);}
+.laminas .lb{background:linear-gradient(90deg,transparent,var(--violet) 38%,var(--violet) 62%,transparent);transform:rotate(28deg);}
+.laminas u{
+  position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;
+  border-radius:50%;background:var(--gold);opacity:0;
+  box-shadow:0 0 12px 2px rgba(242,194,48,.65);
+}
+.dupla.viva .la{animation:lamA 3.4s var(--ease) infinite;}
+.dupla.viva .lb{animation:lamB 3.4s var(--ease) infinite;}
+.dupla.viva .laminas u{animation:fagulha 3.4s var(--ease) infinite;}
+@keyframes lamA{0%,100%{transform:rotate(-28deg);}44%,54%{transform:rotate(-9deg);}}
+@keyframes lamB{0%,100%{transform:rotate(28deg);} 44%,54%{transform:rotate(9deg);}}
+@keyframes fagulha{
+  0%,40%{opacity:0;transform:scale(.3);}
+  48%{opacity:1;transform:scale(1);}
+  70%,100%{opacity:0;transform:scale(2.4);}
+}
+
+.dp-nums{
+  display:grid;grid-template-columns:repeat(3,1fr);margin-top:24px;
+  border-top:1px solid var(--line);
+}
+.dp-nums>div{padding:20px 26px 22px;min-width:0;}
+.dp-nums>div+div{border-left:1px solid var(--line);}
+.dp-nums b{
+  display:block;font-family:var(--m);font-weight:700;font-size:1.35rem;color:#fff;
+  font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin-bottom:8px;
+}
+.dp-nums>div:nth-child(1) b{color:var(--gold);}
+.dp-nums>div:nth-child(2) b{color:var(--violet);}
+.dp-nums>div:nth-child(3) b{color:var(--green);}
+.dp-nums>div>span{display:block;color:var(--mute);font-size:.85rem;line-height:1.5;}
+.dp-nums b span{display:inline;color:inherit;font-size:inherit;}
+.dp-nums i{
+  display:block;font-family:var(--m);font-style:normal;font-size:.57rem;color:var(--dim);
+  letter-spacing:.03em;margin-top:9px;line-height:1.5;
+}
+.dp-pe{
+  padding:17px 26px 20px;border-top:1px solid var(--line);background:rgba(0,0,0,.24);
+  color:var(--txt);font-size:.95rem;line-height:1.58;
+}
+.dp-pe strong{color:#fff;}
+@media (max-width:760px){
+  .dp-top{flex-direction:column;align-items:flex-start;gap:12px;padding:22px 20px 0;}
+  .dp-nums{grid-template-columns:1fr;}
+  .dp-nums>div+div{border-left:0;border-top:1px solid var(--line);}
+  .dp-nums>div{padding:18px 20px;}
+  .dp-pe{padding:16px 20px 20px;}
+}
+@media (prefers-reduced-motion:reduce){
+  .dupla.viva .la,.dupla.viva .lb,.dupla.viva .laminas u{animation:none;}
+  .dupla.viva .laminas u{opacity:.9;}
+}
 .team{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:60px;}
 @media (max-width:800px){.team{grid-template-columns:1fr;}}
 .mem{
@@ -1287,31 +1416,116 @@ table.fontes i{font-style:italic;color:var(--txt);}
         </h2>
       </div>
       <p class="lede rv d1" style="margin-top:0;">
-        <span data-l="pt">Toda empresa que quer vender software para saúde no Brasil bate na mesma parede: <strong>98.968 estabelecimentos para alcançar, e nenhum caminho barato até eles.</strong> A 3BRAIN atravessou essa parede uma vez e ficou com a estrada: <strong>277.645 endereços diretos, 7 de cada 10 estabelecimentos do registro oficial</strong> — construídos, não alugados. Quem não tem isso contrata gente ou compra mídia, todo mês, para sempre.</span>
-        <span data-l="en">Every company trying to sell software to Brazilian healthcare hits the same wall: <strong>98,968 facilities to reach, and no cheap path to any of them.</strong> 3BRAIN crossed that wall once and kept the road: <strong>277,645 direct addresses, 7 of every 10 facilities on the official register</strong> — built, not rented. Whoever lacks that hires people or buys media, every month, forever.</span>
+        <span data-l="pt">Toda empresa que vende para outra empresa no Brasil bate na mesma parede: <strong>10,6 milhões de organizações formais</strong>, e nenhum caminho barato até nenhuma delas. A 3BRAIN atravessou essa parede em saúde — o setor que conhece — e ficou com a estrada: <strong>277.645 endereços diretos, 69 de cada 100 estabelecimentos varridos</strong>. O que se prova ali não é um dado de saúde, é um <strong>rendimento de extração</strong> — e o registro público é o mesmo para todos os setores. Quem não tem isso contrata gente ou compra mídia, todo mês, para sempre.</span>
+        <span data-l="en">Every company in Brazil that sells to another company hits the same wall: <strong>10.6 million formal organisations</strong>, and no cheap path to a single one of them. 3BRAIN crossed that wall in healthcare — the sector it knows — and kept the road: <strong>277,645 direct addresses, 69 of every 100 facilities swept</strong>. What that proves is not a healthcare figure, it is an <strong>extraction yield</strong> — and the public register is the same one for every sector. Whoever lacks it hires people or buys media, every month, forever.</span>
       </p>
     </div>
 
     <div class="flow">
       <div class="fnode rv">
-        <div class="fi"><span data-l="pt">A folha que não temos</span><span data-l="en">The payroll we do not carry</span></div>
-        <div class="fn"><span data-l="pt">R$ 5,3–6,2</span><span data-l="en">US$ 1.02–1.20</span> <span class="un"><span data-l="pt">mil/mês</span><span data-l="en">k/mo</span></span></div>
-        <div class="fl"><span data-l="pt">é o que custa por mês um profissional de prospecção no Brasil, com encargos — e ele agenda de 10 a 20 reuniões. O motor faz esse trabalho sem folha</span><span data-l="en">is the monthly cost of one prospecting rep in Brazil, with payroll taxes — and they book 10 to 20 meetings. The engine does that work with no payroll</span></div>
+        <div class="fi"><span data-l="pt">O alcance</span><span data-l="en">The reach</span></div>
+        <div class="fn" data-count="10607110">10.607.110</div>
+        <div class="fl"><span data-l="pt">organizações formais ativas no Brasil — <strong>todas com endereço em registro público</strong>. É este o alcance do motor, e não o setor onde ele foi provado</span><span data-l="en">formal active organisations in Brazil — <strong>every one of them with an address on a public register</strong>. This is the engine’s reach, not the sector where it was proven</span></div>
+        <div class="fs"><span data-l="pt">IBGE, CEMPRE 2024 · contado</span><span data-l="en">IBGE, CEMPRE 2024 · counted</span></div>
       </div>
       <div class="fnode rv d1">
-        <div class="fi"><span data-l="pt">O que não pagamos</span><span data-l="en">What we do not pay</span></div>
-        <div class="fn" data-count="24515">24.515</div>
-        <div class="fl"><span data-l="pt">contatos alcançados na última campanha sem custo por envio a terceiro — o canal é nosso, não alugado</span><span data-l="en">contacts reached in the last campaign with no per-send fee to a third party — the channel is ours, not rented</span></div>
+        <div class="fi"><span data-l="pt">Quem paga</span><span data-l="en">Who pays</span></div>
+        <div class="fn" data-count="316041">316.041</div>
+        <div class="fl"><span data-l="pt">dessas empresas têm <strong>10 ou mais pessoas e vendem para outra empresa</strong>. Abaixo de 10, o dono prospecta sozinho — alcance não é comprador, e misturar os dois é o erro que infla mercado</span><span data-l="en">of those have <strong>10 or more people and sell to other businesses</strong>. Below 10, the owner prospects alone — reach is not a buyer, and blending the two is how markets get inflated</span></div>
+        <div class="fs"><span data-l="pt">IBGE, CEMPRE 2024 · comércio excluído por prudência: +200.274</span><span data-l="en">IBGE, CEMPRE 2024 · retail excluded for prudence: +200,274</span></div>
       </div>
       <div class="fnode rv d2">
-        <div class="fi"><span data-l="pt">Acesso direto ao comprador</span><span data-l="en">Direct access to the buyer</span></div>
+        <div class="fi"><span data-l="pt">A prova</span><span data-l="en">The proof</span></div>
         <div class="fn" data-count="277645">277.645</div>
-        <div class="fl"><span data-l="pt">endereços de estabelecimentos de saúde, extraídos do registro oficial — 69 de cada 100 varridos</span><span data-l="en">health-facility addresses extracted from the official registry — 69 of every 100 swept</span></div>
+        <div class="fl"><span data-l="pt">endereços diretos já extraídos, e <strong>24.515 contatos alcançados na última campanha, zero reclamações</strong>. O rendimento de 69% é do método, não do setor</span><span data-l="en">direct addresses already extracted, and <strong>24,515 contacts reached in the last campaign with zero complaints</strong>. The 69% yield belongs to the method, not the sector</span></div>
+        <div class="fs"><span data-l="pt">Operação 3BRAIN sobre CNES/DATASUS, 2026</span><span data-l="en">3BRAIN operation over the CNES/DATASUS registry, 2026</span></div>
       </div>
       <div class="fnode rv d3">
         <div class="fi"><span data-l="pt">Segundo mercado</span><span data-l="en">Second market</span></div>
         <div class="fn"><span data-l="pt">R$ 15.480</span><span data-l="en">US$ 3.0k</span></div>
         <div class="fl"><span data-l="pt">por cliente/ano em prospecção B2B, com 70,4% de margem de contribuição — o mesmo motor, vendido</span><span data-l="en">per client/year in B2B prospecting, at 70.4% contribution margin — the same engine, sold</span></div>
+      </div>
+    </div>
+
+    <div class="cnl-wrap rv">
+      <div class="cnl-h"><span data-l="pt">Três canais</span><span data-l="en">Three channels</span></div>
+      <div class="cnl-t"><span data-l="pt">Cada canal a mais é uma <em>fatura</em> a mais — e é por isso que multicanal custa mais.</span><span data-l="en">Every extra channel is one more <em>invoice</em> — which is why multichannel costs more.</span></div>
+      <div class="cnl-box">
+        <table class="cnl">
+          <thead>
+            <tr>
+              <th><span data-l="pt">Canal</span><span data-l="en">Channel</span></th>
+              <th><span data-l="pt">Custo por toque</span><span data-l="en">Cost per touch</span></th>
+              <th><span data-l="pt">Teto</span><span data-l="en">Ceiling</span></th>
+              <th><span data-l="pt">O que ele resolve</span><span data-l="en">What it solves</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k"><span data-l="pt">E-mail</span><span data-l="en">E-mail</span></td>
+              <td class="v"><span data-l="pt">R$ 0,021</span><span data-l="en">US$ 0.004</span></td>
+              <td><span data-l="pt">50 mil/mês na nossa infra · sem teto quando o cliente envia pelo próprio domínio</span><span data-l="en">50k/mo on our own infra · no ceiling when the client sends from their own domain</span></td>
+              <td><span data-l="pt">volume. É o chão do produto e o único canal que escala sozinho</span><span data-l="en">volume. It is the floor of the product and the only channel that scales on its own</span></td>
+            </tr>
+            <tr>
+              <td class="k">LinkedIn</td>
+              <td class="v"><span data-l="pt">sem custo por mensagem</span><span data-l="en">no per-message cost</span></td>
+              <td><span data-l="pt"><strong>240 pedidos por hora</strong>, medido — a 260 estrangula</span><span data-l="en"><strong>240 requests per hour</strong>, measured — 260 throttles</span></td>
+              <td><span data-l="pt">identidade. A bio devolve e-mail em <strong>14% dos perfis</strong> com um único pedido — é o canal que <em>alimenta</em> o e-mail, não o que compete com ele</span><span data-l="en">identity. The bio returns an e-mail on <strong>14% of profiles</strong> from a single request — it is the channel that <em>feeds</em> e-mail, not one that competes with it</span></td>
+            </tr>
+            <tr>
+              <td class="k">WhatsApp</td>
+              <td class="v caro"><span data-l="pt">R$ 0,32</span><span data-l="en">US$ 0.0625</span></td>
+              <td><span data-l="pt">sem teto de volume · exige a API oficial (Business Platform)</span><span data-l="en">no volume ceiling · requires the official Business Platform API</span></td>
+              <td><span data-l="pt">atenção — e custa <strong>15,6× o e-mail</strong> pelo mesmo contato. Por isso é camada paga à parte, nunca o padrão</span><span data-l="en">attention — and it costs <strong>15.6× e-mail</strong> for the same contact. Which is why it is a separately paid tier, never the default</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="cnl-pe"><span data-l="pt">A ordem não é de preferência, é de custo: o e-mail carrega o volume, o LinkedIn devolve o endereço que o e-mail precisa, e o WhatsApp entra onde o contato já vale os R$ 0,32. <strong>Quem compra três canais está comprando três faturas</strong> — o preço maior do plano multicanal é repasse de custo, não posicionamento.</span><span data-l="en">The order is not preference, it is cost: e-mail carries the volume, LinkedIn returns the address e-mail needs, and WhatsApp goes in where the contact is already worth the US$ 0.06. <strong>Buying three channels means buying three invoices</strong> — the higher price of the multichannel plan is cost pass-through, not positioning.</span></div>
+      </div>
+    </div>
+
+    <div class="cnl-wrap rv d1">
+      <div class="cnl-h"><span data-l="pt">Contra o que já existe</span><span data-l="en">Against what already exists</span></div>
+      <div class="cnl-t"><span data-l="pt">Comparado por <em>reunião</em>, que é a única unidade comum.</span><span data-l="en">Compared by <em>meeting</em>, the only unit the two sides share.</span></div>
+      <div class="cnl-box">
+        <table class="cnl">
+          <thead>
+            <tr>
+              <th><span data-l="pt">Canal de aquisição</span><span data-l="en">Acquisition channel</span></th>
+              <th><span data-l="pt">Custo por reunião</span><span data-l="en">Cost per meeting</span></th>
+              <th><span data-l="pt">Contra o HuntAI</span><span data-l="en">Against HuntAI</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k"><span data-l="pt">HuntAI · Base 8k + envio do cliente</span><span data-l="en">HuntAI · 8k base + client sending</span></td>
+              <td class="v"><span data-l="pt">R$ 662</span><span data-l="en">US$ 128</span></td>
+              <td><span data-l="pt">R$ 1.690/mês → 16 mil e-mails → 73 respostas → 2,55 reuniões</span><span data-l="en">US$ 327/mo → 16k e-mails → 73 replies → 2.55 meetings</span></td>
+            </tr>
+            <tr>
+              <td class="k"><span data-l="pt">Google Ads B2B · CPL médio</span><span data-l="en">Google Ads B2B · mid CPL</span></td>
+              <td class="v"><span data-l="pt">R$ 825 a 1.650</span><span data-l="en">US$ 160 to 319</span></td>
+              <td><span data-l="pt">o HuntAI ganha de <strong>20% a 60%</strong></span><span data-l="en">HuntAI wins by <strong>20% to 60%</strong></span></td>
+            </tr>
+            <tr>
+              <td class="k"><span data-l="pt">LinkedIn Ads · CPL R$ 275</span><span data-l="en">LinkedIn Ads · CPL US$ 53</span></td>
+              <td class="v"><span data-l="pt">R$ 1.375 a 2.750</span><span data-l="en">US$ 266 to 532</span></td>
+              <td><span data-l="pt">o HuntAI ganha de <strong>52% a 76%</strong> — em todos os cenários</span><span data-l="en">HuntAI wins by <strong>52% to 76%</strong> — in every scenario</span></td>
+            </tr>
+            <tr>
+              <td class="k"><span data-l="pt">SDR CLT mediano · 10 reuniões/mês</span><span data-l="en">Median in-house SDR · 10 meetings/mo</span></td>
+              <td class="v"><span data-l="pt">R$ 674 a 817</span><span data-l="en">US$ 130 to 158</span></td>
+              <td><span data-l="pt">empate técnico — o HuntAI ganha de 2% a 19%</span><span data-l="en">technical draw — HuntAI wins by 2% to 19%</span></td>
+            </tr>
+            <tr>
+              <td class="k"><span data-l="pt">SDR CLT produtivo · 20 reuniões/mês</span><span data-l="en">Productive in-house SDR · 20 meetings/mo</span></td>
+              <td class="v perde"><span data-l="pt">R$ 337 a 408</span><span data-l="en">US$ 65 to 79</span></td>
+              <td><span data-l="pt"><strong>o HuntAI perde</strong></span><span data-l="en"><strong>HuntAI loses</strong></span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="cnl-pe"><span data-l="pt">A última linha fica na página de propósito. <strong>O HuntAI não substitui um SDR bom</strong> — e um SDR bom só agenda 20 reuniões porque já tem lista para trabalhar. A lista é exatamente o que o motor é. Ele disputa verba de <em>ferramenta</em>, não verba de <em>cabeça</em>, e o prêmio sobre o Apollo se justifica por um dado brasileiro que o Apollo não tem.</span><span data-l="en">The last row is on the page on purpose. <strong>HuntAI does not replace a good SDR</strong> — and a good SDR only books 20 meetings because they already have a list to work. The list is exactly what the engine is. It competes for <em>tooling</em> budget, not <em>headcount</em> budget, and the premium over Apollo is justified by Brazilian data Apollo does not hold.</span></div>
       </div>
     </div>
 
@@ -1378,24 +1592,55 @@ table.fontes i{font-style:italic;color:var(--txt);}
     </p>
 
     <div class="team">
-      <div class="mem rv">
+      <div class="mem sa rv">
         <div class="mono">FS</div>
         <div>
           <h4>Fábio “Binho” da Silva</h4>
           <div class="role"><span data-l="pt">Fundador · Engenharia</span><span data-l="en">Founder · Engineering</span></div>
           <p><span data-l="pt">Nove anos de linha de frente — UTI, emergência, clínicas, longa permanência, laboratório e resgate pré-hospitalar — antes da primeira linha de código. O SAVI nasceu do prontuário que ele mesmo preenchia no fim do turno, sabendo o que ficava de fora do papel. Hoje escreve o código dos produtos, o que mantém a distância entre ver um problema no campo e corrigi-lo em produção medida <strong>em horas, não em trimestres</strong>.</span><span data-l="en">Nine years on the front line — ICU, emergency, outpatient clinics, long-term care, laboratory and pre-hospital rescue — before the first line of code. SAVI came out of the chart he filled in himself at the end of a shift, knowing what never made it onto the page. He writes the code, which keeps the distance between seeing a problem in the field and fixing it in production measured <strong>in hours rather than quarters</strong>.</span></p>
           <div class="cred"><span data-l="pt">Técnico de enfermagem, COREN-SC 1305197 · nove anos de assistência · Biguaçu/SC</span><span data-l="en">Licensed nurse technician, COREN-SC 1305197 · nine years in direct patient care · Biguaçu, SC</span></div>
+          <div class="mtr"><span data-l="pt">O setor dele: <b>605 mil estabelecimentos de saúde</b> — e só 1 em cada 19 empresas do ramo tem porte que compra software<br>CNES jun/2026 · IBGE CEMPRE 2024</span><span data-l="en">His sector: <b>605,000 healthcare facilities</b> — and only 1 in every 19 companies in the field has the size to buy software<br>CNES Jun/2026 · IBGE CEMPRE 2024</span></div>
         </div>
       </div>
-      <div class="mem rv d1">
+      <div class="mem be rv d1">
         <div class="mono">BN</div>
         <div>
           <h4>Bruno “Nobru” da Silva</h4>
           <div class="role"><span data-l="pt">Fundador · Operação</span><span data-l="en">Founder · Operations</span></div>
           <p><span data-l="pt">Dez anos de barbearia, oito deles com a própria casa. Do lado de quem contrata, viveu a mesma falta que o barbeiro vive do lado de quem procura: nenhum lugar onde um ache o outro, o rateio da parceria negociado no boca a boca, e a cadeira parada — que é receita que não volta. A formação em contabilidade é o que define preço, comissão e margem <strong>a partir do que a barbearia consegue pagar, e não do que a planilha gostaria</strong>.</span><span data-l="en">Ten years in barbershops, eight of them running his own. From the hiring side, he lived the same gap the barber lives from the searching side: nowhere for either one to find the other, partnership splits negotiated by word of mouth, and an idle chair — revenue that never comes back. His accounting background is what sets price, commission and margin <strong>against what a barbershop can actually pay, rather than what a spreadsheet would like</strong>.</span></p>
           <div class="cred"><span data-l="pt">Técnico em contabilidade · dez anos de barbearia, oito como proprietário da Nobru's Barbershop · SC</span><span data-l="en">Accounting technician · ten years in barbering, eight as owner of Nobru's Barbershop · SC</span></div>
+          <div class="mtr"><span data-l="pt">O setor dele: <b>1,3 milhão de CNPJ em beleza</b> — e apenas 226 deles têm 20 pessoas ou mais, no país inteiro<br>Sebrae/Receita Federal 2026 · IBGE PAS 2023</span><span data-l="en">His sector: <b>1.3 million beauty businesses</b> — and just 226 of them have 20 people or more, in the whole country<br>Sebrae/Receita Federal 2026 · IBGE PAS 2023</span></div>
         </div>
       </div>
+    </div>
+
+    <div class="dupla rv d2" id="dupla">
+      <div class="dp-top">
+        <div class="dp-q">
+          <div class="dp-tag"><span data-l="pt">A dupla</span><span data-l="en">The pair</span></div>
+          <div class="dp-titulo"><span data-l="pt">Bisturi <em>e</em> Navalha</span><span data-l="en">Scalpel <em>and</em> Razor</span></div>
+          <p class="dp-sub"><span data-l="pt">Saúde e beleza não se encontraram por acaso nesta sociedade. São os dois maiores serviços de mão no Brasil — e os dois que nenhum software conseguiu tomar, pela mesma razão.</span><span data-l="en">Health and beauty did not meet by accident in this partnership. They are the two largest hands-on service economies in Brazil — and the two no software has taken, for the same reason.</span></p>
+        </div>
+        <div class="laminas" aria-hidden="true"><i class="la"></i><i class="lb"></i><u></u></div>
+      </div>
+      <div class="dp-nums">
+        <div>
+          <b><span data-l="pt">1,9 milhão</span><span data-l="en">1.9 million</span></b>
+          <span><span data-l="pt">de negócios nos dois setores somados — 605 mil estabelecimentos de saúde e 1,3 milhão de CNPJ de beleza. É <strong>1 em cada 13</strong> CNPJ ativo do país</span><span data-l="en">businesses across both sectors — 605,000 healthcare facilities and 1.3 million beauty businesses. That is <strong>1 in every 13</strong> active companies in the country</span></span>
+          <i><span data-l="pt">CNES jun/2026 · Sebrae/Receita Federal 2026 · Mapa de Empresas jul/2026</span><span data-l="en">CNES Jun/2026 · Sebrae/Receita Federal 2026 · Mapa de Empresas Jul/2026</span></i>
+        </div>
+        <div>
+          <b>226</b>
+          <span><span data-l="pt">empresas de beleza com 20 pessoas ou mais <strong>no Brasil inteiro</strong>. O universo “enterprise” do setor cabe em três dígitos — aqui ninguém ganha com equipe de vendas</span><span data-l="en">beauty companies with 20 people or more <strong>in all of Brazil</strong>. The sector’s entire “enterprise” universe fits in three digits — nobody wins here with a sales team</span></span>
+          <i><span data-l="pt">IBGE, PAS 2023 · 226 empresas, R$ 2,015 bi de receita líquida</span><span data-l="en">IBGE, PAS 2023 · 226 companies, US$ 390m in net revenue</span></i>
+        </div>
+        <div>
+          <b><span data-l="pt">646 por dia</span><span data-l="en">646 a day</span></b>
+          <span><span data-l="pt">negócios de beleza abertos em 2025, <strong>alta de 18,5%</strong>. A saúde cresce pelo outro lado, o da demografia — um setor segue a moda, o outro segue a idade, e nenhum dos dois para</span><span data-l="en">beauty businesses opened in 2025, <strong>up 18.5%</strong>. Healthcare grows from the other end, demographics — one sector follows fashion, the other follows age, and neither stops</span></span>
+          <i><span data-l="pt">Agência Sebrae de Notícias, jan/2026 · 236 mil aberturas no ano</span><span data-l="en">Agência Sebrae de Notícias, Jan/2026 · 236,000 openings in the year</span></i>
+        </div>
+      </div>
+      <div class="dp-pe"><span data-l="pt">A conta que os dois setores fazem é a mesma: <strong>mercado gigante, conta pequena, e nenhuma porta de entrada que se compre com anúncio.</strong> Quem decide está com as mãos ocupadas — numa cadeira ou num leito — e não atende vendedor. Um técnico de enfermagem e um dono de barbearia não é uma dupla improvável: é a única combinação que entra nos dois pela porta de dentro. <strong>Isso não se descobre em pesquisa de mercado</strong> — descobre-se depois, quando o produto já está errado.</span><span data-l="en">Both sectors run the same arithmetic: <strong>an enormous market, a small account, and no way in that money can buy.</strong> The person who decides has their hands busy — in a chair or at a bedside — and does not take a sales call. A nurse technician and a barbershop owner is not an unlikely pair: it is the only combination that walks into both through the inside door. <strong>Market research does not find this</strong> — you find it later, once the product is already wrong.</span></div>
     </div>
   </div>
 </section>
@@ -1485,7 +1730,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5A2.5 2.5 0 1 0 5 8.5a2.5 2.5 0 0 0-.02-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C20.4 8.65 21 11 21 14.1V21h-4v-6.1c0-1.45-.03-3.3-2-3.3s-2.3 1.57-2.3 3.2V21H9z"/></svg>
         <span class="ct"><b>LinkedIn</b><small>3BRAIN</small></span>
       </a>
-      <a class="cl" href="https://www.linkedin.com/in/fábio-silva-3b73b020b/" target="_blank" rel="noopener">
+      <a class="cl" href="https://www.linkedin.com/in/fabio-silva-49830238b/" target="_blank" rel="noopener">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5A2.5 2.5 0 1 0 5 8.5a2.5 2.5 0 0 0-.02-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C20.4 8.65 21 11 21 14.1V21h-4v-6.1c0-1.45-.03-3.3-2-3.3s-2.3 1.57-2.3 3.2V21H9z"/></svg>
         <span class="ct"><b>LinkedIn</b><small><span data-l="pt">Fábio Silva · fundador</span><span data-l="en">Fábio Silva · founder</span></small></span>
       </a>
@@ -1573,13 +1818,13 @@ table.fontes i{font-style:italic;color:var(--txt);}
 
   /* a onda so vive enquanto o bloco esta na tela: animacao parada fora de vista
      e bateria queimada a toa, e o navegador nao para sozinho */
-  var mito = document.getElementById('mito');
-  if (mito) {
+  ['mito','dupla'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
     new IntersectionObserver(function(ens){
-      ens.forEach(function(en){ mito.classList.toggle('viva', en.isIntersecting); });
-    }, {threshold:.22}).observe(mito);
-  }
-
+      ens.forEach(function(en){ el.classList.toggle('viva', en.isIntersecting); });
+    }, {threshold:.22}).observe(el);
+  });
   /* ---------- mira (cursor proprio) ----------
      A posicao e escrita direto no evento, sem requestAnimationFrame e sem lerp:
      e isso que tira o atraso. O navegador ja agrupa pointermove por quadro, entao
