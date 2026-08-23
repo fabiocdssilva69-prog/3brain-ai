@@ -241,6 +241,32 @@ h1.hero-h em{font-style:italic;color:var(--gold);}
 .js-on .rv.in{opacity:1;transform:none;}
 .js-on .rv.d1{transition-delay:.08s;} .js-on .rv.d2{transition-delay:.16s;}
 .js-on .rv.d3{transition-delay:.24s;} .js-on .rv.d4{transition-delay:.32s;}
+/* Os dois fundadores FECHAM como duas folhas sobre o vao: cada cartao gira em
+   torno da propria borda interna (por isso o transform-origin em 100%/0%), com o
+   lado de fora entrando pelo fundo. Quando os dois assentam, o vao acende — fio
+   dourado com losango no meio, o MESMO elo da peca "Bisturi e Navalha" logo
+   abaixo. A secao do time e o bloco da dupla passam a dizer a mesma coisa, uma
+   em movimento e outra em desenho.
+   Fica DENTRO de no-preference de proposito: assim a regra nao existe para quem
+   desligou movimento, e nao ha disputa nenhuma com o bloco reduce. */
+@media (prefers-reduced-motion:no-preference){
+  .js-on .mem.sa.rv{transform-origin:100% 50%;transform:translateX(-30px) rotateY(-9deg);}
+  .js-on .mem.be.rv{transform-origin:0 50%;transform:translateX(30px) rotateY(9deg);}
+  .js-on .mem.sa.rv.in,.js-on .mem.be.rv.in{transform:none;}
+  /* o elo so se desenha depois que o segundo cartao assentou (0,24s + 0,8s) */
+  .js-on .mem.be::before{transform:scaleY(0);transition:transform .8s var(--ease) .58s;}
+  .js-on .mem.be.in::before{transform:scaleY(1);}
+  .js-on .mem.be::after{transform:rotate(45deg) scale(0);opacity:0;
+    transition:transform .55s var(--ease) 1s,opacity .55s var(--ease) 1s;}
+  .js-on .mem.be.in::after{transform:rotate(45deg) scale(1);opacity:1;}
+  @media (max-width:800px){
+    .js-on .mem.sa.rv,.js-on .mem.be.rv{transform-origin:50% 100%;transform:translateY(24px) rotateX(6deg);}
+    .js-on .mem.be.rv{transform-origin:50% 0;transform:translateY(-24px) rotateX(-6deg);}
+    .js-on .mem.sa.rv.in,.js-on .mem.be.rv.in{transform:none;}
+    .js-on .mem.be::before{transform:scaleX(0);}
+    .js-on .mem.be.in::before{transform:scaleX(1);}
+  }
+}
 @media (prefers-reduced-motion:reduce){
   .js-on .rv{opacity:1!important;transform:none!important;transition:none!important;}
   html{scroll-behavior:auto;}
@@ -581,40 +607,90 @@ table.cnl td.v.perde{color:var(--dim);}
 .dp-sub{color:var(--mute);font-size:.97rem;line-height:1.6;margin-top:13px;max-width:60ch;}
 .dp-sub strong{color:var(--txt);font-weight:600;}
 
-/* a tesoura: as duas laminas fecham e a fagulha vira onda de choque */
-.laminas{position:relative;width:168px;height:96px;flex:0 0 auto;}
-.laminas i{
-  position:absolute;left:50%;top:50%;width:150px;height:3px;margin:-1.5px 0 0 -75px;
-  border-radius:3px;transform-origin:50% 50%;
-}
-.laminas .la{background:linear-gradient(90deg,transparent,var(--green) 36%,var(--green) 64%,transparent);transform:rotate(-30deg);}
-.laminas .lb{background:linear-gradient(90deg,transparent,var(--violet) 36%,var(--violet) 64%,transparent);transform:rotate(30deg);}
-.laminas u{
-  position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
-  border-radius:50%;background:var(--gold);opacity:0;
-  box-shadow:0 0 16px 3px rgba(242,194,48,.7);
-}
-.laminas b{
-  position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;
-  border-radius:50%;border:1px solid var(--gold);opacity:0;
-}
-.dupla.viva .la{animation:lamA 3.6s var(--ease) infinite;}
-.dupla.viva .lb{animation:lamB 3.6s var(--ease) infinite;}
-.dupla.viva .laminas u{animation:fagulha 3.6s var(--ease) infinite;}
-.dupla.viva .laminas b{animation:onda 3.6s var(--ease) infinite;}
-@keyframes lamA{0%,100%{transform:rotate(-30deg);}44%,54%{transform:rotate(-8deg);}}
-@keyframes lamB{0%,100%{transform:rotate(30deg);} 44%,54%{transform:rotate(8deg);}}
-@keyframes fagulha{
-  0%,40%{opacity:0;transform:scale(.3);}
-  47%{opacity:1;transform:scale(1);}
-  68%,100%{opacity:0;transform:scale(2.6);}
-}
-@keyframes onda{
-  0%,42%{opacity:0;transform:scale(.5);}
-  50%{opacity:.9;transform:scale(1);}
-  78%,100%{opacity:0;transform:scale(4.6);}
-}
+/* o encontro: bisturi (verde, saude) e navalha (violeta, beleza) entram por
+   lados opostos, param alinhados, e entre os dois acende o dourado. O elo e uma
+   COTA — linha de medida com traco nas duas pontas — e nao um raio: a pagina
+   inteira e feita de numero com denominador, o desenho fala a mesma lingua.
+   So transform/opacity animam, entao nao ha reflow por quadro. */
+.laminas{position:relative;width:298px;height:195px;flex:0 0 auto;}
+.laminas svg{display:block;width:100%;height:100%;overflow:visible;}
+/* transform-box:view-box faz transform-origin contar em unidade do viewBox.
+   Sem ele o navegador mede pela caixa do proprio no e a origem sai do lugar. */
+.laminas g,.laminas circle,.laminas ellipse{transform-box:view-box;}
+.lm-halo{opacity:.12;}
+.lm-mira{opacity:.58;transform-origin:116px 76px;}
+.lm-brilhoC{opacity:0;transform-origin:116px 76px;}
+.lm-la{transform:translateX(-34px);opacity:.72;}
+.lm-lb{transform:translateX(34px);opacity:.72;}
+.lm-glint{opacity:0;stroke-dasharray:20 300;}
+.lm-cota{opacity:0;}
+.lm-cota .cl{stroke-dasharray:46;stroke-dashoffset:46;}
+.lm-nuc{opacity:0;transform-origin:116px 76px;}
+.lm-nuc .n1{filter:drop-shadow(0 0 7px rgba(242,194,48,.9));}
+.lm-onda{opacity:0;transform-origin:116px 76px;}
+.lm-fai circle{fill:var(--gold-hi);opacity:0;transform-origin:116px 76px;}
 
+.dupla.viva .lm-la{animation:lmA 6.4s var(--ease) infinite;}
+.dupla.viva .lm-lb{animation:lmB 6.4s var(--ease) infinite;}
+.dupla.viva .lm-glint{animation:lmGli 6.4s var(--ease) infinite;}
+.dupla.viva .lm-cota{animation:lmCota 6.4s var(--ease) infinite;}
+.dupla.viva .lm-cota .cl{animation:lmCotaL 6.4s var(--ease) infinite;}
+.dupla.viva .lm-nuc{animation:lmNuc 6.4s var(--ease) infinite;}
+.dupla.viva .lm-brilhoC{animation:lmBri 6.4s var(--ease) infinite;}
+.dupla.viva .lm-mira{animation:lmMira 6.4s var(--ease) infinite;}
+.dupla.viva .lm-halo{animation:lmHalo 6.4s var(--ease) infinite;}
+.dupla.viva .lm-onda.o1{animation:lmOnda 6.4s var(--ease) infinite;}
+.dupla.viva .lm-onda.o2{animation:lmOnda 6.4s var(--ease) infinite .2s;}
+.dupla.viva .lm-fai circle:nth-child(1){animation:lmFai 6.4s var(--ease) infinite;}
+.dupla.viva .lm-fai circle:nth-child(2){animation:lmFai 6.4s var(--ease) infinite .12s;}
+.dupla.viva .lm-fai circle:nth-child(3){animation:lmFai 6.4s var(--ease) infinite .24s;}
+@keyframes lmA{
+  0%,9%{transform:translateX(-34px);opacity:.72;}
+  33%{transform:translateX(0);opacity:1;}
+  37%{transform:translateX(-3px);}
+  44%,66%{transform:translateX(0);opacity:1;}
+  87%,100%{transform:translateX(-34px);opacity:.72;}
+}
+@keyframes lmB{
+  0%,9%{transform:translateX(34px);opacity:.72;}
+  33%{transform:translateX(0);opacity:1;}
+  37%{transform:translateX(3px);}
+  44%,66%{transform:translateX(0);opacity:1;}
+  87%,100%{transform:translateX(34px);opacity:.72;}
+}
+@keyframes lmGli{
+  0%,31%{opacity:0;stroke-dashoffset:0;}
+  35%{opacity:.9;}
+  54%{opacity:0;stroke-dashoffset:-96;}
+  100%{opacity:0;stroke-dashoffset:-96;}
+}
+@keyframes lmCota{0%,32%{opacity:0;}38%,68%{opacity:1;}84%,100%{opacity:0;}}
+@keyframes lmCotaL{0%,33%{stroke-dashoffset:46;}42%,100%{stroke-dashoffset:0;}}
+@keyframes lmNuc{
+  0%,33%{opacity:0;transform:scale(.2);}
+  39%{opacity:1;transform:scale(1.35);}
+  46%,68%{opacity:1;transform:scale(1);}
+  84%,100%{opacity:0;transform:scale(.25);}
+}
+@keyframes lmBri{
+  0%,32%{opacity:0;transform:scale(.45);}
+  41%{opacity:.8;transform:scale(1);}
+  68%{opacity:.4;transform:scale(1.08);}
+  86%,100%{opacity:0;transform:scale(.5);}
+}
+@keyframes lmOnda{0%,34%{opacity:0;transform:scale(.32);}40%{opacity:.5;}72%,100%{opacity:0;transform:scale(3);}}
+@keyframes lmMira{
+  0%,30%{opacity:.5;transform:scale(1.05);}
+  40%{opacity:1;transform:scale(.975);}
+  62%{opacity:.68;transform:scale(1);}
+  100%{opacity:.5;transform:scale(1.05);}
+}
+@keyframes lmHalo{0%,26%{opacity:.10;}44%{opacity:.3;}70%{opacity:.16;}100%{opacity:.10;}}
+@keyframes lmFai{
+  0%,37%{opacity:0;transform:translate(0,0) scale(.5);}
+  45%{opacity:.85;}
+  76%,100%{opacity:0;transform:translate(var(--dx),-26px) scale(.25);}
+}
 .dp-nums{
   display:grid;grid-template-columns:repeat(3,1fr);margin-top:30px;
   border-top:1px solid var(--line);
@@ -649,30 +725,79 @@ table.cnl td.v.perde{color:var(--dim);}
   letter-spacing:.03em;margin-top:12px;line-height:1.55;
 }
 .dp-pe{
-  padding:20px 30px 24px;border-top:1px solid var(--line);background:rgba(0,0,0,.26);
+  padding:22px 30px 26px;border-top:1px solid var(--line);background:rgba(0,0,0,.26);
   color:var(--txt);font-size:.97rem;line-height:1.62;
 }
-.dp-pe strong{color:#fff;}
+.dp-pe p{margin:0;max-width:88ch;}
+.dp-pe p+p{margin-top:15px;}
+.dp-pe strong{color:#fff;font-weight:600;}
+/* a frase que o subtitulo prometeu ("a razao esta na ultima linha") sai do
+   corpo do paragrafo e ganha a mesma gramatica do .pull do resto da pagina —
+   serifa e fio dourado — so que menor, para nao brigar com o titulo do bloco */
+.dp-key{
+  font-family:var(--d);font-size:clamp(1.16rem,1rem + .72vw,1.6rem);line-height:1.28;
+  letter-spacing:-.015em;color:#fff;padding-left:18px;border-left:2px solid var(--gold);
+  max-width:46ch;text-wrap:pretty;
+}
+.dp-key em{font-style:italic;color:var(--gold);}
 @media (max-width:760px){
   .dp-top{flex-direction:column;align-items:flex-start;gap:14px;padding:26px 22px 0;}
-  .laminas{width:140px;height:80px;align-self:center;}
+  .laminas{width:100%;max-width:300px;height:auto;aspect-ratio:232/152;align-self:center;}
   .dp-nums{grid-template-columns:1fr;}
   .dp-nums>div+div{border-left:0;border-top:1px solid var(--line);}
   .dp-nums>div{padding:20px 22px;}
   .dp-pe{padding:18px 22px 22px;}
 }
 @media (prefers-reduced-motion:reduce){
-  .dupla.viva .la,.dupla.viva .lb,.dupla.viva .laminas u,
-  .dupla.viva .laminas b,.dupla.viva::before{animation:none;}
-  .dupla.viva .laminas u{opacity:.9;}
+  /* sem movimento: a peca fica parada no quadro do encontro, que e o
+     quadro que carrega o sentido — nao no de repouso, que nao diz nada */
+  .dupla.viva::before,.dupla.viva .lm-la,.dupla.viva .lm-lb,.dupla.viva .lm-glint,
+  .dupla.viva .lm-cota,.dupla.viva .lm-cota .cl,.dupla.viva .lm-nuc,.dupla.viva .lm-brilhoC,
+  .dupla.viva .lm-mira,.dupla.viva .lm-halo,.dupla.viva .lm-onda,
+  .dupla.viva .lm-fai circle{animation:none;}
+  .lm-la,.lm-lb{transform:none;opacity:1;}
+  .lm-cota{opacity:1;}.lm-cota .cl{stroke-dashoffset:0;}
+  .lm-nuc{opacity:1;}.lm-brilhoC{opacity:.6;}
+  .lm-halo{opacity:.22;}.lm-mira{opacity:.8;}
 }
-.team{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:60px;}
+.team{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:60px;perspective:1300px;}
 @media (max-width:800px){.team{grid-template-columns:1fr;}}
 .mem{
+  position:relative;
   border:1px solid var(--line);border-radius:18px;padding:34px;background:var(--card);
   display:flex;gap:24px;align-items:flex-start;transition:border-color .3s;
 }
 .mem:hover{border-color:var(--line2);}
+/* trilho da cor do setor de cada um: verde e saude, violeta e beleza. O mesmo
+   par de cores do bloco da dupla e dos cartoes de numero, para o leitor nao ter
+   de reaprender o codigo a cada secao. */
+.mem.sa{box-shadow:inset 2px 0 0 rgba(63,214,154,.42);}
+.mem.be{box-shadow:inset -2px 0 0 rgba(178,101,245,.42);}
+/* O ELO no vao entre os dois cartoes. O fio tem um furo no meio (o degrade abre
+   em transparente entre 45% e 55%) para o losango caber sem precisar de fundo
+   solido — fundo solido nao casaria com o campo vivo que passa por tras. */
+.mem.be::before{
+  content:"";position:absolute;left:-10.5px;top:16%;bottom:16%;width:1px;
+  transform:scaleY(1);
+  background:linear-gradient(180deg,transparent,var(--gold-dk) 14%,var(--gold) 40%,
+    transparent 45%,transparent 55%,var(--gold) 60%,var(--gold-dk) 86%,transparent);
+}
+.mem.be::after{
+  content:"";position:absolute;left:-14.5px;top:50%;margin-top:-4.5px;
+  width:9px;height:9px;transform:rotate(45deg) scale(1);
+  border:1px solid var(--gold);border-radius:1.5px;
+  background:radial-gradient(circle,var(--gold-hi) 0 1.7px,transparent 1.8px);
+}
+@media (max-width:800px){
+  .mem.sa{box-shadow:inset 0 2px 0 rgba(63,214,154,.42);}
+  .mem.be{box-shadow:inset 0 -2px 0 rgba(178,101,245,.42);}
+  .mem.be::before{
+    left:16%;right:16%;top:-10.5px;bottom:auto;width:auto;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold-dk) 14%,var(--gold) 40%,
+      transparent 45%,transparent 55%,var(--gold) 60%,var(--gold-dk) 86%,transparent);
+  }
+  .mem.be::after{left:50%;margin-left:-4.5px;top:-14.5px;margin-top:0;}
+}
 .mono{
   flex:none;width:74px;height:74px;border-radius:17px;display:grid;place-items:center;
   font-family:var(--d);font-size:1.7rem;color:var(--gold);letter-spacing:-.02em;
@@ -1454,8 +1579,8 @@ table.fontes i{font-style:italic;color:var(--txt);}
         </h2>
       </div>
       <p class="lede rv d1" style="margin-top:0;">
-        <span data-l="pt">Toda empresa que vende para outra empresa no Brasil bate na mesma parede: <strong>10,6 milhões de organizações formais</strong>, e nenhum caminho barato até nenhuma delas. A 3BRAIN atravessou essa parede em saúde — o setor que conhece — e ficou com a estrada: <strong>518.604 estabelecimentos varridos, 277.645 e-mails extraídos</strong>. O que se prova ali não é um dado de saúde, é um <strong>rendimento de extração</strong> — e o registro público é o mesmo para todos os setores. Quem não tem isso contrata gente ou compra mídia, todo mês, para sempre.</span>
-        <span data-l="en">Every company in Brazil that sells to another company hits the same wall: <strong>10.6 million formal organisations</strong>, and no cheap path to a single one of them. 3BRAIN crossed that wall in healthcare — the sector it knows — and kept the road: <strong>518,604 facilities swept, 277,645 e-mails extracted</strong>. What that proves is not a healthcare figure, it is an <strong>extraction yield</strong> — and the public register is the same one for every sector. Whoever lacks it hires people or buys media, every month, forever.</span>
+        <span data-l="pt">Toda empresa que vende para outra empresa no Brasil bate na mesma parede: <strong>10,6 milhões de organizações formais</strong>, e nenhum caminho barato até nenhuma delas. A 3BRAIN atravessou essa parede em saúde — o setor que conhece — e não parou nela: são <strong>2.126.099 e-mails únicos</strong> extraídos de <strong>15 registros públicos</strong>, dos quais <strong>275.919 saíram de 518.604 estabelecimentos de saúde</strong>. O que se prova ali não é um dado de saúde, é um <strong>rendimento de extração</strong> — e o registro público é o mesmo para todos os setores. Quem não tem isso contrata gente ou compra mídia, todo mês, para sempre.</span>
+        <span data-l="en">Every company in Brazil that sells to another company hits the same wall: <strong>10.6 million formal organisations</strong>, and no cheap path to a single one of them. 3BRAIN crossed that wall in healthcare — the sector it knows — and did not stop there: <strong>2,126,099 unique e-mails</strong> extracted from <strong>15 public registers</strong>, of which <strong>275,919 came from 518,604 healthcare facilities</strong>. What that proves is not a healthcare figure, it is an <strong>extraction yield</strong> — and the public register is the same one for every sector. Whoever lacks it hires people or buys media, every month, forever.</span>
       </p>
     </div>
 
@@ -1475,8 +1600,8 @@ table.fontes i{font-style:italic;color:var(--txt);}
       <div class="fnode rv d2">
         <div class="fi"><span data-l="pt">Já executado</span><span data-l="en">Already executed</span></div>
         <div class="fn" data-count="62131">62.131</div>
-        <div class="fl"><span data-l="pt">ações entregues pelo motor: <strong>49.763 e-mails</strong> e <strong>12.368 candidaturas</strong> em 12 plataformas — e <strong>uma contratação real</strong>, rastreada até a caixa exata</span><span data-l="en">actions delivered by the engine: <strong>49,763 e-mails</strong> and <strong>12,368 job applications</strong> across 12 platforms — and <strong>one real hire</strong>, traced to the exact inbox</span></div>
-        <div class="fs"><span data-l="pt">Ledgers da operação + API do Elastic, medidos em 22/08/2026</span><span data-l="en">Operation ledgers + Elastic API, measured 22 Aug 2026</span></div>
+        <div class="fl"><span data-l="pt">ações entregues pelo motor: <strong>49.763 e-mails</strong> e <strong>12.368 candidaturas</strong>, de <strong>58 adaptadores que submetem</strong> — 23 deles sistemas de recrutamento abertos por HTTP puro. Conversa de entrevista com <strong>86 empregadores distintos</strong> e <strong>uma contratação real</strong> rastreada até a caixa exata</span><span data-l="en">actions delivered by the engine: <strong>49,763 e-mails</strong> and <strong>12,368 applications</strong>, out of <strong>58 submitting adapters</strong> — 23 of them applicant-tracking systems opened by raw HTTP. Interview conversations with <strong>86 distinct employers</strong> and <strong>one real hire</strong> traced to the exact inbox</span></div>
+        <div class="fs"><span data-l="pt">Ledgers da operação + API do Elastic, medidos em 22-23/08/2026</span><span data-l="en">Operation ledgers + Elastic API, measured 22-23 Aug 2026</span></div>
       </div>
       <div class="fnode rv d3">
         <div class="fi"><span data-l="pt">Segundo mercado</span><span data-l="en">Second market</span></div>
@@ -1570,8 +1695,8 @@ table.fontes i{font-style:italic;color:var(--txt);}
 
     <div class="note rv">
       <div class="nt"><span data-l="pt">Três leituras para o investidor</span><span data-l="en">Three readings for an investor</span></div>
-      <p><span data-l="pt">Na primeira leitura, o canal de aquisição do SAVI e do BarberGO <strong>já está construído</strong>, e não é despesa comprada de fora a cada envio. Na segunda, o mesmo motor é produto de prospecção B2B: <strong>R$ 15.480 por cliente/ano com 70,4% de margem de contribuição</strong>, cobrado por <strong>contato verificado</strong> e não por envio, o que põe R$ 1 milhão de receita recorrente a <strong>65 clientes</strong> de distância. Na terceira — e é a que já tem desfecho — o mesmo motor vira produto de <strong>prospecção de emprego</strong>: <strong>12.368 candidaturas enviadas</strong> de 26.811 tentativas em <strong>12 plataformas abertas por HTTP puro</strong>, sem nenhum serviço pago de automação, a <strong>R$ 0,008 por candidatura</strong> — e com uma contratação real no fim. Um mercado de pessoa física, ticket baixo e volume alto, que roda no mesmo motor que atende a empresa.</span>
-      <span data-l="en">On the first reading, the acquisition channel for SAVI and BarberGO is <strong>already built</strong>, and is not a cost bought from outside on every send. On the second, the same engine is a B2B prospecting product: <strong>US$ 3.0k per client/year with a 70.4% contribution margin</strong>, billed per <strong>verified contact</strong> rather than per send, putting US$ 193k in recurring revenue <strong>65 clients</strong> away. On the third — the one that already has an outcome — the same engine becomes a <strong>job-hunting product</strong>: <strong>12,368 applications submitted</strong> out of 26,811 attempts across <strong>12 platforms opened by raw HTTP</strong>, with no paid automation service, at <strong>US$ 0.0015 per application</strong> — and one real hire at the end. A consumer market, low ticket and high volume, running on the same engine that serves the company.</span></p>
+      <p><span data-l="pt">Na primeira leitura, o canal de aquisição do SAVI e do BarberGO <strong>já está construído</strong>, e não é despesa comprada de fora a cada envio. Na segunda, o mesmo motor é produto de prospecção B2B: <strong>R$ 15.480 por cliente/ano com 70,4% de margem de contribuição</strong>, cobrado por <strong>contato verificado</strong> e não por envio, o que põe R$ 1 milhão de receita recorrente a <strong>65 clientes</strong> de distância. Na terceira — e é a que já tem desfecho — o mesmo motor vira produto de <strong>prospecção de emprego</strong>, e é aqui que o alcance aparece inteiro: <strong>240.314 vagas colhidas</strong>, das quais <strong>79.828 trouxeram o e-mail de quem contrata</strong> — 74% no geral e <strong>100% em saúde</strong>. O motor submete em <strong>58 plataformas</strong>, <strong>23 delas sistemas de recrutamento abertos por HTTP puro</strong>, sem nenhum serviço pago de automação e sem robô de tela. Dali saíram <strong>12.368 candidaturas</strong> de 26.811 tentativas (<strong>46,1%</strong>) a <strong>R$ 0,008 cada</strong>, que devolveram conversa de entrevista com <strong>86 empregadores distintos</strong> e <strong>uma contratação rastreada até a caixa exata</strong>. Um mercado de pessoa física, ticket baixo e volume alto, que roda no mesmo motor que atende a empresa.</span>
+      <span data-l="en">On the first reading, the acquisition channel for SAVI and BarberGO is <strong>already built</strong>, and is not a cost bought from outside on every send. On the second, the same engine is a B2B prospecting product: <strong>US$ 3.0k per client/year with a 70.4% contribution margin</strong>, billed per <strong>verified contact</strong> rather than per send, putting US$ 193k in recurring revenue <strong>65 clients</strong> away. On the third — the one that already has an outcome — the same engine becomes a <strong>job-hunting product</strong>, and this is where the full reach shows: <strong>240,314 job postings harvested</strong>, of which <strong>79,828 carried the hiring employer’s e-mail</strong> — 74% overall and <strong>100% in healthcare</strong>. The engine submits on <strong>58 platforms</strong>, <strong>23 of them applicant-tracking systems opened by raw HTTP</strong>, with no paid automation service and no screen robot. Out of that came <strong>12,368 applications</strong> from 26,811 attempts (<strong>46.1%</strong>) at <strong>US$ 0.0015 each</strong>, which returned interview conversations with <strong>86 distinct employers</strong> and <strong>one hire traced to the exact inbox</strong>. A consumer market, low ticket and high volume, running on the same engine that serves the company.</span></p>
     </div>
   </div>
 </section>
@@ -1631,7 +1756,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
     </p>
 
     <div class="team">
-      <div class="mem sa rv">
+      <div class="mem sa rv d1">
         <div class="mono">FS</div>
         <div>
           <h4>Fábio “Binho” da Silva</h4>
@@ -1641,7 +1766,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
           <div class="mtr"><span data-l="pt">O setor dele: <b>605 mil estabelecimentos de saúde</b> — e só 1 em cada 19 empresas do ramo tem porte que compra software<br>CNES jun/2026 · IBGE CEMPRE 2024</span><span data-l="en">His sector: <b>605,000 healthcare facilities</b> — and only 1 in every 19 companies in the field has the size to buy software<br>CNES Jun/2026 · IBGE CEMPRE 2024</span></div>
         </div>
       </div>
-      <div class="mem be rv d1">
+      <div class="mem be rv d3">
         <div class="mono">BN</div>
         <div>
           <h4>Bruno “Nobru” da Silva</h4>
@@ -1660,7 +1785,50 @@ table.fontes i{font-style:italic;color:var(--txt);}
           <div class="dp-titulo"><span data-l="pt">Bisturi <em>e</em> Navalha</span><span data-l="en">Scalpel <em>and</em> Razor</span></div>
           <p class="dp-sub"><span data-l="pt">Um cuida de gente deitada, o outro de gente sentada. São os dois maiores serviços de mão do Brasil, os dois crescem por motivos que ninguém controla, e os dois <strong>continuam sendo tocados no papel e no WhatsApp</strong> — pela mesma razão, que está na última linha.</span><span data-l="en">One looks after people lying down, the other after people sitting down. They are Brazil’s two largest hands-on services, both grow for reasons nobody controls, and both are <strong>still run on paper and WhatsApp</strong> — for the same reason, which is in the last line.</span></p>
         </div>
-        <div class="laminas" aria-hidden="true"><i class="la"></i><i class="lb"></i><b></b><u></u></div>
+        <div class="laminas" aria-hidden="true">
+        <svg viewBox="0 0 232 152" focusable="false" role="presentation">
+          <defs>
+            <linearGradient id="lmgA" gradientUnits="userSpaceOnUse" x1="14" y1="44" x2="150" y2="44"><stop offset="0" stop-color="#3FD69A" stop-opacity=".5"/><stop offset=".66" stop-color="#8FF0C6" stop-opacity=".92"/><stop offset="1" stop-color="#EAFFF6"/></linearGradient>
+            <linearGradient id="lmgB" gradientUnits="userSpaceOnUse" x1="218" y1="107" x2="82" y2="107"><stop offset="0" stop-color="#B265F5" stop-opacity=".5"/><stop offset=".66" stop-color="#D9AFFF" stop-opacity=".92"/><stop offset="1" stop-color="#F7ECFF"/></linearGradient>
+            <radialGradient id="lmhA"><stop offset="0" stop-color="#3FD69A" stop-opacity=".55"/><stop offset="1" stop-color="#3FD69A" stop-opacity="0"/></radialGradient>
+            <radialGradient id="lmhB"><stop offset="0" stop-color="#B265F5" stop-opacity=".55"/><stop offset="1" stop-color="#B265F5" stop-opacity="0"/></radialGradient>
+            <radialGradient id="lmhC"><stop offset="0" stop-color="#F2C230" stop-opacity=".5"/><stop offset=".55" stop-color="#F2C230" stop-opacity=".1"/><stop offset="1" stop-color="#F2C230" stop-opacity="0"/></radialGradient>
+          </defs>
+          <ellipse class="lm-halo" cx="70" cy="50" rx="72" ry="46" fill="url(#lmhA)"/>
+          <ellipse class="lm-halo" cx="162" cy="104" rx="72" ry="46" fill="url(#lmhB)"/>
+          <g class="lm-mira" fill="none" stroke="#7E6210" stroke-width="1.1"><path d="M8 24V10h14"/><path d="M210 10h14v14"/><path d="M224 128v14h-14"/><path d="M22 142H8v-14"/></g>
+          <circle class="lm-brilhoC" cx="116" cy="76" r="30" fill="url(#lmhC)"/>
+          <g class="lm-cota" fill="none" stroke="#F2C230" stroke-linecap="round">
+            <path class="cl" d="M116,53 V99" stroke-width="1" stroke-opacity=".7"/>
+            <path d="M110.5,53 H121.5 M110.5,99 H121.5" stroke-width="1.1" stroke-opacity=".85"/>
+          </g>
+          <g class="lm-nuc">
+            <path class="n2" d="M116,68.6 L123.4,76 L116,83.4 L108.6,76 Z" fill="#0B0B0F" stroke="#F2C230" stroke-width="1.1" stroke-linejoin="round"/>
+            <path class="n1" d="M116,72.6 L119.4,76 L116,79.4 L112.6,76 Z" fill="#FFDC6A"/>
+          </g>
+          <circle class="lm-onda o1" cx="116" cy="76" r="8" fill="none" stroke="#F2C230" stroke-width=".8"/>
+          <circle class="lm-onda o2" cx="116" cy="76" r="8" fill="none" stroke="#F2C230" stroke-width=".7"/>
+          <g class="lm-la" fill="rgba(63,214,154,.085)" stroke="url(#lmgA)" stroke-width="1.1" stroke-linejoin="round">
+            <path d="M20,39.4 L92,40.6 Q97,41.4 97,44 Q97,46.6 92,47.4 L20,48.6 Q15.6,48.6 15.6,45.4 L15.6,42.6 Q15.6,39.4 20,39.4 Z"/>
+            <g stroke-width=".75" stroke-opacity=".45" stroke-linecap="round"><path d="M24,41.7 V46.3"/><path d="M29,41.8 V46.4"/><path d="M34,41.8 V46.4"/><path d="M39,41.9 V46.5"/><path d="M44,41.9 V46.5"/></g>
+            <path d="M97,42.2 L103,42.2 L103,45.8 L97,45.8 Z"/>
+            <path d="M103,39.6 L134,39.6 Q143,40.2 147.4,43.2 Q134,49.4 121,50.6 Q110,51.2 103,48.8 Z"/>
+            <path d="M107,42.4 L133,42.4" stroke-width=".7" stroke-opacity=".38"/>
+            <path class="lm-glint" d="M147.4,43.2 Q134,49.4 121,50.6 Q110,51.2 103,48.8" fill="none" stroke="#EAFFF6" stroke-width="1.6" stroke-linecap="round"/>
+          </g>
+          <g class="lm-lb" fill="rgba(178,101,245,.085)" stroke="url(#lmgB)" stroke-width="1.1" stroke-linejoin="round">
+            <path d="M158,113.6 L102,112.2 Q88,111 83.4,106.6 Q81.8,103.2 86,101.4 L158,101.4 Z"/>
+            <path d="M100,109.6 Q128,110.4 154,111" stroke-width=".72" stroke-opacity=".45"/>
+            <path d="M94,103.6 L154,103.6" stroke-width=".62" stroke-opacity=".3"/>
+            <path d="M158,103.6 L166,104.2 L166,111 L158,110.8 Z"/>
+            <circle cx="169.6" cy="107" r="2.4" fill="none" stroke-width=".9"/>
+            <path d="M173.2,102.6 L211,102.6 Q216.6,103.2 216.6,107 Q216.6,110.8 211,111.4 L173.2,111.4 Z"/>
+            <path d="M179,105.4 L205,105.4" stroke-width=".7" stroke-opacity=".38"/>
+            <path class="lm-glint" d="M86,101.4 L158,101.4" fill="none" stroke="#F7ECFF" stroke-width="1.6" stroke-linecap="round"/>
+          </g>
+          <g class="lm-fai"><circle cx="116" cy="76" r="1.15" style="--dx:-7px"/><circle cx="116" cy="76" r=".9" style="--dx:5px"/><circle cx="116" cy="76" r="1.05" style="--dx:10px"/></g>
+        </svg>
+      </div>
       </div>
       <div class="dp-nums">
         <div>
@@ -1682,7 +1850,11 @@ table.fontes i{font-style:italic;color:var(--txt);}
           <i><span data-l="pt">Sebrae, Pulso dos Pequenos Negócios 12ª ed. · 8.200 entrevistados</span><span data-l="en">Sebrae, Pulso dos Pequenos Negócios 12th ed. · 8,200 respondents</span></i>
         </div>
       </div>
-      <div class="dp-pe"><span data-l="pt">A razão é a mesma nos dois, e é de estrutura: <strong>mercado gigante, conta pequena.</strong> Em beleza existem <strong>226 empresas com 20 pessoas ou mais no Brasil inteiro</strong>; em saúde, só <strong>1 em cada 19</strong> tem porte que compra software. Não dá para montar equipe de vendas em cima disso — quem ganha, ganha em volume de conta pequena, que é exatamente o que um app de autoatendimento e um motor de aquisição fazem. E para chegar lá <strong>tem que ter estado lá dentro</strong>: um técnico de enfermagem e um dono de barbearia é a única combinação que entra nos dois pela porta de serviço.</span><span data-l="en">The reason is the same in both, and it is structural: <strong>an enormous market, a small account.</strong> Beauty has <strong>226 companies with 20 people or more in all of Brazil</strong>; healthcare, only <strong>1 in every 19</strong> with the size to buy software. You cannot build a sales team on that — whoever wins, wins on the volume of small accounts, which is exactly what a self-serve app and an acquisition engine do. And to get there you <strong>have to have been inside</strong>: a nurse technician and a barbershop owner is the only combination that walks into both through the service door.</span></div>
+      <div class="dp-pe">
+        <p><span data-l="pt">A razão é a mesma nos dois, e é estrutural: <strong>mercado gigante, conta pequena</strong>. Vender de porta em porta custa mais do que a porta paga — em beleza, <strong>226 empresas no país inteiro</strong> têm 20 pessoas ou mais; em saúde, só <strong>1 em cada 19</strong> tem porte para comprar software.</span><span data-l="en">The reason is the same in both, and it is structural: <strong>an enormous market, a small account</strong>. Selling door to door costs more than the door pays — in beauty, <strong>226 companies in the entire country</strong> have 20 people or more; in healthcare, only <strong>1 in every 19</strong> is large enough to buy software.</span></p>
+        <p class="dp-key"><span data-l="pt">Esse mercado não ficou no papel por descuido. Ficou porque a conta de <em>ir até ele</em> nunca fechou.</span><span data-l="en">This market was not left on paper by oversight. It was left there because the cost of <em>reaching it</em> never added up.</span></p>
+        <p><span data-l="pt">Só chega nele quem vai sem vendedor, pela tela que o dono já abre todo dia — e quem já esteve do lado de dentro para saber o que pedir. <strong>Um técnico de enfermagem e um dono de barbearia entram nos dois pela porta de serviço.</strong></span><span data-l="en">The only way in is without a salesperson, through the screen the owner already opens every day — and having been on the inside to know what to ask for. <strong>A nurse technician and a barbershop owner walk into both through the service door.</strong></span></p>
+      </div>
     </div>
   </div>
 </section>
@@ -1724,7 +1896,14 @@ table.fontes i{font-style:italic;color:var(--txt);}
           <tr><td class="num">900.868</td><td><span data-l="pt">CNPJs ativos na atividade · inclui salão e manicure</span><span data-l="en">active registrations in the trade · includes salons and nail bars</span></td><td>Mapa de Empresas, <span data-l="pt">2º quad./2025, Tab. 7</span><span data-l="en">Q2 2025, Tab. 7</span></td></tr>
           <tr><td class="num"><span data-l="pt">R$ 5,3–6,2 mil</span><span data-l="en">US$ 1.02–1.20k</span></td><td><span data-l="pt">por mês, o custo de um profissional de prospecção com encargos, para 10 a 20 reuniões · <strong>estimativa com a conta aberta</strong>: salário médio × 1,65 a 2,00</span><span data-l="en">per month, the cost of one prospecting rep with payroll taxes, for 10 to 20 meetings · <strong>an estimate with the arithmetic shown</strong>: average salary × 1.65 to 2.00</span></td><td><span data-l="pt">Glassdoor Brasil (salário, autodeclarado) · tabelas de encargos CLT</span><span data-l="en">Glassdoor Brazil (self-reported salary) · Brazilian payroll tax tables</span></td></tr>
           <tr><td class="num">4,5 / 1.000</td><td><span data-l="pt">respostas de e-mail frio sobre quem <strong>recebeu</strong> · viraria 5% se o denominador fosse “quem abriu”. Está aqui como referência de método, não como nossa taxa</span><span data-l="en">cold e-mail replies over who <strong>received</strong> · would read 5% if the denominator were “who opened”. Here as a methodological reference, not as our rate</span></td><td>Belkins, 2025 — 7.530.489 <span data-l="pt">envios</span><span data-l="en">sends</span></td></tr>
-          <tr><td class="num">277.645 · 24.515</td><td><span data-l="pt">e-mails únicos extraídos de 518.604 estabelecimentos · campanha encerrada em 15/08/2026 com 0 reclamações</span><span data-l="en">unique e-mails from 518,604 facilities · campaign closed 15 Aug 2026 with 0 complaints</span></td><td><span data-l="pt">Operação HuntAI sobre a base CNES/DATASUS, 2026</span><span data-l="en">HuntAI operation over the CNES/DATASUS registry, 2026</span></td></tr>
+          <tr><td class="num">2.126.099</td><td><span data-l="pt">e-mails <strong>únicos</strong> extraídos de 15 registros públicos. A soma das fontes dá 3.782.070; a <strong>união</strong> é 2,1 milhão — sobreposição de 43,8%, porque o mesmo CNPJ entra pela Receita e pelo CNES. <strong>Somar seria inflar em 1,6 milhão</strong></span><span data-l="en">unique e-mails extracted from 15 public registers. The sources add up to 3,782,070; the <strong>union</strong> is 2.1 million — 43.8% overlap, because the same company enters through both the tax registry and CNES. <strong>Adding them would inflate it by 1.6 million</strong></span></td><td><span data-l="pt">Ledger de extração da operação HuntAI, medido em 23/08/2026</span><span data-l="en">HuntAI operation extraction ledger, measured 23 Aug 2026</span></td></tr>
+          <tr><td class="num">240.314</td><td><span data-l="pt">registros de vaga colhidos, de onde saem as <strong>79.828 com e-mail do empregador</strong> da linha abaixo. Inclui backlog e portais que <strong>proíbem contato no texto</strong> — OLX entrega 9.100 vagas e <strong>zero</strong> e-mails, e está contado assim</span><span data-l="en">job-posting records harvested, the source of the <strong>79,828 with an employer e-mail</strong> in the row below. Includes backlog and portals that <strong>forbid contact details in the ad</strong> — OLX yields 9,100 postings and <strong>zero</strong> e-mails, and is counted that way</span></td><td><span data-l="pt">Ledger de colheita da operação HuntAI, medido em 23/08/2026</span><span data-l="en">HuntAI harvest ledger, measured 23 Aug 2026</span></td></tr>
+          <tr><td class="num">58 · 23</td><td><span data-l="pt">adaptadores que <strong>submetem</strong> candidatura e, dentro deles, <strong>23 sistemas de recrutamento</strong> abertos por HTTP puro — Greenhouse, Lever, Workday, iCIMS, Workable e outros. É a capacidade do motor, não o lote enviado</span><span data-l="en">adapters that <strong>submit</strong> an application and, within them, <strong>23 applicant-tracking systems</strong> opened by raw HTTP — Greenhouse, Lever, Workday, iCIMS, Workable and others. This is engine capacity, not the batch sent</span></td><td><span data-l="pt">Inventário de adaptadores da operação HuntAI, 23/08/2026</span><span data-l="en">HuntAI adapter inventory, 23 Aug 2026</span></td></tr>
+          <tr><td class="num">12.368 / 26.811</td><td><span data-l="pt">candidaturas enviadas sobre tentativas registradas — <strong>46,1%</strong>. O que falha são formulários que mudaram de campo ou vaga fechada entre a colheita e o envio</span><span data-l="en">applications sent over attempts logged — <strong>46.1%</strong>. What fails are forms whose fields changed, or postings closed between harvest and submission</span></td><td><span data-l="pt">Ledgers de candidatura da operação HuntAI, 23/08/2026</span><span data-l="en">HuntAI application ledgers, 23 Aug 2026</span></td></tr>
+          <tr><td class="num">79.828</td><td><span data-l="pt">vagas que trouxeram <strong>o e-mail do empregador junto do anúncio</strong>: 74% no geral, 79% em tecnologia e <strong>100% em saúde</strong>. O anúncio entrega o alvo e o canal na mesma extração</span><span data-l="en">job postings that carried <strong>the employer’s e-mail alongside the ad</strong>: 74% overall, 79% in tech and <strong>100% in healthcare</strong>. The posting delivers the target and the channel in one pass</span></td><td><span data-l="pt">Ledger de vagas da operação HuntAI, medido em 23/08/2026</span><span data-l="en">HuntAI job ledger, measured 23 Aug 2026</span></td></tr>
+          <tr><td class="num">275.919</td><td><span data-l="pt">e-mails únicos de 518.604 estabelecimentos de saúde — contados <strong>uma vez só</strong> nos dois arquivos do CNES. Esta página já publicou 277.645, que contava parte deles duas vezes</span><span data-l="en">unique e-mails from 518,604 healthcare facilities — counted <strong>once</strong> across both CNES files. This page previously published 277,645, which counted some of them twice</span></td><td><span data-l="pt">Operação HuntAI sobre a base CNES/DATASUS, 2026</span><span data-l="en">HuntAI operation over the CNES/DATASUS registry, 2026</span></td></tr>
+          <tr><td class="num">154 · 86</td><td><span data-l="pt">mensagens de retorno em <strong>86 empregadores distintos</strong>, lidas no corpo de 2.881 mensagens pré-filtradas. <strong>60 dos 86 são portugueses e só 2 brasileiros</strong> — o motor produziu entrevista sobretudo em Portugal. <strong>Ressalva:</strong> três falsos positivos foram cortados na amostra; sem eles o número dobrava</span><span data-l="en">reply messages across <strong>86 distinct employers</strong>, read in the body of 2,881 pre-filtered messages. <strong>60 of the 86 are Portuguese and only 2 Brazilian</strong> — the engine produced interviews mostly in Portugal. <strong>Caveat:</strong> three false positives were removed by hand; without that the figure doubled</span></td><td><span data-l="pt">Varredura do corpo das mensagens, medida em 23/08/2026</span><span data-l="en">Message-body sweep, measured 23 Aug 2026</span></td></tr>
+          <tr><td class="num">49.763 · 0,008%</td><td><span data-l="pt">e-mails disparados pelo motor e taxa de reclamação medida — <strong>12× abaixo</strong> do limite que faz provedor banir. Agosto: 24.518 enviados, 89,4% entregues. <strong>Ressalva:</strong> a entrega de julho é desconhecida, o provedor anterior não a expunha</span><span data-l="en">e-mails sent by the engine and the measured complaint rate — <strong>12× below</strong> the threshold that gets a sender banned. August: 24,518 sent, 89.4% delivered. <strong>Caveat:</strong> July’s delivery is unknown; the previous provider did not report it</span></td><td><span data-l="pt">API do Elastic Email, medido em 22/08/2026</span><span data-l="en">Elastic Email API, measured 22 Aug 2026</span></td></tr>
           <tr><td class="num">10%</td><td><span data-l="pt">devolução em que a AWS pausa o envio · 5% já põe sob revisão</span><span data-l="en">bounce at which AWS pauses sending · 5% already triggers review</span></td><td><span data-l="pt">Documentação AWS SES, fonte primária</span><span data-l="en">AWS SES documentation, primary source</span>, 2026</td></tr>
         </tbody>
       </table>
@@ -1851,22 +2030,41 @@ table.fontes i{font-style:italic;color:var(--txt);}
   onScroll();
 
   /* ---------- revelação ---------- */
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(en){
-      if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
-    });
-  }, {rootMargin:'0px 0px -8% 0px', threshold:.12});
-  document.querySelectorAll('.rv, .chart').forEach(function(el){ io.observe(el); });
-  // rede de segurança: nenhum conteúdo pode ficar preso invisível por falha de JS
-  setTimeout(function(){
-    document.querySelectorAll('.rv:not(.in), .chart:not(.in)').forEach(function(el){ el.classList.add('in'); });
-  }, 4000);
+  /* Sem IntersectionObserver nao ha o que observar: revela tudo na hora, porque
+     conteudo invisivel e pior do que conteudo sem animacao. */
+  if (!('IntersectionObserver' in window)){
+    document.querySelectorAll('.rv, .chart').forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, {rootMargin:'0px 0px -8% 0px', threshold:.12});
+    document.querySelectorAll('.rv, .chart').forEach(function(el){ io.observe(el); });
+
+    /* Rede de seguranca. A versao antiga era setTimeout(4000) revelando a PAGINA
+       INTEIRA sem olhar onde o elemento estava: medido em 390x844, 78 dos 82
+       blocos eram revelados FORA da tela — os dois cartoes de fundador inclusive —
+       e quem rolasse depois de 4s os encontrava ja revelados, sem animacao nenhuma.
+       Agora resgata SO o que esta de fato visivel, com a MESMA geometria do
+       observador (rootMargin -8% => h*0.92), para os dois nunca discordarem;
+       repete a cada 2,5s e se desliga sozinha quando nao sobra ninguem preso. */
+    var rede = setInterval(function(){
+      var presos = document.querySelectorAll('.rv:not(.in), .chart:not(.in)');
+      if (!presos.length){ clearInterval(rede); return; }
+      var h = window.innerHeight || document.documentElement.clientHeight;
+      presos.forEach(function(el){
+        var r = el.getBoundingClientRect();
+        if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('in');
+      });
+    }, 2500);
+  }
 
   /* a onda so vive enquanto o bloco esta na tela: animacao parada fora de vista
      e bateria queimada a toa, e o navegador nao para sozinho */
   ['mito','dupla'].forEach(function(id){
     var el = document.getElementById(id);
-    if (!el) return;
+    if (!el || !('IntersectionObserver' in window)) return;
     new IntersectionObserver(function(ens){
       ens.forEach(function(en){ el.classList.toggle('viva', en.isIntersecting); });
     }, {threshold:.22}).observe(el);
