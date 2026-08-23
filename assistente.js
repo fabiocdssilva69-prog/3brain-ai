@@ -30,7 +30,7 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
 
   /* ── a ponte. Vazio = so base local, que e exatamente o comportamento de antes.
         Preencha com a URL do Worker depois do `wrangler deploy` (ver worker/README.md). */
-  var API = '';
+  var API = 'https://3brain-api.3brain-ai.workers.dev';
   var ESPERA_MS = 9000;
 
   var ocupado = false;      // trava de reentrancia: sem ela, tres perguntas voltam fora de ordem
