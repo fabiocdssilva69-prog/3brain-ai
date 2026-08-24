@@ -623,7 +623,6 @@ table.cnl td.v.perde{color:var(--dim);}
    Sem ele o navegador mede pela caixa do proprio no e a origem sai do lugar. */
 .laminas g,.laminas circle,.laminas ellipse,.laminas rect{transform-box:view-box;}
 /* a sombra projetada viaja junto com o instrumento, por isso mora dentro do grupo */
-.lm-som{opacity:.5;}
 /* A VARREDURA ESPECULAR e o que faz o metal parecer vivo: uma faixa clara que
    corre pela face da lamina. E um <rect> com degrade recortado pelo clipPath da
    propria lamina e movido por translateX -- so transform, roda na GPU, e nao ha
@@ -632,11 +631,20 @@ table.cnl td.v.perde{color:var(--dim);}
 .lm-halo{opacity:.12;}
 .lm-mira{opacity:.58;transform-origin:150px 88px;}
 .lm-brilhoC{opacity:0;transform-origin:150px 88px;}
-.lm-la{transform:translateX(-40px);opacity:.72;}
-.lm-lb{transform:translateX(40px);opacity:.72;}
+/* A chegada nao e so deslize: o instrumento vem DESFOCADO e entra em foco ao
+   assentar, e a sombra vem LARGA E FRACA (objeto alto) e fecha em curta e forte
+   (objeto pousado). Sao esses dois que dao peso -- deslize puro parece adesivo. */
+.lm-la{transform:translateX(-40px);opacity:.72;filter:blur(1.6px);}
+.lm-lb{transform:translateX(40px);opacity:.72;filter:blur(1.6px);}
+.lm-som{opacity:.5;transform-origin:50% 50%;}
 .lm-glint{opacity:0;stroke-dasharray:20 300;}
 .lm-cota{opacity:0;}
-.lm-cota .cl{stroke-dasharray:36;stroke-dashoffset:36;}
+/* o elo fecha como PAQUIMETRO: primeiro os dois tracos das pontas, depois as
+   duas metades correndo uma para a outra ate se encontrarem no losango. Linha
+   que cresce de uma ponta so le como raio; duas metades que se encontram leem
+   como medida. */
+.lm-cota .tk{opacity:0;}
+.lm-cota .cl{stroke-dasharray:18;stroke-dashoffset:18;}
 .lm-nuc{opacity:0;transform-origin:150px 88px;}
 .lm-nuc .n1{filter:drop-shadow(0 0 7px rgba(242,194,48,.9));}
 .lm-onda{opacity:0;transform-origin:150px 88px;}
@@ -646,7 +654,11 @@ table.cnl td.v.perde{color:var(--dim);}
 .dupla.viva .lm-lb{animation:lmB 6.4s var(--ease) infinite;}
 .dupla.viva .lm-glint{animation:lmGli 6.4s var(--ease) infinite;}
 .dupla.viva .lm-cota{animation:lmCota 6.4s var(--ease) infinite;}
+.dupla.viva .lm-cota .tk{animation:lmCotaT 6.4s var(--ease) infinite;}
 .dupla.viva .lm-cota .cl{animation:lmCotaL 6.4s var(--ease) infinite;}
+.dupla.viva .lm-som{animation:lmSom 6.4s var(--ease) infinite;}
+.dupla.viva .lm-la .lm-som{animation:lmSom 6.4s var(--ease) infinite,lmBoiaA 9.2s ease-in-out infinite;}
+.dupla.viva .lm-lb .lm-som{animation:lmSom 6.4s var(--ease) infinite,lmBoiaB 9.2s ease-in-out infinite;}
 .dupla.viva .lm-nuc{animation:lmNuc 6.4s var(--ease) infinite;}
 .dupla.viva .lm-brilhoC{animation:lmBri 6.4s var(--ease) infinite;}
 .dupla.viva .lm-mira{animation:lmMira 6.4s var(--ease) infinite;}
@@ -659,19 +671,31 @@ table.cnl td.v.perde{color:var(--dim);}
 .dupla.viva .lm-fai circle:nth-child(2){animation:lmFai 6.4s var(--ease) infinite .12s;}
 .dupla.viva .lm-fai circle:nth-child(3){animation:lmFai 6.4s var(--ease) infinite .24s;}
 @keyframes lmA{
-  0%,9%{transform:translateX(-40px);opacity:.72;}
-  33%{transform:translateX(0);opacity:1;}
-  37%{transform:translateX(-3px);}
-  44%,66%{transform:translateX(0);opacity:1;}
-  87%,100%{transform:translateX(-40px);opacity:.72;}
+  0%,9%{transform:translateX(-40px);opacity:.72;filter:blur(1.6px);}
+  31%{transform:translateX(2px);opacity:1;filter:blur(0);}
+  38%{transform:translateX(-2.5px);}
+  46%{transform:translateX(0);}
+  66%{transform:translateX(0);opacity:1;filter:blur(0);}
+  87%,100%{transform:translateX(-40px);opacity:.72;filter:blur(1.6px);}
 }
 @keyframes lmB{
-  0%,9%{transform:translateX(40px);opacity:.72;}
-  33%{transform:translateX(0);opacity:1;}
-  37%{transform:translateX(3px);}
-  44%,66%{transform:translateX(0);opacity:1;}
-  87%,100%{transform:translateX(40px);opacity:.72;}
+  0%,9%{transform:translateX(40px);opacity:.72;filter:blur(1.6px);}
+  31%{transform:translateX(-2px);opacity:1;filter:blur(0);}
+  38%{transform:translateX(2.5px);}
+  46%{transform:translateX(0);}
+  66%{transform:translateX(0);opacity:1;filter:blur(0);}
+  87%,100%{transform:translateX(40px);opacity:.72;filter:blur(1.6px);}
 }
+/* a sombra conta a altura do objeto: larga e fraca no ar, curta e forte pousado */
+@keyframes lmSom{
+  0%,9%{opacity:.18;transform:scaleX(1.22) scaleY(1.5);}
+  33%{opacity:.6;transform:scaleX(1) scaleY(1);}
+  66%{opacity:.55;transform:scaleX(1) scaleY(1);}
+  87%,100%{opacity:.18;transform:scaleX(1.22) scaleY(1.5);}
+}
+/* respiracao no repouso: deriva lenta em fase oposta, para a peca nunca ficar morta */
+@keyframes lmBoiaA{0%,100%{transform:translateY(0);}50%{transform:translateY(-2.2px);}}
+@keyframes lmBoiaB{0%,100%{transform:translateY(0);}50%{transform:translateY(2.2px);}}
 @keyframes lmGli{
   0%,31%{opacity:0;stroke-dashoffset:0;}
   35%{opacity:.9;}
@@ -679,12 +703,13 @@ table.cnl td.v.perde{color:var(--dim);}
   100%{opacity:0;stroke-dashoffset:-96;}
 }
 @keyframes lmCota{0%,32%{opacity:0;}38%,68%{opacity:1;}84%,100%{opacity:0;}}
-@keyframes lmCotaL{0%,33%{stroke-dashoffset:36;}42%,100%{stroke-dashoffset:0;}}
+@keyframes lmCotaT{0%,33%{opacity:0;}39%,100%{opacity:.85;}}
+@keyframes lmCotaL{0%,38%{stroke-dashoffset:18;}52%,100%{stroke-dashoffset:0;}}
 @keyframes lmNuc{
-  0%,33%{opacity:0;transform:scale(.2);}
-  39%{opacity:1;transform:scale(1.35);}
-  46%,68%{opacity:1;transform:scale(1);}
-  84%,100%{opacity:0;transform:scale(.25);}
+  0%,46%{opacity:0;transform:scale(.25) rotate(-38deg);}
+  54%{opacity:1;transform:scale(1.28) rotate(6deg);}
+  61%,68%{opacity:1;transform:scale(1) rotate(0);}
+  84%,100%{opacity:0;transform:scale(.3) rotate(-24deg);}
 }
 @keyframes lmBri{
   0%,32%{opacity:0;transform:scale(.45);}
@@ -692,7 +717,7 @@ table.cnl td.v.perde{color:var(--dim);}
   68%{opacity:.4;transform:scale(1.08);}
   86%,100%{opacity:0;transform:scale(.5);}
 }
-@keyframes lmOnda{0%,34%{opacity:0;transform:scale(.32);}40%{opacity:.5;}72%,100%{opacity:0;transform:scale(3);}}
+@keyframes lmOnda{0%,50%{opacity:0;transform:scale(.32);}56%{opacity:.5;}80%,100%{opacity:0;transform:scale(3);}}
 @keyframes lmMira{
   0%,30%{opacity:.5;transform:scale(1.05);}
   40%{opacity:1;transform:scale(.975);}
@@ -703,8 +728,8 @@ table.cnl td.v.perde{color:var(--dim);}
 @keyframes lmSpecA{0%{opacity:0;transform:translateX(108px);}14%{opacity:.85;}46%{opacity:.85;}62%,100%{opacity:0;transform:translateX(202px);}}
 @keyframes lmSpecB{0%{opacity:0;transform:translateX(72px);}14%{opacity:.85;}46%{opacity:.85;}62%,100%{opacity:0;transform:translateX(208px);}}
 @keyframes lmFai{
-  0%,37%{opacity:0;transform:translate(0,0) scale(.5);}
-  45%{opacity:.85;}
+  0%,52%{opacity:0;transform:translate(0,0) scale(.5);}
+  60%{opacity:.85;}
   76%,100%{opacity:0;transform:translate(var(--dx),-26px) scale(.25);}
 }
 .dp-nums{
@@ -768,11 +793,12 @@ table.cnl td.v.perde{color:var(--dim);}
   /* sem movimento: a peca fica parada no quadro do encontro, que e o
      quadro que carrega o sentido — nao no de repouso, que nao diz nada */
   .dupla.viva::before,.dupla.viva .lm-la,.dupla.viva .lm-lb,.dupla.viva .lm-glint,
-  .dupla.viva .lm-cota,.dupla.viva .lm-cota .cl,.dupla.viva .lm-nuc,.dupla.viva .lm-brilhoC,
+  .dupla.viva .lm-cota,.dupla.viva .lm-cota .cl,.dupla.viva .lm-cota .tk,.dupla.viva .lm-som,.dupla.viva .lm-nuc,.dupla.viva .lm-brilhoC,
   .dupla.viva .lm-mira,.dupla.viva .lm-halo,.dupla.viva .lm-onda,
   .dupla.viva .lm-fai circle,.dupla.viva .lm-spec{animation:none;}
   .lm-la,.lm-lb{transform:none;opacity:1;}
-  .lm-cota{opacity:1;}.lm-cota .cl{stroke-dashoffset:0;}
+  .lm-cota{opacity:1;}.lm-cota .cl{stroke-dashoffset:0;}.lm-cota .tk{opacity:.85;}
+  .lm-la,.lm-lb{filter:none;}
   .lm-nuc{opacity:1;}.lm-brilhoC{opacity:.6;}
   .lm-halo{opacity:.22;}.lm-mira{opacity:.8;}
 }
@@ -1827,8 +1853,9 @@ table.fontes i{font-style:italic;color:var(--txt);}
           <g class="lm-mira" fill="none" stroke="#7E6210" stroke-width="1.1"><path d="M10 26V10h16"/><path d="M254 10h16v16"/><path d="M270 154v16h-16"/><path d="M26 170H10v-16"/></g>
           <circle class="lm-brilhoC" cx="150" cy="88" r="34" fill="url(#lmhC)"/>
           <g class="lm-cota" fill="none" stroke="#F2C230" stroke-linecap="round">
-            <path class="cl" d="M150,70 V106" stroke-width="1" stroke-opacity=".7"/>
-            <path d="M144.5,70 H155.5 M144.5,106 H155.5" stroke-width="1.1" stroke-opacity=".85"/>
+            <path class="tk" d="M144.5,70 H155.5 M144.5,106 H155.5" stroke-width="1.1" stroke-opacity=".85"/>
+            <path class="cl a" d="M150,70 V88" stroke-width="1" stroke-opacity=".7"/>
+            <path class="cl b" d="M150,106 V88" stroke-width="1" stroke-opacity=".7"/>
           </g>
           <g class="lm-nuc">
             <path class="n2" d="M150,80.4 L157.6,88 L150,95.6 L142.4,88 Z" fill="#0B0B0F" stroke="#F2C230" stroke-width="1.1" stroke-linejoin="round"/>
