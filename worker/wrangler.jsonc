@@ -11,7 +11,7 @@
   // period so aceita 10 ou 60 segundos. Dois baldes: rajada e volume.
   "ratelimits": [
     { "name": "LIM_RAJADA", "namespace_id": "3001", "simple": { "limit": 3,  "period": 10 } },
-    { "name": "LIM_MINUTO", "namespace_id": "3002", "simple": { "limit": 10, "period": 60 } }
+    { "name": "LIM_MINUTO", "namespace_id": "3002", "simple": { "limit": 20, "period": 60 } }
   ],
 
   // Descomente quando 3brain.com.br estiver na Cloudflare com a zona Active.
@@ -20,7 +20,7 @@
 
   "vars": {
     "MODELO_GROQ": "openai/gpt-oss-120b",
-    "MODELO_CF": "@cf/meta/llama-3.1-8b-instruct-fast",
+    "MODELO_CF": "@cf/openai/gpt-oss-120b",
     "ORIGENS": "https://fabiocdssilva69-prog.github.io,https://3brain.com.br,https://www.3brain.com.br"
   }
 }
