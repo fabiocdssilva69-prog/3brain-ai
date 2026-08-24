@@ -148,6 +148,39 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
      A rejeicao fora-de-vocabulario continua valendo, so que mais frouxa: se a pergunta nao
      e sobre a 3BRAIN, ele recebe contexto VAZIO e a instrucao manda dizer que nao tem o
      dado. E o que impede o modelo de florear em cima de entrada irrelevante. */
+  /* CONVERSA SOCIAL antes de qualquer busca. "oba", "to te testando" e "valeu" nao
+     sao perguntas sobre a 3BRAIN: candidatos() devolve vazio, o modelo recebe
+     contexto vazio e responde "nao tenho esse dado" -- tecnicamente correto e
+     parecendo quebrado para quem so disse oi. Aqui a conversa e recebida e a
+     pessoa e orientada sobre o que da para perguntar. */
+  var SOCIAL = {
+    saudacao: /^(oi+|ola+|opa+|oba+|eae?|e ai|salve|hey+|hi+|hello+|yo|bom dia|boa tarde|boa noite|tudo bem|tudo bom|blz|beleza|good (morning|afternoon|evening))/,
+    agradece: /^(obrigad|valeu|vlw|brigad|thanks|thank you|ty)/,
+    teste:    /(test(e|ando|ar|o)?|so testando|funciona|ta funcionando|nao ta funcionando|ping)/
+  };
+  function ehSocial(texto){
+    var t = limpa(texto);
+    if (!t || t.split(' ').length > 7) return null;
+    if (SOCIAL.agradece.test(t)) return 'agradece';
+    if (SOCIAL.saudacao.test(t)) return 'saudacao';
+    if (SOCIAL.teste.test(t))    return 'teste';
+    return null;
+  }
+  var FALA = {
+    saudacao: {
+      pt: 'Oi! Eu respondo sobre a **3BRAIN** com fonte: os dois produtos (SAVI Saude e BarberGO), o motor de aquisicao, os numeros desta pagina e o time. Pode perguntar o que quiser — ou tocar numa das sugestoes.',
+      en: 'Hi! I answer about **3BRAIN**, with sources: the two products (SAVI Saude and BarberGO), the acquisition engine, the numbers on this page and the team. Ask me anything — or tap one of the suggestions.'
+    },
+    agradece: {
+      pt: 'De nada. Se quiser ir fundo em algum numero, e so perguntar — cada um aqui tem fonte e denominador.',
+      en: 'You are welcome. If you want to go deep on any figure, just ask — every one here has a source and a denominator.'
+    },
+    teste: {
+      pt: 'Pode testar a vontade. Eu respondo **so com o que esta medido nesta pagina** — e o que eu nao souber, eu digo que nao sei, em vez de inventar. Tenta perguntar o que e o SAVI, quanto custa, ou qual o maior risco.',
+      en: 'Test away. I answer **only from what is measured on this page** — and what I do not know, I say I do not know instead of inventing it. Try asking what SAVI is, how much it costs, or what the biggest risk is.'
+    }
+  };
+
   function candidatos(texto, n){
     var q = fichas(texto);
     if (!q.length) return [];
@@ -248,6 +281,17 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
        de lingua com a resposta em voo, uma leitura tardia devolve o idioma novo e a resposta
        sai misturada. */
     var l = idioma();
+
+    var soc = ehSocial(pergunta);
+    if (soc){
+      lembra(FALA[soc][l] || FALA[soc].pt);
+      diz('ela', forte(FALA[soc][l] || FALA[soc].pt));
+      montaChips();
+      ocupado = false;
+      if (envia) envia.disabled = false;
+      return;
+    }
+
     var reticencia = pensando();
     var respondido = false;
     try {

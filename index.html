@@ -539,7 +539,11 @@ table.cnl td.v.perde{color:var(--dim);}
   color:var(--txt);font-size:.9rem;line-height:1.55;
 }
 .cnl-pe strong{color:#fff;}
-@media (max-width:760px){ .cnl-box{border-radius:12px;} table.cnl th,table.cnl td{padding:12px 14px;} }
+@media (max-width:760px){
+  /* celular: a varredura especular sai. E o efeito mais caro da peca e o que
+     menos se ve num desenho de 340px -- custo sem retorno. */
+  .dupla.viva .lm-spec{animation:none!important;opacity:0;}
+ .cnl-box{border-radius:12px;} table.cnl th,table.cnl td{padding:12px 14px;} }
 .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:60px;}
 @media (max-width:880px){.flow{grid-template-columns:repeat(2,1fr);}}
 @media (max-width:480px){.flow{grid-template-columns:1fr;}}
@@ -634,8 +638,8 @@ table.cnl td.v.perde{color:var(--dim);}
 /* A chegada nao e so deslize: o instrumento vem DESFOCADO e entra em foco ao
    assentar, e a sombra vem LARGA E FRACA (objeto alto) e fecha em curta e forte
    (objeto pousado). Sao esses dois que dao peso -- deslize puro parece adesivo. */
-.lm-la{transform:translateX(-40px);opacity:.72;filter:blur(1.6px);}
-.lm-lb{transform:translateX(40px);opacity:.72;filter:blur(1.6px);}
+.lm-la{transform:translateX(-40px);opacity:.72;}
+.lm-lb{transform:translateX(40px);opacity:.72;}
 .lm-som{opacity:.5;transform-origin:50% 50%;}
 .lm-glint{opacity:0;stroke-dasharray:20 300;}
 .lm-cota{opacity:0;}
@@ -646,7 +650,8 @@ table.cnl td.v.perde{color:var(--dim);}
 .lm-cota .tk{opacity:0;}
 .lm-cota .cl{stroke-dasharray:18;stroke-dashoffset:18;}
 .lm-nuc{opacity:0;transform-origin:150px 88px;}
-.lm-nuc .n1{filter:drop-shadow(0 0 7px rgba(242,194,48,.9));}
+/* sem drop-shadow: filtro dentro de grupo animado re-rasteriza por quadro.
+   O calor do losango ja vem do circulo de degrade (.lm-brilhoC) atras dele. */
 .lm-onda{opacity:0;transform-origin:150px 88px;}
 .lm-fai circle{fill:var(--gold-hi);opacity:0;transform-origin:150px 88px;}
 
@@ -656,7 +661,6 @@ table.cnl td.v.perde{color:var(--dim);}
 .dupla.viva .lm-cota{animation:lmCota 6.4s var(--ease) infinite;}
 .dupla.viva .lm-cota .tk{animation:lmCotaT 6.4s var(--ease) infinite;}
 .dupla.viva .lm-cota .cl{animation:lmCotaL 6.4s var(--ease) infinite;}
-.dupla.viva .lm-som{animation:lmSom 6.4s var(--ease) infinite;}
 .dupla.viva .lm-la .lm-som{animation:lmSom 6.4s var(--ease) infinite,lmBoiaA 9.2s ease-in-out infinite;}
 .dupla.viva .lm-lb .lm-som{animation:lmSom 6.4s var(--ease) infinite,lmBoiaB 9.2s ease-in-out infinite;}
 .dupla.viva .lm-nuc{animation:lmNuc 6.4s var(--ease) infinite;}
@@ -671,20 +675,20 @@ table.cnl td.v.perde{color:var(--dim);}
 .dupla.viva .lm-fai circle:nth-child(2){animation:lmFai 6.4s var(--ease) infinite .12s;}
 .dupla.viva .lm-fai circle:nth-child(3){animation:lmFai 6.4s var(--ease) infinite .24s;}
 @keyframes lmA{
-  0%,9%{transform:translateX(-40px);opacity:.72;filter:blur(1.6px);}
-  31%{transform:translateX(2px);opacity:1;filter:blur(0);}
+  0%,9%{transform:translateX(-40px);opacity:.72;}
+  31%{transform:translateX(2px);opacity:1;}
   38%{transform:translateX(-2.5px);}
   46%{transform:translateX(0);}
-  66%{transform:translateX(0);opacity:1;filter:blur(0);}
-  87%,100%{transform:translateX(-40px);opacity:.72;filter:blur(1.6px);}
+  66%{transform:translateX(0);opacity:1;}
+  87%,100%{transform:translateX(-40px);opacity:.72;}
 }
 @keyframes lmB{
-  0%,9%{transform:translateX(40px);opacity:.72;filter:blur(1.6px);}
-  31%{transform:translateX(-2px);opacity:1;filter:blur(0);}
+  0%,9%{transform:translateX(40px);opacity:.72;}
+  31%{transform:translateX(-2px);opacity:1;}
   38%{transform:translateX(2.5px);}
   46%{transform:translateX(0);}
-  66%{transform:translateX(0);opacity:1;filter:blur(0);}
-  87%,100%{transform:translateX(40px);opacity:.72;filter:blur(1.6px);}
+  66%{transform:translateX(0);opacity:1;}
+  87%,100%{transform:translateX(40px);opacity:.72;}
 }
 /* a sombra conta a altura do objeto: larga e fraca no ar, curta e forte pousado */
 @keyframes lmSom{
@@ -798,7 +802,7 @@ table.cnl td.v.perde{color:var(--dim);}
   .dupla.viva .lm-fai circle,.dupla.viva .lm-spec{animation:none;}
   .lm-la,.lm-lb{transform:none;opacity:1;}
   .lm-cota{opacity:1;}.lm-cota .cl{stroke-dashoffset:0;}.lm-cota .tk{opacity:.85;}
-  .lm-la,.lm-lb{filter:none;}
+  
   .lm-nuc{opacity:1;}.lm-brilhoC{opacity:.6;}
   .lm-halo{opacity:.22;}.lm-mira{opacity:.8;}
 }
@@ -2293,7 +2297,10 @@ table.fontes i{font-style:italic;color:var(--txt);}
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
     var uR = gl.getUniformLocation(pr, 'r'), uT = gl.getUniformLocation(pr, 't');
-    var SCALE = 0.62, running = true, start = performance.now();
+    /* Menos pixel no celular: a tela e pequena e o campo e fundo desfocado, entao
+       ninguem ve a diferenca -- e sao ~2x menos pixels para pintar por quadro. */
+    var estreito = matchMedia('(max-width:760px)').matches;
+    var SCALE = estreito ? 0.42 : 0.62, running = true, start = performance.now();
 
     function resize(){
       var w = Math.max(1, Math.round(cv.clientWidth  * SCALE));
@@ -2313,12 +2320,25 @@ table.fontes i{font-style:italic;color:var(--txt);}
       if (running) requestAnimationFrame(loop);
     });
 
+    /* Quem pediu menos movimento recebe o campo PARADO: desenha um quadro e sai.
+       O fundo continua existindo, so nao se mexe -- e o laco nao roda nunca. */
+    if (RM.matches){
+      gl.uniform1f(uT, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      cv.classList.add('on');
+      return;
+    }
+
     var last = 0;
     function loop(now){
       if (!running) return;
       if (now - last > 33){          // teto de ~30 fps
         last = now;
-        resize();
+        /* resize() NAO entra aqui. Ele le clientWidth/clientHeight, e ler isso
+           FORCA o navegador a recalcular o layout na hora. Chamado por quadro,
+           eram ~30 recalculos forcados por segundo numa pagina cheia de coisa
+           animada -- o custo aparecia como travada de rolagem. O evento resize
+           ja cuida da unica hora em que o tamanho muda. */
         gl.uniform1f(uT, (now - start) / 1000);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
@@ -2363,8 +2383,8 @@ table.fontes i{font-style:italic;color:var(--txt);}
   </form>
 
   <p class="as-rodape">
-    <span data-l="pt">Base própria, sem modelo de linguagem. O que ela não souber, encaminhamos para uma conversa.</span>
-    <span data-l="en">Own knowledge base, no language model. What it does not know, we route to a conversation.</span>
+    <span data-l="pt">Base própria com fonte. Um modelo reformula o que ela diz — nunca inventa número. O que ela não souber, encaminhamos para uma conversa.</span>
+    <span data-l="en">Own curated base, with sources. A model rephrases what it says — it never invents a figure. What it does not know, we route to a conversation.</span>
   </p>
 </aside>
 
