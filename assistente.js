@@ -30,7 +30,10 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
 
   /* ── a ponte. Vazio = so base local, que e exatamente o comportamento de antes.
         Preencha com a URL do Worker depois do `wrangler deploy` (ver worker/README.md). */
-  var API = 'https://3brain-api.3brain-ai.workers.dev';
+  /* Dominio proprio. O workers.dev continua vivo e fixado no wrangler.jsonc,
+     entao trocar aqui nao desliga nada -- so tira o endereco de terceiro da
+     frente do visitante. */
+  var API = 'https://api.3brain.com.br';
   /* Maior que o teto do Worker de proposito. O Worker gasta ate 6s na Groq e
      ate mais 6s na Workers AI antes de desistir; se a pagina desistisse aos 9s,
      ela mataria a queda no meio e o segundo motor nunca chegaria a tela. */
