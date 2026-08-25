@@ -2,6 +2,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "3brain-api",
   "main": "src/index.js",
+
+  // EXPLICITO de proposito. A pagina fala com o endereco workers.dev, e mexer
+  // em rotas pode desliga-lo por padrao -- entao ele fica fixado aqui, e a
+  // adicao do dominio proprio nao pode derrubar o chat que ja esta no ar.
+  "workers_dev": true,
   "compatibility_date": "2026-08-01",
   "observability": { "enabled": true },
 
@@ -16,7 +21,7 @@
 
   // Descomente quando 3brain.com.br estiver na Cloudflare com a zona Active.
   // Custom Domain, nao route: casa o hostname exato e cria DNS + certificado sozinho.
-  // "routes": [ { "pattern": "api.3brain.com.br", "custom_domain": true } ],
+  "routes": [ { "pattern": "api.3brain.com.br", "custom_domain": true } ],
 
   "vars": {
     "MODELO_GROQ": "openai/gpt-oss-120b",
