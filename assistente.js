@@ -345,6 +345,38 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     };
   }
 
+  /* PERGUNTA COMPOSTA: "quanto custa E voces ja tem cliente" sao DUAS
+     perguntas num campo so, e precisam de DUAS entradas entre as cinco que
+     fundamentam. Pontuada inteira, ela vira um saco de fichas onde a metade
+     mais "pesada" abafa a outra -- medido, o alvo da segunda metade caia em 8o.
+
+     Aqui as metades sao pontuadas SEPARADAS e as listas INTERCALADAS, para que
+     o topo tenha as duas. Nao decide resposta: decide quem chega na frente.
+
+     So parte quando as duas metades tem substancia (2+ fichas cada): "preco e
+     prazo" nao e pergunta composta, e partir ali so faria ruido. */
+  function metades(pergunta){
+    var partes = limpa(pergunta).split(/\s+e\s+|\s*[;,?]\s*/).filter(function(x){ return x.trim(); });
+    if (partes.length < 2) return null;
+    var boas = partes.filter(function(x){ return fichas(x).length >= 1; });
+    return boas.length >= 2 ? boas.slice(0, 3) : null;
+  }
+
+  function intercala(listas){
+    var fora = [], visto = {}, i = 0, restam = true;
+    while (restam) {
+      restam = false;
+      for (var k = 0; k < listas.length; k++) {
+        var e = listas[k][i];
+        if (!e) continue;
+        restam = true;
+        if (!visto[e.id]) { visto[e.id] = 1; fora.push(e); }
+      }
+      i++;
+    }
+    return fora;
+  }
+
   function paraOWorker(pergunta, l){
     /* DOIS jeitos de a peneira voltar vazia, e eles pedem tratamento oposto:
          (a) a pergunta e de outro assunto  -> contexto vazio, e o modelo diz que
@@ -371,7 +403,11 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
        a lista sozinho. Medido no teste de exclusao (259 gatilhos retirados um a
        um): IDENTICO com e sem -- 238 chegando ao reordenador nos dois casos.
        Custava 6 candidatos lexicais e nao devolvia nada, entao saiu. */
-    var achados = candidatos(pergunta, 60);
+    var partes = metades(pergunta);
+    var achados = partes
+      ? intercala([candidatos(pergunta, 60)].concat(
+          partes.map(function(x){ return candidatos(x, 30); }))).slice(0, 60)
+      : candidatos(pergunta, 60);
     if (achados.length < 60) {
       /* O PREENCHIMENTO NAO PODE SER PELA ORDEM DO ARQUIVO. Era, ate agora, e
          isso dava vantagem permanente a quem esta no comeco do ficheiro: se a
