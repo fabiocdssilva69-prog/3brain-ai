@@ -80,6 +80,20 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
       .replace(/[^a-z0-9\s]/g, ' ')
       .replace(/\s+/g, ' ').trim();
   }
+  /* TESTEI RADICALIZAR (cortar sufixo de flexao dos dois lados, indice e
+     pergunta) para "faturam" encontrar "faturamento" e "usa" encontrar "usam".
+     PIOROU, nas duas doses que tentei:
+
+                          53      visitante(1o/top5)   piso
+       lista larga       52/53        30 / 33         77/88
+       so plural+mente   52/53        30 / 36         78/88
+       sem radical       53/53        32 / 36         79/88
+
+     Duas razoes, e as duas medidas: o TRIGRAMA ja cobre a variacao morfologica
+     (compara pedaco, nao palavra inteira), entao o ganho e pequeno; e cortar
+     sufixo JUNTA palavras que nao sao a mesma coisa, e esse erro fica invisivel
+     porque a busca continua devolvendo alguma entrada. Somar peca sobre peca
+     que faz a mesma coisa e como se acumula regressao silenciosa. */
   function fichas(s){
     return limpa(s).split(' ').filter(function(t){ return t.length > 2 && !PARA[t]; });
   }
