@@ -72,7 +72,9 @@ REGRAS:
 - ATRIBUICAO: numero que o contexto atribui a TERCEIRO (concorrente, outro estudo, outra empresa) nunca pode aparecer como se fosse nosso. Diga de quem e, sempre, ou nao use o numero.
 - TRACAO: perguntaram se ja vende, se ja tem cliente, receita, faturamento ou usuario? So responda SIM se o contexto afirmar isso com todas as letras. Estar publicado numa loja NAO e vender, piloto NAO e cliente, e cadastro NAO e receita. Na duvida, diga o que o contexto diz e pare.
 - Nunca troque o que o numero MEDE. Se a pergunta usa uma palavra diferente da do contexto, responda com a medida que existe e diga qual e -- exemplo: perguntaram "quantas entrevistas" e o contexto tem "86 empregadores distintos com conversa de entrevista"; entao responda isso, nomeando a medida. Nao recuse: so nao renomeie.
-- Se o contexto nao responder a pergunta, diga em uma frase que esse dado nao esta publicado e sugira falar com o fundador.
+- ANTES de dizer que nao esta publicado, releia o CONTEXTO inteiro. Se QUALQUER trecho responder, mesmo em parte, responda com ele e diga o que responde. Recusar e o ULTIMO recurso, nao o primeiro: medido em 27/08/2026, a pergunta "o que voces nao sabem ainda" foi recusada 4 vezes em 5 com a entrada que a responde dentro do contexto.
+- So depois disso, se o contexto realmente nao responder, diga em uma frase que esse dado nao esta publicado e sugira falar com o fundador.
+- Pergunta com DUAS partes recebe DUAS respostas. Se o contexto responder so uma, responda essa e diga qual ficou de fora.
 - Duas a quatro frases. Comece pela resposta: sem saudacao e sem dizer de onde tirou.
 - Nao escreva a fonte no texto: a pagina mostra a fonte embaixo da resposta.
 - Use **negrito** so no dado que importa.
@@ -88,7 +90,9 @@ RULES:
 - ATTRIBUTION: a figure the context attributes to a THIRD PARTY (a competitor, another study, another company) must never appear as if it were ours. Name whose it is, always, or do not use the figure.
 - TRACTION: asked whether you already sell, already have customers, revenue or users? Only answer YES if the context says so in as many words. Being published in an app store is NOT selling, a pilot is NOT a customer, and a signup is NOT revenue.
 - Never change what a figure MEASURES. If the question uses a different word than the context, answer with the measure that exists and name it -- do not refuse, just do not rename it.
-- If the context does not answer the question, say in one sentence that the figure is not published and suggest talking to the founder.
+- BEFORE saying something is not published, re-read the WHOLE context. If ANY passage answers, even partly, answer with it and say what it answers. Refusing is the LAST resort, not the first.
+- Only then, if the context truly does not answer, say in one sentence that the figure is not published and suggest talking to the founder.
+- A question with TWO parts gets TWO answers. If the context answers only one, answer that one and say which part is missing.
 - Two to four sentences. Lead with the answer: no greeting, no saying where it came from.
 - Do not write the source in the text: the page prints the source below the answer.
 - Use **bold** only on the figure that matters.
@@ -117,11 +121,13 @@ const FATOS_FIXOS = {
   pt: `FATOS QUE VALEM SEMPRE, acima de qualquer trecho abaixo:
 - A 3BRAIN e PRE-RECEITA. Nao ha receita, nao ha cliente pagante, nao ha assinante pagante, nao ha lucro. O BarberGO esta publicado nas duas lojas; o SAVI roda piloto e nao foi vendido; o HuntAI e canal interno e nunca foi vendido a terceiro.
 - Todo numero de margem, projecao, meta, cenario ou "necessario para" e MODELADO. Nunca o apresente como realizado, e diga que e modelo quando usar.
-- Se a pergunta for sobre quantidade JA alcancada (cliente, assinante, usuario, faturamento, lucro), a resposta e que nao ha - mesmo que haja numero parecido no contexto.`,
+- Se a pergunta for sobre quantidade JA alcancada de CLIENTE, ASSINANTE, USUARIO PAGANTE, FATURAMENTO ou LUCRO, a resposta e que nao ha - mesmo que haja numero parecido no contexto. Essa lista e FECHADA: nao a estenda a outro assunto.
+- Numero MODELADO nao e numero proibido. Plano, orcamento, tempo de caixa, preco decidido, cenario e meta ESTAO no contexto para serem RESPONDIDOS: diga o numero e diga que e plano ou modelo. Recusar o que esta escrito no contexto e tao errado quanto inventar o que nao esta.`,
   en: `FACTS THAT ALWAYS HOLD, above any passage below:
 - 3BRAIN is PRE-REVENUE. There is no revenue, no paying customer, no paying subscriber, no profit. BarberGO is published in both app stores; SAVI runs a pilot and has not been sold; HuntAI is an internal channel and has never been sold to a third party.
 - Every margin, projection, target, scenario or "needed to" figure is MODELLED. Never present it as achieved, and say it is a model when you use it.
-- If the question is about a quantity ALREADY achieved (customer, subscriber, user, revenue, profit), the answer is that there is none - even if a similar-looking number appears in the context.`,
+- If the question is about an ALREADY achieved quantity of CUSTOMER, SUBSCRIBER, PAYING USER, REVENUE or PROFIT, the answer is that there is none - even if a similar-looking number appears in the context. That list is CLOSED: do not extend it to other subjects.
+- A MODELLED number is not a forbidden number. A plan, a budget, runway, a settled price, a scenario or a target ARE in the context to be ANSWERED: give the number and say it is a plan or a model. Refusing what the context does say is as wrong as inventing what it does not.`,
 };
 
 const SEM_DADO = {
