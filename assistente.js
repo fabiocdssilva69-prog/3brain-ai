@@ -133,15 +133,24 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     /* 1b) uma contem a outra — so vale se a MENOR das duas ja for especifica.
            Sem isso, uma variante curta como "o savi" casaria dentro de
            "quanto custa o savi" e devolveria a entrada errada. */
+    /* ATALHO AMBIGUO NAO DECIDE. Ate 27/08/2026 este laco devolvia a PRIMEIRA
+       entrada que casasse, e a ordem do arquivo passava a decidir conteudo:
+       "qual o maior risco" -- um dos seis botoes de sugestao da pagina -- cabe
+       dentro de "qual o maior risco desse canal" (HuntAI) e de "qual o maior
+       risco do negocio" (o certo), e ganhava o que estivesse mais acima.
+       Agora, com mais de um casamento, o atalho se cala e deixa a pontuacao
+       decidir entre os que casaram. Um atalho so pode valer quando e unico. */
+    var casaram = [];
     for (var i2 = 0; i2 < INDICE.length; i2++) {
       var fr2 = INDICE[i2].frases;
       for (var j2 = 0; j2 < fr2.length; j2++) {
         var v = fr2[j2];
         var menor = v.length < frase.length ? v.length : frase.length;
         if (menor < 16) continue;
-        if (v.indexOf(frase) >= 0 || frase.indexOf(v) >= 0) return INDICE[i2].e;
+        if (v.indexOf(frase) >= 0 || frase.indexOf(v) >= 0) { casaram.push(INDICE[i2]); break; }
       }
     }
+    if (casaram.length === 1) return casaram[0].e;
 
     /* 2) se a maior parte das palavras nao existe na base, e pergunta de outro assunto.
           E o que impede "receita de bolo de cenoura" de cair na entrada de faturamento. */
@@ -151,7 +160,9 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
 
     /* 3) pontuacao por sobreposicao, exigindo mais de uma palavra casada em pergunta longa */
     var melhor = null;
-    INDICE.forEach(function(it){
+    /* Se o atalho achou varios, so eles disputam: a pergunta ja se declarou
+       daquele grupo, e deixar a base inteira concorrer perderia essa evidencia. */
+    (casaram.length ? casaram : INDICE).forEach(function(it){
       var s = 0, casados = 0;
       q.forEach(function(t){
         if (it.saco[t]) { s += it.saco[t]; casados++; return; }
