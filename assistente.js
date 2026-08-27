@@ -288,9 +288,22 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     agradece: /^(muito )?(obrigad[oa]?|valeu|vlw|brigad[oa]?|thanks|thank you|ty|tks)( mesmo| ai| gente| pela ajuda)?$/,
     teste:    /^(ping|teste|testes|testando|testar|so testando|so um teste|to testando|to te testando|ta funcionando|esta funcionando|nao ta funcionando|nao funciona|ta on|ta vivo)$/
   };
+  /* ENTRADA DEGENERADA. Medido em 27/08/2026: "?????", "aaaaaaa", "..." e "1"
+     mandavam SESSENTA candidatos ao modelo -- gasto e risco, para uma coisa que
+     nem pergunta e. E a resposta que sobrava era "nao tenho essa resposta", que
+     faz o assistente parecer quebrado quando o quebrado foi o teclado. Aqui
+     recebe-se e orienta-se, como ja se faz com "oi". */
+  function degenerada(t){
+    var letras = t.replace(/[^a-z]/g, '');
+    if (letras.length < 2) return true;                 // "?????", "...", "1"
+    if (/^(.)\1+$/.test(letras)) return true;           // "aaaaaaa"
+    return false;
+  }
   function ehSocial(texto){
     var t = limpa(texto);
-    if (!t || t.split(' ').length > 5) return null;
+    if (!t) return 'confuso';           // so pontuacao, so emoji: limpa para nada
+    if (t.split(' ').length > 5) return null;
+    if (degenerada(t)) return 'confuso';
     if (SOCIAL.agradece.test(t)) return 'agradece';
     if (SOCIAL.saudacao.test(t)) return 'saudacao';
     if (SOCIAL.teste.test(t))    return 'teste';
@@ -304,6 +317,10 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     agradece: {
       pt: 'De nada. Se quiser ir fundo em algum numero, e so perguntar — cada um aqui tem fonte e denominador.',
       en: 'You are welcome. If you want to go deep on any figure, just ask — every one here has a source and a denominator.'
+    },
+    confuso: {
+      pt: 'Nao entendi essa. Pode escrever com outras palavras? Eu respondo sobre a **3BRAIN**: os dois produtos (SAVI Saude e BarberGO), o motor de aquisicao, os numeros desta pagina, o time e a rodada.',
+      en: 'I did not get that one. Could you put it in other words? I answer about **3BRAIN**: the two products (SAVI Saude and BarberGO), the acquisition engine, the numbers on this page, the team and the round.'
     },
     teste: {
       pt: 'Pode testar a vontade. Eu respondo **so com o que esta medido nesta pagina** — e o que eu nao souber, eu digo que nao sei, em vez de inventar. Tenta perguntar o que e o SAVI, quanto custa, ou qual o maior risco.',
@@ -415,7 +432,18 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     return fora;
   }
 
-  function paraOWorker(pergunta, l){
+  /* SEGUIMENTO SEM ASSUNTO. "por que" e "como assim" nao dizem de que falam --
+     o assunto ficou na pergunta anterior. Medido em 27/08/2026: as duas
+     mandavam 60 candidatos ao acaso, porque nenhuma ficha delas pontua.
+
+     A pagina ja guarda o historico e ja o envia ao modelo; o que faltava era a
+     BUSCA olhar para ele. So se usa quando a pergunta nova nao tem NENHUMA
+     palavra distintiva -- "e o savi" tem, e nao precisa de muleta; "por que"
+     nao tem, e sem a anterior nao ha o que buscar.
+
+     A pergunta que vai ao reordenador continua a ser a NOVA: e ela que o
+     visitante fez. A anterior serve so para escolher onde procurar. */
+  function paraOWorker(pergunta, l, anterior){
     /* DOIS jeitos de a peneira voltar vazia, e eles pedem tratamento oposto:
          (a) a pergunta e de outro assunto  -> contexto vazio, e o modelo diz que
              nao tem o dado. Contexto irrelevante aqui so daria material para
@@ -446,13 +474,34 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
           -- "e caro", "e seguro" e "is it secure" sao nossas -- entao ali nunca
           se barra. */
     var q = fichas(pergunta);
+    /* Seguimento CURTO: a nova pergunta e a nova+anterior sao pontuadas
+       SEPARADAS e depois intercaladas, como se faz com a pergunta composta.
+       Somar as duas num texto so deixaria a anterior dominar quando fosse mais
+       longa -- assim o que o visitante acabou de escrever nunca e deslocado, e
+       o assunto da anterior entra atras.
+
+       O limite de 3 fichas e o que separa seguimento de pergunta inteira:
+       "por que", "como assim" e "e quanto custa" dependem do que veio antes;
+       "quanto custa o savi barbergo" nao depende de nada. */
+    var comAnterior = (anterior && q.length <= 3) ? anterior + ' ' + pergunta : '';
+    var busca = pergunta;
+    /* Pergunta SEM NENHUMA ficha propria ("por que", "como assim"): ali a
+       anterior deixa de ser muleta e passa a SER a pergunta. Sem isto, o
+       atalho de ficha vazia (logo abaixo) mandava para o trigrama e o historico
+       nunca era olhado -- medido, "quanto custa o savi" seguido de "por que"
+       devolvia por-que-ilpi em 1o e o preco em 52o. */
+    if (!q.length && comAnterior) {
+      busca = comAnterior;
+      q = fichas(busca);
+      comAnterior = '';
+    }
     /* FICHA VAZIA NAO E FORA DE ESCOPO. "what do you do" e "ja esta no ar?" sao
        feitas SO de palavra de parada, e devolviam ZERO candidatos -- a versao
        inglesa do primeiro botao de sugestao respondia "nao tenho essa
        resposta". A contagem de palavra nao tem o que contar, mas o TRIGRAMA
        tem: ele compara caractere, e nao depende de sobrar palavra de conteudo.
        Manda os 60 mais parecidos e deixa o reordenador julgar. */
-    if (!q.length) return porTrigrama(pergunta, {}, 60, l);
+    if (!q.length) return porTrigrama(busca, {}, 60, l);
     var exatas = 0, proprias = 0;
     q.forEach(function(t){
       if (VOCAB.indexOf(t) >= 0) exatas++;
@@ -473,11 +522,20 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
        a lista sozinho. Medido no teste de exclusao (259 gatilhos retirados um a
        um): IDENTICO com e sem -- 238 chegando ao reordenador nos dois casos.
        Custava 6 candidatos lexicais e nao devolvia nada, entao saiu. */
-    var partes = metades(pergunta);
-    var achados = partes
-      ? intercala([candidatos(pergunta, 60)].concat(
-          partes.map(function(x){ return candidatos(x, 30); }))).slice(0, 60)
-      : candidatos(pergunta, 60);
+    var partes = metades(busca);
+    /* A ORDEM DAS LISTAS SEGUE ONDE ESTA O SINAL. Se a pergunta nova nao tem
+       nenhuma palavra distintiva ("por que", "como assim"), ela sozinha nao
+       sabe de nada e quem lidera e a lista com a anterior; se tem ("e quanto
+       custa"), lidera a nova e a anterior entra atras so para desempatar.
+       Medido: liderando sempre a nova, 3 de 5; assim, 4 de 5. */
+    var cega = comAnterior && !q.some(distintiva);
+    var listas = cega ? [candidatos(comAnterior, 60), candidatos(busca, 30)]
+                      : [candidatos(busca, 60)];
+    if (partes) partes.forEach(function(x){ listas.push(candidatos(x, 30)); });
+    if (comAnterior && !cega) listas.push(candidatos(comAnterior, 30));
+    var achados = listas.length > 1
+      ? intercala(listas).slice(0, 60)
+      : listas[0];
     if (achados.length < 60) {
       /* O PREENCHIMENTO NAO PODE SER PELA ORDEM DO ARQUIVO. Era, ate agora, e
          isso dava vantagem permanente a quem esta no comeco do ficheiro: se a
@@ -490,7 +548,7 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
          de ser considerado. */
       var tem = {};
       achados.forEach(function(e){ tem[e.id] = 1; });
-      var extra = porTrigrama(pergunta, tem, 60 - achados.length, null);
+      var extra = porTrigrama(busca, tem, 60 - achados.length, null);
       for (var j = 0; j < extra.length; j++) achados.push(extra[j]);
     }
     return achados.map(function(e){ return paraCandidato(e, l); });
@@ -512,6 +570,13 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     return d;
   }
   function sorteia(a){ return a[Math.floor(Math.random() * a.length)]; }
+
+  /* A pergunta atual JA esta no historico quando responder() corre (o submit
+     empilha antes de chamar), entao a anterior e o penultimo 'user'. */
+  function perguntaAnterior(){
+    var us = historico.filter(function(m){ return m.r === 'user'; });
+    return us.length >= 2 ? String(us[us.length - 2].t || '') : '';
+  }
 
   function lembra(texto){
     historico.push({ r: 'assistant', t: texto });
@@ -592,7 +657,7 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
          quem escolhe as 5 que fundamentam a resposta e o reordenador, no Worker,
          que le pergunta e trecho juntos. Medido: a entrada certa aparecia em 8o,
          17o e ate 43o lugar nesta ordem -- dentro de 60, fora de 5. */
-      var ctx = paraOWorker(pergunta, l);
+      var ctx = paraOWorker(pergunta, l, perguntaAnterior());
       var r = await perguntaAoWorker(pergunta, l, ctx);
       if (r && r.texto) {
         lembra(r.texto);
