@@ -52,7 +52,14 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
        da pergunta, nao o ASSUNTO: nao distinguem entrada nenhuma. */
     'voces voce nao pra pro esta estao sao esse essa esses essas muito mais ainda '  +
     'tambem entao algum alguma alguns todas todos cada mesmo ' +
-    'the of to in for on is are what how do does you your we our it that this a an and or').split(' ');
+    'the of to in for on is are what how do does you your we our it that this a an and or ' +
+    /* mesmas do portugues, do outro lado: dizem o FORMATO da pergunta.
+       Entraram com o indice ingles, senao 'how much', 'where are' e 'do you'
+       passariam a pontuar em metade da base. */
+    'where when who why which there here about from with have has had been will '  +
+    'would should could can may might must they them their its was were be being ' +
+    'not no yes than then so such very more most any all each some other into out ' +
+    'up down over under again just only also both same own too').split(' ');
   var PARA = {}; PARAR.forEach(function(p){ PARA[p] = 1; });
 
   function limpa(s){
@@ -87,6 +94,12 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
       fichas(t).forEach(function(x){ saco[x] = (saco[x] || 0) + 3; });
     });
     fichas(e.pt).forEach(function(t){ saco[t] = (saco[t] || 0) + 0.5; });
+    /* O e.en NUNCA entrava no indice. Medido em 27/08/2026 com 20 perguntas em
+       ingles: 8 acertavam em 1o lugar contra 28 de 36 em portugues, e "is it
+       secure" e "are you profitable" devolviam LISTA VAZIA. A pagina e bilingue
+       e a metade inglesa dela era invisivel para a propria busca. Mesmo peso do
+       pt: os dois sao texto de resposta, nenhum vale mais que o outro. */
+    fichas(e.en || '').forEach(function(t){ saco[t] = (saco[t] || 0) + 0.5; });
     return {
       e: e,
       saco: saco,
@@ -226,6 +239,65 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     return pontos.slice(0, n || 3).map(function(p){ return p.e; });
   }
 
+  /* O texto que o REORDENADOR le -- e que NAO e o mesmo que o modelo usa para
+     fundamentar. Medido em 27/08/2026 com o alvo plantado num contexto de 60:
+     vendo a RESPOSTA, o reordenador achava a entrada certa 2 vezes em 18;
+     vendo a PERGUNTA cadastrada, 11 em 18. Cinco vezes e meia melhor.
+
+     A razao aparece depois de vista: a pergunta do visitante parece com a
+     PERGUNTA, nao com a RESPOSTA. "how much does it cost" nao se parece com um
+     paragrafo sobre R$ 99 por leito; parece com "quanto custa?". Casar pergunta
+     com pergunta e o que o reordenador sabe fazer bem.
+
+     Por isso viajam DOIS campos por candidato: `busca`, para escolher, e
+     `texto`, para fundamentar. Misturar os dois foi o erro de origem. */
+  function textoDeBusca(e, l){
+    var perg = (e.perguntas || []).join('. ');
+    var tags = (e.tags || []).join(' ');
+    var corpo = (e[l] || e.pt || '').slice(0, 260);
+    return (perg + '. ' + tags + '. ' + corpo).replace(/\s+/g, ' ').trim().slice(0, 420);
+  }
+
+  /* A peneira lexical erra por FALTA: medido, em 17% das perguntas dificeis a
+     entrada certa nem pontuava, e ai nenhuma reordenacao a resgata -- ela nunca
+     chega ao Worker. Como o reordenador passou a saber achar entre 60, sai mais
+     barato completar a lista do que deixar a vaga vazia: as que pontuaram vao
+     primeiro, na ordem delas, e o resto entra atras so para ter chance.
+     Pergunta fora de escopo continua devolvendo vazio: completar ali seria dar
+     contexto a quem perguntou de outro assunto, e o modelo florearia em cima. */
+  function paraOWorker(pergunta, l){
+    /* DOIS jeitos de a peneira voltar vazia, e eles pedem tratamento oposto:
+         (a) a pergunta e de outro assunto  -> contexto vazio, e o modelo diz que
+             nao tem o dado. Contexto irrelevante aqui so daria material para
+             florear em cima.
+         (b) a pergunta e nossa e a busca falhou  -> completar ate 60 e deixar o
+             reordenador achar. "is it secure" tem UMA ficha, nenhuma entrada
+             pontua, e mesmo assim e pergunta de visitante nosso.
+       O portao so julga escopo quando ha PALAVRA SUFICIENTE para julgar: com
+       uma ou duas fichas ele calava perguntas legitimas. */
+    var q = fichas(pergunta);
+    if (!q.length) return [];
+    var dentro = 0;
+    q.forEach(function(t){ if (conhecida(t)) dentro++; });
+    if (q.length >= 3 && dentro / q.length < 0.4) return [];
+
+    var achados = candidatos(pergunta, 60);
+    if (achados.length < 60) {
+      var tem = {};
+      achados.forEach(function(e){ tem[e.id] = 1; });
+      for (var i = 0; i < INDICE.length && achados.length < 60; i++) {
+        if (!tem[INDICE[i].e.id]) achados.push(INDICE[i].e);
+      }
+    }
+    return achados.map(function(e){
+      return {
+        texto: (e[l] || e.pt || '').slice(0, 700),
+        fonte: e.fonte || '',
+        busca: textoDeBusca(e, l)
+      };
+    });
+  }
+
   /* ---------- fala ---------- */
   function escapa(s){
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -272,9 +344,7 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
         pergunta: pergunta,
         idioma: l,
         historico: historico.slice(-6),
-        contexto: ctx.map(function(e){
-          return { texto: (e[l] || e.pt || '').slice(0, 700), fonte: e.fonte || '' };
-        })
+        contexto: ctx
       })
     }).then(function(r){
       if (!r.ok) return null;                        // 429, 503, 403 — todos caem no piso local
@@ -324,7 +394,7 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
          quem escolhe as 5 que fundamentam a resposta e o reordenador, no Worker,
          que le pergunta e trecho juntos. Medido: a entrada certa aparecia em 8o,
          17o e ate 43o lugar nesta ordem -- dentro de 60, fora de 5. */
-      var ctx = candidatos(pergunta, 60);
+      var ctx = paraOWorker(pergunta, l);
       var r = await perguntaAoWorker(pergunta, l, ctx);
       if (r && r.texto) {
         lembra(r.texto);

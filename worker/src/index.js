@@ -17,12 +17,18 @@
  * Deploy: ver README.md ao lado.
  */
 
-const MAX_CORPO = 64 * 1024;     // a pagina manda ate 60 candidatos para reordenar
+const MAX_CORPO = 112 * 1024;    // 60 candidatos x (texto 700 + busca 420) + folga
+const MAX_BUSCA = 480;           // teto do texto de casamento, por candidato
 const MAX_PERGUNTA = 220;        // igual ao maxlength do input da pagina
 const MAX_HISTORICO = 6;         // 6 mensagens = 3 turnos. Teto de TPM, nao de gosto
 const MAX_CONTEXTO = 5;          // entradas que chegam ao MODELO como fundamento
 const MAX_CANDIDATOS = 60;       // entradas que a pagina manda para o REORDENADOR
-const PISO_PENEIRA = 2;          // entradas do topo da BUSCA que nunca sao descartadas
+const PISO_PENEIRA = 1;          // entradas do topo da BUSCA que nunca sao descartadas
+                                 // Era 2 enquanto o reordenador lia a RESPOSTA e acertava
+                                 // 2 de 18. Lendo a PERGUNTA cadastrada ele acerta 11 de 18,
+                                 // entao prender 2 dos 5 lugares ao lexical passou a custar
+                                 // mais do que protege. Fica 1: seguro barato para a maioria
+                                 // facil, sem tomar as vagas de quem agora sabe escolher.
 
 /* Por que existe um reordenador aqui.
    A busca da pagina conta palavra. Medido: para "quanto o barbergo fatura em 3
@@ -259,7 +265,17 @@ async function reordena(env, pergunta, lista) {
   try {
     const r = await env.AI.run(MODELO_REORDENADOR, {
       query: String(pergunta).slice(0, MAX_PERGUNTA),
-      contexts: cand.map(e => ({ text: String(e.texto || '').slice(0, 700) })),
+      // LE `busca`, NAO `texto`. Medido em 27/08/2026 com o alvo plantado num
+      // contexto de 60: vendo a RESPOSTA ele achava 2 vezes em 18; vendo a
+      // PERGUNTA cadastrada, 11 em 18. A pergunta do visitante parece com a
+      // pergunta, nao com o paragrafo que a responde.
+      //
+      // `texto` continua sendo o que FUNDAMENTA a resposta, la em montaMensagens.
+      // Escolher e fundamentar deixaram de ser o mesmo campo, e essa separacao e
+      // a peca: misturar os dois era o erro de origem.
+      contexts: cand.map(e => ({
+        text: String(e.busca || e.texto || '').slice(0, MAX_BUSCA),
+      })),
       top_k: MAX_CONTEXTO,
     });
     // O formato varia: as vezes {response:[...]}, as vezes a lista crua, e o
