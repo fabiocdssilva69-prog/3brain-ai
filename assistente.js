@@ -126,6 +126,13 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     (e.tags || []).forEach(function(t){
       fichas(t).forEach(function(x){ saco[x] = (saco[x] || 0) + 3; });
     });
+    /* PESO 0,5 e MEDIDO, nao escolhido: testei 1,0 e o teste de exclusao
+       melhorou 2 pontos (92% -> 94% chegando ao reordenador) mas as baterias
+       principais PIORARAM -- dificeis de 96% para 90% no top 5 e visitante de
+       32 para 30 em 1o lugar. Gatilho tem de continuar valendo mais que texto
+       de resposta: o texto fala do assunto, o gatilho fala da PERGUNTA.
+       Parei de afinar aqui de proposito -- ajustar um numero contra bateria
+       pequena e como se fabrica sobreajuste. */
     fichas(e.pt).forEach(function(t){ saco[t] = (saco[t] || 0) + 0.5; });
     /* O e.en NUNCA entrava no indice. Medido em 27/08/2026 com 20 perguntas em
        ingles: 8 acertavam em 1o lugar contra 28 de 36 em portugues, e "is it
