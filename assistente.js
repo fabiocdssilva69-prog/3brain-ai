@@ -173,6 +173,30 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     INDICE.forEach(function(it){ it.chaves.forEach(function(k){ visto[k] = 1; }); });
     VOCAB = Object.keys(visto);
   })();
+  /* Em quantas entradas cada ficha aparece. Palavra que esta em meia base nao
+     diz que a pergunta e nossa -- "quem", "foi" e "dor" existem aqui por acaso,
+     e eram elas que faziam "quem foi napoleao bonaparte" passar pelo portao. */
+  var DF = {};
+  (function(){
+    INDICE.forEach(function(it){
+      /* SO os GATILHOS e as TAGS, nao o texto da resposta. Contar sobre o texto
+         dava "foi" como palavra nossa -- ela aparece em poucas entradas por
+         acaso, e por isso "quem foi napoleao bonaparte" passava pelo portao.
+         O texto fala de tudo; o gatilho fala do que alguem pergunta AQUI. */
+      var vis = {};
+      (it.e.perguntas || []).forEach(function(x){ fichas(x).forEach(function(t){ vis[t] = 1; }); });
+      (it.e.tags || []).forEach(function(x){ fichas(x).forEach(function(t){ vis[t] = 1; }); });
+      for (var k in vis) DF[k] = (DF[k] || 0) + 1;
+    });
+  })();
+  /* DISTINTIVA = existe na base E nao esta espalhada por ela. O teto de 25%
+     saiu da contagem real: "voces" estava em 52% das entradas, "savi" em 25%,
+     "risco" em 16%. Nome de produto tem de passar; palavra de ligacao, nao. */
+  function distintiva(t){
+    var n = DF[t] || 0;
+    return n > 0 && n / INDICE.length <= 0.25;
+  }
+
   function conhecida(t){
     if (VOCAB.indexOf(t) >= 0) return true;
     for (var i = 0; i < VOCAB.length; i++) if (perto(t, VOCAB[i])) return true;
@@ -401,6 +425,26 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
              pontua, e mesmo assim e pergunta de visitante nosso.
        O portao so julga escopo quando ha PALAVRA SUFICIENTE para julgar: com
        uma ou duas fichas ele calava perguntas legitimas. */
+    /* PORTAO DE ESCOPO. Medido em 27/08/2026 com 18 perguntas de outro assunto:
+       ele barrava 3. Eu proprio o tinha afrouxado duas vezes nesse dia, e no
+       mesmo dia tornei a recusa do modelo "ultimo recurso" -- as duas mudancas
+       somam-se, e sobrava o modelo como unica defesa contra florear em cima de
+       60 entradas irrelevantes. Com fonte ao lado, que e o pior modo de errar
+       nesta pagina.
+
+       Duas correcoes, as duas medidas:
+
+       1. Para julgar ESCOPO, o vocabulario conta SO casamento EXATO. A
+          tolerancia a erro de digitacao dava "ganhou" como conhecida (casa com
+          "ganham", distancia 2) e "quem ganhou a copa" passava. Tolerar erro de
+          digitacao ao PONTUAR esta certo; ao decidir se a pergunta e nossa,
+          nao -- ali o parecido nao e prova.
+
+       2. Pergunta de DUAS fichas exige as DUAS conhecidas. Com o piso de 40%,
+          uma em duas ja dava 50% e passava: "capital da mongolia" entrava
+          porque "capital" existe na base. Com uma ficha so nao ha o que julgar
+          -- "e caro", "e seguro" e "is it secure" sao nossas -- entao ali nunca
+          se barra. */
     var q = fichas(pergunta);
     /* FICHA VAZIA NAO E FORA DE ESCOPO. "what do you do" e "ja esta no ar?" sao
        feitas SO de palavra de parada, e devolviam ZERO candidatos -- a versao
@@ -409,9 +453,21 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
        tem: ele compara caractere, e nao depende de sobrar palavra de conteudo.
        Manda os 60 mais parecidos e deixa o reordenador julgar. */
     if (!q.length) return porTrigrama(pergunta, {}, 60, l);
-    var dentro = 0;
-    q.forEach(function(t){ if (conhecida(t)) dentro++; });
-    if (q.length >= 3 && dentro / q.length < 0.4) return [];
+    var exatas = 0, proprias = 0;
+    q.forEach(function(t){
+      if (VOCAB.indexOf(t) >= 0) exatas++;
+      if (distintiva(t)) proprias++;
+    });
+    /* A pergunta tem de trazer PELO MENOS UMA palavra que seja nossa. Sem
+       isso, o que existe e coincidencia de vocabulario generico -- e foi assim
+       que "quem foi napoleao bonaparte" e "who won the world cup" entravam. */
+    if (q.length >= 2 && proprias === 0) return [];
+    if (q.length >= 3 && exatas / q.length < 0.4) return [];
+    /* Com duas fichas: passa se as DUAS existirem, ou se UMA for distintiva.
+       Exigir as duas barrava "voces seguem a lgpd" -- "seguem" nao esta no
+       indice e "lgpd" e inequivocamente nossa. Uma palavra forte vale mais que
+       duas fracas, e e assim que a pergunta curta de visitante e feita. */
+    if (q.length === 2 && exatas < 2 && proprias === 0) return [];
 
     /* Testei reservar 6 das 60 vagas para o trigrama, para nenhum sinal encher
        a lista sozinho. Medido no teste de exclusao (259 gatilhos retirados um a
