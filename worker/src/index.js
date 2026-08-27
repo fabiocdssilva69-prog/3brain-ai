@@ -22,6 +22,7 @@ const MAX_PERGUNTA = 220;        // igual ao maxlength do input da pagina
 const MAX_HISTORICO = 6;         // 6 mensagens = 3 turnos. Teto de TPM, nao de gosto
 const MAX_CONTEXTO = 5;          // entradas que chegam ao MODELO como fundamento
 const MAX_CANDIDATOS = 60;       // entradas que a pagina manda para o REORDENADOR
+const PISO_PENEIRA = 2;          // entradas do topo da BUSCA que nunca sao descartadas
 
 /* Por que existe um reordenador aqui.
    A busca da pagina conta palavra. Medido: para "quanto o barbergo fatura em 3
@@ -271,7 +272,23 @@ async function reordena(env, pergunta, lista) {
               : (it && typeof it.index === 'number') ? it.index : -1;
       if (i >= 0 && i < cand.length && !fora.includes(cand[i])) fora.push(cand[i]);
     }
-    if (fora.length) return fora.slice(0, MAX_CONTEXTO);
+    if (fora.length) {
+      // UNIAO, nao substituicao. Medido em 27/08/2026: em "quantas pessoas
+      // trabalham ai", "e caro" e "preciso instalar", a entrada certa era a
+      // PRIMEIRA da busca por palavra e o reordenador a descartava -- e a
+      // resposta saia sobre emprego de barbeiro, custo de WhatsApp e "nao esta
+      // publicado". A/B com 60 contra 5 candidatos: 3 de 3 melhores SEM ele.
+      //
+      // Ele entrou quando a entrada certa aparecia em 8o, 17o e 43o lugar, e
+      // para esse caso continua valendo. Entao nenhum dos dois manda sozinho:
+      // o topo da busca e piso garantido, o reordenador preenche o resto.
+      const juntos = cand.slice(0, PISO_PENEIRA);
+      for (const e of fora) {
+        if (juntos.length >= MAX_CONTEXTO) break;
+        if (!juntos.includes(e)) juntos.push(e);
+      }
+      return juntos.slice(0, MAX_CONTEXTO);
+    }
     console.log('reordenador devolveu formato inesperado');
   } catch (e) {
     console.log('reordenador falhou:', e.message);
