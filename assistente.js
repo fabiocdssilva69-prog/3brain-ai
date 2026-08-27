@@ -314,6 +314,30 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
      primeiro, na ordem delas, e o resto entra atras so para ter chance.
      Pergunta fora de escopo continua devolvendo vazio: completar ali seria dar
      contexto a quem perguntou de outro assunto, e o modelo florearia em cima. */
+  /* Os n mais parecidos por TRIGRAMA, pulando os que ja entraram. Serve a dois
+     donos: completar a peneira, e responder sozinha quando a pergunta nao tem
+     nenhuma palavra de conteudo. Se `l` vier, devolve ja no formato do Worker. */
+  function porTrigrama(pergunta, pular, n, l){
+    var triQ = trigramas(pergunta), nQ = 0;
+    for (var k in triQ) nQ++;
+    var resto = [];
+    for (var i = 0; i < INDICE.length; i++) {
+      if (pular[INDICE[i].e.id]) continue;
+      resto.push({ e: INDICE[i].e, s: cobertura(triQ, nQ, INDICE[i].tri) });
+    }
+    resto.sort(function(a, b){ return b.s - a.s; });
+    var fora = resto.slice(0, n).map(function(x){ return x.e; });
+    return l ? fora.map(function(e){ return paraCandidato(e, l); }) : fora;
+  }
+
+  function paraCandidato(e, l){
+    return {
+      texto: (e[l] || e.pt || '').slice(0, 700),
+      fonte: e.fonte || '',
+      busca: textoDeBusca(e, l)
+    };
+  }
+
   function paraOWorker(pergunta, l){
     /* DOIS jeitos de a peneira voltar vazia, e eles pedem tratamento oposto:
          (a) a pergunta e de outro assunto  -> contexto vazio, e o modelo diz que
@@ -325,11 +349,21 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
        O portao so julga escopo quando ha PALAVRA SUFICIENTE para julgar: com
        uma ou duas fichas ele calava perguntas legitimas. */
     var q = fichas(pergunta);
-    if (!q.length) return [];
+    /* FICHA VAZIA NAO E FORA DE ESCOPO. "what do you do" e "ja esta no ar?" sao
+       feitas SO de palavra de parada, e devolviam ZERO candidatos -- a versao
+       inglesa do primeiro botao de sugestao respondia "nao tenho essa
+       resposta". A contagem de palavra nao tem o que contar, mas o TRIGRAMA
+       tem: ele compara caractere, e nao depende de sobrar palavra de conteudo.
+       Manda os 60 mais parecidos e deixa o reordenador julgar. */
+    if (!q.length) return porTrigrama(pergunta, {}, 60, l);
     var dentro = 0;
     q.forEach(function(t){ if (conhecida(t)) dentro++; });
     if (q.length >= 3 && dentro / q.length < 0.4) return [];
 
+    /* Testei reservar 6 das 60 vagas para o trigrama, para nenhum sinal encher
+       a lista sozinho. Medido no teste de exclusao (259 gatilhos retirados um a
+       um): IDENTICO com e sem -- 238 chegando ao reordenador nos dois casos.
+       Custava 6 candidatos lexicais e nao devolvia nada, entao saiu. */
     var achados = candidatos(pergunta, 60);
     if (achados.length < 60) {
       /* O PREENCHIMENTO NAO PODE SER PELA ORDEM DO ARQUIVO. Era, ate agora, e
@@ -343,23 +377,10 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
          de ser considerado. */
       var tem = {};
       achados.forEach(function(e){ tem[e.id] = 1; });
-      var triQ = trigramas(pergunta), nQ = 0;
-      for (var k in triQ) nQ++;
-      var resto = [];
-      for (var i = 0; i < INDICE.length; i++) {
-        if (tem[INDICE[i].e.id]) continue;
-        resto.push({ e: INDICE[i].e, s: cobertura(triQ, nQ, INDICE[i].tri) });
-      }
-      resto.sort(function(a, b){ return b.s - a.s; });
-      for (var j = 0; j < resto.length && achados.length < 60; j++) achados.push(resto[j].e);
+      var extra = porTrigrama(pergunta, tem, 60 - achados.length, null);
+      for (var j = 0; j < extra.length; j++) achados.push(extra[j]);
     }
-    return achados.map(function(e){
-      return {
-        texto: (e[l] || e.pt || '').slice(0, 700),
-        fonte: e.fonte || '',
-        busca: textoDeBusca(e, l)
-      };
-    });
+    return achados.map(function(e){ return paraCandidato(e, l); });
   }
 
   /* ---------- fala ---------- */
