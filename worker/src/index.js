@@ -17,10 +17,28 @@
  * Deploy: ver README.md ao lado.
  */
 
-const MAX_CORPO = 8 * 1024;      // 8 KB: pergunta + contexto + historico cabem folgados
+const MAX_CORPO = 64 * 1024;     // a pagina manda ate 60 candidatos para reordenar
 const MAX_PERGUNTA = 220;        // igual ao maxlength do input da pagina
 const MAX_HISTORICO = 6;         // 6 mensagens = 3 turnos. Teto de TPM, nao de gosto
-const MAX_CONTEXTO = 5;          // entradas da base enviadas como fundamento
+const MAX_CONTEXTO = 5;          // entradas que chegam ao MODELO como fundamento
+const MAX_CANDIDATOS = 60;       // entradas que a pagina manda para o REORDENADOR
+
+/* Por que existe um reordenador aqui.
+   A busca da pagina conta palavra. Medido: para "quanto o barbergo fatura em 3
+   meses", ela punha as cinco entradas de BarberGO no topo e deixava a entrada
+   que responde -- receita-hoje, "nao ha receita" -- em 8o lugar, fora do
+   contexto. A palavra "barbergo" esta em ~20 das 135 entradas e domina; a
+   palavra "fatura", que e o ASSUNTO, quase nao pesa. Pior: "voces ja lucraram
+   alguma coisa" falha porque receita-hoje nao contem a palavra "lucro" -- e
+   falta de vocabulario nenhum ajuste de peso resolve.
+
+   O reordenador le a PERGUNTA E O TRECHO JUNTOS e devolve relevancia. Entao a
+   busca por palavra para de ESCOLHER e passa so a PENEIRAR: manda 60, ele
+   escolhe 5. Custa $0,0031 por milhao de tokens -- 60 trechos dao ~0,002
+   neuronio, ou seja, o preco nao entra na decisao.
+   Se ele falhar, ficam os 5 primeiros da ordem antiga: pior escolha, nunca
+   pagina muda. */
+const MODELO_REORDENADOR = '@cf/baai/bge-reranker-base';
 
 /* Dois tetos, nao um. O da Groq tem de deixar tempo para o segundo motor ainda
    responder DENTRO da espera da pagina -- senao a pagina desiste no meio da
@@ -74,6 +92,31 @@ RULES:
    fundamento e o caminho mais curto para ele inventar -- ou para repetir a
    propria instrucao de volta, que foi o que o llama-8b fazia aqui. Resposta
    fixa: custo zero, texto sempre igual, e nada a alucinar. */
+/* FATOS FIXOS - a trava no ponto de estrangulamento.
+   Vao em TODA resposta, junto com o contexto recuperado, aconteca o que
+   acontecer na busca. Existem porque remendar entrada por entrada nao fecha
+   uma classe inteira de erro.
+
+   O erro medido: perguntado "o barbergo da lucro", o modelo achou a entrada de
+   margem por cliente e respondeu "Sim, gera lucro: R$ 38 por assinatura". Os
+   R$ 38 sao margem MODELADA. Perguntado "quantos usuarios pagando", respondeu
+   "527 barbearias pagantes" -- 527 e quantas barbearias SERIAM PRECISAS para
+   bancar tres pessoas, nao quantas existem. Nos dois casos o numero estava no
+   contexto e o modelo trocou o tempo verbal: planejado virou realizado.
+
+   Uma invariante no lugar certo vale mais que N remendos: custa ~90 tokens por
+   turno e fecha a classe toda. */
+const FATOS_FIXOS = {
+  pt: `FATOS QUE VALEM SEMPRE, acima de qualquer trecho abaixo:
+- A 3BRAIN e PRE-RECEITA. Nao ha receita, nao ha cliente pagante, nao ha assinante pagante, nao ha lucro. O BarberGO esta publicado nas duas lojas; o SAVI roda piloto e nao foi vendido; o HuntAI e canal interno e nunca foi vendido a terceiro.
+- Todo numero de margem, projecao, meta, cenario ou "necessario para" e MODELADO. Nunca o apresente como realizado, e diga que e modelo quando usar.
+- Se a pergunta for sobre quantidade JA alcancada (cliente, assinante, usuario, faturamento, lucro), a resposta e que nao ha - mesmo que haja numero parecido no contexto.`,
+  en: `FACTS THAT ALWAYS HOLD, above any passage below:
+- 3BRAIN is PRE-REVENUE. There is no revenue, no paying customer, no paying subscriber, no profit. BarberGO is published in both app stores; SAVI runs a pilot and has not been sold; HuntAI is an internal channel and has never been sold to a third party.
+- Every margin, projection, target, scenario or "needed to" figure is MODELLED. Never present it as achieved, and say it is a model when you use it.
+- If the question is about a quantity ALREADY achieved (customer, subscriber, user, revenue, profit), the answer is that there is none - even if a similar-looking number appears in the context.`,
+};
+
 const SEM_DADO = {
   pt: 'Esse dado não está na nossa base publicada, então prefiro não chutar. O fundador responde direto e consegue te dar o número com a fonte.',
   en: 'That figure is not in our published base, so I would rather not guess. The founder answers directly and can give you the number with its source.',
@@ -189,7 +232,8 @@ function montaMensagens(corpo, idioma) {
     `[${i + 1}] ${String(e.texto || '').slice(0, 700)}${e.fonte ? `\nFONTE: ${String(e.fonte).slice(0, 160)}` : ''}`
   ).join('\n\n');
 
-  const msgs = [{ role: 'system', content: `${INSTRUCAO[idioma]}\n\nCONTEXTO:\n${bloco}` }];
+  const msgs = [{ role: 'system',
+    content: `${INSTRUCAO[idioma]}\n\n${FATOS_FIXOS[idioma]}\n\nCONTEXTO:\n${bloco}` }];
 
   const hist = Array.isArray(corpo.historico) ? corpo.historico.slice(-MAX_HISTORICO) : [];
   for (const m of hist) {
@@ -200,6 +244,39 @@ function montaMensagens(corpo, idioma) {
 
   msgs.push({ role: 'user', content: String(corpo.pergunta).slice(0, MAX_PERGUNTA) });
   return { msgs, temContexto: ctx.length > 0 };
+}
+
+/** Escolhe as 5 entradas que vao fundamentar a resposta, entre as ate 60 que a
+ *  pagina peneirou. Le pergunta e trecho JUNTOS, que e o que a contagem de
+ *  palavra nao faz.
+ *
+ *  Falhar aqui NAO pode calar a pagina: se o reordenador cair, ficam os 5
+ *  primeiros da ordem que veio -- pior escolha, nunca tela vazia. */
+async function reordena(env, pergunta, lista) {
+  const cand = lista.slice(0, MAX_CANDIDATOS);
+  if (cand.length <= MAX_CONTEXTO) return cand;
+  try {
+    const r = await env.AI.run(MODELO_REORDENADOR, {
+      query: String(pergunta).slice(0, MAX_PERGUNTA),
+      contexts: cand.map(e => ({ text: String(e.texto || '').slice(0, 700) })),
+      top_k: MAX_CONTEXTO,
+    });
+    // O formato varia: as vezes {response:[...]}, as vezes a lista crua, e o
+    // item pode ser {id,score} ou so o indice. Ler os tres custa cinco linhas.
+    const itens = (r && (r.response || r.result)) || (Array.isArray(r) ? r : []);
+    const fora = [];
+    for (const it of itens) {
+      const i = typeof it === 'number' ? it
+              : (it && typeof it.id === 'number') ? it.id
+              : (it && typeof it.index === 'number') ? it.index : -1;
+      if (i >= 0 && i < cand.length && !fora.includes(cand[i])) fora.push(cand[i]);
+    }
+    if (fora.length) return fora.slice(0, MAX_CONTEXTO);
+    console.log('reordenador devolveu formato inesperado');
+  } catch (e) {
+    console.log('reordenador falhou:', e.message);
+  }
+  return cand.slice(0, MAX_CONTEXTO);
 }
 
 /* ─────────────────────────────── provedores ─────────────────────────────── */
@@ -307,18 +384,29 @@ export default {
     if (!ok) return json({ erro: 'turnstile' }, 403, ch);
 
     const idioma = corpo?.idioma === 'en' ? 'en' : 'pt';
-    const { msgs, temContexto } = montaMensagens({ ...corpo, pergunta }, idioma);
+    const peneirado = Array.isArray(corpo.contexto) ? corpo.contexto : [];
 
     // A busca da pagina nao achou fundamento nenhum. Nao ha o que reformular:
     // qualquer coisa que o modelo escrevesse aqui sairia da cabeca dele.
-    if (!temContexto) return json({ texto: SEM_DADO[idioma], motor: 'sem-contexto' }, 200, ch);
+    if (!peneirado.length) return json({ texto: SEM_DADO[idioma], motor: 'sem-contexto' }, 200, ch);
+
+    const escolhido = await reordena(env, pergunta, peneirado);
+    const { msgs } = montaMensagens({ ...corpo, pergunta, contexto: escolhido }, idioma);
+
+    // A pagina mostra a fonte embaixo da resposta, e a fonte tem de ser a das
+    // entradas que o REORDENADOR escolheu -- nao a das que a busca chutou.
+    const fontes = [];
+    for (const e of escolhido) {
+      const f = String(e.fonte || '').trim();
+      if (f && !fontes.includes(f) && fontes.length < 2) fontes.push(f);
+    }
 
     try {
       if (env.GROQ_API_KEY) {
         const relG = new AbortController();
         const tG = setTimeout(() => relG.abort(), TIMEOUT_GROQ);
         try {
-          return json(await viaGroq(env, msgs, relG.signal, idioma), 200, ch);
+          return json({ ...(await viaGroq(env, msgs, relG.signal, idioma)), fontes }, 200, ch);
         } catch (e) {
           console.log('groq falhou:', e.message);   // so a mensagem; a chave nunca entra em log
         } finally {
@@ -328,7 +416,7 @@ export default {
       const relC = new AbortController();
       const tC = setTimeout(() => relC.abort(), TIMEOUT_CF);
       try {
-        return json(await viaWorkersAI(env, msgs, relC.signal, idioma), 200, ch);
+        return json({ ...(await viaWorkersAI(env, msgs, relC.signal, idioma)), fontes }, 200, ch);
       } catch (e) {
         console.log('workers-ai falhou:', e.message);
       } finally {
