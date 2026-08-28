@@ -6,11 +6,18 @@ const src = readFileSync(new URL('../prova_rag/arreio.js', import.meta.url), 'ut
 const ini = src.indexOf('var CASOS = [');
 const fim = src.indexOf('];', ini);
 const CASOS = new Function('return ' + src.slice(ini + 'var CASOS = '.length, fim + 1))();
+/* Comparar SEM acento dos dois lados. Os trechos esperados foram escritos
+   quando metade da base estava sem acento; em 28/08 o texto passou a ter acento
+   e cinco casos "falharam" sem que a resposta tivesse mudado -- "uniao" deixou
+   de casar com "uniao" acentuado. O arreio afere CONTEUDO, nao ortografia, e a
+   propria busca do produto ja normaliza assim (assistente.js, normalize NFD). */
+const sa = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
 let ok = 0; const maus = [];
 for (const [p, esperados] of CASOS) {
   const e = M.busca(p);
   const t = e ? (e.pt || '') : '';
-  const falta = esperados.filter(s => t.toLowerCase().indexOf(String(s).toLowerCase()) < 0);
+  const falta = esperados.filter(s => sa(t).indexOf(sa(s)) < 0);
   if (e && !falta.length) ok++;
   else maus.push([p, e ? e.id : '(nada)', falta.join(',')]);
 }

@@ -9,11 +9,14 @@ arreios so veem a busca.
 Extrai os numeros publicados no index.html (fora de script e de style) e os da
 base, e cruza. Nao decide -- poe lado a lado.
 """
+import os
 import io, json, re, sys, unicodedata
-sys.path.insert(0, ".")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lote4 import ARQ, recorta
 
-PAG = r"c:\workspaces\fabiocdssilva69-prog\3brain-ai\index.html"
+RAIZ = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    os.pardir, os.pardir))
+PAG = os.path.join(RAIZ, "index.html")
 
 NUM = re.compile(r"(?i)(?:R\$\s*)?\d[\d.,]{2,}(?:\s*(?:mil|milh[oõ]es|milh[aã]o|%))?")
 

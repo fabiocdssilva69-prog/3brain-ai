@@ -4,7 +4,7 @@ export const CASOS = [
   ['o que voces fazem',            ['o-que-a-3brain-faz']],
   ['o que e o savi',               ['o-que-e-savi']],
   ['o que e o barbergo',           ['o-que-e-barbergo']],
-  ['pra que serve o savi',         ['o-que-e-savi','para-quem-savi']],
+  ['pra que serve o savi',         ['o-que-e-savi','savi-segmentos']],
   ['isso ja funciona',             ['estagio-produtos']],
   ['onde eu baixo o app',          ['onde-publicado']],
   ['funciona no iphone',           ['onde-publicado']],

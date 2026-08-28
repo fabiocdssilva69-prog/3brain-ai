@@ -6,17 +6,21 @@ meses morta (um \b virou barra literal dentro de r"...") e o conferir_base
 imprimia "OK: nenhuma regressao" o tempo todo. Rodar ISTO antes de confiar
 naquilo.  Uso: python prova_travas.py
 """
+import os
+
 import importlib.util
 import io
 import re
 import sys
 import textwrap
 
-spec = importlib.util.spec_from_file_location("cb", "conferir_base.py")
+CB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "conferir_base.py")
+
+spec = importlib.util.spec_from_file_location("cb", CB)
 cb = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cb)
 
-s = io.open("conferir_base.py", encoding="utf8").read()
+s = io.open(CB, encoding="utf8").read()
 bloco = s[s.index("    FATO = re.compile("):s.index("    for e in ent:", s.index("    HIPOT"))]
 ns = {"re": re}
 exec(textwrap.dedent(bloco), ns)

@@ -14,10 +14,13 @@ rouba pergunta de outra entrada (regressao medida em 25/08 com "ja estao
 vendendo"). Por isso as 53 do arreio rodam depois deste script -- e se cairem,
 o gatilho culpado sai.
 """
+import os
 import io
 import json
 
-ARQ = r"c:\workspaces\fabiocdssilva69-prog\3brain-ai\assistente.js"
+RAIZ = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    os.pardir, os.pardir))
+ARQ = os.path.join(RAIZ, "assistente.js")
 PRE = "window.BASE_3BRAIN = "
 
 # id -> gatilhos a acrescentar. So palavra que o visitante usa e a base nao tinha.

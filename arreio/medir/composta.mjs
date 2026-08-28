@@ -4,7 +4,7 @@
 import { M, ENTRADAS } from './peneira.mjs';
 const CASOS = [
   ['quanto custa e voces ja tem cliente',   ['precos-resumo','preco-savi'], ['receita-hoje','quem-usa-savi','usuarios-barbergo']],
-  ['o que e o savi e quem paga por ele',    ['o-que-e-savi'], ['quem-paga-reembolso','para-quem-savi','savi-segmentos']],
+  ['o que e o savi e quem paga por ele',    ['o-que-e-savi'], ['quem-paga-reembolso','savi-segmentos']],
   ['voces sao quantos e ja faturam',        ['tamanho-time'], ['receita-hoje']],
   ['qual o risco maior e o que voces fazem',['maior-risco'], ['o-que-a-3brain-faz']],
   ['quanto custa o savi e quanto custa o barbergo', ['preco-savi','precos-resumo'], ['preco-barbergo','preco-barbergo-plano']],

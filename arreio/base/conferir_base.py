@@ -2,12 +2,15 @@
 """Confere a base do assistente. Roda local, de graca, e e o unico jeito de saber
 que a base nao regrediu: contradicao entre entradas e pior que entrada faltando,
 porque o modelo escolhe uma das duas e ninguem ve qual."""
+import os
 import json
 import re
 import sys
 import unicodedata
 
-ARQ = r"c:\workspaces\fabiocdssilva69-prog\3brain-ai\assistente.js"
+RAIZ = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    os.pardir, os.pardir))
+ARQ = os.path.join(RAIZ, "assistente.js")
 
 # numeros que NAO podem voltar a aparecer, com o motivo
 PROIBIDOS = {
