@@ -1,0 +1,148 @@
+# -*- coding: utf-8 -*-
+"""Lote 2 - SAVI, mercado, tecnica e time."""
+F_PRECO = "Decisao de preco 3BRAIN, ago/2026"
+F_INTO = "Contrato 200/2024, INTO-MS, Painel de Precos do Governo Federal"
+F_CONTA = "Conta propria 3BRAIN, premissas declaradas, ago/2026"
+F_IBGE = "IBGE CEMPRE 2024; Sebrae/Receita Federal 2026; CNES/DATASUS jun/2026"
+
+E = [
+{"id": "ancora-into", "secao": "#receita", "tags": ["savi", "preco", "ancora"],
+ "perguntas": ["como sabem que o preco esta certo", "tem comparavel", "quem ja paga isso",
+               "ancora de preco", "price anchor", "is there precedent"],
+ "pt": "Existe uma ancora publica e verificavel acima do nosso preco: o **contrato 200/2024 do INTO**, instituto federal, paga **R$ 166,13 por leito de UTI por mes** em vigilancia clinica, por cinco anos, contratado por inexigibilidade de licitacao. Nosso preco de **R$ 99 por leito esta a 59,6% dessa ancora**. Isso vale mais que qualquer argumento de valor: **o comprador confere sozinho**, no Painel de Precos do governo, sem depender do que a gente diz.",
+ "en": "There is a public, verifiable anchor above our price: **contract 200/2024 of INTO**, a federal institute, pays **R$ 166.13 per ICU bed per month** for clinical surveillance, over five years, contracted without tender. Our price of **R$ 99 per bed sits at 59.6% of that anchor**. That is worth more than any value argument: **the buyer can check it alone**, on the federal price portal, without relying on anything we say.",
+ "fonte": F_INTO},
+
+{"id": "savi-unidade-leito", "secao": "#receita", "tags": ["savi", "preco", "modelo"],
+ "perguntas": ["por que cobram por leito", "por que nao por usuario", "qual a unidade de cobranca",
+               "why per bed", "pricing unit"],
+ "pt": "Por **leito, e todos eles, nao so os ocupados**. Cobrar por usuario cria um incentivo que destroi o produto: a instituicao racionaria login, e vigilancia clinica so vale se **a equipe inteira registrar**. Um tecnico sem acesso e um turno inteiro sem dado. Cobrar por leito tambem torna a conta previsivel para o comprador, que ja pensa o orcamento dele por leito, e nao por cabeca.",
+ "en": "By **bed, and all of them, not only the occupied ones**. Charging per user creates an incentive that destroys the product: the institution would ration logins, and clinical surveillance only works if **the whole team records**. One technician without access is a whole shift without data. Per-bed pricing also makes the bill predictable for the buyer, who already thinks about their budget per bed rather than per head.",
+ "fonte": F_PRECO},
+
+{"id": "savi-segmentos", "secao": "#savi", "tags": ["savi", "mercado", "segmento"],
+ "perguntas": ["para quem e o SAVI", "e so para ILPI", "vende para hospital",
+               "qual o alvo do SAVI", "who is SAVI for", "is it only for care homes"],
+ "pt": "**Serve qualquer instituicao de saude, porque todas precisam registrar.** O alvo maior sao **hospitais e clinicas especializadas**; ILPI tambem, mas como cabeca de ponte, nao como teto. A ordem de prioridade e essa: hospital geral e especializado, depois clinica especializada, depois ILPI, depois home care. O piloto num lar de 38 residentes e a porta de entrada com prova em campo - **nao e o mercado principal**, e confundir os dois foi um erro que ja corrigimos mais de uma vez.",
+ "en": "**It serves any healthcare institution, because all of them have to record.** The main target is **hospitals and specialist clinics**; long-term care homes too, but as a bridgehead rather than a ceiling. The priority order is exactly that: general and specialist hospitals, then specialist clinics, then care homes, then home care. The pilot in a 38-resident home is the way in with field proof - **it is not the main market**, and confusing the two is a mistake we have corrected more than once.",
+ "fonte": "Definicao de mercado 3BRAIN, ago/2026; CNES/DATASUS jun/2026"},
+
+{"id": "savi-ilpi-nao-paga", "secao": "#receita", "tags": ["savi", "margem", "segmento"],
+ "perguntas": ["ILPI da dinheiro", "quanto rende uma ILPI", "por que hospital e nao ILPI",
+               "margem por segmento", "care home economics"],
+ "pt": "Numeros que mudaram a estrategia: a **2% de penetracao**, clinica especializada rende cerca de **R$ 157 mil por ano** e ILPI cerca de **R$ 155 mil**. **Nenhum dos dois paga um executivo de contas**, que custa cerca de R$ 154.800 por ano. Hospital, na mesma penetracao, rende de **R$ 1,1 a 3,0 milhoes**. Pior: no preco atual a ILPI tem **contribuicao negativa de cerca de R$ 32 por casa por mes** - cada casa a mais custa dinheiro. Por isso ILPI e prova, e hospital e negocio.",
+ "en": "Figures that changed the strategy: at **2% penetration**, a specialist clinic yields about **R$ 157k a year** and a care home about **R$ 155k**. **Neither pays for one account executive**, who costs about R$ 154,800 a year. A hospital, at the same penetration, yields **R$ 1.1m to 3.0m**. Worse: at the current price a care home has a **negative contribution of about R$ 32 per house per month** - each extra house costs money. That is why care homes are proof, and hospitals are the business.",
+ "fonte": F_CONTA},
+
+{"id": "savi-incerteza-leito", "secao": "#savi", "tags": ["savi", "risco", "premissa"],
+ "perguntas": ["qual a maior incerteza do SAVI", "leito de UTI ou leito comum",
+               "o que pode dar errado no preco", "biggest unknown"],
+ "pt": "A maior incerteza do modelo nao e tecnica, e **de unidade**: o hospital paga por **leito operacional** ou so por **leito de UTI**? A diferenca move o valor de um contrato em **2,66 vezes** - e nenhuma conta de mercado sobrevive a essa faixa sem resposta. E a primeira pergunta a levar para as tres primeiras instituicoes, e a resposta delas vale mais que qualquer estimativa nossa.",
+ "en": "The biggest uncertainty in the model is not technical, it is **the unit**: does a hospital pay per **operational bed** or only per **ICU bed**? The difference moves a contract's value by **2.66 times** - and no market calculation survives that range unanswered. It is the first question to take to the first three institutions, and their answer is worth more than any estimate of ours.",
+ "fonte": F_CONTA},
+
+{"id": "savi-modelo-ia", "secao": "#savi", "tags": ["savi", "ia", "custo"],
+ "perguntas": ["que modelo de IA voces usam", "qual IA roda o SAVI", "e caro rodar a IA",
+               "custo de inferencia", "which AI model", "inference cost"],
+ "pt": "Modelo escolhido por **tarefa, nao por reputacao**: o julgamento clinico roda num modelo de raciocinio forte, e a extracao de texto de imagem roda no modelo mais barato disponivel, porque ler um documento nao exige julgamento. O custo de modelo e a **maior despesa variavel por cliente** do SAVI, e a decisao de qual modelo usar em cada etapa mexe mais na margem do que qualquer negociacao de fornecedor. Nenhuma chave de API fica no aplicativo: a chamada sai sempre do nosso servidor.",
+ "en": "The model is chosen **by task, not by reputation**: clinical judgement runs on a strong reasoning model, and reading text from images runs on the cheapest available one, because reading a document does not require judgement. Model cost is the **largest variable cost per client** in SAVI, and deciding which model handles each step moves the margin more than any supplier negotiation. No API key lives in the app: the call always leaves from our own server.",
+ "fonte": "Arquitetura e conta de custo 3BRAIN, ago/2026"},
+
+{"id": "savi-piloto", "secao": "#savi", "tags": ["savi", "piloto", "estagio"],
+ "perguntas": ["ja tem cliente", "esta em uso", "tem piloto", "onde esta rodando",
+               "is it live", "any pilot"],
+ "pt": "Ha um **piloto em campo num lar de longa permanencia com 38 residentes**, que e onde o produto encontrou o problema real: o prontuario preenchido no fim do turno, com o que ficou de fora do papel. Nao ha operacao comercial: o SAVI **ainda nao foi vendido**. Chamar piloto de cliente e o tipo de enfeite que derruba a conversa toda quando o investidor pede o contrato.",
+ "en": "There is a **pilot in the field at a long-term care home with 38 residents**, which is where the product met the real problem: the chart filled in at the end of a shift, with whatever never made it onto the page. There is no commercial operation: SAVI **has not been sold yet**. Calling a pilot a customer is the kind of dressing-up that collapses the whole conversation when an investor asks for the contract.",
+ "fonte": "3BRAIN, ago/2026"},
+
+{"id": "dois-setores-numeros", "secao": "#time", "tags": ["mercado", "numeros"],
+ "perguntas": ["qual o tamanho do mercado", "quantas empresas", "saude e beleza juntos",
+               "market size", "how many businesses"],
+ "pt": "Somados, **1,9 milhao de negocios**: 605 mil estabelecimentos de saude e 1,3 milhao de CNPJ em beleza - **1 em cada 13 CNPJ ativo do pais** esta num dos dois setores. Sao os dois maiores servicos de mao do Brasil, e os dois crescem por motivos que ninguem controla: a beleza abriu **646 negocios por dia em 2025, alta de 18,5%**, e a saude cresce pela demografia. **O mercado se abastece sozinho**, sem depender de ciclo economico.",
+ "en": "Together, **1.9 million businesses**: 605,000 healthcare facilities and 1.3 million beauty companies - **1 in every 13 active companies in the country** sits in one of the two sectors. They are Brazil's two largest hands-on services, and both grow for reasons nobody controls: beauty opened **646 businesses a day in 2025, up 18.5%**, and healthcare grows through demographics. **The market restocks itself**, with no dependence on the economic cycle.",
+ "fonte": F_IBGE},
+
+{"id": "conta-pequena", "secao": "#time", "tags": ["mercado", "estrutura", "estrategia"],
+ "perguntas": ["por que ninguem atende esse mercado", "por que esta no papel ainda",
+               "qual a barreira", "why is nobody there", "why still on paper"],
+ "pt": "Porque **vender de porta em porta custa mais do que a porta paga**. Em beleza, so **226 empresas no pais inteiro** tem 20 pessoas ou mais; em saude, so **1 em cada 19** tem porte que compra software. Nao da para sustentar equipe de vendas em cima disso - **e por isso que esse mercado continua no papel**, nao por descuido. Quem entra tem que chegar **sem vendedor**, pela tela que o dono ja abre todo dia, com custo de aquisicao proximo de zero.",
+ "en": "Because **selling door to door costs more than the door pays**. In beauty, only **226 companies in the entire country** have 20 people or more; in healthcare, only **1 in every 19** is large enough to buy software. You cannot sustain a sales team on that - **which is why this market is still on paper**, not through neglect. Whoever gets in has to arrive **without a salesperson**, through the screen the owner already opens every day, at near-zero acquisition cost.",
+ "fonte": "IBGE PAS 2023; IBGE CEMPRE 2024"},
+
+{"id": "whatsapp-porta", "secao": "#time", "tags": ["mercado", "canal", "whatsapp"],
+ "perguntas": ["por que WhatsApp", "onde o comprador atende", "como chegam no cliente",
+               "why whatsapp", "where do buyers answer"],
+ "pt": "**82% dos pequenos negocios do Brasil vendem pelo WhatsApp** - nao por telefone, nao por e-mail corporativo, nao por anuncio. E a porta que a 3BRAIN abre e que o funil de ninguem alcanca: ferramenta de vendas tradicional foi construida para caixa de entrada corporativa, e o dono de barbearia ou de clinica pequena nao vive la. **A pesquisa tem 8.200 entrevistados**, entao nao e impressao de mercado.",
+ "en": "**82% of Brazil's small businesses sell through WhatsApp** - not by phone, not by corporate e-mail, not through ads. It is the door 3BRAIN opens and nobody's funnel reaches: traditional sales tooling was built for the corporate inbox, and the owner of a barbershop or a small clinic does not live there. **The survey has 8,200 respondents**, so it is not a market impression.",
+ "fonte": "Sebrae, Pulso dos Pequenos Negocios, 12a edicao"},
+
+{"id": "alcance-vs-comprador", "secao": "#motor", "tags": ["mercado", "metodo", "tam"],
+ "perguntas": ["qual o mercado do motor", "quantas empresas podem comprar",
+               "alcance ou comprador", "reach vs buyer", "TAM do HuntAI"],
+ "pt": "Os dois numeros existem e **nao sao a mesma coisa**. Alcance: **10,6 milhoes de organizacoes formais** no Brasil, todas com endereco em registro publico. Comprador: **316.041 dessas empresas tem 10 ou mais pessoas e vendem para outra empresa**. Abaixo de dez, o dono prospecta sozinho e nao compra ferramenta de prospeccao. **Misturar alcance com comprador e o erro que infla mercado** - por isso publicamos os dois separados, e o comercio ficou de fora por prudencia.",
+ "en": "Both numbers exist and **they are not the same thing**. Reach: **10.6 million formal organisations** in Brazil, every one with an address on a public register. Buyer: **316,041 of those have 10 or more people and sell to other businesses**. Below ten, the owner prospects alone and does not buy prospecting tooling. **Blending reach with buyer is the error that inflates a market** - which is why we publish the two separately, with retail excluded for prudence.",
+ "fonte": "IBGE CEMPRE 2024, comercio excluido: +200.274"},
+
+{"id": "custo-de-vendedor", "secao": "#receita", "tags": ["mercado", "custo", "comparacao"],
+ "perguntas": ["por que nao contratar vendedor", "quanto custa um SDR",
+               "vale mais a pena equipe de vendas", "cost of a salesperson"],
+ "pt": "Um profissional de prospeccao com encargos custa entre **R$ 5,3 mil e R$ 6,2 mil por mes** para entregar de 10 a 20 reunioes - e um executivo de contas custa cerca de **R$ 154.800 por ano**. Contra isso, o nosso custo por comprador alcancado e de **R$ 0,008**. A comparacao honesta nao e essa, e sim **por reuniao**: ai o motor empata com um vendedor mediano e **perde para um vendedor produtivo**. O que ele ganha nao e no preco por reuniao, e no **volume que um humano nao alcanca**.",
+ "en": "A prospecting professional with payroll costs runs **R$ 5.3k to R$ 6.2k a month** to deliver 10 to 20 meetings - and an account executive costs about **R$ 154,800 a year**. Against that, our cost per buyer reached is **R$ 0.008**. The honest comparison is not that one, though, it is **per meeting**: there the engine ties with a median salesperson and **loses to a productive one**. What it wins is not price per meeting, it is **volume a human cannot reach**.",
+ "fonte": "Glassdoor Brasil e tabelas de encargos CLT; conta propria 3BRAIN"},
+
+{"id": "onde-roda-a-ia", "secao": "#motor", "tags": ["tecnica", "seguranca", "ia"],
+ "perguntas": ["onde roda a IA", "onde fica a chave", "como voces protegem a chave",
+               "a chave esta no site", "where does the AI run", "api key security"],
+ "pt": "A chamada de IA sai de um **servidor proprio na Cloudflare**, nunca da pagina. A pagina e publica e qualquer um le o codigo dela: chave que estiver ali esta a vista de todos. O servidor guarda a chave, verifica de onde veio o pedido, aplica limite de uso e faz a cascata - se o modelo principal falhar, cai no segundo, e se os dois falharem a pagina responde pela base local. **Nenhuma dessas camadas cobra ao estourar: as tres param.**",
+ "en": "The AI call leaves from **our own server on Cloudflare**, never from the page. The page is public and anyone can read its code: a key sitting there is a key in plain sight. The server holds the key, checks where the request came from, applies usage limits and runs the cascade - if the main model fails it drops to the second, and if both fail the page answers from its local base. **None of those layers bills on overage: all three simply stop.**",
+ "fonte": "Arquitetura 3BRAIN, ago/2026"},
+
+{"id": "assistente-como-funciona", "secao": "#fontes", "tags": ["tecnica", "assistente", "metodo"],
+ "perguntas": ["como voce funciona", "voce e um chatgpt", "voce inventa resposta",
+               "de onde tira as respostas", "how do you work", "are you chatgpt"],
+ "pt": "Sou uma **base curada com fonte**, e um modelo de linguagem que **so reformula o que ela ja diz**. O mecanismo tem nome: **RAG** - a busca escolhe as entradas mais proximas da pergunta, e **so essas entradas viajam** como contexto para o modelo, que e instruido a nao sair delas. E de proposito: modelo solto numa pagina de investidor **inventa numero**, e esta pagina se sustenta em cada numero ter fonte e denominador. Quando eu nao sei, eu digo que nao sei e encaminho para uma conversa.",
+ "en": "I am a **curated base with sources**, plus a language model that **only rephrases what the base already says**. The mechanism has a name: **RAG** - the search picks the entries closest to your question, and **only those entries travel** as context to the model, which is instructed not to stray from them. That is deliberate: a model running loose on an investor page **invents figures**, and this page stands on every number having a source and a denominator. When I do not know, I say so and route you to a conversation.",
+ "fonte": "Arquitetura do assistente 3BRAIN, ago/2026"},
+
+{"id": "stack-tecnica", "secao": "#barbergo", "tags": ["tecnica", "stack"],
+ "perguntas": ["que tecnologia usam", "qual a stack", "em que foi feito o app",
+               "e react native", "what stack", "tech stack"],
+ "pt": "O BarberGO e **Flutter com Dart**, sobre Firebase - autenticacao, banco em tempo real e armazenamento -, publicado nas duas lojas. **Nao e React Native**, e documentacao antiga que diz isso esta errada. A camada de IA e servida por API, com a chave sempre no servidor. O motor de aquisicao e Python puro sobre HTTP, sem servico pago de automacao. Quem escreve o codigo dos tres e o proprio fundador tecnico, o que mantem a distancia entre ver um problema em campo e corrigi-lo em producao medida **em horas, nao em trimestres**.",
+ "en": "BarberGO is **Flutter with Dart**, on Firebase - authentication, realtime database and storage -, published on both stores. **It is not React Native**, and older documentation saying so is wrong. The AI layer is served through an API, with the key always on the server. The acquisition engine is plain Python over HTTP, with no paid automation service. All three are written by the technical founder himself, which keeps the distance between spotting a problem in the field and fixing it in production measured **in hours, not quarters**.",
+ "fonte": "3BRAIN, ago/2026"},
+
+{"id": "preco-barbergo-plano", "secao": "#barbergo", "tags": ["barbergo", "preco", "plano"],
+ "perguntas": ["vao aumentar o preco", "o preco vai mudar", "reajuste do barbergo",
+               "price increase", "will pricing change"],
+ "pt": "O preco **publico hoje** e Silver a R$ 14,90 e Gold a R$ 29,90 por mes, e e esse que vale para quem assina agora. Ha um **reajuste decidido e ainda nao publicado**, para R$ 29,90 e R$ 49,90, que eleva a margem de contribuicao de 73% para 78% e **derruba o numero de assinantes necessarios para R$ 1 milhao de 4.296 para 2.322**. Enquanto nao subir, o numero que vale e o de hoje - **preco anunciado e preco cobrado tem de ser o mesmo**, sempre.",
+ "en": "The **price today** is Silver at R$ 14.90 and Gold at R$ 29.90 a month, and that is what applies to anyone subscribing now. There is a **decided but not yet shipped increase**, to R$ 29.90 and R$ 49.90, which lifts the contribution margin from 73% to 78% and **cuts the subscribers needed for R$ 1 million from 4,296 to 2,322**. Until it ships, the figure that counts is today's - **the advertised price and the charged price must be the same**, always.",
+ "fonte": "Preco publico no app; decisao de preco 3BRAIN, ago/2026"},
+
+{"id": "porta-de-servico", "secao": "#time", "tags": ["time", "fosso", "estrategia"],
+ "perguntas": ["por que voces dois", "qual o diferencial do time", "por que essa dupla",
+               "why you two", "founder fit"],
+ "pt": "Porque nos dois mercados **nao se entra pela porta da frente**. Um tecnico de enfermagem com nove anos de UTI, emergencia e longa permanencia sabe o que fica de fora do prontuario porque **ja preencheu prontuario no fim do turno**. Um dono de barbearia com oito anos de casa propria sabe o que a cadeira parada custa porque **ja fechou o mes com ela parada**. Nenhum dos dois produtos comecou como pesquisa de mercado - e essa e a parte que um concorrente **nao consegue contratar**.",
+ "en": "Because in both markets **you do not come in through the front door**. A nurse technician with nine years in ICU, emergency and long-term care knows what never makes it onto the chart because **he has filled in charts at the end of a shift**. A barbershop owner with eight years running his own place knows what an idle chair costs because **he has closed a month with it idle**. Neither product started as market research - and that is the part a competitor **cannot hire**.",
+ "fonte": "3BRAIN; COREN-SC 1305197"},
+
+{"id": "risco-copia", "secao": "#porque", "tags": ["risco", "concorrencia", "fosso"],
+ "perguntas": ["e se copiarem", "o que impede um concorrente", "qual o fosso",
+               "what stops a competitor", "moat"],
+ "pt": "O codigo e copiavel e nao adianta fingir que nao. O que nao se copia rapido sao tres coisas: **o acesso** - entrar numa instituicao de saude ou numa barbearia depende de ter estado la dentro -, **a base extraida**, que sao 2,1 milhoes de contatos de registro publico que custaram tempo de engenharia e nao dinheiro, e **o custo de aquisicao proximo de zero**, que so existe porque o canal e proprio. Um concorrente com dinheiro copia o produto em meses; para copiar o canal, tem que construir o canal.",
+ "en": "Code is copyable and pretending otherwise is useless. What is not quickly copied is three things: **access** - getting inside a healthcare institution or a barbershop depends on having been there -, **the extracted base**, 2.1 million contacts from public registers that cost engineering time rather than money, and **near-zero acquisition cost**, which exists only because the channel is our own. A funded competitor copies the product in months; to copy the channel, they have to build the channel.",
+ "fonte": "3BRAIN, ago/2026"},
+
+{"id": "o-que-nao-funciona", "secao": "#porque", "tags": ["risco", "honestidade", "estagio"],
+ "perguntas": ["o que ainda nao funciona", "o que falta", "qual a parte fraca",
+               "seja honesto", "what does not work yet", "weakest part"],
+ "pt": "Em ordem de importancia: **o SAVI nao foi vendido** - ha piloto, nao ha contrato; **o HuntAI nunca foi vendido a terceiro** - ele e canal interno, e a unica prova de ponta a ponta e uma contratacao; **o envio de e-mail esta pausado** por decisao nossa ate a reputacao de IP melhorar; **a entrega de julho e desconhecida**; e o WhatsApp, que e o canal com mais conversa humana, **ainda nao tem numero auditavel**. Nada disso e segredo: esta escrito na pagina, com fonte.",
+ "en": "In order of importance: **SAVI has not been sold** - there is a pilot, not a contract; **HuntAI has never been sold to a third party** - it is an internal channel, and the only end-to-end proof is one hire; **e-mail sending is paused** by our own decision until IP reputation improves; **July's delivery is unknown**; and WhatsApp, the channel with the most human conversation, **still has no auditable figure**. None of this is a secret: it is written on the page, with sources.",
+ "fonte": "3BRAIN, ago/2026"},
+
+{"id": "como-verificar", "secao": "#fontes", "tags": ["metodo", "fontes", "confianca"],
+ "perguntas": ["como confiro esses numeros", "de onde vem os dados", "posso verificar",
+               "as fontes sao publicas", "can I verify", "where do the numbers come from"],
+ "pt": "Todos os numeros da pagina tem **fonte, denominador e, onde a medicao e fragil, a ressalva escrita ao lado** - a secao Fontes lista um por um. Nenhum vem de relatorio de consultoria sem metodologia publica. Os de mercado saem de IBGE, Sebrae, Receita Federal e CNES/DATASUS, que **qualquer um consulta**. Os nossos saem de ledger de operacao e da API do provedor, com a data da medicao. E os que a literatura consagrou mas nao usamos, por fragilidade conhecida, estao listados tambem - **com o motivo**.",
+ "en": "Every number on the page has a **source, a denominator and, where the measurement is fragile, the caveat written beside it** - the Sources section lists them one by one. None comes from a paid research report without public methodology. Market figures come from IBGE, Sebrae, the federal tax registry and CNES/DATASUS, which **anyone can check**. Ours come from operation ledgers and the provider's API, with the measurement date. And the ones the literature made famous but we do not use, for known weaknesses, are listed too - **with the reason why**.",
+ "fonte": "Secao 07 - Fontes, pagina 3BRAIN"},
+]
