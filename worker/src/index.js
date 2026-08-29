@@ -393,10 +393,60 @@ async function viaWorkersAI(env, mensagens, sinal, idioma) {
   throw new Error('workers-ai vazio');
 }
 
+/* ─────────────────── registo de duvidas (o RAG que se corrige) ─────────────
+ * A materia-prima da auto-evolucao da base: o que os visitantes perguntam e,
+ * sobretudo, o que o bot NAO soube responder. Sem isto a base cresce pelo que
+ * NOS achamos que perguntam -- que foi exactamente o defeito medido em 27/08,
+ * quando 8 de 36 perguntas de visitante nao pontuavam entrada nenhuma porque a
+ * base tinha sido escrita com as NOSSAS palavras e nao com as deles.
+ *
+ * TRES INVARIANTES, e a primeira e' a que importa:
+ *
+ * 1. GRAVAR NUNCA PODE DERRUBAR A RESPOSTA. Vai dentro de try/catch, com
+ *    `waitUntil` para correr DEPOIS de a resposta sair (zero latencia), e
+ *    qualquer falha morre num console.log. Registo de melhoria que derruba o
+ *    produto que devia melhorar e' pior do que nao existir.
+ * 2. NENHUM IDENTIFICADOR. Nem IP, nem agente, nem sessao, nem referer. Nada
+ *    disso ajuda a melhorar a base, e todos transformam um registo de duvidas
+ *    num registo de pessoas.
+ * 3. PERGUNTA CORTADA em 400 caracteres -- texto longo colado num chat e' onde
+ *    dado pessoal entra sem querer.
+ */
+function registaDuvida(env, ctx, d) {
+  try {
+    if (!env.DUVIDAS) return;                        // binding ausente: segue a vida
+    const p = String(d.pergunta || '').trim().slice(0, 400);
+    if (!p) return;
+    const tarefa = env.DUVIDAS
+      .prepare('INSERT INTO duvidas (ts,pergunta,idioma,motor,recusou,topo,n_ctx) VALUES (?,?,?,?,?,?,?)')
+      .bind(new Date().toISOString(), p, d.idioma || '', d.motor || '',
+            d.recusou ? 1 : 0, String(d.topo || '').slice(0, 80), d.n_ctx | 0)
+      .run()
+      .catch(e => console.log('duvidas:', e && e.message));
+    if (ctx && ctx.waitUntil) ctx.waitUntil(tarefa);
+  } catch (e) {
+    console.log('duvidas (fora):', e && e.message);
+  }
+}
+
+/* Recusa e' o sinal mais valioso do registo -- e' o bot a dizer "esta eu nao
+ * sei". Detectada pela frase fixa E pelas formas que o modelo inventa. */
+const MARCAS_RECUSA = [
+  'nao esta na nossa base', 'não está na nossa base',
+  'nao tenho essa resposta', 'não tenho essa resposta',
+  'prefiro nao chutar', 'prefiro não chutar',
+  'is not in our published', 'rather not guess',
+  'nao ha informacao', 'não há informação',
+];
+function pareceRecusa(texto) {
+  const t = String(texto || '').toLowerCase();
+  return MARCAS_RECUSA.some(m => t.indexOf(m) >= 0);
+}
+
 /* ──────────────────────────────── entrada ──────────────────────────────── */
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const permitidas = String(env.ORIGENS || '').split(',').map(s => s.trim()).filter(Boolean);
     const origem = request.headers.get('Origin');
     const ch = cors(origem, permitidas);
@@ -429,7 +479,10 @@ export default {
 
     // A busca da pagina nao achou fundamento nenhum. Nao ha o que reformular:
     // qualquer coisa que o modelo escrevesse aqui sairia da cabeca dele.
-    if (!peneirado.length) return json({ texto: SEM_DADO[idioma], motor: 'sem-contexto' }, 200, ch);
+    if (!peneirado.length) {
+      registaDuvida(env, ctx, { pergunta, idioma, motor: 'sem-contexto', recusou: 1, n_ctx: 0 });
+      return json({ texto: SEM_DADO[idioma], motor: 'sem-contexto' }, 200, ch);
+    }
 
     const escolhido = await reordena(env, pergunta, peneirado);
     const { msgs } = montaMensagens({ ...corpo, pergunta, contexto: escolhido }, idioma);
@@ -447,7 +500,11 @@ export default {
         const relG = new AbortController();
         const tG = setTimeout(() => relG.abort(), TIMEOUT_GROQ);
         try {
-          return json({ ...(await viaGroq(env, msgs, relG.signal, idioma)), fontes }, 200, ch);
+          const rG = await viaGroq(env, msgs, relG.signal, idioma);
+          registaDuvida(env, ctx, { pergunta, idioma, motor: rG.motor,
+            recusou: pareceRecusa(rG.texto), topo: (escolhido[0] || {}).fonte,
+            n_ctx: escolhido.length });
+          return json({ ...rG, fontes }, 200, ch);
         } catch (e) {
           console.log('groq falhou:', e.message);   // so a mensagem; a chave nunca entra em log
         } finally {
@@ -457,7 +514,11 @@ export default {
       const relC = new AbortController();
       const tC = setTimeout(() => relC.abort(), TIMEOUT_CF);
       try {
-        return json({ ...(await viaWorkersAI(env, msgs, relC.signal, idioma)), fontes }, 200, ch);
+        const rC = await viaWorkersAI(env, msgs, relC.signal, idioma);
+        registaDuvida(env, ctx, { pergunta, idioma, motor: rC.motor,
+          recusou: pareceRecusa(rC.texto), topo: (escolhido[0] || {}).fonte,
+          n_ctx: escolhido.length });
+        return json({ ...rC, fontes }, 200, ch);
       } catch (e) {
         console.log('workers-ai falhou:', e.message);
       } finally {
