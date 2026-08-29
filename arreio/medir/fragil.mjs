@@ -1,4 +1,11 @@
-/* A entrada aguenta perder um gatilho? Cruza o teste de exclusao com QUANTOS
+/* ⚠️ ESTE MEDE SO A CAMADA CRUA E SO O 1o LUGAR. Para o numero que decide o
+   que o visitante ve, correr `fragil_producao.mjs`, que mede `paraOWorker()`
+   e o TOP 5. A diferenca nao e pequena: 28% aqui contra 54% la, e o "28% de
+   generalizacao" que ficou anotado na memoria saiu deste ficheiro. Trigrama e
+   preenchimento existem justamente para apanhar o que o lexico perde --
+   medir so o lexico e ignorar a rede de seguranca. (29/08/2026)
+
+   A entrada aguenta perder um gatilho? Cruza o teste de exclusao com QUANTOS
    gatilhos a entrada tem. Se as fragis forem as magras, o conserto e escrever
    -- e da para saber ONDE escrever, em vez de escrever em toda a parte. */
 import { BASE_CRUA, comBase } from './peneira.mjs';
