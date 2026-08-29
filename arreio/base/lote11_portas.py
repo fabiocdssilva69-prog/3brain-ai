@@ -58,6 +58,15 @@ PORTAS = {
         "e mais barato que trafego pago",
         "how does it compare to paid ads",
     ],
+    # TERCEIRA corrida. "quem sao os clientes de voces" caía em 6.º porque o
+    # "quem" puxava `fundadores-quem` para 2.º lugar e "clientes" puxava
+    # `clientes-para-1-milhao` para 1.º. Duas palavras da pergunta, dois
+    # sequestradores diferentes -- e a entrada certa sem porta que a apanhasse.
+    "quem-usa-savi": [
+        "quem sao os clientes de voces",
+        "quem usa os produtos de voces",
+        "voces tem cliente de verdade",
+    ],
 }
 
 
