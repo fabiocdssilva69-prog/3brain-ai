@@ -45,6 +45,12 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
   /* ---------- normalizacao e similaridade ---------- */
   var PARAR = ('a o e de da do das dos que qual quais como para por com sem em no na nos nas um uma uns umas ' +
     'os as ao aos se ja eh eu tem ter ha sobre isso isto aquilo ' +
+    /* RUIDO DE DUAS LETRAS. Entrou junto com a baixa do corte de tamanho
+       em `fichas`: o corte apagava TODA ficha de 2 letras, inclusive "ia" --
+       a palavra-nucleo de uma empresa cujo argumento e IA. Medido: "o que a
+       IA faz no app" chegava a busca como [faz, app]. Baixado o corte, estas
+       passam a ser barradas aqui, que e onde ruido se barra. */
+    'ou te me ir vi so la ca ne ta to vc pq ai ah oh ok to us it we my he ' +
     /* MEDIDO em 27/08/2026, nao chutado: contei em quantas das 136 entradas cada
        ficha aparece nos gatilhos. "voces" esta em 71 delas -- 52% da base -- e
        mesmo assim pontuava com peso cheio, entao tres gatilhos com "voces" numa
@@ -95,7 +101,10 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
      porque a busca continua devolvendo alguma entrada. Somar peca sobre peca
      que faz a mesma coisa e como se acumula regressao silenciosa. */
   function fichas(s){
-    return limpa(s).split(' ').filter(function(t){ return t.length > 2 && !PARA[t]; });
+    /* > 1, nao > 2. O corte por TAMANHO era um segundo filtro de ruido a
+       duplicar mal o que a lista de parada ja faz bem -- e o preco era apagar
+       "ia" de toda pergunta sobre IA. Quem decide o que e ruido e PARA. */
+    return limpa(s).split(' ').filter(function(t){ return t.length > 1 && !PARA[t]; });
   }
   /* distancia de edicao curta, para tolerar erro de digitacao */
   function perto(a, b){
