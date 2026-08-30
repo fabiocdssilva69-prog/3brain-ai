@@ -13,6 +13,14 @@
   // Fallback sem chave nenhuma: o binding e injetado no runtime.
   "ai": { "binding": "AI" },
 
+  // INDICE SEMANTICO. Um vetor por PERGUNTA cadastrada (1.466 ao todo),
+  // gerados pelo bge-m3 multilingue. Entra por UNIAO com a peneira lexical
+  // da pagina, nunca por substituicao -- foi assim que o reordenador teve
+  // de ser consertado em 27/08, e a licao vale igual aqui.
+  "vectorize": [
+    { "binding": "VECTORIZE", "index_name": "base-3brain" }
+  ],
+
   // REGISTO DE DUVIDAS. O que os visitantes perguntam -- e sobretudo o que o
   // bot NAO soube responder -- e a materia-prima para a base crescer pelas
   // palavras DELES em vez das nossas. Escrita fora do caminho critico

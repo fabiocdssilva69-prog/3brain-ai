@@ -393,6 +393,79 @@ async function viaWorkersAI(env, mensagens, sinal, idioma) {
   throw new Error('workers-ai vazio');
 }
 
+/* ───────────────────────── busca semantica (Vectorize) ─────────────────────
+ * A busca da PAGINA compara PALAVRAS. Medido no teste de exclusao (1.344
+ * retiradas de gatilho): quando o visitante frase a pergunta de um jeito que
+ * ninguem registou, a entrada certa so chega as cinco que o modelo le em 66%
+ * das vezes. Nos outros 34% a resposta existe e o caminho ate ela nao.
+ *
+ * Vetor nao depende da palavra. Medido com o bge-m3:
+ *   "quanto custa" x "how much does it cost" -> 0,919, e ZERO palavras em comum
+ *   "sois de que pais"  achou  "voces sao de onde?"
+ *   "os meus utentes ficam seguros"  achou  "meus dados estao seguros"
+ *
+ * DUAS INVARIANTES, e as duas ja foram aprendidas a custo:
+ *
+ * 1. UNIAO, NUNCA SUBSTITUICAO. Foi assim que o reordenador foi consertado em
+ *    27/08: ele DESTRUIA a entrada certa quando escolhia sozinho, e passou a
+ *    somar-se a peneira em vez de a substituir. O semantico entra pelo mesmo
+ *    portao -- acrescenta o que o lexico perdeu e nao tira nada do que ele
+ *    achou.
+ * 2. FALHAR AQUI NAO PODE CALAR A PAGINA. Se o modelo de vetor ou a Vectorize
+ *    caírem, segue-se com o lexico e ninguem nota. Peca nova nunca pode passar
+ *    a ser ponto unico de falha de peca velha que funcionava.
+ */
+const MODELO_VETOR = '@cf/baai/bge-m3';
+const SEMANTICOS = 8;      // quantos candidatos o semantico pode acrescentar
+
+async function semantico(env, pergunta, idioma) {
+  try {
+    if (!env.VECTORIZE || !env.AI) return [];
+    const emb = await env.AI.run(MODELO_VETOR, { text: [pergunta] });
+    const v = emb && emb.data && emb.data[0];
+    if (!v) return [];
+    const r = await env.VECTORIZE.query(v, { topK: 20, returnMetadata: 'all' });
+    const vistos = {}, fora = [];
+    for (const m of (r.matches || [])) {
+      const md = m.metadata || {};
+      /* Um vetor por PERGUNTA cadastrada, entao a mesma entrada volta varias
+         vezes -- fica a melhor de cada. */
+      if (!md.entrada || vistos[md.entrada]) continue;
+      vistos[md.entrada] = 1;
+      const texto = (idioma === 'en' ? md.en : md.pt) || md.pt || md.en || '';
+      if (!texto) continue;
+      fora.push({ texto: String(texto).slice(0, 700),
+                  fonte: String(md.fonte || ''),
+                  busca: String(md.pergunta || ''),
+                  _sem: m.score });
+      if (fora.length >= SEMANTICOS) break;
+    }
+    return fora;
+  } catch (e) {
+    console.log('semantico falhou:', e && e.message);   // e a pagina segue
+    return [];
+  }
+}
+
+/* Junta o que o lexico trouxe com o que o semantico achou, sem repetir. A
+   ordem importa: o lexico vem PRIMEIRO, porque `PISO_PENEIRA` protege o topo
+   dele e essa protecao ja se pagou. O semantico entra atras, preenchendo. */
+function juntaSemantico(lexico, sem) {
+  const chave = c => String(c && c.texto || '').slice(0, 120);
+  const vistos = {};
+  const fora = [];
+  for (const c of lexico) { vistos[chave(c)] = 1; fora.push(c); }
+  let novos = 0;
+  for (const c of sem) {
+    const k = chave(c);
+    if (vistos[k]) continue;
+    vistos[k] = 1;
+    fora.push(c);
+    novos++;
+  }
+  return { lista: fora, novos };
+}
+
 /* ─────────────────── registo de duvidas (o RAG que se corrige) ─────────────
  * A materia-prima da auto-evolucao da base: o que os visitantes perguntam e,
  * sobretudo, o que o bot NAO soube responder. Sem isto a base cresce pelo que
@@ -477,14 +550,28 @@ export default {
     const idioma = corpo?.idioma === 'en' ? 'en' : 'pt';
     const peneirado = Array.isArray(corpo.contexto) ? corpo.contexto : [];
 
-    // A busca da pagina nao achou fundamento nenhum. Nao ha o que reformular:
-    // qualquer coisa que o modelo escrevesse aqui sairia da cabeca dele.
-    if (!peneirado.length) {
+    /* O SEMANTICO CORRE ANTES DA DESISTENCIA, e essa ordem e o ponto.
+       Peneira vazia quer dizer que a pergunta nao tem UMA palavra em comum
+       com a base -- que e exactamente onde o vetor ganha e o lexico nao tem
+       como ganhar. Medido antes de existir indice: "o RGPD e cumprido"
+       devolvia peneira vazia, e o Worker nem chegava a ser chamado com
+       fundamento. Desistir antes de tentar era o desperdicio mais caro que
+       havia aqui.
+       Custo: ~1,3 neuronio de 10.000/dia e 1.024 dimensoes de 50 M/mes. Nem o
+       gasto nem a latencia entram na decisao. */
+    const sem = await semantico(env, pergunta, idioma);
+    const { lista: comSemantico, novos } = juntaSemantico(peneirado, sem);
+    if (novos) console.log('semantico acrescentou', novos, 'candidatos');
+
+    // So agora se desiste: nem o lexico nem o vetor acharam fundamento. Nao ha
+    // o que reformular -- qualquer coisa que o modelo escrevesse aqui sairia
+    // da cabeca dele.
+    if (!comSemantico.length) {
       registaDuvida(env, ctx, { pergunta, idioma, motor: 'sem-contexto', recusou: 1, n_ctx: 0 });
       return json({ texto: SEM_DADO[idioma], motor: 'sem-contexto' }, 200, ch);
     }
 
-    const escolhido = await reordena(env, pergunta, peneirado);
+    const escolhido = await reordena(env, pergunta, comSemantico);
     const { msgs } = montaMensagens({ ...corpo, pergunta, contexto: escolhido }, idioma);
 
     // A pagina mostra a fonte embaixo da resposta, e a fonte tem de ser a das
