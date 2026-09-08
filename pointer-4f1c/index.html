@@ -31,6 +31,8 @@
   .tv{width:100%;height:460px;border:0;border-radius:10px;background:#0a0e14} .lw{width:100%;height:340px;border-radius:10px;overflow:hidden}
   .exp{border-left:3px solid var(--ac);padding:8px 12px;margin:10px 0;background:#0e1520;border-radius:0 10px 10px 0} .exp b{display:block;margin-bottom:3px} .exp .ev{color:var(--mut);font-size:12.5px;margin-top:4px}
   .vazio{color:var(--mut);padding:8px 0} .legenda{color:var(--mut);font-size:12px;margin-top:6px}
+  .como{margin-top:8px;padding:8px 10px;border-radius:8px;background:#0e1520;color:var(--mut);font-size:12px;line-height:1.45} .como b{color:var(--tx)}
+  .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}
   footer{color:var(--mut);font-size:12px;padding:20px 16px;text-align:center;border-top:1px solid var(--line);margin-top:30px}
   @media (max-width:640px){.kpi .v{font-size:20px} h2{font-size:14px} .tv{height:380px} .lw{height:280px}}
 </style>
@@ -59,9 +61,20 @@
       <iframe class="tv" id="tv" title="gráfico ao vivo" allowtransparency="true" allowfullscreen loading="lazy"></iframe>
     </div>
     <div class="card largo">
+      <h3>Todos os papéis que estamos negociando, hoje</h3><p class="sub">cada linha é um papel, em % desde a abertura do dia; assim dá para comparar quem sobe e quem cai ao mesmo tempo</p>
+      <canvas id="c_todos" style="max-height:320px"></canvas>
+      <div class="como" id="como_todos"><b>Como ler:</b> a linha sobe quando o papel está acima do preço de abertura e desce quando está abaixo. A linha branca tracejada é o S&amp;P 500, a referência do mercado. Um papel acima da linha branca está indo melhor que o mercado. Os nossos papéis com posição aberta vêm em primeiro na legenda, com o resultado atual.</div>
+    </div>
+    <div class="card largo">
+      <h3>Lucros e previsões</h3><p class="sub">o que já aconteceu hoje, rodada a rodada, e o que o backtest espera daqui para a frente, até a saída de cada posição</p>
+      <canvas id="c_prev" style="max-height:300px"></canvas>
+      <div class="como"><b>Como ler:</b> <span class="sw" style="background:#ffd23f"></span>amarelo cheio = resultado de hoje (fechado + em aberto), medido; <span class="sw" style="background:#ffd23f;opacity:.5"></span>amarelo tracejado = previsão: soma do ganho esperado das posições abertas, cada uma somada no dia em que sai; <span class="sw" style="background:#33d17a"></span>verde = só o que está em aberto agora. A previsão é o efeito médio medido em 10 anos, não uma promessa: o dia real pode ficar acima ou abaixo.</div>
+    </div>
+    <div class="card largo">
       <h3 id="lw_titulo">O que o Pointer fez neste papel</h3><p class="sub">velas de 1 minuto do nosso próprio ouvido (Alpaca IEX) com marcadores: ▲ compra, ▼ saída ou stop. Atualiza a cada rodada de 5 minutos.</p>
       <div class="lw" id="lw"></div>
       <div class="legenda" id="lw_legenda"></div>
+      <div class="como"><b>Como ler:</b> cada vela é 1 minuto. Corpo verde: fechou acima de onde abriu; vermelho: abaixo. As barras em baixo são o volume negociado. <span class="sw" style="background:#ffd23f"></span>▲ seta amarela = o Pointer comprou naquele minuto e preço; <span class="sw" style="background:#5aa9ff"></span>▼ azul = saiu com lucro ou no horário; <span class="sw" style="background:#ff6b6b"></span>▼ vermelha = stop (saiu para limitar a perda).</div>
     </div>
   </section>
 
@@ -155,6 +168,21 @@ async function carregar(){
   document.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>selecionar(ch.dataset.s));
   if(!selecionado||!ordem.includes(selecionado))selecionado=ordem[0]||'SPY';
   selecionar(selecionado);
+  // todos os papeis, % desde a abertura (bars.json), posicoes primeiro
+  const papeis=(b&&b.papeis)||{}; const pos2={}; p.posicoes.forEach(x=>pos2[x.simbolo]=x);
+  const ordemT=[...p.posicoes.map(x=>x.simbolo),...Object.keys(papeis).filter(k=>!pos2[k])].filter(k=>papeis[k]&&papeis[k].barras&&papeis[k].barras.length);
+  const eixo=(papeis['SPY']||papeis[ordemT[0]]||{barras:[]}).barras.map(x=>x.t.slice(11,16));
+  const serieT=(sym,i)=>{const bb=papeis[sym].barras;const o=bb[0].o;const isSpy=sym==='SPY';return {label:((p.nomes||{})[sym]||sym)+' '+sym+(pos2[sym]?' ('+fmt(pos2[sym].pnl_aberto_usd)+'$)':''),data:bb.map(x=>+(100*(x.c/o-1)).toFixed(3)),borderColor:isSpy?'#e8eef5':cores[i%cores.length],borderDash:isSpy?[5,4]:[],borderWidth:pos2[sym]?2.2:1.3,tension:.2,pointRadius:0}};
+  chart('c_todos',{type:'line',data:{labels:eixo,datasets:ordemT.slice(0,10).map(serieT)},options:{...base,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#8a9ab0',boxWidth:10}},tooltip:{callbacks:{label:x=>x.dataset.label+': '+fmt(x.raw)+'%'}}},scales:{...base.scales,y:{...base.scales.y,ticks:{color:'#8a9ab0',callback:v=>fmt(v,1)+'%'}}}}});
+  // lucros e previsoes: realizado por rodada (hoje) + previsao acumulada por dia de saida
+  const rr=(h.rodadas||[]); const labs=rr.map(x=>x.t.slice(11,16)); const real=rr.map(x=>x.pnl_hoje); const ab=rr.map(x=>x.aberto);
+  const porDia={}; p.posicoes.forEach(x=>{const d=x.saida_dia||p.dia;porDia[d]=(porDia[d]||0)+(x.previsao_usd||0)});
+  const dias=Object.keys(porDia).sort(); let acc=(real.length?real[real.length-1]:0); const labP=[],valP=[];
+  if(real.length){labP.push(labs[labs.length-1]);valP.push(acc)}
+  dias.forEach(d=>{acc+=porDia[d];labP.push((d===p.dia?'hoje 15:55':d.slice(5).split('-').reverse().join('/')));valP.push(+acc.toFixed(2))});
+  const labelsP=[...labs,...labP.slice(real.length?1:0)];
+  const prevSerie=new Array(Math.max(0,labs.length-1)).fill(null).concat(valP);
+  chart('c_prev',{type:'line',data:{labels:labelsP,datasets:[{label:'resultado de hoje (medido) US$',data:real.concat(new Array(Math.max(0,labelsP.length-labs.length)).fill(null)),borderColor:'#ffd23f',tension:.25,pointRadius:0,borderWidth:2},{label:'previsão acumulada (backtest) US$',data:prevSerie,borderColor:'#ffd23f',borderDash:[6,5],tension:0,pointRadius:3,borderWidth:1.5},{label:'em aberto US$',data:ab.concat(new Array(Math.max(0,labelsP.length-labs.length)).fill(null)),borderColor:'#33d17a',tension:.25,pointRadius:0,borderWidth:1.2}]},options:{...base,interaction:{mode:'index',intersect:false},spanGaps:false,plugins:{legend:{position:'bottom',labels:{color:'#8a9ab0',boxWidth:10}}}}});
   // lucro
   const lp=p.lucros?p.lucros.por_papel_nome||{}:{}; const temL=Object.keys(lp).length>0; document.getElementById('v_lucro').hidden=temL;
   chart('c_lucro_papel',{type:'bar',data:{labels:Object.keys(lp),datasets:[{label:'US$ realizado hoje',data:Object.values(lp),backgroundColor:Object.values(lp).map(v=>v>=0?'#33d17a':'#ff6b6b')}]},options:{...base,indexAxis:'y'}});
