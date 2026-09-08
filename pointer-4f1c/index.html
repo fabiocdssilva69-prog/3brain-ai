@@ -33,6 +33,7 @@
   .vazio{color:var(--mut);padding:8px 0} .legenda{color:var(--mut);font-size:12px;margin-top:6px}
   .como{margin-top:8px;padding:8px 10px;border-radius:8px;background:#0e1520;color:var(--mut);font-size:12px;line-height:1.45} .como b{color:var(--tx)}
   .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}
+  .org{display:inline-block;margin:4px 6px 4px 0;padding:6px 10px;border-radius:8px;background:#0e1520;font-size:12px;border-left:3px solid #556} .org.ok{border-left-color:#33d17a} .org.erro{border-left-color:#ff6b6b;background:#2a1418} .org.fora{opacity:.45} .org i{color:#ffd23f;font-style:normal}
   footer{color:var(--mut);font-size:12px;padding:20px 16px;text-align:center;border-top:1px solid var(--line);margin-top:30px}
   @media (max-width:640px){.kpi .v{font-size:20px} h2{font-size:14px} .tv{height:380px} .lw{height:280px}}
 </style>
@@ -105,6 +106,13 @@
   <section class="grid">
     <div class="card"><h3>Amplitude ao longo do dia</h3><p class="sub">% dos ativos subindo (azul) e VIX (laranja)</p><canvas id="c_mare"></canvas></div>
     <div class="card"><h3>Setores contra o S&amp;P 500</h3><p class="sub">pontos percentuais acima ou abaixo do índice no dia</p><canvas id="c_set"></canvas></div>
+  </section>
+
+  <h2>Saúde dos órgãos <small id="org_t">vigia a cada 5 minutos durante o pregão</small></h2>
+  <section class="grid">
+    <div class="card" style="grid-column:span 2"><div id="orgaos"></div>
+      <div class="como"><b>Como ler:</b> cada órgão tem de <b>produzir dado válido</b>, não só correr: o ouvido tem de ter cotações, o leitor indicadores, o córtex vereditos. Verde = produziu nos últimos minutos. Vermelho = mudo ou parado; o vigia já agiu e a ação aparece em amarelo (reiniciou a tarefa, ou explica por que não). Cinza = fora do horário desse órgão.</div>
+    </div>
   </section>
 
   <h2>O que o Pointer viu e decidiu <small>última rodada do córtex e o veredito do juiz</small></h2>
@@ -203,6 +211,9 @@ async function carregar(){
   chart('c_set',{type:'bar',data:{labels:Object.keys(s).map(k=>rot[k]||k),datasets:[{label:'vs S&P 500 (p.p.)',data:Object.values(s),backgroundColor:Object.values(s).map(v=>v>=0?'#33d17a':'#ff6b6b')}]},options:base});
   const tb=(id,rows,n)=>{document.querySelector('#'+id+' tbody').innerHTML=rows.length?rows.join(''):`<tr><td colspan="${n}" class="mut">nenhuma por enquanto</td></tr>`};
   tb('t_pos',p.posicoes.map(x=>`<tr><td>${nome(p,x.simbolo)}</td><td>${x.origem||''}</td><td>${x.entrada?.toFixed(2)}</td><td>${x.agora?.toFixed(2)}</td><td class="${cls(x.pnl_aberto_usd)}">${fmt(x.pnl_aberto_usd)} US$</td><td class="${cls(x.pnl_aberto_pct)}">${fmt(x.pnl_aberto_pct)}%</td><td class="ac">${fmt(x.previsao_usd)} US$</td><td class="mut">${x.saida_dia?x.saida_dia.slice(5).split('-').reverse().join('/'):(x.origem==='intradia'||x.origem==='sonda'||x.origem==='orb'?'hoje 15:55':'')}</td></tr>`),8);
+  const og=p.orgaos||{}; const ogi=og.itens||[];
+  document.getElementById('org_t').textContent=og.t_brt?('última passagem '+og.t_brt+(og.vermelhos?' · '+og.vermelhos+' vermelho(s)':' · tudo verde')):'vigia a cada 5 minutos durante o pregão';
+  document.getElementById('orgaos').innerHTML=ogi.length?ogi.map(o=>`<span class="org ${o.estado}"><b>${o.nome}</b> · ${o.detalhe||''}${o.accao?' · <i>'+o.accao+'</i>':''}</span>`).join(''):'<span class="mut">sem leitura ainda (o vigia só corre em pregão)</span>';
   tb('t_mov',(p.movimentacoes||[]).slice().reverse().map(x=>`<tr><td>${x.t}</td><td>${(x.evento||'').replace('_',' ')}</td><td>${x.simbolo?nome(p,x.simbolo):''}</td><td>${x.preco!=null?Number(x.preco).toFixed(2):''}</td><td class="mut">${x.motivo||x.origem||''}</td></tr>`),5);
   const dec={}; (p.decisoes||[]).forEach(x=>dec[x.simbolo]=x);
   tb('t_cx',(p.ideias||[]).map(x=>{const j=dec[x.simbolo]||{};return `<tr><td>${nome(p,x.simbolo)}</td><td>${x.direcao}</td><td class="${cls(x.pontuacao_pb)}">${fmt(x.pontuacao_pb,1)} pb</td><td class="${j.decisao==='APROVADA'?'up':'mut'}">${j.decisao||''}</td><td class="mut">${(j.motivo||'').slice(0,80)}</td></tr>`}),5);
