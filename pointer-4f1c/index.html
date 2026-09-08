@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Pointer ao vivo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha384-bs/nf9FbdNouRbMiFcrcZfLXYPKiPaGVGplVbv7dLGECccEXDW+S3zjqSKR5ZEaD" crossorigin="anonymous"></script>
+<style>
+  :root{--bg:#0b0f14;--card:#121924;--line:#1f2a38;--tx:#e6edf3;--mut:#8b9bb0;--up:#2ecc71;--dn:#ff5c5c;--ac:#f5c542}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0} header .t{color:var(--mut);font-size:12px}
+  main{padding:12px 16px;max-width:1200px;margin:0 auto}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .kpi .l{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.04em} .kpi .v{font-size:22px;font-weight:600;margin-top:2px} .kpi .s{color:var(--mut);font-size:12px}
+  .up{color:var(--up)} .dn{color:var(--dn)} .ac{color:var(--ac)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .card h2{font-size:13px;margin:0 0 8px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+  .wrap{overflow-x:auto} table{border-collapse:collapse;width:100%;font-size:13px} th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap} th{color:var(--mut);font-weight:500} td:first-child,th:first-child{text-align:left}
+  canvas{max-height:260px} .mut{color:var(--mut)} .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid var(--line)}
+  .stale{color:var(--dn)} footer{color:var(--mut);font-size:11px;padding:16px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>🐕 Pointer ao vivo <span class="pill" id="modo">paper · escala US$1.500</span></h1>
+  <div class="t">atualizado <span id="t">—</span> · <span id="idade"></span></div>
+</header>
+<main>
+  <section class="kpis">
+    <div class="kpi"><div class="l">Hoje</div><div class="v" id="k_hoje">—</div><div class="s" id="k_hoje_pct"></div></div>
+    <div class="kpi"><div class="l">Acumulado em papel</div><div class="v" id="k_acum">—</div><div class="s" id="k_acum_pct"></div></div>
+    <div class="kpi"><div class="l">Em aberto</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div></div>
+    <div class="kpi"><div class="l">Previsão (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">efeito do gene × valor · não é promessa</div></div>
+    <div class="kpi"><div class="l">Maré do mercado</div><div class="v" id="k_mare">—</div><div class="s" id="k_regime"></div></div>
+    <div class="kpi"><div class="l">Custo medido (limite)</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">slippage por método, conciliação</div></div>
+  </section>
+  <section class="grid">
+    <div class="card"><h2>Resultado do dia, por rodada</h2><canvas id="c_dia"></canvas></div>
+    <div class="card"><h2>Resultado por dia em papel</h2><canvas id="c_dias"></canvas></div>
+    <div class="card"><h2>Amplitude: % dos 63 ativos que sobem · VIX</h2><canvas id="c_mare"></canvas></div>
+    <div class="card"><h2>Setores vs S&amp;P (dia, pontos %)</h2><canvas id="c_set"></canvas></div>
+  </section>
+  <section class="grid" style="margin-top:12px">
+    <div class="card" style="grid-column:1/-1"><h2>Posições abertas</h2><div class="wrap"><table id="t_pos"><thead><tr><th>Papel</th><th>Origem</th><th>Gene</th><th>Entrada</th><th>Agora</th><th>Aberto US$</th><th>Aberto %</th><th>Previsão US$</th><th>Saída</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card"><h2>Movimentações de hoje</h2><div class="wrap"><table id="t_mov"><thead><tr><th>Hora</th><th>Evento</th><th>Papel</th><th>Preço</th><th>Origem / motivo</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card"><h2>Córtex: ideias e juiz (última rodada)</h2><div class="wrap"><table id="t_cx"><thead><tr><th>Papel</th><th>Direção</th><th>Vantagem pb</th><th>Juiz</th><th>Motivo</th></tr></thead><tbody></tbody></table></div></div>
+  </section>
+</main>
+<footer>Conta paper Alpaca à escala do capital dele. Previsão = efeito líquido do gene no backtest × valor da posição. Slippage = executado − regra nas barras do mesmo dia. Nada aqui é recomendação.</footer>
+<script>
+const fmt=(v,d=2)=>v==null?'—':(v>=0?'+':'')+Number(v).toFixed(d);
+const cls=v=>v==null?'':(v>=0?'up':'dn');
+let charts={};
+function chart(id,cfg){if(charts[id]){charts[id].data=cfg.data;charts[id].options=cfg.options||{};charts[id].update();return}charts[id]=new Chart(document.getElementById(id),cfg)}
+const base={responsive:true,plugins:{legend:{labels:{color:'#8b9bb0'}}},scales:{x:{ticks:{color:'#8b9bb0',maxTicksLimit:8},grid:{color:'#1f2a38'}},y:{ticks:{color:'#8b9bb0'},grid:{color:'#1f2a38'}}}};
+async function carregar(){
+  const q='?v='+Date.now();
+  const [p,h]=await Promise.all([fetch('painel.json'+q).then(r=>r.json()),fetch('hist.json'+q).then(r=>r.json()).catch(()=>({rodadas:[],dias:[],conciliacao:[]}))]);
+  document.getElementById('t').textContent=p.t_brt+' BRT';
+  const idade=(Date.now()-new Date(p.t_iso||Date.now()))/60000; const el=document.getElementById('idade'); el.textContent=idade<8?'ao vivo':'há '+Math.round(idade)+' min'; el.className=idade<8?'':'stale';
+  const c=p.conta,m=p.margens;
+  const set=(id,txt,k)=>{const e=document.getElementById(id);e.textContent=txt;if(k!==undefined)e.className='v '+cls(k)};
+  set('k_hoje',fmt(c.pnl_hoje)+' US$',c.pnl_hoje); document.getElementById('k_hoje_pct').textContent=fmt(m.hoje_sobre_capital_pct)+'% do capital'+(m.hoje_sobre_em_uso_pct!=null?' · '+fmt(m.hoje_sobre_em_uso_pct)+'% do em uso':'');
+  set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel); document.getElementById('k_acum_pct').textContent=fmt(m.acumulado_sobre_capital_pct)+'% do capital';
+  set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd); document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões)';
+  document.getElementById('k_prev').textContent=fmt(p.previsao_total_usd)+' US$';
+  const o=p.olhos||{},a=o.amplitude||{},vix=((o.regime||{}).vix||{}).ultimo;
+  document.getElementById('k_mare').textContent=o.mare||'—'; document.getElementById('k_regime').textContent=(a.pct_sobem!=null?a.pct_sobem+'% sobem · ':'')+(vix!=null?'VIX '+vix+' · ':'')+(o.rotulo||'');
+  const conc=(h.conciliacao||[]).slice(-1)[0]; const sl=conc&&conc.slippage_por_metodo?conc.slippage_por_metodo:{};
+  document.getElementById('k_custo').textContent=sl.limite!=null?fmt(sl.limite,1)+' pb':(sl.mercado!=null?fmt(sl.mercado,1)+' pb (mercado)':'—');
+  // graficos
+  const r=h.rodadas||[];
+  chart('c_dia',{type:'line',data:{labels:r.map(x=>x.t.slice(11,16)),datasets:[{label:'P&L de hoje US$',data:r.map(x=>x.pnl_hoje),borderColor:'#f5c542',tension:.2,pointRadius:0},{label:'em aberto US$',data:r.map(x=>x.aberto),borderColor:'#2ecc71',tension:.2,pointRadius:0}]},options:base});
+  const d=h.dias||[];
+  chart('c_dias',{type:'bar',data:{labels:d.map(x=>x.dia.slice(5)),datasets:[{label:'US$ por dia',data:d.map(x=>x.pnl),backgroundColor:d.map(x=>x.pnl>=0?'#2ecc71':'#ff5c5c')}]},options:base});
+  chart('c_mare',{type:'line',data:{labels:r.map(x=>x.t.slice(11,16)),datasets:[{label:'% sobem',data:r.map(x=>x.pct_sobem),borderColor:'#5aa9ff',tension:.2,pointRadius:0,yAxisID:'y'},{label:'VIX',data:r.map(x=>x.vix),borderColor:'#ff8c42',tension:.2,pointRadius:0,yAxisID:'y1'}]},options:{...base,scales:{...base.scales,y1:{position:'right',ticks:{color:'#8b9bb0'},grid:{display:false}}}}});
+  const s=a.setores_vs_spy_pct||{};
+  chart('c_set',{type:'bar',data:{labels:Object.keys(s),datasets:[{label:'vs SPY (p.p.)',data:Object.values(s),backgroundColor:Object.values(s).map(v=>v>=0?'#2ecc71':'#ff5c5c')}]},options:base});
+  // tabelas
+  const tb=(id,rows)=>{document.querySelector('#'+id+' tbody').innerHTML=rows.length?rows.join(''):'<tr><td colspan="9" class="mut">(nenhuma)</td></tr>'};
+  tb('t_pos',p.posicoes.map(x=>`<tr><td>${x.simbolo}</td><td>${x.origem||''}</td><td class="mut">${(x.gene||'').split('|').slice(0,2).join(' ')}</td><td>${x.entrada?.toFixed(2)}</td><td>${x.agora?.toFixed(2)}</td><td class="${cls(x.pnl_aberto_usd)}">${fmt(x.pnl_aberto_usd)}</td><td class="${cls(x.pnl_aberto_pct)}">${fmt(x.pnl_aberto_pct)}%</td><td class="ac">${fmt(x.previsao_usd)}</td><td class="mut">${x.regra||''}${x.saida_dia?' → '+x.saida_dia.slice(5):''}</td></tr>`));
+  tb('t_mov',(p.movimentacoes||[]).slice().reverse().map(x=>`<tr><td>${x.t}</td><td>${x.evento}</td><td>${x.simbolo||''}</td><td>${x.preco!=null?Number(x.preco).toFixed(2):''}</td><td class="mut">${x.motivo||x.origem||''}</td></tr>`));
+  const ideias=(p.ideias||[]),dec={}; (p.decisoes||[]).forEach(x=>dec[x.simbolo]=x);
+  tb('t_cx',ideias.map(x=>{const j=dec[x.simbolo]||{};return `<tr><td>${x.simbolo}</td><td>${x.direcao}</td><td class="${cls(x.pontuacao_pb)}">${fmt(x.pontuacao_pb,1)}</td><td>${j.decisao||''}</td><td class="mut">${(j.motivo||'').slice(0,70)}</td></tr>`}));
+}
+carregar(); setInterval(carregar,60000);
+</script>
+</body>
+</html>
