@@ -43,13 +43,13 @@
 </head>
 <body>
 <header>
-  <div class="brand"><span style="font-size:22px">🐕</span><div><b>Pointer</b> <small>· agente de investimentos da 3BRAIN</small><br><small id="sub">conta de treino (paper) · escala US$1.500</small></div></div>
+  <div class="brand"><span style="font-size:22px">🐕</span><div><b>Pointer</b> <small>· agente de investimentos da 3BRAIN</small><br><small id="sub">conta de treino (paper)</small></div></div>
   <div><span class="pill" id="pill_vivo" title="preço, resultado e movimentações vêm de um canal leve publicado a cada minuto">● ao vivo <span id="t_vivo">—</span></span> <span class="pill">painel <span id="t">—</span></span> <span class="pill" id="idade">—</span></div>
 </header>
 <main>
   <h2>Resultado <small>o que ganhamos e perdemos, à escala do nosso capital</small></h2>
   <section class="kpis">
-    <div class="kpi"><div class="l">Hoje</div><div class="v" id="k_hoje">—</div><div class="s" id="k_hoje_pct"></div></div>
+    <div class="kpi"><div class="l">Hoje</div><div class="v" id="k_hoje">—</div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div></div>
     <div class="kpi"><div class="l">Desde o início (papel)</div><div class="v" id="k_acum">—</div><div class="s" id="k_acum_pct"></div></div>
     <div class="kpi"><div class="l">Em aberto agora</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div></div>
     <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div></div>
@@ -174,12 +174,18 @@ async function carregar(){
   const c=p.conta,m=p.margens,al=p.alocacao||{por_papel:{},por_modo:{},livre:null};
   const set=(id,txt,k)=>{const e=document.getElementById(id);e.textContent=txt;if(k!==undefined)e.className='v '+cls(k)};
   const ins=p.instrumentos||{};
+  document.getElementById('sub').textContent='conta de treino (paper) · capital US$'+(c.capital_escala!=null?c.capital_escala.toFixed(2):'—');
   set('k_hoje',fmt(c.pnl_hoje)+' US$',c.pnl_hoje);
-  if(ins.medicoes) document.getElementById('k_hoje_pct').insertAdjacentHTML('afterend','<div class="s" style="color:#8a9ab0">inclui '+fmt(ins.custo_usd)+' US$ das '+ins.medicoes+' medições de custo de execução, que não são a estratégia</div>'); document.getElementById('k_hoje_pct').textContent=fmt(m.hoje_sobre_capital_pct)+'% do capital'+(m.hoje_sobre_em_uso_pct!=null?' · '+fmt(m.hoje_sobre_em_uso_pct)+'% do investido':'');
+  // 09/09: aqui estava insertAdjacentHTML('afterend'), que ACRESCENTA — e carregar() corre de 60 em 60 s,
+  // logo a mesma frase empilhava-se dentro do cartão. Elemento próprio + textContent: escrever no mesmo
+  // sítio não pode duplicar, por construção.
+  document.getElementById('k_hoje_ins').textContent=ins.medicoes?('inclui '+fmt(ins.custo_usd)+' US$ das '+ins.medicoes+' medições de custo de execução, que não são a estratégia'):'';
+  document.getElementById('k_hoje_pct').textContent=fmt(m.hoje_sobre_capital_pct)+'% do capital'+(m.hoje_sobre_em_uso_pct!=null?' · '+fmt(m.hoje_sobre_em_uso_pct)+'% do investido':'');
   set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel); document.getElementById('k_acum_pct').textContent=fmt(m.acumulado_sobre_capital_pct)+'% do capital';
   set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd); document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões) aberta(s)';
   document.getElementById('k_prev').textContent=fmt(p.previsao_total_usd)+' US$';
-  const investido=Object.values(al.por_papel||{}).reduce((a,b)=>a+b,0);
+  // o short entra com valor NEGATIVO em por_papel (e' o sinal da direccao); o capital EMPREGADO e' o modulo.
+  const investido=al.em_uso!=null?al.em_uso:Object.values(al.por_papel||{}).reduce((a,b)=>a+Math.abs(b),0);
   document.getElementById('k_aloc').textContent=investido.toFixed(0)+' / '+(al.livre!=null?al.livre.toFixed(0):'—')+' US$'; document.getElementById('k_aloc_s').textContent=Object.entries(al.por_modo||{}).map(([k,v])=>k+' '+v.toFixed(0)).join(' · ')||'nada investido agora';
   const conc=(h.conciliacao||[]).slice(-1)[0]; const sl=conc&&conc.slippage_por_metodo?conc.slippage_por_metodo:{};
   document.getElementById('k_custo').textContent=sl.limite!=null?fmt(sl.limite,1)+' pb':(sl.mercado!=null?fmt(sl.mercado,1)+' pb':'—'); if(sl.mercado!=null&&sl.limite==null)document.getElementById('k_custo_s').textContent='medido a mercado em '+(conc.dia||'')+'; o método a limite ainda não tem medida';
@@ -214,7 +220,8 @@ async function carregar(){
   chart('c_dia',{type:'line',data:{labels:r.map(x=>x.t.slice(11,16)),datasets:[{label:'resultado do dia US$',data:r.map(x=>x.pnl_hoje),borderColor:'#ffd23f',tension:.25,pointRadius:0},{label:'em aberto US$',data:r.map(x=>x.aberto),borderColor:'#33d17a',tension:.25,pointRadius:0}]},options:base});
   const d=h.dias||[];
   chart('c_dias',{type:'bar',data:{labels:d.map(x=>x.dia.slice(5).split('-').reverse().join('/')),datasets:[{label:'US$ por dia',data:d.map(x=>x.pnl),backgroundColor:d.map(x=>x.pnl>=0?'#33d17a':'#ff6b6b')}]},options:base});
-  const ap={...(al.por_papel||{})}; if(al.livre!=null&&al.livre>0)ap['Livre (caixa)']=al.livre;
+  // fatia de rosca com valor negativo nao desenha: o short entra pelo modulo, com a direccao no rotulo.
+  const ap={}; Object.entries(al.por_papel||{}).forEach(([k,v])=>{ap[v<0?k+' ▼ curto':k]=Math.abs(v)}); if(al.livre!=null&&al.livre>0)ap['Livre (caixa)']=al.livre;
   chart('c_aloc',{type:'doughnut',data:{labels:Object.keys(ap),datasets:[{data:Object.values(ap),backgroundColor:cores}]},options:{plugins:{legend:{position:'right',labels:{color:'#8a9ab0',boxWidth:12}}}}});
   const o=p.olhos||{},a=o.amplitude||{},vix=((o.regime||{}).vix||{}).ultimo;
   document.getElementById('k_mare').textContent=o.mare?('maré '+o.mare):'—'; document.getElementById('k_regime').textContent=(o.rotulo?'mercado '+o.rotulo:'')+(a.rsi5_medio!=null?' · RSI médio '+a.rsi5_medio:'');
