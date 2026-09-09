@@ -173,7 +173,9 @@ async function carregar(){
   const idade=(Date.now()-new Date(p.t_iso||Date.now()))/60000; const el=document.getElementById('idade'); el.textContent=idade<8?'● ao vivo':'há '+Math.round(idade)+' min'; el.className='pill '+(idade<8?'live':'stale');
   const c=p.conta,m=p.margens,al=p.alocacao||{por_papel:{},por_modo:{},livre:null};
   const set=(id,txt,k)=>{const e=document.getElementById(id);e.textContent=txt;if(k!==undefined)e.className='v '+cls(k)};
-  set('k_hoje',fmt(c.pnl_hoje)+' US$',c.pnl_hoje); document.getElementById('k_hoje_pct').textContent=fmt(m.hoje_sobre_capital_pct)+'% do capital'+(m.hoje_sobre_em_uso_pct!=null?' · '+fmt(m.hoje_sobre_em_uso_pct)+'% do investido':'');
+  const ins=p.instrumentos||{};
+  set('k_hoje',fmt(c.pnl_hoje)+' US$',c.pnl_hoje);
+  if(ins.medicoes) document.getElementById('k_hoje_pct').insertAdjacentHTML('afterend','<div class="s" style="color:#8a9ab0">inclui '+fmt(ins.custo_usd)+' US$ das '+ins.medicoes+' medições de custo de execução, que não são a estratégia</div>'); document.getElementById('k_hoje_pct').textContent=fmt(m.hoje_sobre_capital_pct)+'% do capital'+(m.hoje_sobre_em_uso_pct!=null?' · '+fmt(m.hoje_sobre_em_uso_pct)+'% do investido':'');
   set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel); document.getElementById('k_acum_pct').textContent=fmt(m.acumulado_sobre_capital_pct)+'% do capital';
   set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd); document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões) aberta(s)';
   document.getElementById('k_prev').textContent=fmt(p.previsao_total_usd)+' US$';
