@@ -33,6 +33,9 @@
   .vazio{color:var(--mut);padding:8px 0} .legenda{color:var(--mut);font-size:12px;margin-top:6px}
   .como{margin-top:8px;padding:8px 10px;border-radius:8px;background:#0e1520;color:var(--mut);font-size:12px;line-height:1.45} .como b{color:var(--tx)}
   .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}
+  #pill_vivo{color:#33d17a} #pill_vivo.frio{color:var(--mut)} #pill_vivo.frio::first-letter{color:#556}
+  @keyframes pulsa{0%,100%{opacity:1}50%{opacity:.35}} #pill_vivo:not(.frio)::first-letter{animation:pulsa 2s infinite}
+  .piscou{animation:realce 1.2s ease-out} @keyframes realce{0%{background:#2a3b25}100%{background:transparent}}
   .org{display:inline-block;margin:4px 6px 4px 0;padding:6px 10px;border-radius:8px;background:#0e1520;font-size:12px;border-left:3px solid #556} .org.ok{border-left-color:#33d17a} .org.erro{border-left-color:#ff6b6b;background:#2a1418} .org.fora{opacity:.45} .org i{color:#ffd23f;font-style:normal}
   footer{color:var(--mut);font-size:12px;padding:20px 16px;text-align:center;border-top:1px solid var(--line);margin-top:30px}
   @media (max-width:640px){.kpi .v{font-size:20px} h2{font-size:14px} .tv{height:380px} .lw{height:280px}}
@@ -41,7 +44,7 @@
 <body>
 <header>
   <div class="brand"><span style="font-size:22px">🐕</span><div><b>Pointer</b> <small>· agente de investimentos da 3BRAIN</small><br><small id="sub">conta de treino (paper) · escala US$1.500</small></div></div>
-  <div><span class="pill">atualizado <span id="t">—</span></span> <span class="pill" id="idade">—</span></div>
+  <div><span class="pill" id="pill_vivo" title="preço, resultado e movimentações vêm de um canal leve publicado a cada minuto">● ao vivo <span id="t_vivo">—</span></span> <span class="pill">painel <span id="t">—</span></span> <span class="pill" id="idade">—</span></div>
 </header>
 <main>
   <h2>Resultado <small>o que ganhamos e perdemos, à escala do nosso capital</small></h2>
@@ -235,6 +238,36 @@ async function carregar(){
   ex.innerHTML=lista.length?lista.map(e=>`<div class="exp"><b>${e.regra}</b>${e.previsao_pct!=null?`<span class="ac">ganho esperado ${fmt(e.previsao_pct)}% por operação</span>`:''}<div class="ev">${e.evidencia||''}<br><span style="opacity:.7">gene: ${e.gene}</span></div></div>`).join(''):'<div class="vazio">Sem posições abertas: as explicações aparecem junto com elas.</div>';
 }
 carregar(); setInterval(carregar,60000);
+
+// ---- CANAL AO VIVO (09/09/2026): o painel gordo leva ~40 s e por isso corre de 5 em 5 min; o vivo.json e
+// publicado de minuto a minuto e traz so o que muda ao segundo. A pagina pede-o de 15 em 15 s e sobrepoe os
+// numeros, sem esperar pelo painel e sem F5.
+let ultimoVivo=null;
+async function aoVivo(){
+  try{
+    const v=await fetch('vivo.json?v='+Date.now()).then(r=>r.json());
+    const pill=document.getElementById('pill_vivo'), tv=document.getElementById('t_vivo');
+    const idade=(Date.now()-new Date(v.t_iso).getTime())/1000;
+    tv.textContent=(v.t_brt||'').slice(-8)+(idade>150?' · parado há '+Math.round(idade/60)+' min':'');
+    pill.classList.toggle('frio',idade>150);
+    const c=v.conta||{};
+    if(c.pnl_hoje!=null){const el=document.getElementById('k_hoje');const antes=el.textContent;
+      el.textContent=fmt(c.pnl_hoje)+' US$'; el.className='v '+cls(c.pnl_hoje);
+      if(antes!==el.textContent&&ultimoVivo){el.classList.add('piscou');setTimeout(()=>el.classList.remove('piscou'),1200);} }
+    if(v.aberto_total_usd!=null){const el=document.getElementById('k_aberto');
+      el.textContent=fmt(v.aberto_total_usd)+' US$'; el.className='v '+cls(v.aberto_total_usd);
+      document.getElementById('k_npos').textContent=(v.posicoes||[]).length+' posição(ões) aberta(s) · preço ao vivo em '+(v.posicoes||[]).filter(x=>x.ao_vivo).length; }
+    const dp=dadosP||{nomes:{}};
+    if((v.posicoes||[]).length) document.querySelector('#t_pos tbody').innerHTML=v.posicoes.map(x=>{
+      const base=((dp.posicoes||[]).find(y=>y.simbolo===x.simbolo))||{};
+      return `<tr><td>${nome(dp,x.simbolo)}</td><td>${base.origem||''}</td><td>${x.entrada?.toFixed(2)}</td><td>${x.agora?.toFixed(2)}${x.ao_vivo?' <span class="mut">•</span>':''}</td><td class="${cls(x.pnl_aberto_usd)}">${fmt(x.pnl_aberto_usd)} US$ <span class="mut">(${fmt(x.pnl_aberto_pct)}%)</span></td><td class="ac">${base.previsao_usd!=null?fmt(base.previsao_usd)+' US$':'—'}</td><td>${base.saida_dia||''}</td></tr>`;}).join('');
+    if((v.movimentacoes||[]).length) document.querySelector('#t_mov tbody').innerHTML=v.movimentacoes.slice().reverse().map(x=>
+      `<tr><td>${x.t}</td><td>${(x.evento||'').replace(/_/g,' ')}</td><td>${x.nome||x.simbolo||''}</td><td>${x.preco!=null?Number(x.preco).toFixed(2):''}</td><td>${x.origem||''}</td></tr>`).join('');
+    ultimoVivo=v;
+  }catch(e){ document.getElementById('pill_vivo').classList.add('frio'); }
+}
+aoVivo(); setInterval(aoVivo,15000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){aoVivo();carregar();} });
 </script>
 </body>
 </html>
