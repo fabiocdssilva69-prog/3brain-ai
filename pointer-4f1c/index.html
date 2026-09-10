@@ -219,7 +219,7 @@ async function carregar(){
   document.getElementById('k_hoje_ins').textContent=ins.medicoes?('inclui '+fmt(ins.custo_usd)+' US$ das '+ins.medicoes+' medições de custo de execução, que não são a estratégia'):'';
   document.getElementById('k_hoje_pct').textContent=fmt(m.hoje_sobre_capital_pct)+'% do capital'+(m.hoje_sobre_em_uso_pct!=null?' · '+fmt(m.hoje_sobre_em_uso_pct)+'% do investido':'');
   set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel); document.getElementById('k_acum_pct').textContent=fmt(m.acumulado_sobre_capital_pct)+'% do capital';
-  set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd); document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões) aberta(s)';
+  set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd); const ae=p.apostas_efectivas; document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões) aberta(s)'+(ae&&ae.n>=2?' · '+ae.efectivas.toFixed(1)+' apostas efectivas ('+ae.matriz+')':'');
   document.getElementById('k_prev').textContent=fmt(p.previsao_total_usd)+' US$';
   // o short entra com valor NEGATIVO em por_papel (e' o sinal da direccao); o capital EMPREGADO e' o modulo.
   const investido=al.em_uso!=null?al.em_uso:Object.values(al.por_papel||{}).reduce((a,b)=>a+Math.abs(b),0);
