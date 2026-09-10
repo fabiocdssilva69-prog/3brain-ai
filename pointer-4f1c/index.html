@@ -57,7 +57,7 @@
   </style>
   <section class="frase" id="frase_dia">—</section>
   <section class="funil" id="funil"></section>
-  <h2>Resultado <small>o que ganhamos e perdemos, à escala do nosso capital</small></h2>
+  <h2>Resultado <small>o que ganhamos e perdemos hoje, em dólares, à escala do nosso capital</small></h2>
   <section class="kpis">
     <div class="kpi"><div class="l">Hoje</div><div class="v" id="k_hoje">—</div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div></div>
     <div class="kpi"><div class="l">Desde o início (papel)</div><div class="v" id="k_acum">—</div><div class="s" id="k_acum_pct"></div></div>
@@ -66,6 +66,42 @@
     <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_s"></div></div>
     <div class="kpi"><div class="l">Custo real de execução</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">diferença entre o que a regra prometia e o que a corretora deu</div></div>
   </section>
+
+  <h2>👁️ O que ele viu <small>como estava o mercado hoje: a maré, o medo, quem liderou</small></h2>
+  <section class="kpis" style="margin-bottom:12px">
+    <div class="kpi"><div class="l">Maré</div><div class="v" id="k_mare">—</div><div class="s" id="k_regime"></div></div>
+    <div class="kpi"><div class="l">Ativos subindo</div><div class="v" id="k_sobem">—</div><div class="s">dos 63 que o leitor acompanha</div></div>
+    <div class="kpi"><div class="l">VIX (medo)</div><div class="v" id="k_vix">—</div><div class="s" id="k_vix_s"></div></div>
+    <div class="kpi"><div class="l">Líder / lanterna</div><div class="v" id="k_lider" style="font-size:16px">—</div><div class="s">maior alta e maior queda do dia</div></div>
+  </section>
+  <section class="grid">
+    <div class="card"><h3>Amplitude ao longo do dia</h3><p class="sub">% dos ativos subindo (azul) e VIX (laranja)</p><canvas id="c_mare"></canvas></div>
+    <div class="card"><h3>Setores contra o S&amp;P 500</h3><p class="sub">pontos percentuais acima ou abaixo do índice no dia</p><canvas id="c_set"></canvas></div>
+  </section>
+
+  <h2>🧠 O que ele pensou <small id="sn_t">todas as oportunidades de hoje, de todos os órgãos, na mesma régua</small></h2>
+  <section class="grid">
+    <div class="card" style="grid-column:span 2">
+      <div class="wrap"><table id="t_sn"><thead><tr><th>Empresa</th><th>Modo</th><th>Direção</th><th>Ganho esperado</th><th>Capital preso</th><th>Por dia</th><th>Quem falou</th><th>Nota</th></tr></thead><tbody></tbody></table></div>
+      <div id="sn_apr" class="legenda"></div>
+      <div class="como"><b>Como ler:</b> cada linha é uma oportunidade que um ou mais órgãos apontaram hoje. <b>Ganho esperado</b> é o efeito medido em 10 anos para essa condição, no regime de mercado de agora. <b>Por dia</b> divide esse ganho, já sem o custo de entrar, pelos dias que o capital fica preso: é a régua que compara "ganhar 1% em 3 horas" com "ganhar 3% em 5 dias". <b>Quem falou</b> são as famílias de órgãos que dispararam; quando várias falam do mesmo papel, a segunda em diante conta metade, porque se repetem. Vendas ainda não são executáveis em papel e aparecem só para informação.</div>
+    </div>
+  </section>
+
+  <h2>⚖️ O que ele decidiu, e o que fez <small>as ideias que o juiz aprovou ou recusou, e as ordens que saíram</small></h2>
+  <section class="grid">
+    <div class="card"><h3>Movimentações de hoje</h3><p class="sub">ordens enviadas, compras, saídas, stops</p><div class="wrap"><table id="t_mov"><thead><tr><th>Hora</th><th>Evento</th><th>Empresa</th><th>Preço</th><th>Motivo</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card"><h3>Ideias e juiz</h3><p class="sub">vantagem em pontos-base (1 pb = 0,01%) e por que foi aprovada ou recusada</p><div class="wrap"><table id="t_cx"><thead><tr><th>Empresa</th><th>Direção</th><th>Vantagem</th><th>Juiz</th><th>Motivo</th></tr></thead><tbody></tbody></table></div></div>
+  </section>
+
+  <h2>💼 O que ele tem agora <small>onde está o dinheiro neste momento, e quanto em cada papel</small></h2>
+  <section class="grid">
+    <div class="card"><h3>Distribuição do capital</h3><p class="sub">por empresa, com o que está livre</p><canvas id="c_aloc"></canvas></div>
+    <div class="card" style="grid-column:span 2"><h3>Posições abertas</h3><p class="sub">entrada, preço agora, resultado em aberto e o ganho que o backtest espera</p><div class="wrap"><table id="t_pos"><thead><tr><th>Empresa</th><th>Modo</th><th>Entrada</th><th>Agora</th><th>Aberto</th><th>%</th><th>Esperado</th><th>Sai</th></tr></thead><tbody></tbody></table></div></div>
+  </section>
+
+  <h2>🔮 O que ele espera <small>a regra por trás de cada posição, em português, e o que o backtest espera dela</small></h2>
+  <section id="explicacoes"></section>
 
   <h2>Gráficos de bolsa <small>velas ao vivo do papel selecionado, e as nossas entradas e saídas em cima delas</small></h2>
   <section class="grid">
@@ -100,47 +136,33 @@
     <div class="card"><h3>Resultado por dia em papel</h3><p class="sub">cada barra é um dia de treino com a conta paper</p><canvas id="c_dias"></canvas></div>
   </section>
 
-  <h2>Onde estamos investindo <small>posições abertas agora e quanto há em cada uma</small></h2>
-  <section class="grid">
-    <div class="card"><h3>Distribuição do capital</h3><p class="sub">por empresa, com o que está livre</p><canvas id="c_aloc"></canvas></div>
-    <div class="card" style="grid-column:span 2"><h3>Posições abertas</h3><p class="sub">entrada, preço agora, resultado em aberto e o ganho que o backtest espera</p><div class="wrap"><table id="t_pos"><thead><tr><th>Empresa</th><th>Modo</th><th>Entrada</th><th>Agora</th><th>Aberto</th><th>%</th><th>Esperado</th><th>Sai</th></tr></thead><tbody></tbody></table></div></div>
-  </section>
-
-  <h2>Por que essas previsões <small>a regra por trás de cada posição, em português, e a evidência medida</small></h2>
-  <section id="explicacoes"></section>
-
-  <h2>O mercado agora <small>o que os olhos do Pointer veem no conjunto</small></h2>
-  <section class="kpis" style="margin-bottom:12px">
-    <div class="kpi"><div class="l">Maré</div><div class="v" id="k_mare">—</div><div class="s" id="k_regime"></div></div>
-    <div class="kpi"><div class="l">Ativos subindo</div><div class="v" id="k_sobem">—</div><div class="s">dos 63 que o leitor acompanha</div></div>
-    <div class="kpi"><div class="l">VIX (medo)</div><div class="v" id="k_vix">—</div><div class="s" id="k_vix_s"></div></div>
-    <div class="kpi"><div class="l">Líder / lanterna</div><div class="v" id="k_lider" style="font-size:16px">—</div><div class="s">maior alta e maior queda do dia</div></div>
-  </section>
-  <section class="grid">
-    <div class="card"><h3>Amplitude ao longo do dia</h3><p class="sub">% dos ativos subindo (azul) e VIX (laranja)</p><canvas id="c_mare"></canvas></div>
-    <div class="card"><h3>Setores contra o S&amp;P 500</h3><p class="sub">pontos percentuais acima ou abaixo do índice no dia</p><canvas id="c_set"></canvas></div>
-  </section>
-
-  <h2>O que o Pointer pensa agora <small id="sn_t">todas as oportunidades de hoje, de todos os órgãos e horizontes, na mesma régua</small></h2>
-  <section class="grid">
-    <div class="card" style="grid-column:span 2">
-      <div class="wrap"><table id="t_sn"><thead><tr><th>Empresa</th><th>Modo</th><th>Direção</th><th>Ganho esperado</th><th>Capital preso</th><th>Por dia</th><th>Quem falou</th><th>Nota</th></tr></thead><tbody></tbody></table></div>
-      <div id="sn_apr" class="legenda"></div>
-      <div class="como"><b>Como ler:</b> cada linha é uma oportunidade que um ou mais órgãos apontaram hoje. <b>Ganho esperado</b> é o efeito medido em 10 anos para essa condição, no regime de mercado de agora. <b>Por dia</b> divide esse ganho, já sem o custo de entrar, pelos dias que o capital fica preso: é a régua que compara "ganhar 1% em 3 horas" com "ganhar 3% em 5 dias". <b>Quem falou</b> são as famílias de órgãos que dispararam; quando várias falam do mesmo papel, a segunda em diante conta metade, porque se repetem. Vendas ainda não são executáveis em papel e aparecem só para informação.</div>
-    </div>
-  </section>
-
-  <h2>Saúde dos órgãos <small id="org_t">vigia a cada 5 minutos durante o pregão</small></h2>
+  <h2>🫀 Saúde dos órgãos <small id="org_t">vigia a cada 5 minutos durante o pregão</small></h2>
   <section class="grid">
     <div class="card" style="grid-column:span 2"><div id="orgaos"></div>
       <div class="como"><b>Como ler:</b> cada órgão tem de <b>produzir dado válido</b>, não só correr: o ouvido tem de ter cotações, o leitor indicadores, o córtex vereditos. Verde = produziu nos últimos minutos. Vermelho = mudo ou parado; o vigia já agiu e a ação aparece em amarelo (reiniciou a tarefa, ou explica por que não). Cinza = fora do horário desse órgão.</div>
     </div>
   </section>
 
-  <h2>O que o Pointer viu e decidiu <small>última rodada do córtex e o veredito do juiz</small></h2>
+<style>
+    .gl{margin:0;display:grid;grid-template-columns:1fr;gap:6px 0} .gl dt{font-weight:600;margin-top:8px} .gl dd{margin:2px 0 0 0;color:var(--mut,#8a9ab0);font-size:13px;line-height:1.45}
+  </style>
+
+  <h2>📖 Glossário <small>os termos que esta página usa, em português simples</small></h2>
   <section class="grid">
-    <div class="card"><h3>Movimentações de hoje</h3><p class="sub">ordens enviadas, compras, saídas, stops</p><div class="wrap"><table id="t_mov"><thead><tr><th>Hora</th><th>Evento</th><th>Empresa</th><th>Preço</th><th>Motivo</th></tr></thead><tbody></tbody></table></div></div>
-    <div class="card"><h3>Ideias e juiz</h3><p class="sub">vantagem em pontos-base (1 pb = 0,01%) e por que foi aprovada ou recusada</p><div class="wrap"><table id="t_cx"><thead><tr><th>Empresa</th><th>Direção</th><th>Vantagem</th><th>Juiz</th><th>Motivo</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card" style="grid-column:span 2">
+      <dl class="gl">
+        <dt>Ponto-base (pb)</dt><dd>Um centésimo de 1%. 10 pb = 0,10%. Em US$100 investidos, 10 pb são 10 cêntimos. A nossa vantagem por operação mede-se nesta unidade porque é pequena.</dd>
+        <dt>Rompimento (da faixa de abertura)</dt><dd>A regra principal do Pointer: nos primeiros 5 minutos o papel faz um máximo e um mínimo (a "faixa"); se depois o preço sai por cima, compra-se; o stop fica no outro lado da faixa.</dd>
+        <dt>Stop</dt><dd>O preço a que se sai para limitar a perda. Muitas operações acabam no stop com perdas pequenas; as poucas que correm bem pagam-nas. Por isso uma taxa de acerto baixa pode ser lucrativa.</dd>
+        <dt>Sonda</dt><dd>Uma compra pequena, feita de propósito, para medir o custo real de entrar e sair — não é a estratégia. O painel separa o que as sondas custaram.</dd>
+        <dt>Venda a descoberto (short)</dt><dd>Vender um papel que não se tem, apostando que cai, para o comprar mais barato depois. Em papel só se faz com uma acção inteira e o custo de "aluguer" ainda está por medir.</dd>
+        <dt>Maré</dt><dd>A percentagem dos papéis que estão acima da sua média de 200 dias. Maré alta = mercado a subir de forma larga; maré baixa = a cair.</dd>
+        <dt>VIX (medo)</dt><dd>O índice de volatilidade esperada do S&amp;P 500. Acima de 25 o mercado está assustado — e nesses dias tudo se move junto, o que muda o risco das nossas posições.</dd>
+        <dt>Capital empregado / livre</dt><dd>Quanto do nosso capital está dentro de posições agora (comprado ou vendido a descoberto — os dois prendem dinheiro) e quanto está em caixa.</dd>
+        <dt>Ganho esperado</dt><dd>O efeito médio que a regra teve em 10 anos de dados, na condição de hoje. É uma média histórica, não uma promessa: o dia real pode ficar acima ou abaixo.</dd>
+        <dt>Juiz</dt><dd>O órgão que recebe todas as ideias dos outros órgãos e aprova só as que têm vantagem medida acima do custo de execução. "Aprovadas" no funil são as que passaram por ele.</dd>
+      </dl>
+    </div>
   </section>
 </main>
 <footer>Pointer · 3BRAIN. Conta de treino na Alpaca (paper), escalada ao capital real. "Esperado" = efeito líquido do gene medido em 10 anos de dados × valor da posição; não é promessa. Custo real = executado − regra nas barras do mesmo dia. Gráfico ao vivo: TradingView. Nada aqui é recomendação de investimento.</footer>
