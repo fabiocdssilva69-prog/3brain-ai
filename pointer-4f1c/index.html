@@ -70,7 +70,7 @@
   <h2>👁️ O que ele viu <small>como estava o mercado hoje: a maré, o medo, quem liderou</small></h2>
   <section class="kpis" style="margin-bottom:12px">
     <div class="kpi"><div class="l">Maré</div><div class="v" id="k_mare">—</div><div class="s" id="k_regime"></div></div>
-    <div class="kpi"><div class="l">Ativos subindo</div><div class="v" id="k_sobem">—</div><div class="s">dos 63 que o leitor acompanha</div></div>
+    <div class="kpi"><div class="l">Ativos subindo</div><div class="v" id="k_sobem">—</div><div class="s" id="k_sobem_s">—</div></div>
     <div class="kpi"><div class="l">VIX (medo)</div><div class="v" id="k_vix">—</div><div class="s" id="k_vix_s"></div></div>
     <div class="kpi"><div class="l">Líder / lanterna</div><div class="v" id="k_lider" style="font-size:16px">—</div><div class="s">maior alta e maior queda do dia</div></div>
   </section>
@@ -261,7 +261,7 @@ async function carregar(){
   const ap={}; Object.entries(al.por_papel||{}).forEach(([k,v])=>{ap[v<0?k+' ▼ curto':k]=Math.abs(v)}); if(al.livre!=null&&al.livre>0)ap['Livre (caixa)']=al.livre;
   chart('c_aloc',{type:'doughnut',data:{labels:Object.keys(ap),datasets:[{data:Object.values(ap),backgroundColor:cores}]},options:{plugins:{legend:{position:'right',labels:{color:'#8a9ab0',boxWidth:12}}}}});
   const o=p.olhos||{},a=o.amplitude||{},vix=((o.regime||{}).vix||{}).ultimo;
-  document.getElementById('k_mare').textContent=o.mare?('maré '+o.mare):'—'; document.getElementById('k_regime').textContent=(o.rotulo?'mercado '+o.rotulo:'')+(a.rsi5_medio!=null?' · RSI médio '+a.rsi5_medio:'');
+  document.getElementById('k_mare').textContent=o.mare?('maré '+o.mare):'—'; document.getElementById('k_sobem_s').textContent=a.n?('dos '+a.n+' que o leitor acompanha'):''; document.getElementById('k_regime').textContent=(o.rotulo?'mercado '+o.rotulo:'')+(a.rsi5_medio!=null?' · RSI médio '+a.rsi5_medio:'');
   document.getElementById('k_sobem').textContent=a.pct_sobem!=null?a.pct_sobem+'%':'—'; document.getElementById('k_vix').textContent=vix!=null?vix:'—'; document.getElementById('k_vix_s').textContent=vix==null?'':(vix<16?'abaixo de 16: calmo':vix<24?'entre 16 e 24: normal':'acima de 24: stress');
   document.getElementById('k_lider').innerHTML=(a.lider?nome(p,a.lider):'—')+' <span class="mut">/</span> '+(a.lanterna?nome(p,a.lanterna):'—');
   chart('c_mare',{type:'line',data:{labels:r.map(x=>x.t.slice(11,16)),datasets:[{label:'% subindo',data:r.map(x=>x.pct_sobem),borderColor:'#5aa9ff',tension:.25,pointRadius:0,yAxisID:'y'},{label:'VIX',data:r.map(x=>x.vix),borderColor:'#ff8c42',tension:.25,pointRadius:0,yAxisID:'y1'}]},options:{...base,scales:{...base.scales,y1:{position:'right',ticks:{color:'#8a9ab0'},grid:{display:false}}}}});
