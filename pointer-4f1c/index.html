@@ -47,6 +47,16 @@
   <div><span class="pill" id="pill_vivo" title="preço, resultado e movimentações vêm de um canal leve publicado a cada minuto">● ao vivo <span id="t_vivo">—</span></span> <span class="pill">painel <span id="t">—</span></span> <span class="pill" id="idade">—</span></div>
 </header>
 <main>
+  <style>
+    .frase{background:var(--card,#141a26);border:1px solid var(--line,#26304a);border-left:4px solid #ffd23f;border-radius:10px;padding:14px 16px;font-size:16px;line-height:1.5;margin:14px 0 10px}
+    .funil{background:var(--card,#141a26);border:1px solid var(--line,#26304a);border-radius:10px;padding:10px 16px 12px;margin:0 0 18px}
+    .funil .fr{display:grid;grid-template-columns:170px 1fr 60px;align-items:center;gap:10px;margin:4px 0;font-size:13px}
+    .funil .fl{color:var(--mut,#8a9ab0)} .funil .fv{text-align:right;font-weight:600}
+    .funil .fb{height:12px;background:#0e1420;border-radius:6px;overflow:hidden} .funil .fb i{display:block;height:100%;background:linear-gradient(90deg,#5aa9ff,#33d17a);border-radius:6px}
+    @media (max-width:640px){.funil .fr{grid-template-columns:120px 1fr 44px}}
+  </style>
+  <section class="frase" id="frase_dia">—</section>
+  <section class="funil" id="funil"></section>
   <h2>Resultado <small>o que ganhamos e perdemos, à escala do nosso capital</small></h2>
   <section class="kpis">
     <div class="kpi"><div class="l">Hoje</div><div class="v" id="k_hoje">—</div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div></div>
@@ -175,6 +185,11 @@ async function carregar(){
   const set=(id,txt,k)=>{const e=document.getElementById(id);e.textContent=txt;if(k!==undefined)e.className='v '+cls(k)};
   const ins=p.instrumentos||{};
   document.getElementById('sub').textContent='conta de treino (paper) · capital US$'+(c.capital_escala!=null?c.capital_escala.toFixed(2):'—');
+  // 10/09: a FRASE DO DIA e o FUNIL vêm prontos do painel.json — nunca escritos à mão aqui (PAINEL_DESENHO.md)
+  document.getElementById('frase_dia').textContent=p.frase_dia||'—';
+  const fu=p.funil||{}; const etapas=[['ideias vistas',fu.vistas],['aprovadas pelo juiz',fu.aprovadas],['executadas',fu.executadas_juiz],['sondas',fu.sondas],['stops',fu.stops]];
+  const maxf=Math.max(1,...etapas.map(e=>e[1]||0));
+  document.getElementById('funil').innerHTML=etapas.map(([n,v])=>`<div class="fr"><span class="fl">${n}</span><span class="fb"><i style="width:${Math.max(2,100*(v||0)/maxf).toFixed(1)}%"></i></span><span class="fv">${v==null?'—':v}</span></div>`).join('')+'<div class="s" style="margin-top:6px;color:#8a9ab0">onde o dia trava: se "aprovadas" é alto e "executadas" é zero, as vagas estavam ocupadas</div>';
   set('k_hoje',fmt(c.pnl_hoje)+' US$',c.pnl_hoje);
   // 09/09: aqui estava insertAdjacentHTML('afterend'), que ACRESCENTA — e carregar() corre de 60 em 60 s,
   // logo a mesma frase empilhava-se dentro do cartão. Elemento próprio + textContent: escrever no mesmo
