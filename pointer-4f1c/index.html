@@ -59,11 +59,11 @@
   <section class="funil" id="funil"></section>
   <h2>Resultado <small>o que ganhamos e perdemos hoje, em dólares, à escala do nosso capital</small></h2>
   <section class="kpis">
-    <div class="kpi"><div class="l">Hoje</div><div class="v" id="k_hoje">—</div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div></div>
+    <div class="kpi"><div class="l">Hoje</div><div class="v" id="k_hoje">—</div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
     <div class="kpi"><div class="l">Desde o início (papel)</div><div class="v" id="k_acum">—</div><div class="s" id="k_acum_pct"></div></div>
     <div class="kpi"><div class="l">Em aberto agora</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div></div>
     <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div></div>
-    <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_s"></div></div>
+    <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
     <div class="kpi"><div class="l">Custo real de execução</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">diferença entre o que a regra prometia e o que a corretora deu</div></div>
   </section>
 
@@ -286,6 +286,8 @@ async function carregar(){
   const s=a.setores_vs_spy_pct||{}; const rot={XLE:'Energia',XLF:'Financeiro',XLK:'Tecnologia',XLV:'Saúde',SMH:'Semicondutores',XLI:'Industrial'};
   chart('c_set',{type:'bar',data:{labels:Object.keys(s).map(k=>rot[k]||k),datasets:[{label:'vs S&P 500 (p.p.)',data:Object.values(s),backgroundColor:Object.values(s).map(v=>v>=0?'#33d17a':'#ff6b6b')}]},options:base});
   const tb=(id,rows,n)=>{document.querySelector('#'+id+' tbody').innerHTML=rows.length?rows.join(''):`<tr><td colspan="${n}" class="mut">nenhuma por enquanto</td></tr>`};
+  const ld=p.lados||{}; const la=ld.acoes||{}, lc=ld.cripto||{}; const eL=document.getElementById('k_lados'); if(eL&&ld.acoes){ eL.innerHTML='de onde vem: <b class="'+cls(la.total)+'">ações '+fmt(la.total)+'</b> (fechado '+fmt(la.realizado)+' · aberto '+fmt(la.aberto)+') · <b class="'+cls(lc.total)+'">cripto '+fmt(lc.total)+'</b> (fechado '+fmt(lc.realizado)+' · aberto '+fmt(lc.aberto)+')'; }
+  const eU=document.getElementById('k_lados_uso'); if(eU&&ld.acoes){ eU.textContent='ações '+fmt(la.em_uso)+' de '+fmt(la.capital)+' ('+(la.capital?Math.round(100*la.em_uso/la.capital):0)+'%) · cripto '+fmt(lc.em_uso)+' de '+fmt(lc.capital)+' ('+(lc.capital?Math.round(100*lc.em_uso/lc.capital):0)+'%)'; }
   const cr=p.cripto||{}; const crT=document.getElementById('cr_t'); if(crT){ crT.textContent = cr.capital ? ('capital US$'+fmt(cr.capital)+' · em uso US$'+fmt(cr.em_uso)+' · livre US$'+fmt(cr.livre)+' · sondas hoje '+(cr.sondas_hoje||0)+' · fechadas hoje '+(cr.saidas_hoje||0)+' ('+fmt(cr.pnl_fechado_hoje)+' US$)'+' · genes provados com cripto: '+(cr.genes_elegiveis==null?0:cr.genes_elegiveis)+(cr.batimento?' · último ciclo '+String(cr.batimento).slice(11,16)+' UTC':'')) : 'executor cripto ainda sem ciclo hoje'; }
   tb('t_cr',(cr.posicoes||[]).map(x=>`<tr><td>${x.par}</td><td>${x.origem||''}${x.gene?' <span class="mut">'+x.gene+'</span>':''}</td><td>${x.entrada!=null?Number(x.entrada).toFixed(2):''}</td><td>${x.agora!=null?Number(x.agora).toFixed(2):''}</td><td class="${cls(x.pnl_aberto_usd)}">${fmt(x.pnl_aberto_usd)} US$</td><td class="${cls(x.pnl_aberto_pct)}">${fmt(x.pnl_aberto_pct,2)}%</td><td>${x.sai_em?String(x.sai_em).slice(5,16).replace('T',' '):''}</td></tr>`));
   const crc=document.getElementById('cr_custos'); if(crc){ const cp=Object.entries(cr.custo_por_par||{}).sort((a,b)=>b[1].mediana_pb-a[1].mediana_pb); crc.innerHTML='<b>Custo medido por par</b> (mediana do fill contra o meio do livro; a taxa real de '+(cr.taxa_pb||25)+' pb por lado não é cobrada em paper e entra à parte): '+(cp.length?cp.map(([k,v])=>k+' '+fmt(v.mediana_pb,1)+' pb (n='+v.n+')').join(' · '):'sem sondas ainda'); }
