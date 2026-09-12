@@ -60,7 +60,8 @@
   <h2>Resultado <small>o que ganhamos e perdemos hoje, em dólares, à escala do nosso capital</small></h2>
   <section class="kpis">
     <div class="kpi"><div class="l">Hoje (líquido realista)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
-    <div class="kpi"><div class="l">Desde o início (papel)</div><div class="v" id="k_acum">—</div><div class="s" id="k_acum_pct"></div></div>
+    <div class="kpi" style="border-color:#ffd23f"><div class="l">💰 JÁ ENTROU (realizado)</div><div class="v" id="k_entrou">—</div><div class="s" id="k_entrou_det"></div><div class="s" style="color:#8a9ab0">operações FECHADAS, dos fills da corretora · sem estimativa</div></div>
+    <div class="kpi"><div class="l">Desde o início (equity, inclui aberto)</div><div class="v" id="k_acum">—</div><div class="s" id="k_acum_pct"></div></div>
     <div class="kpi"><div class="l">Em aberto agora</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div></div>
     <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div></div>
     <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_cr" style="color:#ffd23f"></div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
@@ -243,6 +244,10 @@ async function carregar(){
   // sítio não pode duplicar, por construção.
   document.getElementById('k_hoje_ins').textContent=ins.medicoes?('inclui '+fmt(ins.custo_usd)+' US$ das '+ins.medicoes+' medições de custo de execução, que não são a estratégia'):'';
   document.getElementById('k_hoje_pct').textContent=fmt(m.hoje_sobre_capital_pct)+'% do capital'+(m.hoje_sobre_em_uso_pct!=null?' · '+fmt(m.hoje_sobre_em_uso_pct)+'% do investido':'');
+  // 12/09: o JA ENTROU vem dos FILLS da corretora (realizado.py, FIFO). E o unico numero sem estimativa dentro.
+  const je=p.ja_entrou||{};
+  if(je.liquido!=null){ set('k_entrou',fmt(je.liquido)+' US$',je.liquido);
+    document.getElementById('k_entrou_det').textContent='bruto '+fmt(je.realizado)+' · taxa cripto '+fmt(-je.taxa)+' · '+(je.operacoes||0)+' operações fechadas'; }
   set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel); document.getElementById('k_acum_pct').textContent=fmt(m.acumulado_sobre_capital_pct)+'% do capital';
   set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd);
   // 12/09: o aberto agora inclui a cripto (accoes + cripto, separados por baixo)
