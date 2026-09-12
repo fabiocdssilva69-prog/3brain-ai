@@ -57,6 +57,11 @@
   </style>
   <section class="frase" id="frase_dia">—</section>
   <section class="funil" id="funil"></section>
+  <section class="card" id="card_dinheiro" style="border-left:4px solid #4ade80;margin:14px 0">
+    <h3>💵 O dinheiro <small style="font-weight:400;color:#8a9ab0">quanto o capital vale agora — o que já entrou é facto, o que está em aberto é estimativa</small></h3>
+    <div class="wrap"><table id="t_dinheiro"><thead><tr><th></th><th>Ações</th><th>Cripto</th><th>Total</th></tr></thead><tbody></tbody></table></div>
+    <p class="sub" id="dinheiro_resumo"></p>
+  </section>
   <h2>Resultado <small>o que ganhamos e perdemos hoje, em dólares, à escala do nosso capital</small></h2>
   <section class="kpis">
     <div class="kpi"><div class="l">Hoje (líquido realista)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
@@ -246,6 +251,18 @@ async function carregar(){
   document.getElementById('k_hoje_pct').textContent=fmt(m.hoje_sobre_capital_pct)+'% do capital'+(m.hoje_sobre_em_uso_pct!=null?' · '+fmt(m.hoje_sobre_em_uso_pct)+'% do investido':'');
   // 12/09: o JA ENTROU vem dos FILLS da corretora (realizado.py, FIFO). E o unico numero sem estimativa dentro.
   const je=p.ja_entrou||{};
+  // 12/09: O DINHEIRO — quanto o capital vale agora, por lado (a pergunta do dono, nao a do operador)
+  const pt=p.patrimonio;
+  if(pt){
+    const lin=[['já entrou (facto)','ja_entrou'],['em aberto (estimativa)','em_aberto'],['soma','soma']];
+    document.querySelector('#t_dinheiro tbody').innerHTML=lin.map(([rot,ch])=>
+      `<tr><td>${rot}</td><td class="${(pt.acoes[ch]||0)<0?'neg':'pos'}">${fmt(pt.acoes[ch])}</td>`+
+      `<td class="${(pt.cripto[ch]||0)<0?'neg':'pos'}">${fmt(pt.cripto[ch])}</td>`+
+      `<td class="${(pt.total[ch]||0)<0?'neg':'pos'}"><b>${fmt(pt.total[ch])}</b></td></tr>`).join('');
+    document.getElementById('dinheiro_resumo').innerHTML='Começámos com <b>'+fmt(pt.capital_inicial)+' US$</b> · '+
+      'vale agora <b>'+fmt(pt.valor_agora)+' US$</b> ('+fmt(pt.variacao_pct)+'%) · '+
+      'só com o que já entrou: <b>'+fmt(pt.valor_so_realizado)+' US$</b> ('+fmt(pt.variacao_realizada_pct)+'%)';
+  }
   if(je.liquido!=null){ set('k_entrou',fmt(je.liquido)+' US$',je.liquido);
     document.getElementById('k_entrou_det').textContent='bruto '+fmt(je.realizado)+' · taxa cripto '+fmt(-je.taxa)+' · '+(je.operacoes||0)+' operações fechadas'; }
   set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel); document.getElementById('k_acum_pct').textContent=fmt(m.acumulado_sobre_capital_pct)+'% do capital';
