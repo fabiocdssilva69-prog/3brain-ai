@@ -370,7 +370,9 @@ async function carregar(){
   const ex=document.getElementById('explicacoes'); const lista=p.explicacoes||[];
   ex.innerHTML=lista.length?lista.map(e=>`<div class="exp"><b>${e.regra}</b>${e.previsao_pct!=null?`<span class="ac">ganho esperado ${fmt(e.previsao_pct)}% por operação</span>`:''}<div class="ev">${e.evidencia||''}<br><span style="opacity:.7">gene: ${e.gene}</span></div></div>`).join(''):'<div class="vazio">Sem posições abertas: as explicações aparecem junto com elas.</div>';
 }
-carregar(); setInterval(carregar,60000);
+// 12/09: carregar() le o painel.json (de hora a hora) e escrevia POR CIMA do que aoVivo() (15 s) tinha posto:
+// o ecra voltava ao valor velho a cada minuto. O mais RECENTE tem de ter a ultima palavra, sempre.
+carregar().then(()=>{try{aoVivo();}catch(e){}}); setInterval(()=>carregar().then(()=>{try{aoVivo();}catch(e){}}),60000);
 
 // ---- CANAL AO VIVO (09/09/2026): o painel gordo leva ~40 s e por isso corre de 5 em 5 min; o vivo.json e
 // publicado de minuto a minuto e traz so o que muda ao segundo. A pagina pede-o de 15 em 15 s e sobrepoe os
