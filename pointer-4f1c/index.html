@@ -60,7 +60,7 @@
   <section class="kpis" style="margin:14px 0">
     <div class="kpi" style="border:2px solid #4ade80"><div class="l">✅ GANHOS realizados</div><div class="v pos" id="k_gan">—</div><div class="s" id="k_gan_det"></div><div class="s" id="k_gar_estavel" style="color:#4ade80"></div></div>
     <div class="kpi" style="border:2px solid #ff6b6b"><div class="l">❌ PERDAS realizadas</div><div class="v neg" id="k_per">—</div><div class="s" id="k_per_det"></div><div class="s" id="k_res" style="color:#cfd8ea"></div></div>
-    <div class="kpi" style="border:2px dashed #ffd23f"><div class="l">📉 VOLÁTIL — ainda não é dinheiro</div><div class="v" id="k_vol">—</div><div class="s" id="k_vol_det"></div><div class="s" style="color:#ffd23f">preço de mercado · muda ao segundo · pode ir a zero</div></div>
+    <div class="kpi" style="border:2px dashed #ffd23f"><div class="l">📉 VOLÁTIL — ainda não é dinheiro</div><div class="v" id="k_vol">—</div><div class="s" id="k_vol_det"></div><div class="s" style="color:#ffd23f">preço de mercado · muda ao segundo · pode ir a zero</div><div class="s" id="k_ao_vol" style="color:#5aa9ff"></div></div>
   </section>
   <section class="card" id="card_dinheiro" style="border-left:4px solid #4ade80;margin:14px 0">
     <h3>💵 O dinheiro <small style="font-weight:400;color:#8a9ab0">quanto o capital vale agora — o que já entrou é facto, o que está em aberto é estimativa</small></h3>
@@ -71,8 +71,8 @@
   <section class="kpis">
     <div class="kpi"><div class="l">Hoje — fechado (entrou na conta)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
     <div class="kpi" style="border-color:#ffd23f"><div class="l">💰 JÁ ENTROU (realizado)</div><div class="v" id="k_entrou">—</div><div class="s" id="k_entrou_det"></div><div class="s" style="color:#8a9ab0">operações FECHADAS, dos fills da corretora · sem estimativa</div></div>
-    <div class="kpi"><div class="l">Em aberto agora (estimativa)</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div><div class="s" style="color:#8a9ab0">preço de mercado · só vira dinheiro ao fechar</div></div>
-    <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div></div>
+    <div class="kpi"><div class="l">Em aberto agora (estimativa)</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div><div class="s" style="color:#8a9ab0">preço de mercado · só vira dinheiro ao fechar</div><div class="s" id="k_ao_aberto" style="color:#5aa9ff"></div></div>
+    <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div><div class="s" id="k_ao_prev" style="color:#5aa9ff"></div></div>
     <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_cr" style="color:#ffd23f"></div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
     <div class="kpi"><div class="l">Real vs backtest</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">positivo = a vida real correu MELHOR que o backtest previa</div><div class="s" id="k_custo_exec" style="color:#8a9ab0"></div></div>
   </section>
@@ -409,6 +409,12 @@ async function aoVivo(){
     if(false && c.pnl_hoje!=null){const el=document.getElementById('k_hoje');const antes=el.textContent;
       el.textContent=fmt(c.pnl_hoje)+' US$'; el.className='v '+cls(c.pnl_hoje);
       if(antes!==el.textContent&&ultimoVivo){el.classList.add('piscou');setTimeout(()=>el.classList.remove('piscou'),1200);} }
+    // 12/09: o GANHO ESPERADO tambem e ao vivo (o valor da posicao muda com o preco, logo a previsao muda tambem)
+    if(v.previsao_total_usd!=null){const ep=document.getElementById('k_prev'); if(ep)ep.textContent=fmt(v.previsao_total_usd)+' US$';}
+    // SINAL DE VIDA: a hora da ultima leitura em cada cartao que muda. Sem isto, um valor que nao mexe durante uns
+    // minutos (porque o preco nao mexeu) parece um painel congelado — e a duvida vale tanto como o erro.
+    const hh=(v.t_brt||'').slice(-8);
+    ['k_ao_aberto','k_ao_prev','k_ao_vol'].forEach(id=>{const e=document.getElementById(id); if(e)e.textContent='atualizado '+hh;});
     if(v.aberto_total_usd!=null){const el=document.getElementById('k_aberto');
       el.textContent=fmt(v.aberto_total_usd)+' US$'; el.className='v '+cls(v.aberto_total_usd);
       document.getElementById('k_npos').textContent=(v.posicoes||[]).length+' posição(ões) aberta(s) · preço ao vivo em '+(v.posicoes||[]).filter(x=>x.ao_vivo).length; }
