@@ -64,10 +64,9 @@
   </section>
   <h2>Resultado <small>o que ganhamos e perdemos hoje, em dólares, à escala do nosso capital</small></h2>
   <section class="kpis">
-    <div class="kpi"><div class="l">Hoje (líquido realista)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
+    <div class="kpi"><div class="l">Hoje — fechado (entrou na conta)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
     <div class="kpi" style="border-color:#ffd23f"><div class="l">💰 JÁ ENTROU (realizado)</div><div class="v" id="k_entrou">—</div><div class="s" id="k_entrou_det"></div><div class="s" style="color:#8a9ab0">operações FECHADAS, dos fills da corretora · sem estimativa</div></div>
-    <div class="kpi"><div class="l">Desde o início (equity, inclui aberto)</div><div class="v" id="k_acum">—</div><div class="s" id="k_acum_pct"></div></div>
-    <div class="kpi"><div class="l">Em aberto agora</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div></div>
+    <div class="kpi"><div class="l">Em aberto agora (estimativa)</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div><div class="s" style="color:#8a9ab0">preço de mercado · só vira dinheiro ao fechar</div></div>
     <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div></div>
     <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_cr" style="color:#ffd23f"></div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
     <div class="kpi"><div class="l">Custo real de execução</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">diferença entre o que a regra prometia e o que a corretora deu</div></div>
@@ -234,10 +233,11 @@ async function carregar(){
   // 12/09: o KPI de hoje mostra o LIQUIDO REALISTA (realizado - taxa que a conta de papel nao cobra), nao o
   // `pnl_hoje` da corretora, que junta o que ja voltou com o que ainda esta no mercado e pode evaporar.
   const gn=p.ganho||{};
-  const vHoje = (gn.liquido_realista_usd!=null)? gn.liquido_realista_usd : c.pnl_hoje;
+  // o cartao 'Hoje' mostra o FECHADO do dia (facto); o aberto tem cartao proprio e o liquido vem na linha de baixo
+  const vHoje = (gn.realizado_usd!=null)? gn.realizado_usd : c.pnl_hoje;
   set('k_hoje',fmt(vHoje)+' US$',vHoje);
   document.getElementById('k_ganho_det').textContent = (gn.realizado_usd!=null)
-    ? ('realizado '+fmt(gn.realizado_usd)+' · em aberto '+fmt(gn.aberto_usd)+' (estimativa) · taxa cripto '+fmt(-gn.taxa_cripto_a_pagar_usd))
+    ? ('com a taxa real: '+fmt(gn.liquido_realista_usd)+' US$ · moveu '+fmt(gn.aberto_hoje_usd!=null?gn.aberto_hoje_usd:gn.aberto_usd)+' em aberto (estimativa)')
     : '';
   // 10/09: o LEQUE (§3.6) e o PROMETIDO CONTRA ENTREGUE (§3.7), ambos do JSON
   const lq=p.leque; if(lq){document.getElementById('leque').innerHTML='Em <b>'+lq.n_operacoes.toLocaleString('pt-BR')+'</b> operacoes desta regra em '+lq.papeis+' papeis, a media foi <b>'+fmt(lq.media_pb,1)+' pb</b> por operacao — mas a operacao tipica (mediana) deu <b>'+fmt(lq.p50_pb,0)+' pb</b>. Em 10 operacoes como esta, a pior deu cerca de <b class="dn">'+fmt(lq.p10_pb,0)+' pb</b> e a melhor <b class="up">+'+fmt(lq.p90_pb,0)+' pb</b>. Ela acerta <b>'+lq.acerto_pct+'%</b> das vezes — e e assim que ganha dinheiro: perde pouco muitas vezes, ganha muito poucas vezes. (1 pb = 0,01%; em US$65 investidos, 100 pb sao 65 centimos.)';}
@@ -265,7 +265,9 @@ async function carregar(){
   }
   if(je.liquido!=null){ set('k_entrou',fmt(je.liquido)+' US$',je.liquido);
     document.getElementById('k_entrou_det').textContent='bruto '+fmt(je.realizado)+' · taxa cripto '+fmt(-je.taxa)+' · '+(je.operacoes||0)+' operações fechadas'; }
-  set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel); document.getElementById('k_acum_pct').textContent=fmt(m.acumulado_sobre_capital_pct)+'% do capital';
+  // 12/09: o cartao 'Desde o inicio' saiu — mostrava exactamente o mesmo que 'Ja entrou' desde que o acumulado
+  // passou a vir dos fills da corretora. Dois cartoes com o mesmo numero nao informam: confundem.
+  const eAc=document.getElementById('k_acum'); if(eAc){set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel);}
   set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd);
   // 12/09: o aberto agora inclui a cripto (accoes + cripto, separados por baixo)
   if(p.aberto_cripto_usd!=null){const eA=document.getElementById('k_npos');if(eA)eA.dataset.cr=p.aberto_cripto_usd;} const ae=p.apostas_efectivas; document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões) aberta(s)'+(ae&&ae.n>=2?' · '+ae.efectivas.toFixed(1)+' apostas efectivas ('+ae.matriz+')':'');
@@ -355,7 +357,9 @@ async function aoVivo(){
     tv.textContent=(v.t_brt||'').slice(-8)+(idade>150?' · parado há '+Math.round(idade/60)+' min':'');
     pill.classList.toggle('frio',idade>150);
     const c=v.conta||{};
-    if(c.pnl_hoje!=null){const el=document.getElementById('k_hoje');const antes=el.textContent;
+    // 12/09: o vivo escrevia `pnl_hoje` por cima do numero do cartao e este passava a contradizer o proprio
+    // rotulo (dizia 'liquido realista' e mostrava +2,88, que e outra coisa). O cartao 'Hoje' e o FECHADO do dia.
+    if(false && c.pnl_hoje!=null){const el=document.getElementById('k_hoje');const antes=el.textContent;
       el.textContent=fmt(c.pnl_hoje)+' US$'; el.className='v '+cls(c.pnl_hoje);
       if(antes!==el.textContent&&ultimoVivo){el.classList.add('piscou');setTimeout(()=>el.classList.remove('piscou'),1200);} }
     if(v.aberto_total_usd!=null){const el=document.getElementById('k_aberto');
