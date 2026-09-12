@@ -69,7 +69,7 @@
     <div class="kpi"><div class="l">Em aberto agora (estimativa)</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div><div class="s" style="color:#8a9ab0">preço de mercado · só vira dinheiro ao fechar</div></div>
     <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div></div>
     <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_cr" style="color:#ffd23f"></div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
-    <div class="kpi"><div class="l">Custo real de execução</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">diferença entre o que a regra prometia e o que a corretora deu</div></div>
+    <div class="kpi"><div class="l">Real vs backtest</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">positivo = a vida real correu MELHOR que o backtest previa</div><div class="s" id="k_custo_exec" style="color:#8a9ab0"></div></div>
   </section>
 
   <h2>👁️ O que ele viu <small>como estava o mercado hoje: a maré, o medo, quem liderou</small></h2>
@@ -279,7 +279,13 @@ async function carregar(){
   const eCR=document.getElementById('k_aloc_cr');
   if(eCR&&al.em_uso_cripto!=null){eCR.textContent='ações '+(al.em_uso_acoes||0).toFixed(0)+' · cripto '+(al.em_uso_cripto||0).toFixed(0)+' US$';}
   const conc=(h.conciliacao||[]).slice(-1)[0]; const sl=conc&&conc.slippage_por_metodo?conc.slippage_por_metodo:{};
-  document.getElementById('k_custo').textContent=sl.limite!=null?fmt(sl.limite,1)+' pb':(sl.mercado!=null?fmt(sl.mercado,1)+' pb':'—'); if(sl.mercado!=null&&sl.limite==null)document.getElementById('k_custo_s').textContent='medido a mercado em '+(conc.dia||'')+'; o método a limite ainda não tem medida';
+  // 12/09: isto NAO e custo de execucao — e `real - backtest` nas mesmas operacoes. Os +103 pb de 11/09 vinham
+  // de o backtest prever -140 pb no AMD e o real ter sido -1,8: correu MELHOR, nao pior. O custo de execucao
+  // verdadeiro e o slippage de entrada, medido por par (mediana dos nossos fills), na linha de baixo.
+  document.getElementById('k_custo').textContent=sl.limite!=null?fmt(sl.limite,1)+' pb':(sl.mercado!=null?fmt(sl.mercado,1)+' pb':'—');
+  const cx=(p.cripto||{}).custo_por_par||{}; const vs=Object.values(cx).map(x=>x.mediana_pb).filter(v=>v!=null);
+  if(vs.length){const md=vs.slice().sort((a,b)=>a-b)[Math.floor(vs.length/2)];
+    document.getElementById('k_custo_exec').textContent='custo de execução medido: '+fmt(md,1)+' pb por entrada em cripto ('+vs.length+' pares) · ~0,4 pb em ações';} if(sl.mercado!=null&&sl.limite==null)document.getElementById('k_custo_s').textContent='medido a mercado em '+(conc.dia||'')+'; o método a limite ainda não tem medida';
   // chips dos graficos de bolsa: posicoes primeiro, depois o resto do bars.json
   const ordem=[]; p.posicoes.forEach(x=>ordem.push(x.simbolo)); Object.keys((b&&b.papeis)||{}).forEach(s=>{if(!ordem.includes(s))ordem.push(s)});
   const pos={}; p.posicoes.forEach(x=>pos[x.simbolo]=x);
