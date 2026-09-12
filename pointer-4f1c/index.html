@@ -297,7 +297,8 @@ async function carregar(){
     document.getElementById('k_entrou_det').textContent='bruto '+fmt(je.realizado)+' · taxa cripto '+fmt(-je.taxa)+' · '+(je.operacoes||0)+' operações fechadas'; }
   // 12/09: o cartao 'Desde o inicio' saiu — mostrava exactamente o mesmo que 'Ja entrou' desde que o acumulado
   // passou a vir dos fills da corretora. Dois cartoes com o mesmo numero nao informam: confundem.
-  const eAc=document.getElementById('k_acum'); if(eAc){set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel);}
+  // 12/09: o cartao 'Desde o inicio' foi removido (duplicava o saldo realizado) e a referencia ao id ficou
+  // para tras. Estava protegida por `if`, mas referencia a elemento que nao existe e divida: sai.
   set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd);
   // 12/09: o aberto agora inclui a cripto (accoes + cripto, separados por baixo)
   if(p.aberto_cripto_usd!=null){const eA=document.getElementById('k_npos');if(eA)eA.dataset.cr=p.aberto_cripto_usd;} const ae=p.apostas_efectivas; document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões) aberta(s)'+(ae&&ae.n>=2?' · '+ae.efectivas.toFixed(1)+' apostas efectivas ('+ae.matriz+')':'');
