@@ -58,7 +58,8 @@
   <section class="frase" id="frase_dia">—</section>
   <section class="funil" id="funil"></section>
   <section class="kpis" style="margin:14px 0">
-    <div class="kpi" style="border:2px solid #4ade80"><div class="l">🔒 GARANTIDO — já converteu</div><div class="v" id="k_gar">—</div><div class="s" id="k_gar_det"></div><div class="s" id="k_gar_estavel" style="color:#4ade80"></div></div>
+    <div class="kpi" style="border:2px solid #4ade80"><div class="l">✅ GANHOS realizados</div><div class="v pos" id="k_gan">—</div><div class="s" id="k_gan_det"></div><div class="s" id="k_gar_estavel" style="color:#4ade80"></div></div>
+    <div class="kpi" style="border:2px solid #ff6b6b"><div class="l">❌ PERDAS realizadas</div><div class="v neg" id="k_per">—</div><div class="s" id="k_per_det"></div><div class="s" id="k_res" style="color:#cfd8ea"></div></div>
     <div class="kpi" style="border:2px dashed #ffd23f"><div class="l">📉 VOLÁTIL — ainda não é dinheiro</div><div class="v" id="k_vol">—</div><div class="s" id="k_vol_det"></div><div class="s" style="color:#ffd23f">preço de mercado · muda ao segundo · pode ir a zero</div></div>
   </section>
   <section class="card" id="card_dinheiro" style="border-left:4px solid #4ade80;margin:14px 0">
@@ -260,8 +261,12 @@ async function carregar(){
   // da ultima conversao). Um numero chamado 'entrou na conta' ao lado de um valor que dança nao se acredita.
   const gv=p.gv;
   if(gv&&gv.garantido){ const ga=gv.garantido, vo=gv.volatil||{};
-    set('k_gar',fmt(ga.valor_usd)+' US$',ga.valor_usd);
-    document.getElementById('k_gar_det').textContent=(ga.operacoes||0)+' operações fechadas · ações '+fmt(ga.acoes_usd)+' · cripto '+fmt(ga.cripto_usd);
+    // 12/09: GANHOS e PERDAS separados — um saldo negativo chamado 'garantido' era uma contradicao.
+    document.getElementById('k_gan').textContent=fmt(ga.ganhos_usd)+' US$';
+    document.getElementById('k_gan_det').textContent=(ga.n_ganhos||0)+' operações com lucro · média '+fmt(ga.ganho_medio_usd)+' US$';
+    document.getElementById('k_per').textContent=fmt(ga.perdas_usd)+' US$';
+    document.getElementById('k_per_det').textContent=(ga.n_perdas||0)+' operações com prejuízo · média '+fmt(ga.perda_media_usd)+' US$';
+    document.getElementById('k_res').innerHTML='<b>resultado '+fmt(ga.valor_usd)+' US$</b> (com a taxa) · acerto <b>'+(ga.acerto_pct!=null?ga.acerto_pct:'—')+'%</b>';
     const mm=ga.parado_ha_min; document.getElementById('k_gar_estavel').textContent = (mm!=null)
       ? ('não muda há '+(mm<120?mm+' min':(mm/60).toFixed(1)+' h')+' — só muda quando uma posição FECHA')
       : 'só muda quando uma posição fecha';
@@ -374,6 +379,24 @@ let ultimoVivo=null;
 async function aoVivo(){
   try{
     const v=await fetch('vivo.json?v='+Date.now()).then(r=>r.json());
+    // 12/09: o vivo so mexia em k_hoje/k_aberto/posicoes — os cartoes novos (ganhos, perdas, volatil, o dinheiro)
+    // ficavam com o valor do painel gordo, de hora a hora. Agora reaplicam-se aqui, que corre de 5 em 5 min.
+    try{ if(v.gv&&v.gv.garantido){ const ga=v.gv.garantido, vo=v.gv.volatil||{};
+      document.getElementById('k_gan').textContent=fmt(ga.ganhos_usd)+' US$';
+      document.getElementById('k_per').textContent=fmt(ga.perdas_usd)+' US$';
+      document.getElementById('k_res').innerHTML='<b>resultado '+fmt(ga.valor_usd)+' US$</b> (com a taxa) · acerto <b>'+(ga.acerto_pct!=null?ga.acerto_pct:'—')+'%</b>';
+      const mm=ga.parado_ha_min; if(mm!=null)document.getElementById('k_gar_estavel').textContent='não muda há '+(mm<120?mm+' min':(mm/60).toFixed(1)+' h');
+      document.getElementById('k_vol').textContent=fmt(vo.valor_usd)+' US$';
+      document.getElementById('k_vol_det').textContent='ações '+fmt(vo.acoes_usd)+' · cripto '+fmt(vo.cripto_usd); }
+      if(v.patrimonio){ const pt=v.patrimonio; const lin=[['já entrou (facto)','ja_entrou'],['em aberto (estimativa)','em_aberto'],['soma','soma']];
+        const tb=document.querySelector('#t_dinheiro tbody'); if(tb) tb.innerHTML=lin.map(([rot,ch])=>
+          `<tr><td>${rot}</td><td class="${(pt.acoes[ch]||0)<0?'neg':'pos'}">${fmt(pt.acoes[ch])}</td>`+
+          `<td class="${(pt.cripto[ch]||0)<0?'neg':'pos'}">${fmt(pt.cripto[ch])}</td>`+
+          `<td class="${(pt.total[ch]||0)<0?'neg':'pos'}"><b>${fmt(pt.total[ch])}</b></td></tr>`).join('');
+        const dr=document.getElementById('dinheiro_resumo'); if(dr) dr.innerHTML='Começámos com <b>'+fmt(pt.capital_inicial)+' US$</b> · vale agora <b>'+fmt(pt.valor_agora)+' US$</b> ('+fmt(pt.variacao_pct)+'%) · só com o que já entrou: <b>'+fmt(pt.valor_so_realizado)+' US$</b>';}
+      if(v.ganho){const gg=v.ganho; const eH=document.getElementById('k_hoje'); if(eH&&gg.realizado_usd!=null){eH.textContent=fmt(gg.realizado_usd)+' US$';
+        const ed=document.getElementById('k_ganho_det'); if(ed)ed.textContent='com a taxa real: '+fmt(gg.liquido_realista_usd)+' US$ · moveu '+fmt(gg.aberto_hoje_usd!=null?gg.aberto_hoje_usd:gg.aberto_usd)+' em aberto (estimativa)';}}
+    }catch(e){}
     const pill=document.getElementById('pill_vivo'), tv=document.getElementById('t_vivo');
     const idade=(Date.now()-new Date(v.t_iso).getTime())/1000;
     tv.textContent=(v.t_brt||'').slice(-8)+(idade>150?' · parado há '+Math.round(idade/60)+' min':'');
