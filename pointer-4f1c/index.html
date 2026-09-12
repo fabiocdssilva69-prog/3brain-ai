@@ -59,11 +59,11 @@
   <section class="funil" id="funil"></section>
   <h2>Resultado <small>o que ganhamos e perdemos hoje, em dólares, à escala do nosso capital</small></h2>
   <section class="kpis">
-    <div class="kpi"><div class="l">Hoje</div><div class="v" id="k_hoje">—</div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
+    <div class="kpi"><div class="l">Hoje (líquido realista)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
     <div class="kpi"><div class="l">Desde o início (papel)</div><div class="v" id="k_acum">—</div><div class="s" id="k_acum_pct"></div></div>
     <div class="kpi"><div class="l">Em aberto agora</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div></div>
     <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div></div>
-    <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
+    <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_cr" style="color:#ffd23f"></div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
     <div class="kpi"><div class="l">Custo real de execução</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">diferença entre o que a regra prometia e o que a corretora deu</div></div>
   </section>
 
@@ -225,7 +225,14 @@ async function carregar(){
   const fu=p.funil||{}; const etapas=[['ideias vistas',fu.vistas],['aprovadas pelo juiz',fu.aprovadas],['executadas',fu.executadas_juiz],['sondas',fu.sondas],['stops',fu.stops]];
   const maxf=Math.max(1,...etapas.map(e=>e[1]||0));
   document.getElementById('funil').innerHTML=etapas.map(([n,v])=>`<div class="fr"><span class="fl">${n}</span><span class="fb"><i style="width:${Math.max(2,100*(v||0)/maxf).toFixed(1)}%"></i></span><span class="fv">${v==null?'—':v}</span></div>`).join('')+'<div class="s" style="margin-top:6px;color:#8a9ab0">onde o dia trava: se "aprovadas" é alto e "executadas" é zero, as vagas estavam ocupadas</div>';
-  set('k_hoje',fmt(c.pnl_hoje)+' US$',c.pnl_hoje);
+  // 12/09: o KPI de hoje mostra o LIQUIDO REALISTA (realizado - taxa que a conta de papel nao cobra), nao o
+  // `pnl_hoje` da corretora, que junta o que ja voltou com o que ainda esta no mercado e pode evaporar.
+  const gn=p.ganho||{};
+  const vHoje = (gn.liquido_realista_usd!=null)? gn.liquido_realista_usd : c.pnl_hoje;
+  set('k_hoje',fmt(vHoje)+' US$',vHoje);
+  document.getElementById('k_ganho_det').textContent = (gn.realizado_usd!=null)
+    ? ('realizado '+fmt(gn.realizado_usd)+' · em aberto '+fmt(gn.aberto_usd)+' (estimativa) · taxa cripto '+fmt(-gn.taxa_cripto_a_pagar_usd))
+    : '';
   // 10/09: o LEQUE (§3.6) e o PROMETIDO CONTRA ENTREGUE (§3.7), ambos do JSON
   const lq=p.leque; if(lq){document.getElementById('leque').innerHTML='Em <b>'+lq.n_operacoes.toLocaleString('pt-BR')+'</b> operacoes desta regra em '+lq.papeis+' papeis, a media foi <b>'+fmt(lq.media_pb,1)+' pb</b> por operacao — mas a operacao tipica (mediana) deu <b>'+fmt(lq.p50_pb,0)+' pb</b>. Em 10 operacoes como esta, a pior deu cerca de <b class="dn">'+fmt(lq.p10_pb,0)+' pb</b> e a melhor <b class="up">+'+fmt(lq.p90_pb,0)+' pb</b>. Ela acerta <b>'+lq.acerto_pct+'%</b> das vezes — e e assim que ganha dinheiro: perde pouco muitas vezes, ganha muito poucas vezes. (1 pb = 0,01%; em US$65 investidos, 100 pb sao 65 centimos.)';}
   const apz=p.aprendizagem; if(apz&&apz.pontos&&apz.pontos.length){const pts=apz.pontos.map(x=>({x:x.esperado,y:x.realizado})); const lim=Math.max(0.5,...pts.map(q=>Math.max(Math.abs(q.x),Math.abs(q.y))));
@@ -237,11 +244,16 @@ async function carregar(){
   document.getElementById('k_hoje_ins').textContent=ins.medicoes?('inclui '+fmt(ins.custo_usd)+' US$ das '+ins.medicoes+' medições de custo de execução, que não são a estratégia'):'';
   document.getElementById('k_hoje_pct').textContent=fmt(m.hoje_sobre_capital_pct)+'% do capital'+(m.hoje_sobre_em_uso_pct!=null?' · '+fmt(m.hoje_sobre_em_uso_pct)+'% do investido':'');
   set('k_acum',fmt(c.acumulado_papel)+' US$',c.acumulado_papel); document.getElementById('k_acum_pct').textContent=fmt(m.acumulado_sobre_capital_pct)+'% do capital';
-  set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd); const ae=p.apostas_efectivas; document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões) aberta(s)'+(ae&&ae.n>=2?' · '+ae.efectivas.toFixed(1)+' apostas efectivas ('+ae.matriz+')':'');
+  set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd);
+  // 12/09: o aberto agora inclui a cripto (accoes + cripto, separados por baixo)
+  if(p.aberto_cripto_usd!=null){const eA=document.getElementById('k_npos');if(eA)eA.dataset.cr=p.aberto_cripto_usd;} const ae=p.apostas_efectivas; document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões) aberta(s)'+(ae&&ae.n>=2?' · '+ae.efectivas.toFixed(1)+' apostas efectivas ('+ae.matriz+')':'');
   document.getElementById('k_prev').textContent=fmt(p.previsao_total_usd)+' US$';
   // o short entra com valor NEGATIVO em por_papel (e' o sinal da direccao); o capital EMPREGADO e' o modulo.
   const investido=al.em_uso!=null?al.em_uso:Object.values(al.por_papel||{}).reduce((a,b)=>a+Math.abs(b),0);
   document.getElementById('k_aloc').textContent=investido.toFixed(0)+' / '+(al.livre!=null?al.livre.toFixed(0):'—')+' US$'; document.getElementById('k_aloc_s').textContent=Object.entries(al.por_modo||{}).map(([k,v])=>k+' '+v.toFixed(0)).join(' · ')||'nada investido agora';
+  // 12/09: a reparticao accoes/cripto — `em_uso` contava so accoes e o livre estava errado por ~195 US$
+  const eCR=document.getElementById('k_aloc_cr');
+  if(eCR&&al.em_uso_cripto!=null){eCR.textContent='ações '+(al.em_uso_acoes||0).toFixed(0)+' · cripto '+(al.em_uso_cripto||0).toFixed(0)+' US$';}
   const conc=(h.conciliacao||[]).slice(-1)[0]; const sl=conc&&conc.slippage_por_metodo?conc.slippage_por_metodo:{};
   document.getElementById('k_custo').textContent=sl.limite!=null?fmt(sl.limite,1)+' pb':(sl.mercado!=null?fmt(sl.mercado,1)+' pb':'—'); if(sl.mercado!=null&&sl.limite==null)document.getElementById('k_custo_s').textContent='medido a mercado em '+(conc.dia||'')+'; o método a limite ainda não tem medida';
   // chips dos graficos de bolsa: posicoes primeiro, depois o resto do bars.json
