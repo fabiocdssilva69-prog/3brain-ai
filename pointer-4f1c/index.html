@@ -57,6 +57,10 @@
   </style>
   <section class="frase" id="frase_dia">—</section>
   <section class="funil" id="funil"></section>
+  <section class="kpis" style="margin:14px 0">
+    <div class="kpi" style="border:2px solid #4ade80"><div class="l">🔒 GARANTIDO — já converteu</div><div class="v" id="k_gar">—</div><div class="s" id="k_gar_det"></div><div class="s" id="k_gar_estavel" style="color:#4ade80"></div></div>
+    <div class="kpi" style="border:2px dashed #ffd23f"><div class="l">📉 VOLÁTIL — ainda não é dinheiro</div><div class="v" id="k_vol">—</div><div class="s" id="k_vol_det"></div><div class="s" style="color:#ffd23f">preço de mercado · muda ao segundo · pode ir a zero</div></div>
+  </section>
   <section class="card" id="card_dinheiro" style="border-left:4px solid #4ade80;margin:14px 0">
     <h3>💵 O dinheiro <small style="font-weight:400;color:#8a9ab0">quanto o capital vale agora — o que já entrou é facto, o que está em aberto é estimativa</small></h3>
     <div class="wrap"><table id="t_dinheiro"><thead><tr><th></th><th>Ações</th><th>Cripto</th><th>Total</th></tr></thead><tbody></tbody></table></div>
@@ -252,6 +256,18 @@ async function carregar(){
   // 12/09: o JA ENTROU vem dos FILLS da corretora (realizado.py, FIFO). E o unico numero sem estimativa dentro.
   const je=p.ja_entrou||{};
   // 12/09: O DINHEIRO — quanto o capital vale agora, por lado (a pergunta do dono, nao a do operador)
+  // 12/09: GARANTIDO vs VOLATIL — a separacao que ele pediu, com a PROVA de que o garantido nao muda (carimbo
+  // da ultima conversao). Um numero chamado 'entrou na conta' ao lado de um valor que dança nao se acredita.
+  const gv=p.gv;
+  if(gv&&gv.garantido){ const ga=gv.garantido, vo=gv.volatil||{};
+    set('k_gar',fmt(ga.valor_usd)+' US$',ga.valor_usd);
+    document.getElementById('k_gar_det').textContent=(ga.operacoes||0)+' operações fechadas · ações '+fmt(ga.acoes_usd)+' · cripto '+fmt(ga.cripto_usd);
+    const mm=ga.parado_ha_min; document.getElementById('k_gar_estavel').textContent = (mm!=null)
+      ? ('não muda há '+(mm<120?mm+' min':(mm/60).toFixed(1)+' h')+' — só muda quando uma posição FECHA')
+      : 'só muda quando uma posição fecha';
+    set('k_vol',fmt(vo.valor_usd)+' US$',vo.valor_usd);
+    document.getElementById('k_vol_det').textContent='ações '+fmt(vo.acoes_usd)+' · cripto '+fmt(vo.cripto_usd);
+  }
   const pt=p.patrimonio;
   if(pt){
     const lin=[['já entrou (facto)','ja_entrou'],['em aberto (estimativa)','em_aberto'],['soma','soma']];
