@@ -69,8 +69,10 @@
   </section>
   <h2>Resultado <small>o que ganhamos e perdemos hoje, em dólares, à escala do nosso capital</small></h2>
   <section class="kpis">
-    <div class="kpi"><div class="l">Hoje — fechado (entrou na conta)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
-    <div class="kpi" style="border-color:#ffd23f"><div class="l">💰 JÁ ENTROU (realizado)</div><div class="v" id="k_entrou">—</div><div class="s" id="k_entrou_det"></div><div class="s" style="color:#8a9ab0">operações FECHADAS, dos fills da corretora · sem estimativa</div></div>
+    <div class="kpi" style="border-left:3px solid #4ade80"><div class="l">⬆ ENTROU hoje</div><div class="v pos" id="k_ent">—</div><div class="s" id="k_ent_det"></div></div>
+    <div class="kpi" style="border-left:3px solid #ff6b6b"><div class="l">⬇ SAIU hoje</div><div class="v neg" id="k_sai">—</div><div class="s" id="k_sai_det"></div></div>
+    <div class="kpi"><div class="l">Saldo do dia (fechado)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
+    <div class="kpi" style="border-color:#ffd23f"><div class="l">💰 SALDO REALIZADO (desde o início)</div><div class="v" id="k_entrou">—</div><div class="s" id="k_entrou_det"></div><div class="s" style="color:#8a9ab0">operações FECHADAS, dos fills da corretora · sem estimativa</div></div>
     <div class="kpi"><div class="l">Em aberto agora (estimativa)</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div><div class="s" style="color:#8a9ab0">preço de mercado · só vira dinheiro ao fechar</div><div class="s" id="k_ao_aberto" style="color:#5aa9ff"></div></div>
     <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div><div class="s" id="k_ao_prev" style="color:#5aa9ff"></div></div>
     <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_cr" style="color:#ffd23f"></div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
@@ -239,6 +241,13 @@ async function carregar(){
   // `pnl_hoje` da corretora, que junta o que ja voltou com o que ainda esta no mercado e pode evaporar.
   const gn=p.ganho||{};
   // o cartao 'Hoje' mostra o FECHADO do dia (facto); o aberto tem cartao proprio e o liquido vem na linha de baixo
+  // 12/09: ENTROU e SAIU em cartoes proprios — 'entrou na conta' com numero negativo era contradicao na palavra
+  if(gn.entrou_hoje_usd!=null){
+    document.getElementById('k_ent').textContent=fmt(gn.entrou_hoje_usd)+' US$';
+    document.getElementById('k_ent_det').textContent=(gn.n_entrou_hoje||0)+' posição(ões) fecharam com lucro';
+    document.getElementById('k_sai').textContent=fmt(gn.saiu_hoje_usd)+' US$';
+    document.getElementById('k_sai_det').textContent=(gn.n_saiu_hoje||0)+' fecharam com prejuízo';
+  }
   const vHoje = (gn.realizado_usd!=null)? gn.realizado_usd : c.pnl_hoje;
   set('k_hoje',fmt(vHoje)+' US$',vHoje);
   document.getElementById('k_ganho_det').textContent = (gn.realizado_usd!=null)
@@ -396,6 +405,10 @@ async function aoVivo(){
           `<td class="${(pt.cripto[ch]||0)<0?'neg':'pos'}">${fmt(pt.cripto[ch])}</td>`+
           `<td class="${(pt.total[ch]||0)<0?'neg':'pos'}"><b>${fmt(pt.total[ch])}</b></td></tr>`).join('');
         const dr=document.getElementById('dinheiro_resumo'); if(dr) dr.innerHTML='Começámos com <b>'+fmt(pt.capital_inicial)+' US$</b> · vale agora <b>'+fmt(pt.valor_agora)+' US$</b> ('+fmt(pt.variacao_pct)+'%) · só com o que já entrou: <b>'+fmt(pt.valor_so_realizado)+' US$</b>';}
+      if(v.ganho&&v.ganho.entrou_hoje_usd!=null){const g2=v.ganho;
+        const e1=document.getElementById('k_ent'), e2=document.getElementById('k_sai');
+        if(e1)e1.textContent=fmt(g2.entrou_hoje_usd)+' US$';
+        if(e2)e2.textContent=fmt(g2.saiu_hoje_usd)+' US$';}
       if(v.ganho){const gg=v.ganho; const eH=document.getElementById('k_hoje'); if(eH&&gg.realizado_usd!=null){eH.textContent=fmt(gg.realizado_usd)+' US$';
         const ed=document.getElementById('k_ganho_det'); if(ed)ed.textContent='com a taxa real: '+fmt(gg.liquido_realista_usd)+' US$ · moveu '+fmt(gg.aberto_hoje_usd!=null?gg.aberto_hoje_usd:gg.aberto_usd)+' em aberto (estimativa)';}}
     }catch(e){}
