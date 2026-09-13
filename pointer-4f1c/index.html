@@ -953,7 +953,7 @@ function quadro(ts){ requestAnimationFrame(quadro); const dt=Math.min(0.05,Math.
   if(S.teste>0){ S.teste+=dt; const p=S.teste; if(p<0.45) alvo=S.esc*Math.sin(p/0.45*Math.PI/2); else if(p<1.0){ const u=(p-0.45)/0.55; alvo=S.esc*(1-u)+(S.real||0)*u; } if(p>1.2) S.teste=0; }
   const k=calmo?80:34, am=2*Math.sqrt(k)*(calmo?1:0.86); S.vel+=(k*(alvo-S.val)-am*S.vel)*dt; S.val+=S.vel*dt;
   S.disp+=((S.simOn?S.simValor:(S.real||0))-S.disp)*Math.min(1,dt*8);
-  S.esc+=(S.escAlvo-S.esc)*Math.min(1,dt*3); if(Math.abs(S.esc-S.escAlvo)<S.escAlvo*0.001) S.esc=S.escAlvo;
+  S.esc=S.escAlvo;   // 13/09: um instrumento muda de escala de uma vez — a animar, os numerais passavam por -6.1, -25
   S.ritmoV+=(S.ritmo-S.ritmoV)*Math.min(1,dt*2); S.flash=Math.max(0,S.flash-dt*1.2);
   // 13/09 ("trava demais no mobile"): um instrumento parado não precisa de 60 frames por segundo. Só se redesenha quando
   // algo muda — ponteiro em movimento, cenário, mira, foco, dados novos, escala — e em repouso 1 vez por segundo.
