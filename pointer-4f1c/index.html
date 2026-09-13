@@ -73,8 +73,8 @@
     <div class="kpi" style="border-left:3px solid #ff6b6b"><div class="l">⬇ SAIU hoje</div><div class="v neg" id="k_sai">—</div><div class="s" id="k_sai_det"></div></div>
     <div class="kpi"><div class="l">Saldo do dia (fechado)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
     <div class="kpi" style="border-color:#ffd23f"><div class="l">💰 SALDO REALIZADO (desde o início)</div><div class="v" id="k_entrou">—</div><div class="s" id="k_entrou_det"></div><div class="s" style="color:#8a9ab0">operações FECHADAS, dos fills da corretora · sem estimativa</div></div>
-    <div class="kpi"><div class="l">Em aberto agora (estimativa)</div><div class="v" id="k_aberto">—</div><div class="s" id="k_npos"></div><div class="s" style="color:#8a9ab0">preço de mercado · só vira dinheiro ao fechar</div><div class="s" id="k_ao_aberto" style="color:#5aa9ff"></div></div>
-    <div class="kpi"><div class="l">Ganho esperado (backtest)</div><div class="v ac" id="k_prev">—</div><div class="s">soma das previsões das posições · não é promessa</div><div class="s" id="k_ao_prev" style="color:#5aa9ff"></div></div>
+    <div class="kpi"><div class="l">💵 Se fechasse agora</div><div class="v" id="k_aberto">—</div><div class="s" id="k_aberto_taxa"></div><div class="s" id="k_npos"></div><div class="s" style="color:#8a9ab0">o que entrava na conta se tudo fosse vendido a este preço, já com as taxas · muda com o preço</div><div class="s" id="k_ao_aberto" style="color:#5aa9ff"></div></div>
+    <div class="kpi"><div class="l">🎯 Plano até à saída</div><div class="v" id="k_prev">—</div><div class="s" id="k_prev_alvo"></div><div class="s" id="k_prev_prazo"></div><div class="s" style="color:#8a9ab0">o que o backtest espera no FIM de cada posição, com a taxa real, sobre o dinheiro que entrou · fixo desde a entrada: não mexe com o preço · não é promessa</div><div class="s" id="k_ao_prev" style="color:#5aa9ff"></div></div>
     <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_cr" style="color:#ffd23f"></div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
     <div class="kpi"><div class="l">Real vs backtest</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">positivo = a vida real correu MELHOR que o backtest previa</div><div class="s" id="k_custo_exec" style="color:#8a9ab0"></div></div>
   </section>
@@ -299,10 +299,12 @@ async function carregar(){
   // passou a vir dos fills da corretora. Dois cartoes com o mesmo numero nao informam: confundem.
   // 12/09: o cartao 'Desde o inicio' foi removido (duplicava o saldo realizado) e a referencia ao id ficou
   // para tras. Estava protegida por `if`, mas referencia a elemento que nao existe e divida: sai.
-  set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd);
+  // 13/09: os dois cartoes de posicoes abertas vem do vivo (preco ao vivo + contas de cartoes.py); o gordo so os
+  // preenche enquanto o vivo nao chegou, senao os dois ficheiros escreviam por cima um do outro de minuto a minuto.
+  if(!window.__vivoOk) set('k_aberto',fmt(p.aberto_total_usd)+' US$',p.aberto_total_usd);
   // 12/09: o aberto agora inclui a cripto (accoes + cripto, separados por baixo)
   if(p.aberto_cripto_usd!=null){const eA=document.getElementById('k_npos');if(eA)eA.dataset.cr=p.aberto_cripto_usd;} const ae=p.apostas_efectivas; document.getElementById('k_npos').textContent=p.posicoes.length+' posição(ões) aberta(s)'+(ae&&ae.n>=2?' · '+ae.efectivas.toFixed(1)+' apostas efectivas ('+ae.matriz+')':'');
-  document.getElementById('k_prev').textContent=fmt(p.previsao_total_usd)+' US$';
+  if(!window.__vivoOk) document.getElementById('k_prev').textContent=fmt(p.previsao_total_usd)+' US$';
   // o short entra com valor NEGATIVO em por_papel (e' o sinal da direccao); o capital EMPREGADO e' o modulo.
   const investido=al.em_uso!=null?al.em_uso:Object.values(al.por_papel||{}).reduce((a,b)=>a+Math.abs(b),0);
   document.getElementById('k_aloc').textContent=investido.toFixed(0)+' / '+(al.livre!=null?al.livre.toFixed(0):'—')+' US$'; document.getElementById('k_aloc_s').textContent=Object.entries(al.por_modo||{}).map(([k,v])=>k+' '+v.toFixed(0)).join(' · ')||'nada investido agora';
@@ -441,14 +443,35 @@ async function aoVivo(){
     if(false && c.pnl_hoje!=null){const el=document.getElementById('k_hoje');const antes=el.textContent;
       el.textContent=fmt(c.pnl_hoje)+' US$'; el.className='v '+cls(c.pnl_hoje);
       if(antes!==el.textContent&&ultimoVivo){el.classList.add('piscou');setTimeout(()=>el.classList.remove('piscou'),1200);} }
-    // 12/09: o GANHO ESPERADO tambem e ao vivo (o valor da posicao muda com o preco, logo a previsao muda tambem)
-    if(v.previsao_total_usd!=null){const ep=document.getElementById('k_prev'); if(ep)ep.textContent=fmt(v.previsao_total_usd)+' US$';}
+    // 13/09: DOIS CARTOES, DUAS PERGUNTAS. "Se fechasse agora" muda com o preco; "Plano ate a saida" e fixo desde a
+    // entrada. E o sinal de vida e a hora do PRECO, nao a do ficheiro (o ficheiro era de 11:14 com o preco das 00:00).
+    try{ const fc=v.cartao_fechar, pl=v.cartao_plano, pr=v.precos||{};
+      if(fc){const el=document.getElementById('k_aberto'); el.textContent=fmt(fc.liquido_usd)+' US$'; el.className='v '+cls(fc.liquido_usd);
+        const tx=(fc.taxa_entrada_usd||0)+(fc.taxa_saida_usd||0);
+        document.getElementById('k_aberto_taxa').textContent='preço de mercado '+fmt(fc.bruto_usd)+(tx>0?' · taxas cripto '+fmt(-tx)+' (entrada '+fc.taxa_entrada_usd.toFixed(2)+' · saída '+fc.taxa_saida_usd.toFixed(2)+')':'');
+        window.__vivoOk=true;}
+      const partes=[];
+      if(pr.n_cripto){ if(pr.cripto_t){const ida=Math.round((Date.now()-new Date(pr.cripto_t).getTime())/1000);
+          partes.push((ida>180?'⚠ ':'')+'cripto: preço das '+new Date(pr.cripto_t).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})+' (há '+(ida<120?Math.max(0,ida)+' s':Math.round(ida/60)+' min')+')');}
+        else partes.push('⚠ cripto: sem cotação ao vivo — preço do fecho do dia');}
+      if(pr.n_acoes) partes.push('ações: '+(pr.bolsa_aberta?(pr.acoes_ao_vivo+' de '+pr.n_acoes+' com preço ao vivo'):'bolsa fechada — preço do último fecho'));
+      const ea=document.getElementById('k_ao_aberto'); if(ea){ea.textContent=partes.join(' · '); ea.style.color=partes.some(x=>x.startsWith('⚠'))?'#ff6b6b':'#5aa9ff';}
+      if(pl){const ep=document.getElementById('k_prev'); ep.textContent=pl.n_com_estimativa?fmt(pl.esperado_usd)+' US$':'—'; ep.className='v '+(pl.n_com_estimativa?cls(pl.esperado_usd):'');
+        const hBR=iso=>{try{return new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}};
+        const ps=pl.posicoes||[], cur=s=>String(s||'').replace(/USD$/,'');
+        const al=ps.filter(x=>x.no_alvo_usd!=null);
+        document.getElementById('k_prev_alvo').textContent=al.length?('se o alvo bater: '+fmt(pl.no_alvo_usd)+' US$ já com taxas ('+al.map(x=>cur(x.simbolo)+' falta '+fmt(x.falta_pct)+'%').join(' · ')+')'):'';
+        const pz=ps.filter(x=>x.sai_em), sem=pl.sem_estimativa||[];
+        document.getElementById('k_prev_prazo').textContent=(pz.length?'senão sai por prazo: '+pz.map(x=>cur(x.simbolo)+' '+(String(x.sai_em).length>10?hBR(x.sai_em):x.sai_em)).join(' · '):'')+
+          (sem.length?(pz.length?' · ':'')+sem.length+' sem estimativa ('+sem.map(cur).join(', ')+': sem gene)':'');
+        window.__vivoOk=true;}
+    }catch(e){}
     // SINAL DE VIDA: a hora da ultima leitura em cada cartao que muda. Sem isto, um valor que nao mexe durante uns
     // minutos (porque o preco nao mexeu) parece um painel congelado — e a duvida vale tanto como o erro.
     const hh=(v.t_brt||'').slice(-8);
-    ['k_ao_aberto','k_ao_prev','k_ao_vol'].forEach(id=>{const e=document.getElementById(id); if(e)e.textContent='atualizado '+hh;});
+    ['k_ao_vol'].forEach(id=>{const e=document.getElementById(id); if(e)e.textContent='atualizado '+hh;});
     if(v.aberto_total_usd!=null){const el=document.getElementById('k_aberto');
-      el.textContent=fmt(v.aberto_total_usd)+' US$'; el.className='v '+cls(v.aberto_total_usd);
+      if(!v.cartao_fechar){el.textContent=fmt(v.aberto_total_usd)+' US$'; el.className='v '+cls(v.aberto_total_usd);}
       document.getElementById('k_npos').textContent=(v.posicoes||[]).length+' posição(ões) aberta(s) · preço ao vivo em '+(v.posicoes||[]).filter(x=>x.ao_vivo).length; }
     const dp=dadosP||{nomes:{}};
     if((v.posicoes||[]).length) document.querySelector('#t_pos tbody').innerHTML=v.posicoes.map(x=>{
