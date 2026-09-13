@@ -1155,7 +1155,7 @@ function iniciar(){
   let sujoTam=true; if(window.ResizeObserver) new ResizeObserver(()=>{sujoTam=true;}).observe(palco); addEventListener('resize',()=>{sujoTam=true;});
   function redimensionar(){ if(!sujoTam) return; sujoTam=false; const w=Math.max(200,palco.clientWidth), h=Math.max(160,palco.clientHeight), dpr=Math.min(window.devicePixelRatio||1,[1,1.25,1.75][Q.nivel]);
     renderer.setPixelRatio(dpr); renderer.setSize(w,h,false); composer.setPixelRatio(dpr); composer.setSize(w,h);
-    camera.aspect=w/h; camBase.z=Math.max(4.7,1.45/(Math.tan(THREE.MathUtils.degToRad(16))*camera.aspect)); camera.updateProjectionMatrix(); }
+    camera.aspect=w/h; camBase.z=Math.max(5.3,1.55/(Math.tan(THREE.MathUtils.degToRad(16))*camera.aspect)); camera.updateProjectionMatrix(); }
   function qualidade(dtr){ if(Q.fixo||!(dtr>0)||dtr>0.5) return; Q.ema=Q.ema*0.93+dtr*70;
     if(Q.ema>30){ Q.lento+=dtr; Q.rapido=0; if(Q.lento>1.5&&Q.nivel>0){ Q.nivel--; Q.max=Q.nivel; Q.lento=0; sujoTam=true; } }
     else if(Q.ema<14){ Q.rapido+=dtr; Q.lento=0; if(Q.rapido>6&&Q.nivel<Q.max){ Q.nivel++; Q.rapido=0; sujoTam=true; } } else { Q.lento=0; Q.rapido=0; } }
