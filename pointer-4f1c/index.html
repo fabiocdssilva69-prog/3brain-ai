@@ -48,6 +48,40 @@
 </header>
 <main>
   <style>
+    .medidor{position:relative;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:6px 20px;align-items:center;margin:14px 0 12px;padding:8px 18px 14px;border-radius:16px;
+      background:radial-gradient(90% 120% at 32% 55%,var(--md-glow,rgba(51,209,122,.12)),transparent 62%),linear-gradient(180deg,#0f1622,#0a0f17);border:1px solid var(--line);overflow:hidden;box-shadow:0 0 42px -14px var(--md-glow,transparent)}
+    .md-palco{position:relative;width:100%;aspect-ratio:1.5/1;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+    #md_cv{position:absolute;inset:0;width:100%;height:100%;max-height:none;display:block}
+    .md-l{color:var(--mut);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+    .md-v{font-size:clamp(34px,5.4vw,56px);font-weight:760;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--md-cor,var(--tx));text-shadow:0 0 22px var(--md-glow,transparent);margin:2px 0}
+    .md-s{color:var(--mut);font-size:12.5px;margin-top:3px}
+    .md-leg{display:grid;gap:6px;margin:12px 0 8px;font-size:13px;max-width:380px}
+    .md-leg span{display:flex;align-items:center;gap:9px} .md-leg b{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:650}
+    .md-i{display:inline-block;width:12px;height:12px;flex:none}
+    .md-bola{border-radius:50%;background:var(--md-cor,#3ddc84);box-shadow:0 0 8px var(--md-cor,#3ddc84)}
+    .md-tri{background:#ffd23f;clip-path:polygon(50% 100%,0 0,100% 0)}
+    .md-los{background:#22e1ff;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+    .md-como{color:var(--mut);font-size:11.5px;line-height:1.45;margin-top:8px;max-width:430px} .md-como b{color:var(--tx)}
+    .md-bt{margin-top:10px}
+    @media (max-width:760px){.medidor{grid-template-columns:1fr;padding:6px 12px 14px}.md-palco{aspect-ratio:1.2/1}}
+  </style>
+  <section class="medidor" id="medidor" aria-label="Medidor do dia">
+    <div class="md-palco" id="md_palco"><canvas id="md_cv"></canvas></div>
+    <div class="md-info">
+      <div class="md-l">⚡ O dia agora</div>
+      <div class="md-v" id="md_v">—</div>
+      <div class="md-s" id="md_s">a ligar…</div>
+      <div class="md-leg">
+        <span><i class="md-i md-bola"></i>agora <b id="md_agora">—</b></span>
+        <span><i class="md-i md-tri"></i>esperado (backtest) <b id="md_esp">—</b></span>
+        <span><i class="md-i md-los"></i>se os alvos baterem <b id="md_alvo">—</b></span>
+      </div>
+      <div class="md-s" id="md_fonte"></div>
+      <div class="md-como">O ponteiro e o orbe são o dia <b>agora</b>: o que já fechou hoje (com taxas) mais o que entrava se tudo fechasse neste segundo. Acende <b>verde</b> acima de zero, <b>vermelho</b> abaixo e <b>dourado</b> quando passa do esperado. O ▲ é o que o backtest espera; o ◆ é o dia se as regras de saída acertarem os alvos. Arrasta para girar, toca para sentir.</div>
+      <button type="button" class="chip md-bt" id="md_vib">📳 ligar vibração</button>
+    </div>
+  </section>
+  <style>
     .frase{background:var(--card,#141a26);border:1px solid var(--line,#26304a);border-left:4px solid #ffd23f;border-radius:10px;padding:14px 16px;font-size:16px;line-height:1.5;margin:14px 0 10px}
     .funil{background:var(--card,#141a26);border:1px solid var(--line,#26304a);border-radius:10px;padding:10px 16px 12px;margin:0 0 18px}
     .funil .fr{display:grid;grid-template-columns:170px 1fr 60px;align-items:center;gap:10px;margin:4px 0;font-size:13px}
@@ -73,7 +107,7 @@
     <div class="kpi" style="border-left:3px solid #ff6b6b"><div class="l">⬇ SAIU hoje</div><div class="v neg" id="k_sai">—</div><div class="s" id="k_sai_det"></div></div>
     <div class="kpi"><div class="l">Saldo do dia (fechado)</div><div class="v" id="k_hoje">—</div><div class="s" id="k_ganho_det" style="color:#ffd23f"></div><div class="s" id="k_hoje_pct"></div><div class="s" id="k_hoje_ins" style="color:#8a9ab0"></div><div class="s" id="k_lados"></div></div>
     <div class="kpi" style="border-color:#ffd23f"><div class="l">💰 SALDO REALIZADO (desde o início)</div><div class="v" id="k_entrou">—</div><div class="s" id="k_entrou_det"></div><div class="s" style="color:#8a9ab0">operações FECHADAS, dos fills da corretora · sem estimativa</div></div>
-    <div class="kpi"><div class="l">💵 Se fechasse agora</div><div class="v" id="k_aberto">—</div><div class="s" id="k_aberto_taxa"></div><div class="s" id="k_npos"></div><div class="s" style="color:#8a9ab0">o que entrava na conta se tudo fosse vendido a este preço, já com as taxas · muda com o preço</div><div class="s" id="k_ao_aberto" style="color:#5aa9ff"></div></div>
+    <div class="kpi"><div class="l">💵 Se fechasse agora</div><div class="v" id="k_aberto">—</div><div class="s" id="k_aberto_taxa"></div><div class="s" id="k_aberto_seg" style="color:#33d17a"></div><div class="s" id="k_npos"></div><div class="s" style="color:#8a9ab0">o que entrava na conta se tudo fosse vendido a este preço, já com as taxas · muda com o preço</div><div class="s" id="k_ao_aberto" style="color:#5aa9ff"></div></div>
     <div class="kpi"><div class="l">🎯 Plano até à saída</div><div class="v" id="k_prev">—</div><div class="s" id="k_prev_alvo"></div><div class="s" id="k_prev_prazo"></div><div class="s" style="color:#8a9ab0">o que o backtest espera no FIM de cada posição, com a taxa real, sobre o dinheiro que entrou · fixo desde a entrada: não mexe com o preço · não é promessa</div><div class="s" id="k_ao_prev" style="color:#5aa9ff"></div></div>
     <div class="kpi"><div class="l">Capital investido / livre</div><div class="v" id="k_aloc">—</div><div class="s" id="k_aloc_cr" style="color:#ffd23f"></div><div class="s" id="k_aloc_s"></div><div class="s" id="k_lados_uso"></div></div>
     <div class="kpi"><div class="l">Real vs backtest</div><div class="v" id="k_custo">—</div><div class="s" id="k_custo_s">positivo = a vida real correu MELHOR que o backtest previa</div><div class="s" id="k_custo_exec" style="color:#8a9ab0"></div></div>
@@ -402,6 +436,7 @@ let ultimoVivo=null;
 async function aoVivo(){
   try{
     const v=await fetch('vivo.json?v='+Date.now()).then(r=>r.json());
+    try{ if(window.medidorVivo) window.medidorVivo(v); }catch(e){}   // 13/09: o medidor do dia (e a cripto ao segundo)
     // 12/09: o vivo so mexia em k_hoje/k_aberto/posicoes — os cartoes novos (ganhos, perdas, volatil, o dinheiro)
     // ficavam com o valor do painel gordo, de hora a hora. Agora reaplicam-se aqui, que corre de 5 em 5 min.
     try{ if(v.gv&&v.gv.garantido){ const ga=v.gv.garantido, vo=v.gv.volatil||{};
@@ -446,14 +481,17 @@ async function aoVivo(){
     // 13/09: DOIS CARTOES, DUAS PERGUNTAS. "Se fechasse agora" muda com o preco; "Plano ate a saida" e fixo desde a
     // entrada. E o sinal de vida e a hora do PRECO, nao a do ficheiro (o ficheiro era de 11:14 com o preco das 00:00).
     try{ const fc=v.cartao_fechar, pl=v.cartao_plano, pr=v.precos||{};
-      if(fc){const el=document.getElementById('k_aberto'); el.textContent=fmt(fc.liquido_usd)+' US$'; el.className='v '+cls(fc.liquido_usd);
+      // 13/09: com a Binance ligada o medidor escreve este cartao AO SEGUNDO; aqui nao se pisa esse valor
+      if(fc){const el=document.getElementById('k_aberto'); if(!window.__mdVivo){el.textContent=fmt(fc.liquido_usd)+' US$'; el.className='v '+cls(fc.liquido_usd);}
         const tx=(fc.taxa_entrada_usd||0)+(fc.taxa_saida_usd||0);
         document.getElementById('k_aberto_taxa').textContent='preço de mercado '+fmt(fc.bruto_usd)+(tx>0?' · taxas cripto '+fmt(-tx)+' (entrada '+fc.taxa_entrada_usd.toFixed(2)+' · saída '+fc.taxa_saida_usd.toFixed(2)+')':'');
         window.__vivoOk=true;}
-      const partes=[];
-      if(pr.n_cripto){ if(pr.cripto_t){const ida=Math.round((Date.now()-new Date(pr.cripto_t).getTime())/1000);
-          partes.push((ida>180?'⚠ ':'')+'cripto: preço das '+new Date(pr.cripto_t).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})+' (há '+(ida<120?Math.max(0,ida)+' s':Math.round(ida/60)+' min')+')');}
-        else partes.push('⚠ cripto: sem cotação ao vivo — preço do fecho do dia');}
+      // 13/09 (ele: "não está mudando ao vivo"): medido — a cotação da Alpaca só muda quando o livro mexe (14:32:02
+      // repetida 3 min num domingo calmo). O aviso antigo acusava mercado CALMO como leitura PARADA. Agora separa-os.
+      const partes=[], tLido=new Date(v.t_iso).getTime(), idadeLeitura=(Date.now()-tLido)/1000, hBRT=(ms,o)=>new Date(ms).toLocaleTimeString('pt-BR',Object.assign({timeZone:'America/Sao_Paulo'},o||{}));
+      if(pr.n_cripto){ if(!pr.cripto_t) partes.push('⚠ cripto: sem cotação ao vivo — preço do fecho do dia');
+        else if(idadeLeitura>150) partes.push('⚠ cripto: leitura parada há '+Math.round(idadeLeitura/60)+' min');
+        else { const tq=new Date(pr.cripto_t).getTime(); partes.push('cripto: lido às '+hBRT(tLido)+((tLido-tq)/1000>90?' · preço igual desde '+hBRT(tq,{hour:'2-digit',minute:'2-digit'})+' (ninguém mexeu no livro)':'')); } }
       if(pr.n_acoes) partes.push('ações: '+(pr.bolsa_aberta?(pr.acoes_ao_vivo+' de '+pr.n_acoes+' com preço ao vivo'):'bolsa fechada — preço do último fecho'));
       const ea=document.getElementById('k_ao_aberto'); if(ea){ea.textContent=partes.join(' · '); ea.style.color=partes.some(x=>x.startsWith('⚠'))?'#ff6b6b':'#5aa9ff';}
       if(pl){const ep=document.getElementById('k_prev'); ep.textContent=pl.n_com_estimativa?fmt(pl.esperado_usd)+' US$':'—'; ep.className='v '+(pl.n_com_estimativa?cls(pl.esperado_usd):'');
@@ -484,6 +522,227 @@ async function aoVivo(){
 }
 aoVivo(); setInterval(aoVivo,15000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden){aoVivo();carregar();} });
+</script>
+<script>
+// ==== MEDIDOR DO DIA (13/09/2026). Pedido dele: "um medidor de ganho interativo animado em 3D vivo ... velocímetro,
+// algo que enche, que acende, que pinta ... o ganho esperado pro dia em tempo real somado com o que já foi ganho, com
+// cores e vibrações". Três leituras num aparelho, TODAS do vivo.json:
+//   ponteiro + orbe = o dia AGORA   = fechado hoje (ganho.liquido_realista_usd) + se fechasse agora (cartao_fechar)
+//   ▲ dourado       = o dia ESPERADO = fechado + cartao_plano.esperado_usd + aberto das posições sem estimativa
+//   ◆ ciano         = se os ALVOS baterem = fechado + cartao_plano.no_alvo_usd + aberto das posições sem alvo
+// Entre dois minutos a parte cripto mexe AO SEGUNDO pela Binance, ANCORADA ao preço da Alpaca: só a VARIAÇÃO da
+// Binance entra, nunca o nível dela (as duas bolsas não têm exactamente o mesmo preço).
+(function(){
+  'use strict';
+  const cv=document.getElementById('md_cv'); if(!cv||!cv.getContext) return;
+  const g=cv.getContext('2d'), palco=document.getElementById('md_palco'), secao=document.getElementById('medidor');
+  const $=id=>document.getElementById(id);
+  const calmo=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const TAXA=0.0025, VARRE=Math.PI*0.75, SEG=64, INCL=-0.38;
+  const sgn=x=>(x>=0?'+':'−')+Math.abs(x).toFixed(2);
+  const S={fech:null,abBase:0,esp:null,alvos:null,cr:{},nAcoes:0,bolsa:false,alvo:null,val:0,vel:0,disp:0,esc:6,escAlvo:6,
+    onda:0,pulsos:[],parts:[],treme:0,rx:INCL,ry:0,trx:INCL,try_:0,ox:0,oy:0,apont:false,giro:null,vib:false,ultVib:0,
+    balde:null,sinal:null,acima:null,ultTick:0,visivel:true,t:0,corTxt:0,txt:0,orb:null};
+  try{S.vib=localStorage.getItem('md_vib')==='1';}catch(e){}
+
+  // ---------- geometria ----------
+  const W={w:300,h:200,cx:150,cy:120,R:80,r:60,D:14,foco:340,dpr:1};
+  function medir(){ const b=palco.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1);
+    W.w=Math.max(220,b.width); W.h=Math.max(160,b.height); W.dpr=dpr; cv.width=Math.round(W.w*dpr); cv.height=Math.round(W.h*dpr);
+    W.R=Math.min(W.w*0.39,W.h*0.50); W.r=W.R*0.76; W.D=W.R*0.17; W.cx=W.w/2; W.cy=W.h*0.60; W.foco=W.R*4.2; }
+  medir(); if(window.ResizeObserver) new ResizeObserver(medir).observe(palco); else addEventListener('resize',medir);
+  function rot(x,y,z){ const cx=Math.cos(S.rx),sx=Math.sin(S.rx),cy=Math.cos(S.ry),sy=Math.sin(S.ry);
+    const y1=y*cx-z*sx, z1=y*sx+z*cx; return [x*cy+z1*sy, y1, -x*sy+z1*cy]; }
+  function P(x,y,z){ const q=rot(x,y,z); const f=W.foco/(W.foco-q[2]); return [W.cx+q[0]*f+S.ox, W.cy-q[1]*f+S.oy, q[2], f]; }
+  const LUZ=(()=>{const l=[-0.35,0.55,0.76],n=Math.hypot(l[0],l[1],l[2]);return l.map(v=>v/n);})();
+  function luz(nx,ny,nz){ const q=rot(nx,ny,nz); return {vis:q[2]>0.02, b:0.34+0.66*Math.max(0,q[0]*LUZ[0]+q[1]*LUZ[1]+q[2]*LUZ[2])}; }
+  const ang=v=>Math.PI/2-(v/S.esc)*VARRE;
+
+  // ---------- cores ----------
+  const VERDE=[61,220,132],CIANO=[34,225,255],LARANJA=[255,159,67],VERM=[255,59,92],OURO=[255,210,63],APAG=[30,41,58];
+  const mix=(a,b,t)=>a.map((v,i)=>Math.round(v+(b[i]-v)*t));
+  const rgba=(c,a)=>'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';
+  function corDe(v){ const k=Math.min(1,Math.abs(v)/Math.max(1e-9,S.esc));
+    if(v>=0) return (S.esp!=null&&S.esp>0&&v>S.esp)?mix(VERDE,OURO,Math.min(1,0.45+k)):mix(VERDE,CIANO,k*0.8);
+    return mix(LARANJA,VERM,Math.min(1,0.3+k)); }
+
+  // ---------- desenho ----------
+  function anel(t){
+    const polys=[], R=W.R, r=W.r, D=W.D, vv=Math.max(-S.esc,Math.min(S.esc,S.val));
+    for(let i=0;i<SEG;i++){
+      const va=-S.esc+2*S.esc*i/SEG, vb=-S.esc+2*S.esc*(i+1)/SEG, vm=(va+vb)/2, perto=Math.abs(va)<Math.abs(vb)?va:vb;
+      const lit=vv>=0?(vm>0&&perto<vv):(vm<0&&perto>vv);
+      const cor=lit?corDe(vm):APAG, bri=lit?(0.86+0.14*Math.sin(t*3.2-i*0.28)):1;
+      const a=ang(va), b=ang(vb), ca=Math.cos(a), sa=Math.sin(a), cb=Math.cos(b), sb=Math.sin(b), cm=Math.cos((a+b)/2), sm=Math.sin((a+b)/2);
+      const faces=[[[0,0,1],[[r*ca,r*sa,0],[R*ca,R*sa,0],[R*cb,R*sb,0],[r*cb,r*sb,0]],1],
+        [[cm,sm,0],[[R*ca,R*sa,0],[R*cb,R*sb,0],[R*cb,R*sb,-D],[R*ca,R*sa,-D]],0.78],
+        [[-cm,-sm,0],[[r*ca,r*sa,0],[r*cb,r*sb,0],[r*cb,r*sb,-D],[r*ca,r*sa,-D]],0.78],
+        [[0,0,-1],[[r*ca,r*sa,-D],[R*ca,R*sa,-D],[R*cb,R*sb,-D],[r*cb,r*sb,-D]],0.5]];
+      for(const f of faces){ const lz=luz(f[0][0],f[0][1],f[0][2]); if(!lz.vis) continue;
+        const pp=f[1].map(q=>P(q[0],q[1],q[2])); polys.push({pp,z:(pp[0][2]+pp[1][2]+pp[2][2]+pp[3][2])/4,cor,k:lz.b*f[2]*bri,lit}); }
+    }
+    for(const [th,sg] of [[ang(-S.esc),1],[ang(S.esc),-1]]){ const c=Math.cos(th), s=Math.sin(th), lz=luz(-s*sg,c*sg,0);
+      if(!lz.vis) continue; const pp=[[r*c,r*s,0],[R*c,R*s,0],[R*c,R*s,-D],[r*c,r*s,-D]].map(q=>P(q[0],q[1],q[2]));
+      polys.push({pp,z:(pp[0][2]+pp[2][2])/2,cor:APAG,k:lz.b*0.7,lit:false}); }
+    polys.sort((A,B)=>A.z-B.z);
+    for(const q of polys){ g.beginPath(); g.moveTo(q.pp[0][0],q.pp[0][1]); for(let j=1;j<4;j++) g.lineTo(q.pp[j][0],q.pp[j][1]); g.closePath();
+      const c=q.cor.map(v=>Math.min(255,Math.round(v*q.k*(q.lit?1.12:1)))); g.fillStyle=rgba(c,1); g.fill(); g.strokeStyle=rgba(c,q.lit?0.95:0.5); g.lineWidth=0.7; g.stroke(); }
+  }
+  function brilhoAceso(t){ const vv=Math.max(-S.esc,Math.min(S.esc,S.val)); if(Math.abs(vv)<S.esc*0.004) return;
+    const k=Math.min(1,Math.abs(vv)/S.esc), c=corDe(vv), rm=(W.R+W.r)/2, n=48, p0=P(0,rm,1);
+    g.save(); g.globalCompositeOperation='lighter'; g.lineCap='round'; g.shadowColor=rgba(c,0.9); g.shadowBlur=12+34*k*(0.8+0.2*Math.sin(t*4));
+    g.strokeStyle=rgba(c,0.22+0.3*k); g.lineWidth=(W.R-W.r)*p0[3]*0.5; g.beginPath();
+    for(let i=0;i<=n;i++){ const a=ang(vv*i/n), p=P(rm*Math.cos(a),rm*Math.sin(a),1); if(i) g.lineTo(p[0],p[1]); else g.moveTo(p[0],p[1]); }
+    g.stroke(); g.restore(); }
+  const fEsc=x=>x>=10?x.toFixed(0):(x>=1?String(Math.round(x*10)/10):x.toFixed(2));
+  function marcas(){ g.save(); g.font='600 '+Math.max(10,Math.round(W.R*0.075))+'px system-ui,sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+    for(let i=-4;i<=4;i++){ const v=S.esc*i/4, a=ang(v), ca=Math.cos(a), sa=Math.sin(a), p1=P(W.R*1.02*ca,W.R*1.02*sa,0), p2=P(W.R*1.09*ca,W.R*1.09*sa,0);
+      g.strokeStyle=i===0?'rgba(232,238,245,.85)':'rgba(138,154,176,.55)'; g.lineWidth=i%2===0?2:1; g.beginPath(); g.moveTo(p1[0],p1[1]); g.lineTo(p2[0],p2[1]); g.stroke();
+      if(i%2===0){ const p=P(W.R*1.21*ca,W.R*1.21*sa,0); g.fillStyle=i===0?'#e8eef5':'#8a9ab0'; g.fillText((v>0?'+':v<0?'−':'')+fEsc(Math.abs(v)),p[0],p[1]); } }
+    g.restore(); }
+  function marcador(v,cor,forma,t){ if(v==null) return; const vc=Math.max(-S.esc,Math.min(S.esc,v)), a=ang(vc), ca=Math.cos(a), sa=Math.sin(a);
+    const o=P(W.R*1.04*ca,W.R*1.04*sa,2.5), i2=P(W.r*0.98*ca,W.r*0.98*sa,2.5), ext=P(W.R*1.12*ca,W.R*1.12*sa,2.5), c0=P(0,0,2.5);
+    g.save(); g.shadowColor=cor; g.shadowBlur=9+5*Math.sin(t*2.5); g.strokeStyle=cor; g.lineWidth=2; g.setLineDash([4,3]);
+    g.beginPath(); g.moveTo(o[0],o[1]); g.lineTo(i2[0],i2[1]); g.stroke(); g.setLineDash([]);
+    let dx=ext[0]-c0[0], dy=ext[1]-c0[1]; const m=Math.hypot(dx,dy)||1; dx/=m; dy/=m; const s=Math.max(6,W.R*0.055), nx=-dy, ny=dx;
+    g.fillStyle=cor; g.beginPath();
+    if(forma==='tri'){ g.moveTo(ext[0],ext[1]); g.lineTo(ext[0]+dx*s*1.3+nx*s*0.75,ext[1]+dy*s*1.3+ny*s*0.75); g.lineTo(ext[0]+dx*s*1.3-nx*s*0.75,ext[1]+dy*s*1.3-ny*s*0.75); }
+    else { const bx=ext[0]+dx*s*0.9, by=ext[1]+dy*s*0.9; g.moveTo(bx-dx*s*0.9,by-dy*s*0.9); g.lineTo(bx+nx*s*0.62,by+ny*s*0.62); g.lineTo(bx+dx*s*0.9,by+dy*s*0.9); g.lineTo(bx-nx*s*0.62,by-ny*s*0.62); }
+    g.closePath(); g.fill(); g.restore(); }
+  function ponteiro(){ const v=Math.max(-S.esc*1.05,Math.min(S.esc*1.05,S.val)), a=ang(v), ca=Math.cos(a), sa=Math.sin(a), px=-sa, py=ca;
+    const lg=W.R*0.045, zN=W.D*0.55, raiz=W.R*0.2, ponta=W.r*0.95, zs=-W.D*0.25;
+    const tip=P(ponta*ca,ponta*sa,zN), l=P(raiz*ca+px*lg,raiz*sa+py*lg,zN), rr=P(raiz*ca-px*lg,raiz*sa-py*lg,zN), cauda=P(-raiz*0.55*ca,-raiz*0.55*sa,zN);
+    const st=P(ponta*ca,ponta*sa,zs), sl=P(raiz*ca+px*lg,raiz*sa+py*lg,zs), sr=P(raiz*ca-px*lg,raiz*sa-py*lg,zs);
+    g.fillStyle='rgba(0,0,0,.38)'; g.beginPath(); g.moveTo(st[0],st[1]); g.lineTo(sl[0],sl[1]); g.lineTo(sr[0],sr[1]); g.closePath(); g.fill();
+    const c=corDe(S.val), gr=g.createLinearGradient(cauda[0],cauda[1],tip[0],tip[1]); gr.addColorStop(0,'#e8eef5'); gr.addColorStop(1,rgba(c,1));
+    g.save(); g.shadowColor=rgba(c,0.9); g.shadowBlur=12; g.fillStyle=gr; g.beginPath(); g.moveTo(tip[0],tip[1]); g.lineTo(l[0],l[1]); g.lineTo(cauda[0],cauda[1]); g.lineTo(rr[0],rr[1]); g.closePath(); g.fill(); g.restore(); }
+  function orbe(t){ const c0=P(0,0,W.D*0.6), ro=W.R*0.30*c0[3], x=c0[0], y=c0[1];
+    const k=Math.min(1,Math.abs(S.val)/S.esc), c=corDe(S.val), enche=0.5+0.5*Math.max(-1,Math.min(1,S.val/S.esc));
+    g.save(); g.shadowColor=rgba(c,0.95); g.shadowBlur=16+52*k*(0.85+0.15*Math.sin(t*3)); g.fillStyle='#090e17'; g.beginPath(); g.arc(x,y,ro,0,Math.PI*2); g.fill(); g.restore();
+    g.save(); g.beginPath(); g.arc(x,y,ro*0.94,0,Math.PI*2); g.clip();
+    const nivel=y+ro-2*ro*enche, amp=ro*(0.025+0.09*Math.min(1,S.onda));
+    for(const [cam,alfa,fase,vel] of [[0,0.5,0,2.1],[1,0.92,1.7,-2.9]]){
+      g.beginPath(); g.moveTo(x-ro,y+ro);
+      for(let i=0;i<=30;i++){ const u=i/30*Math.PI*2; g.lineTo(x-ro+2*ro*i/30, nivel+cam*ro*0.045+Math.sin(u*1.5+t*vel+fase)*amp+Math.sin(u*3.2-t*vel*1.3)*amp*0.35); }
+      g.lineTo(x+ro,y+ro); g.closePath(); const lgr=g.createLinearGradient(0,nivel-ro*0.2,0,y+ro);
+      lgr.addColorStop(0,rgba(c,alfa)); lgr.addColorStop(1,rgba(mix(c,[5,10,20],0.6),alfa)); g.fillStyle=lgr; g.fill(); }
+    for(const b of S.parts){ if(b.tipo!=='bolha') continue; g.fillStyle='rgba(255,255,255,'+(0.4*b.vida).toFixed(3)+')'; g.beginPath(); g.arc(x+b.x*ro,y+b.y*ro,Math.max(0.8,b.r*ro),0,Math.PI*2); g.fill(); }
+    g.strokeStyle='rgba(232,238,245,.16)'; g.lineWidth=1; g.beginPath(); g.moveTo(x-ro,y); g.lineTo(x+ro,y); g.stroke();
+    g.restore();
+    const hl=g.createRadialGradient(x-ro*0.35,y-ro*0.45,ro*0.05,x-ro*0.2,y-ro*0.3,ro*0.95);
+    hl.addColorStop(0,'rgba(255,255,255,.42)'); hl.addColorStop(0.35,'rgba(255,255,255,.06)'); hl.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=hl; g.beginPath(); g.arc(x,y,ro,0,Math.PI*2); g.fill();
+    g.strokeStyle=rgba(c,0.5+0.45*k); g.lineWidth=Math.max(1.5,ro*0.06); g.beginPath(); g.arc(x,y,ro,0,Math.PI*2); g.stroke();
+    return {x,y,ro}; }
+  function pulso(sinal,forca){ S.pulsos.push({t:0,sinal,forca}); if(S.pulsos.length>8) S.pulsos.shift(); }
+  function pulsos(dt){ for(const p of S.pulsos){ p.t+=dt/1.3; const a=(1-p.t)*0.55*p.forca; if(a<=0) continue; const rad=W.R*(0.3+1.1*p.t), c=p.sinal>=0?VERDE:VERM;
+      g.strokeStyle=rgba(c,a.toFixed(3)); g.lineWidth=2+4*(1-p.t); g.beginPath();
+      for(let i=0;i<=48;i++){ const th=i/48*Math.PI*2, q=P(rad*Math.cos(th),rad*Math.sin(th),-W.D*0.5); if(i) g.lineTo(q[0],q[1]); else g.moveTo(q[0],q[1]); }
+      g.stroke(); }
+    S.pulsos=S.pulsos.filter(p=>p.t<1); }
+  function explosao(sinal,forca){ const o=S.orb||{x:W.cx,y:W.cy}, n=calmo?10:Math.round(30+60*forca), cs=sinal>0?[OURO,VERDE,CIANO]:[VERM,LARANJA];
+    for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, v=120+Math.random()*320*(0.5+forca);
+      S.parts.push({tipo:'faisca',x:o.x,y:o.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-(sinal>0?140:0),vida:1,r:1.5+Math.random()*2.5,cor:cs[i%cs.length]}); }
+    pulso(sinal,1); }
+  function particulas(dt){
+    const ritmo=0.6+Math.min(12,Math.abs(S.vel)*40);
+    if(Math.random()<ritmo*dt) S.parts.push({tipo:'bolha',x:(Math.random()-0.5)*1.3,y:S.vel>=0?0.88:-0.88,vy:(S.vel>=0?-1:1)*(0.25+Math.random()*0.35),r:0.02+Math.random()*0.04,vida:1});
+    for(const p of S.parts){
+      if(p.tipo==='bolha'){ p.y+=p.vy*dt; p.x+=Math.sin(p.y*9)*0.1*dt; p.vida-=dt*0.5; if(Math.hypot(p.x,p.y)>0.95) p.vida=0; }
+      else { p.vx*=Math.pow(0.4,dt); p.vy=p.vy*Math.pow(0.4,dt)+220*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vida-=dt*0.75;
+        g.fillStyle=rgba(p.cor,Math.max(0,p.vida).toFixed(3)); g.beginPath(); g.arc(p.x,p.y,p.r,0,Math.PI*2); g.fill(); } }
+    S.parts=S.parts.filter(p=>p.vida>0).slice(-260); }
+
+  // ---------- vibração e eventos ----------
+  function vibrar(p,forcar){ if(!S.vib||!navigator.vibrate) return; const t=performance.now(); if(!forcar&&t-S.ultVib<350) return; S.ultVib=t; try{navigator.vibrate(p);}catch(e){} }
+  function hapticos(v){
+    const passo=Math.max(0.05,S.escAlvo/60), pos=v/passo;
+    if(S.balde==null) S.balde=Math.round(pos);
+    else if(Math.abs(pos-S.balde)>=1){ const sobe=pos>S.balde; S.balde=Math.round(pos); vibrar(sobe?12:[8,50,8]); S.treme=Math.max(S.treme,0.25); }
+    const sinal=v>=0; if(S.sinal!=null&&sinal!==S.sinal){ vibrar([70,40,70]); pulso(sinal?1:-1,1); S.treme=1; } S.sinal=sinal;
+    if(S.esp!=null){ const ac=v>=S.esp; if(S.acima!=null&&ac!==S.acima){ vibrar(ac?[30,40,30,40,60]:[120]); pulso(ac?1:-1,0.8); S.treme=Math.max(S.treme,0.6); } S.acima=ac; } }
+
+  // ---------- dados: vivo.json (minuto) + Binance (segundo) ----------
+  const escala=x=>{ const p=Math.pow(10,Math.floor(Math.log10(x))); for(const k of [1,1.5,2,2.5,3,4,5,6,8,10]) if(k*p>=x) return k*p; return 10*p; };
+  function abertoVivo(){ let d=0,n=0; for(const s in S.cr){ const c=S.cr[s]; if(c.bin!=null&&c.basis!=null){ d+=c.qty*((c.bin+c.basis)-c.agora)*(1-TAXA); n++; } } return {v:S.abBase+d,n}; }
+  function textos(a){
+    const put=(id,x)=>{const e=$(id); if(e) e.textContent=x==null?'—':sgn(x)+' US$';};
+    put('md_agora',S.alvo); put('md_esp',S.esp); put('md_alvo',S.alvos);
+    const s=$('md_s'); if(s) s.textContent='fechado hoje '+sgn(S.fech)+' US$ (já com taxas) + se fechasse agora '+sgn(a.v)+' US$';
+    const fonte=[], nCr=Object.keys(S.cr).length;
+    if(nCr) fonte.push(a.n?('⚡ cripto ao segundo pela Binance · último negócio há '+Math.max(0,Math.round((Date.now()-S.ultTick)/1000))+' s'):'cripto ao minuto (a ligar à Binance…)');
+    if(S.nAcoes) fonte.push(S.bolsa?'ações ao minuto':'ações: bolsa fechada');
+    const fe=$('md_fonte'); if(fe) fe.textContent=fonte.join(' · ');
+    if(a.n){ const el=$('k_aberto'); if(el){ el.textContent=(typeof fmt==='function'?fmt(a.v):sgn(a.v))+' US$'; el.className='v '+(typeof cls==='function'?cls(a.v):(a.v>=0?'up':'dn')); }
+      const e2=$('k_aberto_seg'); if(e2) e2.textContent='⚡ mexe ao segundo (Binance, ancorada ao preço da Alpaca)'; window.__mdVivo=true; } }
+  function recalcular(){ if(S.fech==null) return; const a=abertoVivo(), novo=S.fech+a.v, antes=S.alvo; S.alvo=novo;
+    S.escAlvo=escala(Math.max(4,Math.abs(novo),Math.abs(S.esp||0),Math.abs(S.alvos||0))*1.2);
+    if(antes!=null){ const d=novo-antes; if(Math.abs(d)>=0.01){ S.onda=Math.min(1.6,S.onda+Math.min(1,Math.abs(d)*4)); if(Math.abs(d)>=0.08) pulso(d>0?1:-1,Math.min(1,Math.abs(d)*2)); } }
+    hapticos(novo); textos(a); }
+  let ws=null, wsFalhas=0, pollT=null, rq=false;
+  function tick(s,p){ const c=S.cr[s]; if(!c||!(p>0)) return; if(c.basis==null) c.basis=c.agora-p; c.bin=p; S.ultTick=Date.now();
+    if(!rq){ rq=true; setTimeout(()=>{rq=false; recalcular();},250); } }
+  function iniciarPoll(){ if(pollT) return; const f=async()=>{ for(const s of Object.keys(S.cr)){ try{ const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol='+s.replace(/USD$/,'USDT')); const j=await r.json(); if(j&&j.price) tick(s,Number(j.price)); }catch(e){} } };
+    f(); pollT=setInterval(f,3000); }
+  function ligarBinance(){
+    try{ if(ws){ ws.onclose=null; ws.close(); } }catch(e){} ws=null;
+    const syms=Object.keys(S.cr); if(!syms.length||pollT) return;
+    try{ ws=new WebSocket('wss://stream.binance.com:9443/stream?streams='+syms.map(s=>s.replace(/USD$/,'USDT').toLowerCase()+'@aggTrade').join('/'));
+      ws.onopen=()=>{wsFalhas=0;};
+      ws.onmessage=ev=>{ try{ const m=JSON.parse(ev.data), d=m.data||m; tick(String(d.s||'').replace(/USDT$/,'USD'),Number(d.p)); }catch(e){} };
+      ws.onclose=()=>{ ws=null; wsFalhas++; if(wsFalhas>=3) iniciarPoll(); else setTimeout(ligarBinance,1500*wsFalhas); };
+      ws.onerror=()=>{ try{ws.close();}catch(e){} };
+    }catch(e){ iniciarPoll(); } }
+  window.medidorVivo=function(v){ try{
+    const gn=v.ganho||{}, fc=v.cartao_fechar||{}, pl=v.cartao_plano||{}, pos=v.posicoes||[];
+    const fech=Number(gn.liquido_realista_usd!=null?gn.liquido_realista_usd:(gn.realizado_usd||0));
+    const pnl={}; pos.forEach(p=>{pnl[p.simbolo]=Number(p.pnl_aberto_usd||0);});
+    const novo={}; pos.filter(p=>p.cripto&&p.qty).forEach(p=>{ const s=String(p.simbolo), ant=S.cr[s]||{};
+      novo[s]={qty:Number(p.qty),agora:Number(p.agora),bin:ant.bin,basis:ant.bin!=null?Number(p.agora)-ant.bin:null}; });
+    const mudou=Object.keys(novo).sort().join()!==Object.keys(S.cr).sort().join();
+    S.cr=novo; S.abBase=Number(fc.liquido_usd!=null?fc.liquido_usd:(v.aberto_total_usd||0));
+    S.nAcoes=pos.filter(p=>!p.cripto).length; S.bolsa=!!(v.precos||{}).bolsa_aberta;
+    if(S.fech!=null&&fech>S.fech+0.005){ vibrar([80,60,160],true); explosao(1,Math.min(1,(fech-S.fech)/5)); S.treme=1.2; }
+    else if(S.fech!=null&&fech<S.fech-0.005){ vibrar([220],true); explosao(-1,Math.min(1,(S.fech-fech)/5)); S.treme=1.2; }
+    S.fech=fech;
+    const sem=pl.sem_estimativa||[], semAlvo=(pl.posicoes||[]).filter(x=>x.no_alvo_usd==null).map(x=>x.simbolo);
+    S.esp=pl.posicoes?fech+Number(pl.esperado_usd||0)+sem.reduce((s,k)=>s+(pnl[k]||0),0):null;
+    S.alvos=pl.n_com_alvo?fech+Number(pl.no_alvo_usd||0)+semAlvo.reduce((s,k)=>s+(pnl[k]||0),0):null;
+    if(mudou) ligarBinance();
+    recalcular();
+  }catch(e){} };
+
+  // ---------- interacção ----------
+  palco.addEventListener('pointermove',e=>{ const b=palco.getBoundingClientRect(); S.apont=true; S.try_=((e.clientX-b.left)/b.width-0.5)*0.9; S.trx=INCL+((e.clientY-b.top)/b.height-0.5)*0.6; });
+  palco.addEventListener('pointerleave',()=>{S.apont=false;});
+  palco.addEventListener('pointerdown',()=>{ pulso(S.val>=0?1:-1,0.8); S.treme=Math.max(S.treme,0.5); vibrar(18,true); });
+  window.addEventListener('deviceorientation',e=>{ if(e.beta==null||e.gamma==null) return; S.giro={b:Math.max(-0.35,Math.min(0.35,(e.beta-45)/120)),g:Math.max(-0.5,Math.min(0.5,e.gamma/70))}; });
+  const bt=$('md_vib');
+  function rotuloVib(){ if(!bt) return; bt.textContent=!navigator.vibrate?'📳 este aparelho não vibra pelo navegador (o iPhone não deixa) — fica o tremor no ecrã':(S.vib?'📳 vibração ligada':'📳 ligar vibração'); bt.classList.toggle('on',S.vib); }
+  if(bt) bt.addEventListener('click',()=>{ S.vib=!S.vib; try{localStorage.setItem('md_vib',S.vib?'1':'0');}catch(e){} if(S.vib) vibrar([30,40,60],true);
+    try{ if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function') DeviceOrientationEvent.requestPermission().catch(()=>{}); }catch(e){}
+    rotuloVib(); });
+  rotuloVib();
+  if(window.IntersectionObserver) new IntersectionObserver(es=>{S.visivel=es[0].isIntersecting;}).observe(secao);
+
+  // ---------- ciclo ----------
+  let tAnt=performance.now();
+  function quadro(agora){ requestAnimationFrame(quadro); const dt=Math.min(0.05,Math.max(0,(agora-tAnt)/1000)); tAnt=agora;
+    if(!S.visivel||document.hidden) return; S.t+=dt; const t=S.t;
+    const alvo=S.alvo==null?0:S.alvo, k=38, amort=calmo?2*Math.sqrt(k):5.2;
+    S.vel+=(k*(alvo-S.val)-amort*S.vel)*dt; S.val+=S.vel*dt; S.disp+=(alvo-S.disp)*Math.min(1,dt*5);
+    S.esc+=(S.escAlvo-S.esc)*Math.min(1,dt*3); S.onda=Math.min(1.6,S.onda*Math.exp(-dt*0.7)+Math.abs(S.vel)*dt*2);
+    if(!S.apont){ if(S.giro){ S.trx=INCL+S.giro.b; S.try_=S.giro.g; } else if(!calmo){ S.trx=INCL+Math.sin(t*0.6)*0.05; S.try_=Math.sin(t*0.43)*0.16; } else { S.trx=INCL; S.try_=0; } }
+    S.rx+=(S.trx-S.rx)*Math.min(1,dt*5); S.ry+=(S.try_-S.ry)*Math.min(1,dt*5);
+    S.treme*=Math.exp(-dt*4); const tr=calmo?0:S.treme*W.R*0.035; S.ox=(Math.random()-0.5)*tr; S.oy=(Math.random()-0.5)*tr;
+    g.setTransform(W.dpr,0,0,W.dpr,0,0); g.clearRect(0,0,W.w,W.h);
+    pulsos(dt); anel(t); brilhoAceso(t); marcas(); marcador(S.alvos,'#22e1ff','los',t); marcador(S.esp,'#ffd23f','tri',t); ponteiro();
+    S.orb=orbe(t); particulas(dt);
+    const ev=$('md_v'); if(ev) ev.textContent=S.alvo==null?'—':sgn(S.disp)+' US$';
+    S.corTxt-=dt; if(S.corTxt<=0){ S.corTxt=0.2; const cc=corDe(S.val), kk=Math.min(1,Math.abs(S.val)/S.esc); secao.style.setProperty('--md-cor',rgba(cc,1)); secao.style.setProperty('--md-glow',rgba(cc,(0.18+0.45*kk).toFixed(3))); }
+    S.txt-=dt; if(S.txt<=0){ S.txt=1; if(S.fech!=null) textos(abertoVivo()); } }
+  requestAnimationFrame(quadro);
+})();
 </script>
 </body>
 </html>
