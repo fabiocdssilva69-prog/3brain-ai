@@ -70,7 +70,7 @@
     .ins-r i{font:400 10.5px "JetBrains Mono",monospace;color:var(--d);font-style:normal;margin-left:6px}
     .ins-r.big{padding:6px 0 7px} .ins-r.big b{font-size:22px;font-weight:600;letter-spacing:-.01em}
     .ins-k{display:inline-block;width:9px;height:2px;vertical-align:middle;margin-right:7px;position:relative;top:-2px}
-    .ins-bar{position:relative;height:3px;background:var(--l);border-radius:2px;overflow:hidden;margin:2px 0 6px} .ins-bar i{position:absolute;top:0;bottom:0;left:0;width:0;transition:width .6s,left .6s}
+    .ins-bar{position:relative;height:3px;background:var(--l);border-radius:2px;overflow:hidden;margin:2px 0 6px} .ins-bar i{position:absolute;top:0;bottom:0;left:0;width:0}
     .ins-sep{height:10px}
     .ins-dial{display:flex;flex-direction:column;align-items:center;padding:10px 12px 12px}
     .ins-palco{position:relative;width:100%;max-width:470px;aspect-ratio:1/1;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;outline:none}
@@ -620,6 +620,7 @@ const cv=document.getElementById('md_cv'); if(!cv||!cv.getContext) return;
 const g=cv.getContext('2d'), palco=document.getElementById('md_palco'), secao=document.getElementById('medidor'), dica=document.getElementById('md_tip');
 const $=id=>document.getElementById(id);
 const calmo=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+const telemovel=!!(window.matchMedia&&matchMedia('(pointer: coarse)').matches);   // 13/09: o telemóvel trava com DOM a 4 Hz e redesenho a cada preço
 const TAXA=0.0025, PI2=Math.PI*2, VARRE=Math.PI*0.75;
 const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
 const sgn=(x,c)=>(x>=0?'+':'−')+Math.abs(x).toFixed(c==null?2:c);
@@ -645,13 +646,13 @@ const S={fech:null,pos:[],cr:{},plano:null,alvoPor:{},nAcoes:0,bolsa:false,esp:n
 // ---------- geometria ----------
 const W={s:400,dpr:1,c:200,R:160}; let forcar=true, ultDesenho=0;
 const base=document.createElement('canvas'), gb=base.getContext('2d'); let baseChave='';
-function medir(){ const b=palco.getBoundingClientRect(), s=Math.max(220,Math.round(b.width)), dpr=Math.min(2,window.devicePixelRatio||1);
+function medir(){ const b=palco.getBoundingClientRect(), s=Math.max(220,Math.round(b.width)), dpr=Math.min(telemovel?1.5:2,window.devicePixelRatio||1);
   W.s=s; W.dpr=dpr; W.c=s/2; W.R=s*0.42; const px=Math.round(s*dpr); if(cv.width!==px){ cv.width=cv.height=px; base.width=base.height=px; } baseChave=''; forcar=true; }
 medir(); if(window.ResizeObserver) new ResizeObserver(medir).observe(palco); else addEventListener('resize',medir);
 const ang=(v,esc)=>-Math.PI/2+(v/esc)*VARRE;
 const angSub=u=>-Math.PI/2+u*(2*Math.PI/3);
 const P=(r,a)=>[W.c+r*Math.cos(a),W.c+r*Math.sin(a)];
-const SUBS=[{id:'ritmo',dx:-0.44,dy:0.1,tit:'RITMO · US$/h'},{id:'capital',dx:0.44,dy:0.1,tit:'CAPITAL · %'},{id:'meta',dx:0,dy:0.5,tit:'META · %'}];
+const SUBS=[{id:'ritmo',dx:-0.44,dy:0.1,tit:'RITMO'},{id:'capital',dx:0.44,dy:0.1,tit:'CAPITAL'},{id:'meta',dx:0,dy:0.5,tit:'META'}];
 const SUB_R=0.2;
 function caixa(x,a,b,w,h,r){ x.beginPath(); x.moveTo(a+r,b); x.arcTo(a+w,b,a+w,b+h,r); x.arcTo(a+w,b+h,a,b+h,r); x.arcTo(a,b+h,a,b,r); x.arcTo(a,b,a+w,b,r); x.closePath(); }
 function espacado(x,txt,px,py,sp){ if('letterSpacing' in x){ x.letterSpacing=sp+'px'; x.fillText(txt,px,py); x.letterSpacing='0px'; } else x.fillText(txt,px,py); }
@@ -766,7 +767,7 @@ function recalcular(){ if(S.fech==null) return; const novo=diaCom(0); S.real=nov
   S.escAlvo=escala(Math.max(4,Math.abs(novo),Math.abs(S.esp||0),Math.abs(S.alvos||0),Math.abs(S.meta||0),Math.abs(S.pico||0),Math.abs(S.vale||0),Math.abs(S.limite||0))*1.12);
   amostra(novo); cruzamentos(novo); forcar=true; }
 let ws=null, wsFalhas=0, pollT=null, rq=false, chaveWs='';
-function tick(s,p,b,a){ const c=S.cr[s]; if(!c||!(p>0)) return; if(c.basis==null) c.basis=c.agora-p; c.bin=p; if(b>0&&a>0) S.spread[s]=(a/b-1)*1e4; S.ultTick=Date.now(); if(!rq){ rq=true; setTimeout(()=>{rq=false; recalcular();},200); } }
+function tick(s,p,b,a){ const c=S.cr[s]; if(!c||!(p>0)) return; if(c.basis==null) c.basis=c.agora-p; c.bin=p; if(b>0&&a>0) S.spread[s]=(a/b-1)*1e4; S.ultTick=Date.now(); if(!rq){ rq=true; setTimeout(()=>{rq=false; recalcular();},telemovel?500:200); } }
 function iniciarPoll(){ if(pollT) return; const f=async()=>{
     for(const s of Object.keys(S.cr)){ try{ const r=await fetch('https://api.binance.com/api/v3/ticker/bookTicker?symbol='+s.replace(/USD$/,'USDT')); const j=await r.json(); if(j&&j.bidPrice&&j.askPrice) tick(s,(Number(j.bidPrice)+Number(j.askPrice))/2,Number(j.bidPrice),Number(j.askPrice)); }catch(e){} }
     try{ const r=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22%5D'); const j=await r.json(); for(const x of j||[]) S.mercado[x.symbol]={c:Number(x.lastPrice),o:Number(x.openPrice)}; }catch(e){} };
@@ -934,13 +935,13 @@ function quadro(ts){ requestAnimationFrame(quadro); const dt=Math.min(0.05,Math.
   g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,cv.width,cv.height); g.drawImage(base,0,0); g.setTransform(W.dpr,0,0,W.dpr,0,0);
   banda(esc); indices(esc);
   const cap=Number(S.capital||0), usado=Number(S.aloc.em_uso_cripto||0)+Number(S.aloc.em_uso_acoes||0), pctCap=cap?usado/cap*100:0, pctMeta=S.meta>0?Math.max(0,(S.simOn?S.simValor:(S.real||0)))/S.meta*100:0;
-  subAgulha(SUBS[0],(S.ritmoV||0)/Math.max(0.1,S.ritEsc),(S.ritmoV||0)>=0?K.up:K.dn,sgn(S.ritmoV||0,2));
+  subAgulha(SUBS[0],(S.ritmoV||0)/Math.max(0.1,S.ritEsc),(S.ritmoV||0)>=0?K.up:K.dn,sgn(S.ritmoV||0,2)+'/h');
   subAgulha(SUBS[1],-1+2*clamp(pctCap,0,100)/100,K.txt,pctCap.toFixed(0)+'%');
   subAgulha(SUBS[2],-1+2*clamp(pctMeta,0,125)/125,K.am,pctMeta.toFixed(0)+'%');
   digital(); agulha(esc); mira(esc); }
   if(S.tipAte&&performance.now()>S.tipAte&&!S.hover){ S.tipAte=0; esconderDica(); }
-  S.txtT-=dt; if(S.txtT<=0){ S.txtT=0.25; textos(); relogio(); }
-  S.posT-=dt; if(S.posT<=0){ S.posT=1; tabelaPos(); }
+  S.txtT-=dt; if(S.txtT<=0){ S.txtT=1; textos(); relogio(); }
+  S.posT-=dt; if(S.posT<=0){ S.posT=telemovel?3:1; tabelaPos(); }
   S.segT-=dt; if(S.segT<=0){ S.segT=1; S.ritmo=ritmoAgora(); ajustarRitEsc(); }
   S.srT-=dt; if(S.srT<=0){ S.srT=10; desenharTrilho(); if(S.real!=null) put('md_sr','Resultado do dia '+sgn(S.real)+' dólares; esperado '+(S.esp!=null?sgn(S.esp):'sem estimativa')+'; meta '+(S.meta!=null?sgn(S.meta):'—')+'.'); } }
 requestAnimationFrame(quadro);
