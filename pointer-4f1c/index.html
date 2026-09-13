@@ -55,7 +55,8 @@
     .md-l{color:var(--mut);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
     .md-v{font-size:clamp(34px,5.4vw,56px);font-weight:760;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--md-cor,var(--tx));text-shadow:0 0 22px var(--md-glow,transparent);margin:2px 0}
     .md-s{color:var(--mut);font-size:12.5px;margin-top:3px}
-    .md-leg{display:grid;gap:6px;margin:12px 0 8px;font-size:13px;max-width:380px}
+    .md-info{min-width:0}
+    .md-leg{display:grid;gap:6px;margin:12px 0 8px;font-size:13px;max-width:min(380px,100%)}
     .md-leg span{display:flex;align-items:center;gap:9px} .md-leg b{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:650}
     .md-i{display:inline-block;width:12px;height:12px;flex:none}
     .md-bola{border-radius:50%;background:var(--md-cor,#3ddc84);box-shadow:0 0 8px var(--md-cor,#3ddc84)}
@@ -407,7 +408,7 @@ async function carregar(){
     `<td>${pr(x.alvo)}</td>`+
     `<td class="${x.falta_pct!=null&&x.falta_pct<=2?'pos':''}">${x.falta_pct!=null?fmt(x.falta_pct)+'%':''}</td>`+
     `<td class="pos">${x.vale_usd!=null?fmt(x.vale_usd):''}</td>`+
-    `<td class="mut">${(x.sai_em||'').slice(5,16).replace('T',' ')}</td></tr>`).join('')||'<tr><td colspan=10 class="mut">sem posições de cripto</td></tr>');
+    `<td class="mut">${(x.sai_em||'').slice(5,16).replace('T',' ')}</td></tr>`),10);   // 13/09: passava TEXTO ja juntado e o tb rebentava (rows.join) — tudo o que o carregar() desenhava depois disto morria desde 12/09
   const crc=document.getElementById('cr_custos'); if(crc){ const cp=Object.entries(cr.custo_por_par||{}).sort((a,b)=>b[1].mediana_pb-a[1].mediana_pb); crc.innerHTML='<b>Custo medido por par</b> (mediana do fill contra o meio do livro; a taxa real de '+(cr.taxa_pb||25)+' pb por lado não é cobrada em paper e entra à parte): '+(cp.length?cp.map(([k,v])=>k+' '+fmt(v.mediana_pb,1)+' pb (n='+v.n+')').join(' · '):'sem sondas ainda'); }
   tb('t_pos',p.posicoes.map(x=>`<tr><td>${nome(p,x.simbolo)}</td><td>${x.origem||''}</td><td>${x.entrada?.toFixed(2)}</td><td>${x.agora?.toFixed(2)}</td><td class="${cls(x.pnl_aberto_usd)}">${fmt(x.pnl_aberto_usd)} US$</td><td class="${cls(x.pnl_aberto_pct)}">${fmt(x.pnl_aberto_pct)}%</td><td class="ac">${fmt(x.previsao_usd)} US$</td><td class="mut">${x.saida_dia?x.saida_dia.slice(5).split('-').reverse().join('/'):(x.origem==='intradia'||x.origem==='sonda'||x.origem==='orb'?'hoje 15:55':'')}</td></tr>`),8);
   const sn=p.sinapse||{}; const ops=sn.oportunidades||[];
@@ -530,7 +531,8 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden){aoVivo()
 //   ponteiro + orbe = o dia AGORA   = fechado hoje (ganho.liquido_realista_usd) + se fechasse agora (cartao_fechar)
 //   ▲ dourado       = o dia ESPERADO = fechado + cartao_plano.esperado_usd + aberto das posições sem estimativa
 //   ◆ ciano         = se os ALVOS baterem = fechado + cartao_plano.no_alvo_usd + aberto das posições sem alvo
-// Entre dois minutos a parte cripto mexe AO SEGUNDO pela Binance, ANCORADA ao preço da Alpaca: só a VARIAÇÃO da
+// Entre dois minutos a parte cripto mexe AO SEGUNDO pelo MEIO DO LIVRO da Binance (bookTicker: medido 68 mensagens em
+// 6 s contra ZERO negócios no aggTrade num domingo calmo), ANCORADA ao preço da Alpaca: só a VARIAÇÃO da
 // Binance entra, nunca o nível dela (as duas bolsas não têm exactamente o mesmo preço).
 (function(){
   'use strict';
@@ -549,7 +551,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden){aoVivo()
   const W={w:300,h:200,cx:150,cy:120,R:80,r:60,D:14,foco:340,dpr:1};
   function medir(){ const b=palco.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1);
     W.w=Math.max(220,b.width); W.h=Math.max(160,b.height); W.dpr=dpr; cv.width=Math.round(W.w*dpr); cv.height=Math.round(W.h*dpr);
-    W.R=Math.min(W.w*0.39,W.h*0.50); W.r=W.R*0.76; W.D=W.R*0.17; W.cx=W.w/2; W.cy=W.h*0.60; W.foco=W.R*4.2; }
+    W.R=Math.min(W.w*0.39,W.h*0.48); W.r=W.R*0.76; W.D=W.R*0.17; W.cx=W.w/2; W.cy=W.h*0.58; W.foco=W.R*4.2; }
   medir(); if(window.ResizeObserver) new ResizeObserver(medir).observe(palco); else addEventListener('resize',medir);
   function rot(x,y,z){ const cx=Math.cos(S.rx),sx=Math.sin(S.rx),cy=Math.cos(S.ry),sy=Math.sin(S.ry);
     const y1=y*cx-z*sx, z1=y*sx+z*cx; return [x*cy+z1*sy, y1, -x*sy+z1*cy]; }
@@ -670,7 +672,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden){aoVivo()
     put('md_agora',S.alvo); put('md_esp',S.esp); put('md_alvo',S.alvos);
     const s=$('md_s'); if(s) s.textContent='fechado hoje '+sgn(S.fech)+' US$ (já com taxas) + se fechasse agora '+sgn(a.v)+' US$';
     const fonte=[], nCr=Object.keys(S.cr).length;
-    if(nCr) fonte.push(a.n?('⚡ cripto ao segundo pela Binance · último negócio há '+Math.max(0,Math.round((Date.now()-S.ultTick)/1000))+' s'):'cripto ao minuto (a ligar à Binance…)');
+    if(nCr) fonte.push(a.n?('⚡ cripto ao segundo pelo livro da Binance · última mudança há '+Math.max(0,Math.round((Date.now()-S.ultTick)/1000))+' s'):'cripto ao minuto (a ligar à Binance…)');
     if(S.nAcoes) fonte.push(S.bolsa?'ações ao minuto':'ações: bolsa fechada');
     const fe=$('md_fonte'); if(fe) fe.textContent=fonte.join(' · ');
     if(a.n){ const el=$('k_aberto'); if(el){ el.textContent=(typeof fmt==='function'?fmt(a.v):sgn(a.v))+' US$'; el.className='v '+(typeof cls==='function'?cls(a.v):(a.v>=0?'up':'dn')); }
@@ -682,14 +684,14 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden){aoVivo()
   let ws=null, wsFalhas=0, pollT=null, rq=false;
   function tick(s,p){ const c=S.cr[s]; if(!c||!(p>0)) return; if(c.basis==null) c.basis=c.agora-p; c.bin=p; S.ultTick=Date.now();
     if(!rq){ rq=true; setTimeout(()=>{rq=false; recalcular();},250); } }
-  function iniciarPoll(){ if(pollT) return; const f=async()=>{ for(const s of Object.keys(S.cr)){ try{ const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol='+s.replace(/USD$/,'USDT')); const j=await r.json(); if(j&&j.price) tick(s,Number(j.price)); }catch(e){} } };
+  function iniciarPoll(){ if(pollT) return; const f=async()=>{ for(const s of Object.keys(S.cr)){ try{ const r=await fetch('https://api.binance.com/api/v3/ticker/bookTicker?symbol='+s.replace(/USD$/,'USDT')); const j=await r.json(); if(j&&j.bidPrice&&j.askPrice) tick(s,(Number(j.bidPrice)+Number(j.askPrice))/2); }catch(e){} } };
     f(); pollT=setInterval(f,3000); }
   function ligarBinance(){
     try{ if(ws){ ws.onclose=null; ws.close(); } }catch(e){} ws=null;
     const syms=Object.keys(S.cr); if(!syms.length||pollT) return;
-    try{ ws=new WebSocket('wss://stream.binance.com:9443/stream?streams='+syms.map(s=>s.replace(/USD$/,'USDT').toLowerCase()+'@aggTrade').join('/'));
+    try{ ws=new WebSocket('wss://stream.binance.com:9443/stream?streams='+syms.map(s=>s.replace(/USD$/,'USDT').toLowerCase()+'@bookTicker').join('/'));
       ws.onopen=()=>{wsFalhas=0;};
-      ws.onmessage=ev=>{ try{ const m=JSON.parse(ev.data), d=m.data||m; tick(String(d.s||'').replace(/USDT$/,'USD'),Number(d.p)); }catch(e){} };
+      ws.onmessage=ev=>{ try{ const m=JSON.parse(ev.data), d=m.data||m; if(d.b&&d.a) tick(String(d.s||'').replace(/USDT$/,'USD'),(Number(d.b)+Number(d.a))/2); }catch(e){} };
       ws.onclose=()=>{ ws=null; wsFalhas++; if(wsFalhas>=3) iniciarPoll(); else setTimeout(ligarBinance,1500*wsFalhas); };
       ws.onerror=()=>{ try{ws.close();}catch(e){} };
     }catch(e){ iniciarPoll(); } }
