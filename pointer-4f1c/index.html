@@ -709,10 +709,13 @@ function indices(esc){ const R=W.R, foco=S.foco&&S.foco.ate>performance.now()?S.
     S.hits.push({tipo:m.tipo,x:b[0],y:b[1]}); }
   for(const [tipo,v,cor] of [['pico',S.pico,'rgba(242,244,247,.9)'],['vale',S.vale,'rgba(138,148,163,.9)']]){ if(v==null) continue; const a=ang(clamp(v,-esc,esc),esc), p0=P(R*0.89,a), p1=P(R*0.92,a), h=P(R*0.862,a);
     g.strokeStyle=cor; g.lineWidth=foco===tipo?2.4:1.3; g.beginPath(); g.moveTo(p0[0],p0[1]); g.lineTo(p1[0],p1[1]); g.stroke(); g.fillStyle=cor; g.beginPath(); g.arc(h[0],h[1],foco===tipo?2.6:1.7,0,PI2); g.fill(); S.hits.push({tipo,x:h[0],y:h[1]}); } }
-const COR={prata:[205,211,218],verde:[62,207,142],menta:[125,255,192],coral:[255,90,95],rosa:[255,138,142],ambar:[232,176,75],ouro:[255,206,92]};
-function corAlvoAgulha(v){ let c; if(S.simOn) c=COR.ambar; else if(Math.abs(v)<Math.max(0.01,S.esc*0.002)) c=COR.prata; else if(v<0) c=COR.coral;
-  else if(S.meta!=null&&S.meta>0&&v>=S.meta) c=COR.ouro; else if(S.esp!=null&&S.esp>0&&v>=S.esp) c=COR.ambar; else c=COR.verde;
-  if(S.fxBrilho>0.01&&!S.simOn){ const m=S.trend>0?COR.menta:COR.rosa, k=S.fxBrilho*0.6; c=c.map((x,i)=>x+(m[i]-x)*k); } return c; }
+const COR={prata:[205,211,218],verde:[62,207,142],menta:[125,255,192],coral:[255,90,95],rosa:[255,138,142],ambar:[232,176,75],ouro:[255,206,92],sobe:[40,235,135],desce:[255,64,76]};
+// 13/09 ("não muda de cor quando mexe"): a cor do ponteiro é o MOVIMENTO — verde vivo a subir, vermelho vivo a descer —
+// segura 2,5 s depois do último movimento e volta em 1 s à cor do estado (prata ~0, verde, âmbar ≥ esperado, dourado ≥ meta, coral <0).
+function corEstado(v){ if(Math.abs(v)<Math.max(0.01,S.esc*0.002)) return COR.prata; if(v<0) return COR.coral;
+  if(S.meta!=null&&S.meta>0&&v>=S.meta) return COR.ouro; if(S.esp!=null&&S.esp>0&&v>=S.esp) return COR.ambar; return COR.verde; }
+function corAlvoAgulha(v){ if(S.simOn) return COR.ambar; const base=corEstado(v), idade=(performance.now()-(S.movT||-1e9))/1000;
+  if(idade>=3.5) return base; const mov=S.movS>0?COR.sobe:COR.desce; if(idade<2.5) return mov; const k=idade-2.5; return mov.map((x,i)=>x+(base[i]-x)*k); }
 const rgbS=(c,a)=>'rgba('+Math.round(c[0])+','+Math.round(c[1])+','+Math.round(c[2])+','+(a==null?1:a)+')';
 const HALO=new Map();
 function halo(c){ const k=c.map(x=>Math.min(255,Math.round(x/16)*16)).join(); let s=HALO.get(k); if(s) return s; s=document.createElement('canvas'); s.width=s.height=64; const x=s.getContext('2d'), gr=x.createRadialGradient(32,32,0,32,32,32);
@@ -729,12 +732,12 @@ function efeitos(esc,dt){ const c=W.c, R=W.R;
       if(n){ g.strokeStyle=rgbS(rs.s>0?COR.menta:COR.rosa,(0.85*a).toFixed(3)); g.lineWidth=1.5; g.stroke(); } } }
   const vr=S.fxVarre; if(vr){ vr.t+=dt/0.9; const vv=clamp(S.val,0,esc); if(vr.t>=1||vv<=0) S.fxVarre=null; else { const p=vr.t*vv, span=Math.max(esc*0.03,vv*0.12);
       g.lineCap='butt'; g.lineWidth=R*0.024; for(let k=0;k<3;k++){ const v1=clamp(p-span*k/3,0,vv), v0=clamp(p-span*(k+1)/3,0,vv); if(v1<=v0) continue; g.strokeStyle='rgba(255,255,255,'+((0.5-0.14*k)*(1-vr.t*0.4)).toFixed(3)+')'; g.beginPath(); g.arc(c,c,R*0.905,ang(v0,esc),ang(v1,esc)); g.stroke(); } } }
-  const fd=S.fxDelta; if(fd){ fd.t+=dt/1.6; if(fd.t>=1) S.fxDelta=null; else { const jy=c-R*0.53, sobe=calmo?0:fd.t*R*0.06, a=fd.t<0.12?fd.t/0.12:1-(fd.t-0.12)/0.88;
+  const fd=S.fxDelta; if(fd){ fd.t+=dt/1.6; if(fd.t>=1) S.fxDelta=null; else if(Math.abs(fd.v)>=0.01){ const jy=c-R*0.53, sobe=calmo?0:fd.t*R*0.06, a=fd.t<0.12?fd.t/0.12:1-(fd.t-0.12)/0.88;
       g.font='600 '+Math.max(9,Math.round(R*0.042))+'px '+MONO; g.textAlign='center'; g.textBaseline='alphabetic'; g.fillStyle=rgbS(fd.s>0?COR.verde:COR.coral,clamp(a,0,1).toFixed(3)); g.fillText((fd.s>0?'▲ ':'▼ ')+sgn(fd.v),c,jy-R*0.03-sobe); } } }
 function agulha(esc){ const c=W.c, R=W.R, a=ang(clamp(S.val,-esc*1.04,esc*1.04),esc), ca=Math.cos(a), sa=Math.sin(a), nx=-sa, ny=ca, pt=R*0.93, cd=R*0.1, lb=R*0.012, lp=R*0.003;
   const forma=(ox,oy)=>{ g.beginPath(); g.moveTo(c+ox+ca*pt+nx*lp,c+oy+sa*pt+ny*lp); g.lineTo(c+ox+ca*pt-nx*lp,c+oy+sa*pt-ny*lp); g.lineTo(c+ox-ca*cd-nx*lb,c+oy-sa*cd-ny*lb); g.lineTo(c+ox-ca*cd+nx*lb,c+oy-sa*cd+ny*lb); g.closePath(); };
   forma(1.4,2.4); g.fillStyle='rgba(0,0,0,.5)'; g.fill();
-  const cg=S.corAg, grA=g.createLinearGradient(c-ca*cd,c-sa*cd,c+ca*pt,c+sa*pt); grA.addColorStop(0,'#aeb5bd'); grA.addColorStop(0.38,rgbS(cg.map((x,i)=>x*0.55+[205,211,218][i]*0.45))); grA.addColorStop(1,rgbS(cg));   // 13/09: o ponteiro troca de cor com o estado
+  const cg=S.corAg, grA=g.createLinearGradient(c-ca*cd,c-sa*cd,c+ca*pt,c+sa*pt); grA.addColorStop(0,'#9aa2ab'); grA.addColorStop(0.22,rgbS(cg.map((x,i)=>x*0.75+[205,211,218][i]*0.25))); grA.addColorStop(1,rgbS(cg));   // 13/09: o ponteiro troca de cor com o estado
   forma(0,0); g.fillStyle=grA; g.fill();
   g.strokeStyle='rgba(10,12,15,.35)'; g.lineWidth=0.6; g.beginPath(); g.moveTo(c-ca*cd,c-sa*cd); g.lineTo(c+ca*pt*0.74,c+sa*pt*0.74); g.stroke();
   const r0=pt*0.8; g.strokeStyle=rgbS(cg.map(x=>Math.min(255,x*1.12+22))); g.lineWidth=Math.max(1.4,R*0.006); g.beginPath(); g.moveTo(c+ca*r0,c+sa*r0); g.lineTo(c+ca*pt,c+sa*pt); g.stroke();
@@ -788,7 +791,7 @@ function semearHist(tIso,serie){ if(!tIso) return; const dia=String(tIso).slice(
 function ritmoAgora(){ const t=Date.now()/1000, pts=S.hist.filter(p=>t-p[0]<=600); if(pts.length<3||pts[pts.length-1][0]-pts[0][0]<90) return 0;
   let sx=0,sy=0,sxx=0,sxy=0; const n=pts.length, t0=pts[0][0]; for(const p of pts){ const x=p[0]-t0; sx+=x; sy+=p[1]; sxx+=x*x; sxy+=x*p[1]; } const den=n*sxx-sx*sx; return den>0?(n*sxy-sx*sy)/den*3600:0; }
 function ajustarRitEsc(){ const a=Math.abs(S.ritmo); let e=S.ritEsc; if(a>e*0.95) e=escala(a*1.4); else if(a<e*0.2&&e>2) e=Math.max(2,escala(a*1.6)); S.ritEsc=e; }
-function efeitoSubida(d,de,ate){ if(Math.abs(d)<Math.max(0.02,S.esc*0.0008)) return; const s=d>0?1:-1;
+function efeitoSubida(d,de,ate){ if(Math.abs(d)<0.004) return; const s=d>0?1:-1; S.movT=performance.now(); S.movS=s;   // 13/09: a cor é o movimento
   S.trend=s; S.fxBrilho=Math.min(1,S.fxBrilho+0.35+Math.min(0.65,Math.abs(d)/Math.max(0.01,S.esc*0.02)));
   if(S.fxDelta&&S.fxDelta.s===s&&S.fxDelta.t<0.7){ S.fxDelta.v+=d; S.fxDelta.t=0.12; } else S.fxDelta={v:d,s,t:0};
   if(!calmo){ if(s>0&&(!S.fxVarre||S.fxVarre.t>0.6)) S.fxVarre={t:0}; S.fxRastro={de,ate,t:0,s}; } forcar=true; }
@@ -942,7 +945,7 @@ if(bF) bF.addEventListener('click',()=>ecra(!secao.classList.contains('full')));
 document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement&&secao.classList.contains('full')) ecra(false); });
 rotulos(); if(window.IntersectionObserver) new IntersectionObserver(es=>{ S.visivel=es[0].isIntersecting||secao.classList.contains('full'); }).observe(secao);
 if(document.fonts&&document.fonts.load) Promise.all([document.fonts.load('500 12px "JetBrains Mono"'),document.fonts.load('600 12px Inter')]).then(()=>{ baseChave=''; desenharTrilho(); }).catch(()=>{});
-window.__md={S,W};
+window.__md={S,W,recalcular};
 ligarBinance();
 
 // ---------- ciclo ----------
@@ -957,9 +960,9 @@ function quadro(ts){ requestAnimationFrame(quadro); const dt=Math.min(0.05,Math.
   S.ritmoV+=(S.ritmo-S.ritmoV)*Math.min(1,dt*2); S.flash=Math.max(0,S.flash-dt*1.2);
   // 13/09 ("trava demais no mobile"): um instrumento parado não precisa de 60 frames por segundo. Só se redesenha quando
   // algo muda — ponteiro em movimento, cenário, mira, foco, dados novos, escala — e em repouso 1 vez por segundo.
-  S.fxBrilho=Math.max(0,S.fxBrilho-dt*0.9); const corA=corAlvoAgulha(S.val); let corMexe=false; for(let i=0;i<3;i++){ const dc=corA[i]-S.corAg[i]; if(Math.abs(dc)>0.8) corMexe=true; S.corAg[i]+=dc*Math.min(1,dt*6); }
+  S.fxBrilho=Math.max(0,S.fxBrilho-dt*0.9); const corA=corAlvoAgulha(S.val); let corMexe=false; for(let i=0;i<3;i++){ const dc=corA[i]-S.corAg[i]; if(Math.abs(dc)>0.8) corMexe=true; S.corAg[i]+=dc*Math.min(1,dt*12); }
   const esc=S.esc, agoraMs=performance.now(), dispAlvo=S.simOn?S.simValor:(S.real||0);
-  const mexe=forcar||S.simOn||S.teste>0||S.flash>0.001||Math.abs(S.vel)>esc*2e-4||Math.abs(alvo-S.val)>esc*2e-4||Math.abs(S.disp-dispAlvo)>0.004||S.esc!==S.escAlvo||Math.abs(S.ritmoV-S.ritmo)>0.004||(S.foco&&S.foco.ate>agoraMs)||baseChave!==chave()||agoraMs-ultDesenho>1000||corMexe||S.fxBrilho>0.01||!!S.fxDelta||!!S.fxVarre||!!S.fxRastro;
+  const mexe=forcar||S.simOn||S.teste>0||S.flash>0.001||Math.abs(S.vel)>esc*2e-4||Math.abs(alvo-S.val)>esc*2e-4||Math.abs(S.disp-dispAlvo)>0.004||S.esc!==S.escAlvo||Math.abs(S.ritmoV-S.ritmo)>0.004||(S.foco&&S.foco.ate>agoraMs)||baseChave!==chave()||agoraMs-ultDesenho>1000||corMexe||S.fxBrilho>0.01||!!S.fxDelta||!!S.fxVarre||!!S.fxRastro||(agoraMs-(S.movT||-1e9))<3600;
   const mexe30=mexe&&(forcar||!telemovel||agoraMs-ultDesenho>=33);   // 13/09: no telemóvel os efeitos ficam a 30 fps
   if(mexe30){ forcar=false; ultDesenho=agoraMs;
   if(baseChave!==chave()) desenharBase();
