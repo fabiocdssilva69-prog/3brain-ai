@@ -1692,6 +1692,20 @@
       if (f.hash === h.hash && !forcar && !h.redesenha && !h.vivo) return;
       h.hash = f.hash; h.redesenha = false; h.dados = dn;
       PH.DESENHOS.numeros(h.g, h.canvas.width, h.canvas.height, dn, { valores: h.valores, brilho: brilho, pulso: vivoN ? ((agoraMs % 2400) / 2400) : null, idadeMin: idade });
+    } else if (h.nome === 'laboratorio') {
+      // a MALHA DAS FAMILIAS roda sempre: uma volta em ~57 s. E o objecto que continua vivo quando nenhum
+      // numero mudou - o que o canal faz com a 'strategy lattice'. Quem manda na cadencia e o laco.
+      h.hash = f.hash; h.dados = f.dados;
+      PH.DESENHOS.laboratorio(h.g, h.canvas.width, h.canvas.height, f.dados, { idadeMin: idade, angulo: performance.now() / 9000 });
+    } else if (h.nome === 'mesa') {
+      // a FITA desliza quando entra uma linha nova (o evento empurra as outras para baixo, 520 ms)
+      var topo = lista(f.dados.fita)[0], chave = topo ? (topo.t + '|' + topo.tipo + '|' + topo.simbolo) : '';
+      if (h.topoFita === undefined) h.topoFita = chave;
+      else if (chave !== h.topoFita) { h.topoFita = chave; h.deslT0 = performance.now(); }
+      var dtF = h.deslT0 ? (performance.now() - h.deslT0) : 1e9, desl = dtF < 520 ? (1 - dtF / 520) : 0;
+      if (f.hash === h.hash && !forcar && desl === 0) return;
+      h.hash = f.hash; h.dados = f.dados;
+      PH.DESENHOS.mesa(h.g, h.canvas.width, h.canvas.height, f.dados, { idadeMin: idade, desl: desl });
     } else {
       if (f.hash === h.hash && !forcar) return;
       h.hash = f.hash; h.dados = f.dados;
@@ -1700,7 +1714,7 @@
     h.tex.needsUpdate = true;
   }
   function actualizarHologramas(forcar) { NOMES_HOLO.forEach(function (n) { desenharHolo(holos[n], forcar); }); pintarSeparador(); }
-  var ultimoTrilho = 0, ultimoNumeros = 0, ultimoVivo = 0;
+  var ultimoTrilho = 0, ultimoNumeros = 0, ultimoVivo = 0, ultimoLab = 0, ultimoMesa = 0;
   var cicloPausadoAte = 0;   // v6: o arreio pausa o ciclo enquanto injecta dados (senao o ficheiro real pisa a prova a meio)
   function animarHolos(agora) {
     if (!T) return;
@@ -1711,6 +1725,10 @@
     if (nm && nm.sprite.visible && (nm.redesenha || nm.vivo) && agora - ultimoNumeros > 90) { ultimoNumeros = agora; desenharHolo(nm, false); }
     // com a ancora da Binance de pe, o numero muda ao segundo: sem este toque so se redesenhava de 2 em 2 s (o
     // ciclo do ficheiro). O hash ja trava o desenho quando o valor nao mexeu, logo isto nao custa fotogramas.
+    var lb = holos.laboratorio;
+    if (lb && lb.sprite.visible && agora - ultimoLab > 110) { ultimoLab = agora; desenharHolo(lb, true); }
+    var ms = holos.mesa;
+    if (ms && ms.sprite.visible && ms.deslT0 && agora - ms.deslT0 < 620 && agora - ultimoMesa > 60) { ultimoMesa = agora; desenharHolo(ms, true); }
     if (window.__mdVivo && agora - ultimoVivo > 330) {
       ultimoVivo = agora;
       if (v && v.sprite.visible) desenharHolo(v, false);
