@@ -1528,7 +1528,7 @@
       return L;
     }
     var topoFita = 26;                                      // a fita flutua no topo do palco: a coluna comeca abaixo dela
-    var hvel = k >= 2 ? 120 : clamp(0.26 * H - topoFita / 2, 180, 340);
+    var hvel = k >= 2 ? 120 : clamp(0.26 * H - topoFita, 150, 340);   // 19/09: o chao era 180 e, com a fita no topo, o painel dos numeros deixava de caber
     var wvel = Math.min(1.45 * hvel, 0.30 * W); hvel = wvel / 1.45;
     var ht = Math.round(hvel * 0.62);
     L.rects.velocimetro = { esq: W - 12 - wvel, topo: topoFita, dir: W - 12, fundo: topoFita + hvel, coluna: 'dir' };
