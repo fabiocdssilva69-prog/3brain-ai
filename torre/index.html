@@ -1,0 +1,293 @@
+<!-- TORRE STARK - copia publica e SANEADA: as chaves dos genes sao hashes, a receita fica em casa.
+     Gerada por tesouraria/mercado/publicar_torre.py em 19/09 01:34:22. Actualiza-se sozinha.
+     Nao listada: <meta robots noindex> nesta pagina e Disallow em /robots.txt. -->
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>TORRE STARK — a torre</title>
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect x=%279%27 y=%273%27 width=%2714%27 height=%2726%27 fill=%27%230a0c0f%27 stroke=%27%235ac8fa%27 stroke-width=%272%27/%3E%3Cpath d=%27M9 11h14M9 17h14M9 23h14%27 stroke=%27%235ac8fa%27 stroke-width=%271.2%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="torre.css">
+<link rel="stylesheet" href="predio.css">
+</head>
+<body class="predio">
+
+<!-- ===================== HUD de cima ===================== -->
+<div class="barra topo">
+  <div class="marca">Torre Stark<small id="b_sub">a torre · a base</small></div>
+  <span class="cel"><i class="led" id="b_led"></i><b id="b_estado">—</b></span>
+  <span class="cel"><i>BRT</i><b id="b_brt">—</b></span>
+  <span class="cel"><i>NY</i><b id="b_ny">—</b></span>
+  <span class="cel"><i>fase</i><b id="b_fase">—</b></span>
+  <span class="cel"><i>próximo órgão</i><b id="b_prox">—</b></span>
+  <div class="dir">
+    <span class="cel"><i>andares</i><b id="b_andares">—</b></span>
+    <span class="cel"><i>funcionários</i><b id="b_func">—</b></span>
+    <span class="cel"><i>regulador</i><b id="b_portao">—</b></span>
+    <span class="jar"><u>sessão</u><span class="jbar" id="jb_ses"><i></i></span><b class="num" id="jt_ses">—</b></span>
+    <span class="jar"><u>semana</u><span class="jbar" id="jb_sem"><i></i></span><b class="num" id="jt_sem">—</b></span>
+  </div>
+</div>
+
+<!-- ===================== os cinco numeros da casa (ref_11) — todos saem de ficheiro ===================== -->
+<div class="casa-num">
+  <span><u>capital da casa</u><b id="k_cap">—</b><i id="k_cap_s">—</i></span>
+  <span><u>realizado hoje</u><b id="k_dia">—</b><i id="k_dia_s">—</i></span>
+  <span><u>livro da mesa</u><b id="k_mesa">—</b><i id="k_mesa_s">—</i></span>
+  <span><u>órgãos prontos</u><b id="k_org">—</b><i id="k_org_s">—</i></span>
+  <span><u>passagens</u><b id="k_pas">—</b><i id="k_pas_s">—</i></span>
+</div>
+
+<!-- ===================== a torre (3D) + a coluna do lado + os cartoes ===================== -->
+<div class="pred-envol">
+
+  <div class="pred-palco" id="palco">
+    <canvas id="cena" aria-label="A Torre Stark: 100 andares por ordem de importância, a base em baixo e a coroa no topo"></canvas>
+    <div class="pred-vinheta" aria-hidden="true"></div>
+
+    <!-- etiqueta de andar sob o cursor -->
+    <div class="pred-etiq" id="etiq" hidden></div>
+
+    <!-- OS NIVEIS: Torre · Andar · Sector · Funcionario (teclas 0-3). A camara anda 600 ms ate ao nivel. -->
+    <div class="pred-niveis" id="niveis" role="toolbar" aria-label="nível de zoom">
+      <u>nível</u>
+      <button type="button" data-k="0" title="tecla 0 — a torre inteira, de longe: o DNA">0 · Torre</button>
+      <button type="button" data-k="1" title="tecla 1 — os 35 andares com nome">1 · Andar</button>
+      <button type="button" data-k="2" title="tecla 2 — o sector: secretárias e o número de cada morador">2 · Sector</button>
+      <button type="button" data-k="3" title="tecla 3 — um andar a encher o ecrã, um cartão por funcionário">3 · Funcionário</button>
+      <button type="button" id="btn_pointer" class="pointer-btn" title="os dados, ao vivo, na torre: instrumento, livro, gerações, apostas, custos, feed, cadeiras, auditores">Dados</button>
+    </div>
+
+    <!-- v5 (ordem dele, 20:40): "só transfere os DADOS para a Torre Stark, não o Pointer todo". Os blocos do
+         instrumento, do livro, das gerações, das apostas independentes, dos custos, do feed, das cadeiras e dos
+         auditores passam a viver AQUI, renderizados pelo reactor.js e pelo torre.js sobre o mesmo torre.json.
+         A página antiga deixa de ser servida: nada se perde, nada se duplica. -->
+    <div class="pointer-gaveta" id="pointer_dados" hidden>
+      <div class="pg-bh"><b>DADOS · ao vivo</b><span>o instrumento, o livro, as gerações, as apostas, os custos, o feed, as cadeiras e os auditores</span><button type="button" id="pg_fechar" aria-label="fechar">✕</button></div>
+      <div class="envol pointer-envol">
+  <!-- ===================== ZONA A — REACTOR ARC (instrumento v3, intacto) ===================== -->
+  <!-- Marcacao do INSTRUMENTO v3, copiada tal e qual de 3brain-ai/pointer-4f1c/index.html
+       (<section class="ins" id="medidor"> ... </section>). Os ids md_* sao o contrato com o
+       reactor.js: mudar um id aqui e apagar meio mostrador sem nenhum erro na consola.
+       🔴 A copia TEM de levar o </section> final. Sem ele o browser nao fecha a seccao, tudo o que
+       vem a seguir passa a viver DENTRO do instrumento (medido: a seccao ficou com 2.053 px de
+       altura em vez de 940) e o `contain:layout paint` do .ins passa a valer para a pagina toda. -->
+  <section class="ins" id="medidor" aria-label="Instrumento do dia">
+    <div class="ins-top">
+      <div class="ins-tit"><b>Instrumento do dia</b></div>
+      <div class="ins-st"><span><i class="ins-dot" id="md_led_bin"></i>BINANCE <em id="md_bin_idade">—</em></span><span><i class="ins-dot" id="md_led_bolsa"></i><em id="md_bolsa">NYSE —</em></span><span id="md_rel_utc">UTC —</span><span id="md_rel_ny">NY —</span></div>
+    </div>
+    <div class="ins-g">
+      <div class="ins-col">
+        <div class="ins-h">Resultado do dia <span id="md_dia_data"></span></div>
+        <div class="ins-r big"><span>Agora</span><b id="md_agora">—</b></div>
+        <div class="ins-r"><span>Fechado <i>com taxas</i></span><b id="md_fech">—</b></div>
+        <div class="ins-r"><span>Aberto <i>se fechasse</i></span><b id="md_aberto">—</b></div>
+        <div class="ins-r" data-m="pico"><span>Pico <i id="md_pico_t"></i></span><b id="md_pico">—</b></div>
+        <div class="ins-r" data-m="vale"><span>Vale <i id="md_vale_t"></i></span><b id="md_vale">—</b></div>
+        <div class="ins-r"><span>Recuo desde o pico</span><b id="md_recuo">—</b></div>
+        <div class="ins-r"><span>Ritmo <i>regressão 10 min</i></span><b id="md_ritmo">—</b></div>
+        <div class="ins-sep"></div>
+        <div class="ins-h">Trilho do dia <span id="md_trilho_escala"></span></div>
+        <canvas id="md_trilho" aria-label="trilho do dia"></canvas>
+        <div class="ins-sep"></div>
+        <div class="ins-h">Desempenho acumulado</div>
+        <div class="ins-r"><span>Realizado <i>líquido, desde o início</i></span><b id="md_odo">—</b></div>
+        <div class="ins-r"><span>Taxa de acerto</span><b id="md_acerto">—</b></div>
+        <div class="ins-r"><span>Ganho médio · perda média</span><b id="md_medias">—</b></div>
+        <div class="ins-r"><span>Operações <i id="md_ops_hoje"></i></span><b id="md_ops">—</b></div>
+      </div>
+      <div class="ins-col ins-dial">
+        <div class="ins-palco" id="md_palco"><canvas id="md_cv"></canvas><div class="md-tip" id="md_tip" hidden></div></div>
+        <div class="ins-bt">
+          <button type="button" class="ins-btn" id="md_meta_menos" aria-label="baixar a meta">Meta −</button>
+          <button type="button" class="ins-btn" id="md_meta_mais" aria-label="subir a meta">Meta +</button>
+          <button type="button" class="ins-btn" id="md_vib">Háptico</button>
+          <button type="button" class="ins-btn" id="md_full">Ecrã inteiro</button>
+        </div>
+      </div>
+      <div class="ins-col">
+        <div class="ins-h">Metas <span>distância</span></div>
+        <div class="ins-r" data-m="esperado"><span><i class="ins-k" style="background:var(--am);margin-left:0"></i>Esperado <i id="md_esp_f"></i></span><b id="md_esp">—</b></div>
+        <div class="ins-r" data-m="alvos"><span><i class="ins-k" style="background:var(--cy);margin-left:0"></i>Se os alvos baterem <i id="md_alvo_f"></i></span><b id="md_alvo">—</b></div>
+        <div class="ins-r" data-m="meta"><span><i class="ins-k" style="background:var(--t);margin-left:0"></i>Meta definida <i id="md_meta_f"></i></span><b id="md_meta">—</b></div>
+        <div class="ins-r" data-m="stop"><span><i class="ins-k" style="background:var(--dn);margin-left:0"></i>Stop do dia <i id="md_stop_f"></i></span><b id="md_stop">—</b></div>
+        <div class="ins-sep"></div>
+        <div class="ins-h">Risco</div>
+        <div class="ins-r"><span>Uso do stop</span><b id="md_stop_uso">—</b></div>
+        <div class="ins-bar"><i id="md_stop_bar" style="background:var(--dn)"></i></div>
+        <div class="ins-r"><span>Capital em uso <i id="md_cap_f"></i></span><b id="md_cap">—</b></div>
+        <div class="ins-bar"><i id="md_cap_cr" style="background:var(--cy)"></i><i id="md_cap_ac" style="background:#8b95a7"></i></div>
+        <div class="ins-r"><span><i class="ins-k" style="background:var(--cy);margin-left:0"></i>Cripto</span><b id="md_cr">—</b></div>
+        <div class="ins-r"><span><i class="ins-k" style="background:#8b95a7;margin-left:0"></i>Ações</span><b id="md_ac">—</b></div>
+        <div class="ins-r"><span>Livre</span><b id="md_livre">—</b></div>
+        <div class="ins-sep"></div>
+        <div class="ins-h">Mercado <span>24 h</span></div>
+        <div class="ins-r"><span>BTC <i id="md_btc_p"></i></span><b id="md_btc">—</b></div>
+        <div class="ins-r"><span>ETH <i id="md_eth_p"></i></span><b id="md_eth">—</b></div>
+        <div class="ins-r"><span>Spread <i id="md_spread_s"></i></span><b id="md_spread">—</b></div>
+      </div>
+    </div>
+    <div class="ins-pos">
+      <div class="ins-h">Posições abertas <span id="md_pos_res"></span></div>
+      <div class="wrap2"><table><thead><tr><th>Ativo</th><th>Qtd</th><th>Entrada</th><th>Agora</th><th>Valor</th><th>P&amp;L US$</th><th>P&amp;L %</th><th>Alvo</th><th>Distância</th><th>Até ao alvo</th><th>Prazo</th></tr></thead><tbody id="md_pos"></tbody></table></div>
+    </div>
+    <div class="ins-rod">
+      <div class="ins-log"><div class="ins-h">Registo <span id="md_log_n"></span></div><div id="md_log"></div></div>
+      <div class="ins-ctl"><div class="ins-h">Instrumento</div><span id="md_fonte"></span><br><b>Arraste na horizontal</b> sobre o mostrador para testar um cenário de mercado (a venda no alvo entra na conta) · passe o cursor sobre a escala para ler qualquer valor e sobre as marcas para ver o que são · ← → testam cenários pelo teclado · + − ajustam a meta.</div>
+    </div>
+    <div class="md-sr" id="md_sr" aria-live="polite"></div>
+  </section>
+
+  <!-- ===================== ZONA B — a mesa (grelha 2x3, como o Algory) ======================== -->
+  <div class="zb">
+
+    <section class="bloco" id="bl_pepper" tabindex="-1">
+      <div class="bh">
+        <h2>Pepper <em>o livro por estratégia</em></h2>
+        <div class="kn" id="pep_kn"></div><span class="tecla">1</span>
+      </div>
+      <div class="diag" id="pep_diag"></div>
+      <div class="pep-topo">
+        <button type="button" class="pil on" data-filtro="todas">todas</button>
+        <button type="button" class="pil" data-filtro="posicao">com posição</button>
+        <button type="button" class="pil" data-filtro="elegiveis">elegíveis</button>
+        <button type="button" class="pil" data-filtro="controlo">controlo</button>
+        <div class="somas" id="pep_somas"></div>
+      </div>
+      <div class="pep-corpo"><table class="tab" id="pep_tab"><thead></thead><tbody></tbody></table></div>
+    </section>
+
+    <div class="dir">
+
+      <section class="bloco" id="bl_extremis" tabindex="-1">
+        <div class="bh"><h2>Extremis <em>a evolução</em></h2><div class="kn" id="ext_kn"></div><span class="tecla">2</span></div>
+        <div class="bcorpo">
+          <div class="grande" id="ext_mark">—<small>geração</small></div>
+          <div class="ger" id="ext_ger"></div>
+          <div class="diag" id="ext_diag" style="border:0;padding-left:0"></div>
+        </div>
+      </section>
+
+      <section class="bloco" id="bl_vingadores" tabindex="-1">
+        <div class="bh"><h2>Vingadores <em>apostas independentes</em></h2><div class="kn" id="vin_kn"></div><span class="tecla">3</span></div>
+        <div class="bcorpo">
+          <div class="grande" id="vin_nef">—<small>N efectivo</small></div>
+          <div id="vin_grupos"></div>
+          <div class="diag" id="vin_diag" style="border:0;padding-left:0"></div>
+        </div>
+      </section>
+
+      <section class="bloco" id="bl_killian" tabindex="-1">
+        <div class="bh"><h2>Killian <em>custo &amp; spread</em></h2><div class="kn" id="kil_kn"></div><span class="tecla">4</span></div>
+        <div class="bcorpo" id="kil_corpo"></div>
+      </section>
+
+      <section class="bloco" id="bl_feed" tabindex="-1">
+        <div class="bh"><h2>Feed <em>últimos eventos</em></h2><div class="kn" id="feed_kn"></div><span class="tecla">5</span></div>
+        <div class="bcorpo feed" id="feed"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ===================== ZONA C — as cadeiras ============================================== -->
+  <div class="zc" id="cadeiras"></div>
+
+  <section class="bloco" id="bl_friday" tabindex="-1">
+    <div class="bh"><h2>F.R.I.D.A.Y. <em>auditores</em></h2><div class="kn" id="fri_kn"></div><span class="tecla">6</span></div>
+    <div class="bcorpo"><div class="avisos" id="avisos"></div><div class="avisos" id="fri_achados"></div></div>
+  </section>
+      </div>
+    </div>
+
+    <!-- contadores sobre a cena (uma linha, em baixo: a esquerda e das colunas de hologramas) -->
+    <div class="pred-cont" id="contadores">
+      <span><u>nível</u><b id="c_nivel">—</b></span>
+      <span><u>andar em foco</u><b id="c_andar">—</b></span>
+      <span><u>pacotes vivos</u><b id="c_pac">0</b></span>
+      <span><u>eventos sem caminho</u><b id="c_sem">0</b></span>
+      <span><u>partículas</u><b id="c_part">0</b></span>
+      <span><u>fps</u><b id="c_fps">—</b></span>
+      <span><u>prédio de</u><b id="c_idade">—</b></span>
+    </div>
+
+    <div class="pred-aviso" id="aviso_webgl" hidden>
+      Esta máquina não tem WebGL disponível. <a href="#">Abrir a Torre em 2D</a>.
+    </div>
+  </div>
+
+  <!-- no telemovel os hologramas que nao cabem ao lado da torre vivem aqui, um de cada vez -->
+  <div class="holo-sep" id="holo_sep" hidden>
+    <div class="holo-tabs">
+      <button type="button" data-holo="trilho" class="on">Trilho</button>
+      <button type="button" data-holo="sr_stark">Sr. Stark</button>
+      <button type="button" data-holo="risco">Risco</button>
+      <button type="button" data-holo="mesa">Mesa</button>
+      <button type="button" data-holo="laboratorio">Laboratório</button>
+      <button type="button" data-holo="numeros">Números</button>
+    </div>
+    <canvas id="holo_cv" aria-label="holograma seleccionado"></canvas>
+  </div>
+
+  <!-- ===================== a FILA DE CARTOES DE PAPEL (ref_03) ===================== -->
+  <div class="cartoes-fx">
+    <div class="cartoes-tit"><u>cartões</u><b id="ct_kn">—</b><em>nome · de que falha é dono · o seu número</em></div>
+    <div class="cartoes" id="cartoes"></div>
+  </div>
+
+  <aside class="pred-lado" id="lado">
+    <section class="lado-bl">
+      <div class="bh"><h2>Acorde de passagens <em>quem passa a quem</em></h2><div class="kn" id="ac_kn"></div>
+        <button type="button" class="lado-toggle" id="lado_toggle" title="recolher / abrir a coluna">◀</button></div>
+      <canvas id="acorde" class="ac-cv" width="300" height="230" aria-label="As ligações entre andares, agregadas por andar"></canvas>
+      <div class="ac-leg" id="ac_leg"></div>
+    </section>
+    <section class="lado-bl">
+      <div class="bh"><h2>Sem número <em>não moram na torre</em></h2><div class="kn" id="sn_kn"></div></div>
+      <div class="sn-lista" id="semnumero"></div>
+    </section>
+    <section class="lado-bl cresce">
+      <div class="bh"><h2>Leituras <em>o que a torre está a fazer</em></h2><div class="kn" id="lei_kn"></div></div>
+      <div class="pred-lista" id="leituras"></div>
+    </section>
+  </aside>
+
+</div>
+
+<!-- ===================== painel de um andar (abre ao clicar) ===================== -->
+<div class="pred-painel" id="painel" aria-hidden="true">
+  <div class="pred-painel-cx" role="dialog" aria-labelledby="pn_tit">
+    <div class="bh">
+      <h2 id="pn_tit">—</h2>
+      <div class="kn" id="pn_kn"></div>
+      <button type="button" class="pred-fechar" id="pn_fechar" aria-label="fechar">✕</button>
+    </div>
+    <div class="pred-painel-corpo" id="pn_corpo"></div>
+  </div>
+</div>
+
+<!-- ===================== barra de baixo: o directorio ===================== -->
+<div class="barra baixo">
+  <span class="cel"><i>directório</i><b>—</b></span>
+  <div class="pred-dir" id="directorio"></div>
+  <div class="dir">
+    <span class="cel z">clique parado num andar abre · arraste para mover (1 dedo) · Shift+arraste roda · roda ou 2 dedos aproxima · 0-3 níveis · Esc fecha</span>
+  </div>
+</div>
+
+<script src="three.min.js"></script>
+<!-- as contas puras primeiro (feed, geometria, hologramas): o predio.js usa-as -->
+<script src="predio_feed.js"></script>
+<script src="predio_geo.js"></script>
+<script src="predio_holo.js"></script>
+<!-- os renderizadores dos dados do Pointer (o mesmo torre.json): correm sobre os blocos da gaveta -->
+<script src="reactor.js"></script>
+<script src="torre.js"></script>
+<script src="predio.js"></script>
+<script src="predio_chat.js"></script>
+</body>
+</html>
