@@ -1400,7 +1400,8 @@
   }
   function animarAndantes(agora) {
     if (!instAndantes || !andantes.length) return;
-    var dt = ultimoAndantes ? Math.min(100, agora - ultimoAndantes) : 0; ultimoAndantes = agora;
+    if (ultimoAndantes && agora - ultimoAndantes < 80) return;   // 19/09: 12 passos por segundo chegam para andar
+    var dt = ultimoAndantes ? Math.min(160, agora - ultimoAndantes) : 0; ultimoAndantes = agora;
     var m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(0, 0, 0, 'YZX'), s1 = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3(), v = new THREE.Vector3();
     andantes.forEach(function (a) {
       var h = semente(a.i + ':' + Math.floor(agora / 700));
