@@ -1328,7 +1328,10 @@
       var d = obj(it.dados), n = Number(d.n_funcionarios) || 0;
       if (n <= 0) return;
       var noFoco = janela && janela[it.ordem];
-      var quantos = perto ? (noFoco ? Math.min(n, 300) : 0) : Math.min(n, Math.max(6, Math.round(n * 0.10)));
+      // 19/09: os tectos sairam de uma MEDICAO - com 300 por andar na janela e 10% ao longe, o arreio acusou
+      // que as animacoes passaram a custar 49,6% dos fotogramas (o limite e 25%). Menos gente, mesma leitura:
+      // ao perto ve-se o andar cheio na mesma, ao longe basta uma amostra para o andar parecer habitado.
+      var quantos = perto ? (noFoco ? Math.min(n, 120) : 0) : Math.min(n, Math.max(4, Math.round(n * 0.07)));
       if (quantos <= 0) return;
       lote.push({ it: it, n: n, q: quantos });
     });
