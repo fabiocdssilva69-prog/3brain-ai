@@ -2720,7 +2720,7 @@
         ortografica: !!(camara && camara.isOrthographicCamera), fps: Math.round(fps()), temD: !!D, temT: !!T, telemovel: telemovel,
         // v6: o batimento, a onda de dados, a coroa e a disposicao dos cartoes
         batimento: { amp: batimento.amp, fase: batimento.fase, w: batimento.w, vivo: batimento.vivo, bpm: batimento.bpm }, vidroOpacidade: vidroOpacidade,
-        ondasDeDados: ondasDeDados, ondaActiva: ondaDados.v != null, letreiro: !!(coroa && coroa.planos.length === 2 && grupoCoroa && grupoCoroa.visible),
+        ondasDeDados: ondasDeDados, ondaActiva: ondaDados.v != null, letreiro: !!(coroa && coroa.planos.length >= 1 && grupoCoroa && grupoCoroa.visible),   // v6b: era '=== 2' (os dois planos das faces); o facto e HAVER letreiro, nao como esta feito
         andaresAcesos: projecto ? projecto.lista.filter(function (it) { return !!it.acesoT0; }).length : 0,
         cartoesModo: $('cartoes') ? ($('cartoes').classList.contains('duas-filas') ? 'duas-filas' : ($('cartoes').classList.contains('faixa') ? 'faixa' : '')) : ''
       };
