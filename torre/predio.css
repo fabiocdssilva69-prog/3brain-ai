@@ -234,11 +234,14 @@
   display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0;
 }
 .lado-bl {
-  display: flex; flex-direction: column; min-height: 0; min-width: 0;
+  /* 🔴 19/09, MEDIDO: com o chat a encher as Leituras, o acorde ficou com 31 px de altura (o canvas tem 230) e o
+     "sem numero" com 15 px para 77 etiquetas. A culpa e do flex por omissao: numa coluna flexivel TODOS os filhos
+     encolhem, e quem cresce empurra os outros para zero. Quem tem altura propria nao pode encolher. */
+  display: flex; flex-direction: column; min-height: 0; min-width: 0; flex: 0 0 auto;
   background: linear-gradient(180deg, var(--b2), #090b0e);
   border: 1px solid var(--l); border-radius: 10px; overflow: hidden;
 }
-.lado-bl.cresce { flex: 1 1 auto; }
+.lado-bl.cresce { flex: 1 1 auto; min-height: 220px; }
 
 /* ---------------------------------------------------------------- acorde de passagens */
 .ac-cv { display: block; width: 100%; height: auto; }

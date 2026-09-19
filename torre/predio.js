@@ -31,7 +31,7 @@
 
   var PG = window.PredioGeo, PH = window.PredioHolo, PF = window.PredioFeed;
   var F_PREDIO = 'predio.json', F_TORRE = 'torre.json';
-  var PERIODO_MS = 5000;
+  var PERIODO_MS = 2000;      // 19/09: era 5 s. A pagina le de 2 em 2 s; o que limita a frescura e quem escreve.
   var MAX_PACOTES = 40, MAX_LEITURAS = 60, ARRANQUE_RAPIDO = 10;
   var DUR_PACOTE_MS = 2600, PULSO_MS = 1500;
   var DUR_TWEEN_NUM_MS = 900, DUR_TWEEN_AGULHA_MS = 700, DUR_CAMARA_MS = 600;
@@ -152,7 +152,7 @@
   var batimento = { amp: 0, fase: 0, w: 0, vivo: false, bpm: BPM }, ultimoBatimento = 0, vidroOpacidade = 0.32;
   var vidroMat = null, ondaDados = { v: null, t_iso: '' }, ondasDeDados = 0;
   var coroa = null, grupoCoroa = null;
-  var ALTURA_COROA = 2.0 * ALTURA, COROA_ANDARES = ALTURA_COROA / ALTURA + 0.6;   // o que a coroa acrescenta ao enquadramento (com folga)
+  var ALTURA_COROA = 2.0 * ALTURA, COROA_ANDARES = ALTURA_COROA / ALTURA + 1.9;   // +1,9: a coroa mais o letreiro que fica por cima dela   // o que a coroa acrescenta ao enquadramento (com folga)
   var ultimaCorridaPorId = null;  // id -> ultima_corrida_brt da leitura anterior: a deteccao de corridas para TODOS os funcionarios
   var cartoesTopo = {};           // id -> {el, titulo, andares, dependentes, elegiveis, robustos, activos60, aCorrer} (os 10 de topo, vivos)
   var _corTmp = null, _branco = null;
@@ -2291,9 +2291,10 @@
     txt($('c_pac'), String(pacotesVivos.length)); txt($('c_idade'), String(D.t_brt || '—').slice(11));
     var maus = lista(D.funcionarios).filter(function (f) { return f.estado === 'erro'; }), atras = lista(D.funcionarios).filter(function (f) { return f.estado === 'atrasado'; });
     $('b_led').className = 'led ' + (maus.length ? 'mau' : (atras.length ? 'at' : 'ok'));
-    txt($('b_estado'), maus.length ? (maus.length + ' em erro: ' + maus.map(function (f) { return f.id; }).slice(0, 2).join(', ')) : (atras.length ? (atras.length + ' atrasado(s)') : 'torre de pé · a base · ' + (pj.habitados || 0) + ' habitados'));
+    estadoBase = maus.length ? (maus.length + ' em erro: ' + maus.map(function (f) { return f.id; }).slice(0, 2).join(', ')) : (atras.length ? (atras.length + ' atrasado(s)') : 'torre de pé · a base · ' + (pj.habitados || 0) + ' habitados');
+    txt($('b_estado'), estadoBase);
     if (T) {
-      txt($('b_brt'), String(T.t_brt || '—')); txt($('b_ny'), String(T.t_ny || '—')); txt($('b_fase'), String(T.fase || '—'));
+      txt($('b_fase'), String(T.fase || '—'));   // BRT e NY sao RELOGIOS: andam ao segundo em relogio(), nao no ciclo
       var org = obj(T.orgaos), prox = obj(org.proximo);
       txt($('b_prox'), prox.nome ? (String(prox.nome).replace('Tesouraria-', '') + ' em ' + num(prox.em_min, 0) + ' min') : '—');
       var j = obj(T.jarvis); txt($('b_portao'), j.portao ? String(j.portao) : '—');
@@ -2514,15 +2515,16 @@
     var plat = new THREE.Mesh(new THREE.BoxGeometry(largP, 0.22, 2.6), new THREE.MeshLambertMaterial({ color: 0x2a3442 })); plat.position.set(xP, 0.61, profC * 0.12); g.add(plat);
     var arP = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(largP, 0.22, 2.6)), arestasC); arP.position.copy(plat.position); g.add(arP);
     // O LETREIRO: 1,6 andares de altura, nas duas faces compridas (so a face virada para a camara se ve: FrontSide)
-    var tl = texturaLetreiro(), hL = 1.6 * ALTURA, wL = hL * tl.W / tl.H, planos = [], mats = [], halos = [];
-    var haloEsc = [wL * 1.25, hL * 1.7];
-    [[1, 0], [-1, Math.PI]].forEach(function (lado) {
-      var mt = new THREE.MeshBasicMaterial({ map: tl.tex, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.FrontSide });
-      var pl = new THREE.Mesh(new THREE.PlaneGeometry(wL, hL), mt);
-      pl.position.set(dx, yVidro, lado[0] * (profC / 2 + 0.08)); pl.rotation.y = lado[1]; pl.renderOrder = 4; g.add(pl);
-      var halo = spriteRadial(haloEsc[0], haloEsc[1], 0.5, 3); halo.position.set(dx, yVidro, lado[0] * (profC / 2 + 0.2)); g.add(halo);
-      planos.push(pl); mats.push(mt); halos.push(halo);
-    });
+    // 🔴 19/09, VISTO no recorte 3x: em planos colados as faces do penthouse, e com a torre torcida 3,6 graus por
+    // andar (no 49.o andar sao ~176 graus), o letreiro aparecia DEITADO, a ler-se como tinta no telhado. Passa a ser
+    // um SPRITE em cima da cobertura: um sprite esta sempre de frente para quem olha, logo le-se "STARK" de qualquer
+    // angulo e de qualquer nivel de zoom - que e como o letreiro aparece no filme, de pe na coroa.
+    var tl = texturaLetreiro(), hL = 1.15 * ALTURA, wL = hL * tl.W / tl.H, planos = [], mats = [], halos = [];
+    var haloEsc = [wL * 1.22, hL * 1.8], yLetreiro = altC + hL * 0.62;
+    var mtL = new THREE.SpriteMaterial({ map: tl.tex, transparent: true, opacity: 0.9, depthWrite: false, depthTest: false });
+    var spL = new THREE.Sprite(mtL); spL.scale.set(wL, hL, 1); spL.position.set(dx, yLetreiro, 0); spL.renderOrder = 7; g.add(spL);
+    var haloL = spriteRadial(haloEsc[0], haloEsc[1], 0.5, 6); haloL.position.set(dx, yLetreiro, 0); g.add(haloL);
+    planos.push(spL); mats.push(mtL); halos.push(haloL);
     // o reactor arc: o brilho azul no centro da coroa
     var reactorEscala = PROF * 0.9, reactor = spriteRadial(reactorEscala, reactorEscala, 0.8, 6); reactor.position.set(dx * 0.35, yVidro, 0); g.add(reactor);
     coroa = { grupo: g, yC: yC, angC: angC, largC: largC, profC: profC, altC: altC, dx: dx, arestasMat: arestasC, planos: planos, letreiroMats: mats,
@@ -2618,6 +2620,7 @@
 
   // ---------------------------------------------------------------- dados
   function buscar(ficheiro) { return fetch(ficheiro + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }); }
+  var estadoBase = '';        // o texto do estado sem a idade do dado (o relogio junta-lha ao segundo)
   var cicloPausadoAte = 0;   // v6: o arreio pausa o ciclo enquanto injecta dados (senao o ficheiro real pisa a prova a meio)
   function ciclo() {
     if (cicloPausadoAte > Date.now()) return;
@@ -2629,7 +2632,22 @@
   // ---------------------------------------------------------------- arranque
   if (!temWebGL()) { $('aviso_webgl').hidden = false; }
   else { iniciar3D(); criarHologramas(); requestAnimationFrame(quadro); }
+  // 🔴 19/09, queixa dele: "os numeros nao estao em tempo real a cada segundo". Metade disso era o ecra: os campos
+  // BRT e NY sao RELOGIOS e mostravam a hora do FICHEIRO, logo ficavam parados entre leituras e a pagina parecia
+  // morta. Passam a andar ao segundo, e ao lado do estado passa a contar-se A IDADE DO DADO - que e honesto: diz
+  // quando a ultima leitura chegou em vez de fingir que chegou agora.
+  function relogio() {
+    var a = new Date(), hora = function (tz) { try { return a.toLocaleTimeString('pt-PT', { timeZone: tz, hour12: false }); } catch (e) { return '—'; } };
+    txt($('b_brt'), hora('America/Sao_Paulo'));
+    txt($('b_ny'), hora('America/New_York'));
+    if (!estadoBase) return;
+    var iso = T && T.t_iso, s = null;
+    if (iso) { var ms = Date.parse(iso); if (isFinite(ms)) s = Math.max(0, Math.round((Date.now() - ms) / 1000)); }
+    txt($('b_estado'), estadoBase + (s == null ? '' : ' · dado há ' + (s < 90 ? s + ' s' : Math.round(s / 60) + ' min')));
+  }
   ciclo();
+  relogio();
+  setInterval(relogio, 1000);
   setInterval(ciclo, PERIODO_MS);
 
   // ================================================================ o contrato com o arreio (sala/prova_predio.js)
