@@ -1628,6 +1628,10 @@
   // ficheiro); a diferenca e o aberto. `window.__mdVivo` so fica true quando a ancora da Binance esta de pe.
   function vivoDoInstrumento() {
     try {
+      // enquanto o arreio injecta dados (pausarCiclo), manda o FICHEIRO: a prova da agulha alimenta um `agora`
+      // fabricado, e o preco vivo - que continua a chegar - passava-lhe a frente e a prova caia. Fora da prova
+      // esta condicao nunca e verdadeira.
+      if (cicloPausadoAte > Date.now()) return null;
       if (!window.__mdVivo || !window.__md || !window.__md.S) return null;
       var S = window.__md.S, r = Number(S.real), fe = Number(S.fech);
       if (!isFinite(r)) return null;
@@ -1697,6 +1701,7 @@
   }
   function actualizarHologramas(forcar) { NOMES_HOLO.forEach(function (n) { desenharHolo(holos[n], forcar); }); pintarSeparador(); }
   var ultimoTrilho = 0, ultimoNumeros = 0, ultimoVivo = 0;
+  var cicloPausadoAte = 0;   // v6: o arreio pausa o ciclo enquanto injecta dados (senao o ficheiro real pisa a prova a meio)
   function animarHolos(agora) {
     if (!T) return;
     var v = holos.velocimetro; if (v && v.redesenha) desenharHolo(v, false);
@@ -2655,7 +2660,6 @@
   // ---------------------------------------------------------------- dados
   function buscar(ficheiro) { return fetch(ficheiro + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }); }
   var estadoBase = '';        // o texto do estado sem a idade do dado (o relogio junta-lha ao segundo)
-  var cicloPausadoAte = 0;   // v6: o arreio pausa o ciclo enquanto injecta dados (senao o ficheiro real pisa a prova a meio)
   function ciclo() {
     if (cicloPausadoAte > Date.now()) return;
     Promise.all([buscar(F_PREDIO).catch(function () { return null; }), buscar(F_TORRE).catch(function () { return null; })])
