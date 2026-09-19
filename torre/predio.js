@@ -2260,7 +2260,54 @@
   // v5 (ordem dele): a fila de cartoes sao OS 10 MAIS IMPORTANTES DE TODA A CADEIA (torre_30.cargos_de_topo), nao
   // um por andar: Sr. Stark, directores, gerentes de operacoes, supervisores de operacoes, gerentes de andar.
   // O que se le em grande e "GERENTE ROGERS · SUPERVISORA ROMANOFF" (cargo + apelido); o heroi fica por baixo.
+  // ---------------------------------------------------------------- v6 (19/09): o cartao reage ao agente
+  // Visto quadro a quadro no canal: o agente que age ganha um BALAO por cima com a frase do que fez, e
+  // acende. Aqui a frase vem da conversa do predio (conversa.json) e o cartao e o do cargo que manda no
+  // andar de quem falou. Guarda-se o ultimo topo para saber que cargo cuida de que andar.
+  var topoActual = [], balaoAte = {};
+  function cartaoDoAndar(andar) {
+    if (andar == null) return null;
+    var achado = null;
+    topoActual.forEach(function (c) {
+      if (achado) return;
+      var ns = lista(c.andares);
+      if ((ns.length && ns.indexOf(Number(andar)) >= 0) || Number(c.andar) === Number(andar)) achado = c;
+    });
+    return achado;
+  }
+  function acenderCartao(c, texto, tipo) {
+    if (!c) return;
+    var el = document.querySelector('.cartao.topo[data-id="' + String(c.id).replace(/"/g, '') + '"]');
+    if (!el) return;
+    var b = el.querySelector('.balao');
+    if (b) {
+      b.textContent = String(texto || '').slice(0, 96);
+      b.className = 'balao ' + (tipo === 'lucro' ? 'up' : (tipo === 'perda' ? 'dn' : ''));
+      b.hidden = false;
+      balaoAte[c.id] = Date.now() + 5200;
+    }
+    el.classList.remove('acende');
+    void el.offsetWidth;                       // reinicia a animacao mesmo que ja estivesse a correr
+    el.classList.add('acende');
+  }
+  addEventListener('torre:mensagem', function (ev) {
+    var m = obj(ev && ev.detail), a = obj(m.autor);
+    var c = cartaoDoAndar(a.andar);
+    if (!c) return;
+    acenderCartao(c, S(a.titulo) + ': ' + S(m.texto), S(m.tipo));
+  });
+  setInterval(function () {
+    var agora = Date.now();
+    Object.keys(balaoAte).forEach(function (id) {
+      if (balaoAte[id] > agora) return;
+      delete balaoAte[id];
+      var el = document.querySelector('.cartao.topo[data-id="' + id.replace(/"/g, '') + '"]');
+      var b = el && el.querySelector('.balao');
+      if (b) b.hidden = true;
+    });
+  }, 700);
   function pintarCartoesDaCadeia(cx, topo) {
+    topoActual = lista(topo);
     var modo = disporCartoes(cx, topo.length);
     var maxDep = Math.max.apply(null, topo.map(function (c) { return num0(c.dependentes); }).concat([1]));
     var maxEle = Math.max.apply(null, topo.map(function (c) { return num0(c.elegiveis); }).concat([1]));
@@ -2276,6 +2323,7 @@
         var cor = corDiv[c.divisao] || '#ffd479';
         var activo = num0(c.dependentes) > 0;
         return '<button type="button" class="cartao topo ' + (activo ? 'ok' : 'zero') + '" data-id="' + escH(c.id) + '" data-andar="' + escH(c.andar == null ? '' : c.andar) + '" title="' + escH((c.titulo_completo || c.titulo || '') + ' — ' + (c.criterio || '')) + '">' +
+          '<span class="balao" hidden></span>' +
           '<span class="cab"><span class="avatar">' + avatarSVG(c.personagem || c.heroi, cor, !!c.feminino) + '</span>' +
           '<span class="ident"><u>' + ('0' + (c.posicao || 0)).slice(-2) + ' / ' + escH(String(c.cargo_banco || c.cargo || '').toUpperCase()) + '</u>' +
           '<b>' + escH(String(c.titulo || c.heroi || '').toUpperCase()) + '</b>' +

@@ -7,7 +7,7 @@
 // Nada e inventado aqui: texto, numeros, autor e tipo vem do JSON; quando falta, escreve-se "sem dado".
 (function () {
   'use strict';
-  var URL_CONVERSA = 'conversa.json', CADA_MS = 15000, MAX_DOM = 80, BRILHO_MS = 1300;
+  var URL_CONVERSA = 'conversa.json', CADA_MS = 5000, MAX_DOM = 80, BRILHO_MS = 1300;
   var ETIQUETA = { mercado: 'MERCADO', lucro: 'LUCRO', perda: 'PERDA', director: 'DIRECTOR', contratacao: 'CONTRATACAO',
     inauguracao: 'INAUGURACAO', lab: 'LAB', risco: 'RISCO', resposta: 'RESPOSTA' };
   var vistos = {};            // id -> true: o que ja esta (ou esteve) no DOM
@@ -119,6 +119,9 @@
       var el = construir(m), mae = m.responde_a ? cx.querySelector('.chat-msg[data-id="' + String(m.responde_a).replace(/"/g, '') + '"]') : null;
       if (mae) cx.insertBefore(el, mae.nextSibling);   // a resposta fica colada a mae, indentada
       else cx.insertBefore(el, cx.firstChild);
+      // 19/09: quem quiser saber que um funcionario acabou de falar ouve este evento - e assim que os
+      // cartoes acendem sem o chat saber que os cartoes existem.
+      try { window.dispatchEvent(new CustomEvent('torre:mensagem', { detail: m })); } catch (e) { }
       estado.inseridas++; estado.porTipo[m.tipo] = (estado.porTipo[m.tipo] || 0) + 1;
     }
     podar(cx); escreverKn();
