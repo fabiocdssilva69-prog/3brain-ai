@@ -1915,6 +1915,10 @@
         mo.ultima = f.ultima_corrida_brt; mo.pulso = agora;
         var chefe = f.chefe ? porId[f.chefe] : null;
         if (chefe && chefe.andar !== f.andar) lancarPacote(f.andar, chefe.andar, 'ideia');
+        // 19/09 (queixa dele: "os cards nao estao reagindo"): ate aqui o cartao so acendia com uma mensagem
+        // da conversa - poucas por hora. Agora acende sempre que alguem dos seus andares CORRE, que e o que
+        // acontece a cada ciclo. E a mesma reaccao do canal: o agente age, o cartao dele acende.
+        try { acenderCartao(cartaoDoAndar(andarTorreDe(f)), (obj(f.elenco).titulo_curto || f.id) + ' correu', ''); } catch (e) { }
         if (f.andar === 6) ondaDaFonte(f.id);
         escreverLeituraDeCorrida(f);
       }
@@ -2370,6 +2374,28 @@
     void el.offsetWidth;                       // reinicia a animacao mesmo que ja estivesse a correr
     el.classList.add('acende');
   }
+  // 19/09: o tamanho dos cartoes a pedido dele, guardado no browser. Mudar a classe do body muda duas
+  // variaveis CSS e mais nada - nao ha redesenho, so escala.
+  function aplicarTamanhoCartoes(t) {
+    t = (t === 's' || t === 'g') ? t : 'm';
+    document.body.classList.remove('cart-s', 'cart-g');
+    if (t !== 'm') document.body.classList.add('cart-' + t);
+    var cx = $('ct_tam');
+    if (cx) Array.prototype.forEach.call(cx.querySelectorAll('button'), function (x) { x.classList.toggle('on', x.dataset.tam === t); });
+    try { localStorage.setItem('torre_cartao_tam', t); } catch (e) { }
+    if (typeof disporCartoes === 'function') { var c = $('cartoes'); if (c && topoActual.length) pintarCartoesDaCadeia(c, topoActual); }
+  }
+  (function () {
+    var cx = $('ct_tam');
+    if (!cx) return;
+    cx.addEventListener('click', function (e) {
+      var b = e.target; while (b && b !== this && !(b.dataset && b.dataset.tam)) b = b.parentNode;
+      if (b && b !== this) aplicarTamanhoCartoes(b.dataset.tam);
+    });
+    var t = 'm';
+    try { t = localStorage.getItem('torre_cartao_tam') || 'm'; } catch (e) { }
+    aplicarTamanhoCartoes(t);
+  })();
   addEventListener('torre:mensagem', function (ev) {
     var m = obj(ev && ev.detail), a = obj(m.autor);
     var c = cartaoDoAndar(a.andar);

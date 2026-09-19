@@ -621,3 +621,25 @@ body.lado-fechado .lado-toggle { transform: rotate(180deg); }
 .fita-mov .up { color: #3ecf8e; } .fita-mov .dn { color: #ff5a5f; }
 @keyframes fitaCorre { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) { .fita-mov { animation: none; } }
+
+/* v6 (19/09, pedido dele): o tamanho dos cartoes muda na hora. A largura e a altura da tela saem de uma
+   variavel CSS; mudar a variavel nao redesenha nada, so estica. A escolha fica no browser dele. */
+.ct-tam { margin-left: auto; display: inline-flex; gap: 3px; }
+.ct-tam button {
+  min-width: 22px; padding: 2px 6px; cursor: pointer;
+  background: rgba(16,22,31,.9); color: #8794a4; border: 1px solid rgba(90,200,250,.25); border-radius: 5px;
+  font: 700 9px var(--mono); letter-spacing: .06em;
+}
+.ct-tam button:hover { color: #dfeaf5; border-color: rgba(90,200,250,.55); }
+.ct-tam button.on { color: #0b1018; background: #7fd4ff; border-color: #7fd4ff; }
+:root { --cartao-larg: 236px; --cartao-esc: 1; }
+.cartao.topo { min-width: var(--cartao-larg); max-width: var(--cartao-larg); }
+.cartao.topo .cab .avatar { flex-basis: calc(56px * var(--cartao-esc)); width: calc(56px * var(--cartao-esc)); height: calc(56px * var(--cartao-esc)); }
+.cartao.topo .ident b { font-size: calc(12px * var(--cartao-esc)); }
+.cartao.topo .ident u { font-size: calc(8.5px * var(--cartao-esc)); }
+.cartao.topo .ident em { font-size: calc(9px * var(--cartao-esc)); }
+.cartao.topo .num { font-size: calc(15px * var(--cartao-esc)); }
+.cartao.topo .mtr u { font-size: calc(7.5px * var(--cartao-esc)); }
+.cartao.topo .mtr em { font-size: calc(9px * var(--cartao-esc)); }
+body.cart-s { --cartao-larg: 186px; --cartao-esc: .86; }
+body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
