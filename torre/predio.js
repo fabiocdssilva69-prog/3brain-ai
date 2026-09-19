@@ -2829,9 +2829,19 @@
   // ---------------------------------------------------------------- dados
   function buscar(ficheiro) { return fetch(ficheiro + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }); }
   var estadoBase = '';        // o texto do estado sem a idade do dado (o relogio junta-lha ao segundo)
+  // 🔴 19/09, MEDIDO: a pagina buscava e interpretava o `predio.json` - 330 KB - DE 2 EM 2 SEGUNDOS, quando esse
+  // ficheiro so e reescrito de minuto a minuto pelo servico. Eram ~165 KB de JSON por segundo a serem lidos e
+  // comparados para nada, e e essa a causa mais provavel do travamento de que ele se queixa. O `torre.json` (55 KB)
+  // e que traz os numeros que mudam ao segundo, e esse continua de 2 em 2 s.
+  var CADENCIA_PREDIO_MS = 20000;
+  var ultimoPredio = 0;
   function ciclo() {
     if (cicloPausadoAte > Date.now()) return;
-    Promise.all([buscar(F_PREDIO).catch(function () { return null; }), buscar(F_TORRE).catch(function () { return null; })])
+    var agora = Date.now();
+    var querPredio = !D || (agora - ultimoPredio) >= CADENCIA_PREDIO_MS;
+    if (querPredio) ultimoPredio = agora;
+    Promise.all([querPredio ? buscar(F_PREDIO).catch(function () { return null; }) : Promise.resolve(null),
+                 buscar(F_TORRE).catch(function () { return null; })])
       .then(function (r) { aplicarDados(r[0], r[1]); })
       .catch(function (e) { if (window.console) console.warn('predio', String(e).slice(0, 120)); });
   }
