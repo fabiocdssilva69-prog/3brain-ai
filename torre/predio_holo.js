@@ -65,9 +65,16 @@
       }
       case 'mesa': {
         var p = obj(T.pepper), tot = obj(obj(p.totais).estrategias);
+        // 19/09: a FITA - as ultimas linhas do feed, que e o que corre na "live tape" do canal. Sao eventos reais
+        // escritos pelos executores; aqui so se cortam os campos e se limita a 14.
+        var fita = lista(T.feed).slice(0, 14).map(function (e) {
+          e = obj(e);
+          return { t: S(e.t_brt).slice(0, 5), origem: S(e.origem), tipo: S(e.tipo), simbolo: S(e.simbolo),
+                   texto: S(e.texto_curto), valor: n(e.valor) };
+        });
         var linhas = lista(p.linhas).map(function (l) { l = obj(l); return { nome: S(l.nome_curto || l.chave), classe: S(l.classe), realizado: n(l.realizado) || 0, n: n(l.n), elegivel: l.elegivel === true }; });
         linhas.sort(function (x, y) { return y.realizado - x.realizado; });
-        d = { linhas: linhas.slice(0, 6), n_linhas: n(tot.n_linhas), n: n(tot.n), realizado: n(tot.realizado), aberto: n(tot.aberto),
+        d = { fita: fita, linhas: linhas.slice(0, 6), n_linhas: n(tot.n_linhas), n: n(tot.n), realizado: n(tot.realizado), aberto: n(tot.aberto),
               posicoes: lista(r.posicoes).map(function (q) { q = obj(q); return { simbolo: S(q.simbolo), pnl: n(q.pnl_aberto_usd), pct: n(q.pnl_aberto_pct), origem: S(q.origem), valor: n(q.valor_usd) }; }).slice(0, 7) };
         break;
       }
@@ -252,248 +259,217 @@
     return { esc: esc, angulo: ang, cx: cx, cy: cy, R: R };
   }
 
-  // ---------------------------------------------------------------- 2. TRILHO DO DIA
-  // extra = { pulso: 0..1 ou null } - o pulso do ponto actual so vem enquanto o dado tem < 2 min (a unica
-  // animacao sem evento, e cala-se quando o dado envelhece). A conta de "esta vivo?" e do predio_geo.js.
+  // ============================================================================================
+  // 19/09/2026 - OS OBJECTOS VIVOS, na linguagem do canal @atsmatrix (ordem dele: "substitui os nossos
+  // graficos e hologramas pelos que tu ves la, quero os objetos vivos que ele fez"). Copiou-se a GRAMATICA -
+  // area com ponto vivo, aneis de percentagem, barras de modulos activos, fita de operacoes a rolar, malha de
+  // nos a rodar - e NUNCA os numeros: cada objecto desenha so o que existe nos ficheiros. Onde falta dado,
+  // escreve-se "sem dado".
+  // ============================================================================================
+
+  // ---------------------------------------------------------------- 2. BALANCO DO DIA (era o trilho)
+  // extra = { pulso: 0..1 ou null }. Area por baixo da linha, grelha com os valores a direita, e o PONTO VIVO
+  // no fim - que e o que o canal usa para dizer "isto esta a acontecer agora".
   function trilho(g, W, H, d, extra) {
     d = obj(d); extra = obj(extra);
     var k = Math.max(1, W / 260);
     var r0 = moldura(g, W, H, k, TITULOS.trilho, d.t_brt, extra.idadeMin);
-    var serie = lista(d.serie).filter(function (p) { return lista(p).length === 2 && isFinite(Number(p[1])); });
-    var x0 = r0.x + 4 * k, x1 = r0.x + r0.w - 4 * k, yTop = r0.y + 6 * k, yBot = r0.y + r0.h - 12 * k;
-    // eixo das 00:00 as 24:00 BRT, marcas de 4 h
-    g.strokeStyle = 'rgba(90,200,250,.25)'; g.lineWidth = 1 * k;
-    for (var h = 0; h <= 24; h += 4) {
-      var x = x0 + (x1 - x0) * h / 24;
-      g.beginPath(); g.moveTo(x, yBot); g.lineTo(x, yBot + 3 * k); g.stroke();
-      linhaMono(g, k, (h < 10 ? '0' : '') + h + 'h', x, yBot + 10 * k, 6.5, C.cinzaF, h === 0 ? 'left' : (h === 24 ? 'right' : 'center'));
+    var s = lista(d.serie);
+    if (!s.length) { rotuloPequeno(g, k, 'sem dado', r0.x, r0.y + 14 * k, C.cinza); varrimento(g, W, H, k); return; }
+    var vs = s.map(function (p) { return p[1]; }).concat([0]);
+    var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
+    if (hi - lo < 0.2) { hi += 0.1; lo -= 0.1; }
+    var pad = (hi - lo) * 0.12; hi += pad; lo -= pad;
+    var x0 = r0.x + 2 * k, x1 = r0.x + r0.w - 30 * k, y0 = r0.y + 10 * k, y1 = r0.y + r0.h - 16 * k;
+    var X = function (i) { return x0 + (x1 - x0) * (s.length < 2 ? 1 : i / (s.length - 1)); };
+    var Y = function (v) { return y1 - (y1 - y0) * ((v - lo) / (hi - lo)); };
+    g.lineWidth = k; g.strokeStyle = 'rgba(255,255,255,.055)';
+    for (var i = 0; i <= 3; i++) {
+      var v = lo + (hi - lo) * i / 3, yg = Y(v);
+      g.beginPath(); g.moveTo(x0, yg); g.lineTo(x1, yg); g.stroke();
+      linhaMono(g, k, sinal(v, 1), x1 + 4 * k, yg + 3 * k, 7, C.cinzaF, 'left');
     }
-    g.beginPath(); g.moveTo(x0, yBot); g.lineTo(x1, yBot); g.stroke();
-    if (!serie.length) { linhaMono(g, k, 'sem série do dia no torre.json', (x0 + x1) / 2, (yTop + yBot) / 2, 8, C.cinza, 'center'); varrimento(g, W, H, k); return { pontos: 0 }; }
-    var vmin = 0, vmax = 0;
-    serie.forEach(function (p) { var v = Number(p[1]); if (v < vmin) vmin = v; if (v > vmax) vmax = v; });
-    if (vmax - vmin < 1e-9) { vmax += 1; vmin -= 1; }
-    var folga = (vmax - vmin) * 0.12; vmin -= folga; vmax += folga;
-    function X(t) { var f = fracaoDoDiaLocal(t); return f == null ? null : x0 + (x1 - x0) * f; }
-    function Y(v) { return yBot - (yBot - yTop) * (v - vmin) / (vmax - vmin); }
-    // a linha do zero
-    var y0 = Y(0);
-    g.strokeStyle = 'rgba(255,255,255,.14)'; g.setLineDash([3 * k, 3 * k]); g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y0); g.stroke(); g.setLineDash([]);
-    // area suave e linha
-    var pts = [];
-    serie.forEach(function (p) { var x = X(p[0]); if (x != null) pts.push([x, Y(Number(p[1])), Number(p[1])]); });
-    if (pts.length) {
-      var grad = g.createLinearGradient(0, yTop, 0, yBot);
-      grad.addColorStop(0, 'rgba(90,200,250,.30)'); grad.addColorStop(1, 'rgba(90,200,250,.02)');
-      g.fillStyle = grad; g.beginPath(); g.moveTo(pts[0][0], y0);
-      pts.forEach(function (p) { g.lineTo(p[0], p[1]); });
-      g.lineTo(pts[pts.length - 1][0], y0); g.closePath(); g.fill();
-      g.strokeStyle = C.ciano; g.lineWidth = 1.6 * k; g.lineJoin = 'round'; g.beginPath();
-      pts.forEach(function (p, i) { if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); g.stroke();
-      // pico e vale com a hora
-      function ponto(t, v, cor, txt, acima) {
-        var x = X(t); if (x == null || v == null) return;
-        var y = Y(v);
-        g.fillStyle = cor; g.beginPath(); g.arc(x, y, 2.4 * k, 0, Math.PI * 2); g.fill();
-        linhaMono(g, k, txt, Math.min(x1 - 30 * k, Math.max(x0 + 30 * k, x)), acima ? y - 5 * k : y + 10 * k, 6.5, cor, 'center');
-      }
-      ponto(d.pico_t, d.pico, C.verde, 'pico ' + sinal(d.pico, 2) + ' ' + S(d.pico_t), true);
-      ponto(d.vale_t, d.vale, C.vermelho, 'vale ' + sinal(d.vale, 2) + ' ' + S(d.vale_t), false);
-      // o ponto actual: pulsa so quando o dado esta vivo
-      var ult = pts[pts.length - 1];
-      var pulso = Number(extra.pulso);
-      if (isFinite(pulso)) {
-        var rr = (3 + 6 * Math.abs(Math.sin(pulso * Math.PI))) * k;
-        g.strokeStyle = 'rgba(90,200,250,' + (0.85 * (1 - Math.abs(Math.sin(pulso * Math.PI)))).toFixed(3) + ')';
-        g.lineWidth = 1.2 * k; g.beginPath(); g.arc(ult[0], ult[1], rr, 0, Math.PI * 2); g.stroke();
-      }
-      g.fillStyle = corPnl(ult[2]); g.beginPath(); g.arc(ult[0], ult[1], 3 * k, 0, Math.PI * 2); g.fill();
-      linhaMono(g, k, sinal(ult[2], 2), Math.min(x1 - 4 * k, ult[0] + 6 * k), ult[1] + 3 * k, 8, corPnl(ult[2]), ult[0] > x1 - 50 * k ? 'right' : 'left');
-      linhaMono(g, k, S(serie[0][0]) + ' → ' + S(serie[serie.length - 1][0]) + ' · ' + serie.length + ' min', x1, yTop + 2 * k, 6.5, C.cinzaF, 'right');
-    }
+    var yZero = Y(0);
+    g.setLineDash([3 * k, 3 * k]); g.strokeStyle = 'rgba(200,215,230,.30)';
+    g.beginPath(); g.moveTo(x0, yZero); g.lineTo(x1, yZero); g.stroke(); g.setLineDash([]);
+    var fim = s[s.length - 1][1], cor = corPnl(fim);
+    var grd = g.createLinearGradient(0, Math.min(Y(fim), yZero), 0, yZero);
+    grd.addColorStop(0, fim >= 0 ? 'rgba(62,207,142,.34)' : 'rgba(255,90,95,.34)');
+    grd.addColorStop(1, 'rgba(62,207,142,0)');
+    g.beginPath(); g.moveTo(X(0), yZero);
+    s.forEach(function (p, i2) { g.lineTo(X(i2), Y(p[1])); });
+    g.lineTo(X(s.length - 1), yZero); g.closePath(); g.fillStyle = grd; g.fill();
+    g.beginPath(); s.forEach(function (p, i2) { i2 ? g.lineTo(X(i2), Y(p[1])) : g.moveTo(X(i2), Y(p[1])); });
+    g.lineWidth = 1.8 * k; g.strokeStyle = cor; g.lineJoin = 'round'; g.stroke();
+    [[d.pico, d.pico_t, C.verde], [d.vale, d.vale_t, C.vermelho]].forEach(function (m) {
+      if (m[0] == null) return;
+      var ym = Y(m[0]);
+      g.strokeStyle = m[2]; g.lineWidth = k; g.beginPath(); g.moveTo(x0, ym); g.lineTo(x0 + 8 * k, ym); g.stroke();
+      linhaMono(g, k, S(m[1]), x0 + 10 * k, ym + 3 * k, 6.5, m[2], 'left');
+    });
+    var px = X(s.length - 1), py = Y(fim);
+    var pul = extra.pulso == null ? 0 : Math.sin(Number(extra.pulso) * Math.PI * 2) * 0.5 + 0.5;
+    g.fillStyle = cor; g.globalAlpha = 0.25 + 0.35 * pul;
+    g.beginPath(); g.arc(px, py, (4.5 + 3 * pul) * k, 0, Math.PI * 2); g.fill();
+    g.globalAlpha = 1; g.beginPath(); g.arc(px, py, 2.6 * k, 0, Math.PI * 2); g.fill();
+    var etq = sinal(fim, 2);
+    g.font = '700 ' + (8.5 * k) + 'px ' + MONO;
+    var wE = g.measureText(etq).width + 8 * k;
+    var ex = Math.min(px + 6 * k, r0.x + r0.w - wE), ey = py - 9 * k;
+    g.fillStyle = 'rgba(8,13,20,.92)'; cantoRedondo(g, ex, ey, wE, 12 * k, 3 * k); g.fill();
+    g.strokeStyle = cor; g.lineWidth = k; g.stroke();
+    numero(g, k, etq, ex + wE / 2, ey + 9 * k, 8.5, cor, 'center');
+    linhaMono(g, k, s.length + ' pontos · ' + S(s[0][0]) + '→' + S(s[s.length - 1][0]), r0.x, r0.y + r0.h - 2 * k, 7, C.cinzaF, 'left');
     varrimento(g, W, H, k);
-    return { pontos: pts.length, pulsa: isFinite(Number(extra.pulso)) };
-  }
-  function fracaoDoDiaLocal(hhmm) {
-    var m = S(hhmm).match(/(\d{1,2}):(\d{2})/); if (!m) return null;
-    var h = Number(m[1]), mi = Number(m[2]); if (h > 24 || mi > 59) return null;
-    return Math.max(0, Math.min(1, (h * 60 + mi) / 1440));
   }
 
-  // ---------------------------------------------------------------- 3. SR. STARK (Direccao)
+  // ---------------------------------------------------------------- 3. ANEIS DO CAPITAL (era o Sr. Stark)
+  // Os tres aneis de percentagem do canal, com o que ca importa: quanto do capital esta em uso e como se reparte.
+  function anel(g, k, cx, cy, r, frac, cor, titulo, valor) {
+    var a0 = -Math.PI / 2, a1 = a0 + Math.PI * 2 * Math.max(0, Math.min(1, frac || 0));
+    g.lineCap = 'round';
+    g.lineWidth = r * 0.26; g.strokeStyle = 'rgba(255,255,255,.07)';
+    g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = cor; g.beginPath(); g.arc(cx, cy, r, a0, a1); g.stroke();
+    g.lineCap = 'butt';
+    numero(g, k, (frac == null ? '—' : Math.round(frac * 100) + '%'), cx, cy + 4 * k, 11, C.texto, 'center');
+    rotuloPequeno(g, k, titulo, cx, cy + r + 10 * k, C.cinza, 'center');
+    if (valor) linhaMono(g, k, valor, cx, cy + r + 19 * k, 7, C.textoM, 'center');
+  }
   function srStark(g, W, H, d, extra) {
     d = obj(d); extra = obj(extra);
-    var k = Math.max(1, W / 220);
-    var r0 = moldura(g, W, H, k, TITULOS.sr_stark, d.t_brt, extra.idadeMin, d.existe ? null : 'Sr. Stark v1 não aplica — a fatia é do alocador');
-    var a = obj(d.acoes), c = obj(d.cripto);
-    var usoC = Math.max(0, Number(c.em_uso) || 0), usoA = Math.max(0, Number(a.em_uso) || 0);
-    var livre = Number(d.livre), casa = Number(d.capital_casa);
-    var livreDesenho = isFinite(livre) ? Math.max(0, livre) : 0;
-    var total = usoC + usoA + livreDesenho;
-    var yTop = r0.y + (d.existe ? 2 : 10) * k;
-    var R = Math.min((r0.h - (d.existe ? 2 : 10) * k) * 0.36, r0.w * 0.19), cx = r0.x + R + 6 * k, cy = yTop + R + 4 * k;
-    // o anel de capital: cripto em uso / accoes em uso / livre
-    var fatias = [[usoC, C.ambar, 'cripto em uso'], [usoA, C.azul, 'acções em uso'], [livreDesenho, C.cinza, 'livre']];
-    var a0 = -Math.PI / 2;
-    g.lineWidth = R * 0.42; g.lineCap = 'butt';
-    if (total > 0) fatias.forEach(function (f) {
-      if (f[0] <= 0) return;
-      var a1 = a0 + Math.PI * 2 * f[0] / total;
-      g.strokeStyle = f[1]; g.beginPath(); g.arc(cx, cy, R * 0.78, a0, a1); g.stroke(); a0 = a1;
-    });
-    else { g.strokeStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.arc(cx, cy, R * 0.78, 0, Math.PI * 2); g.stroke(); }
-    numero(g, k, isFinite(casa) ? num(casa, 0) : '—', cx, cy + 4 * k, 11, C.texto, 'center');
-    rotuloPequeno(g, k, 'US$ casa', cx, cy + 12 * k, C.cinzaF, 'center');
-    // legenda
-    var lx = cx + R + 10 * k, ly = yTop + 8 * k;
-    fatias.forEach(function (f, i) {
-      g.fillStyle = f[1]; g.fillRect(lx, ly + i * 13 * k - 6 * k, 6 * k, 6 * k);
-      linhaMono(g, k, num(f[0], 2), lx + 10 * k, ly + i * 13 * k, 8.5, C.texto, 'left');
-      rotuloPequeno(g, k, f[2], lx + 10 * k + g.measureText(num(f[0], 2)).width + 6 * k, ly + i * 13 * k, C.cinza, 'left');
-    });
-    if (isFinite(livre) && livre < 0) linhaMono(g, k, 'livre ' + sinal(livre, 2) + ' (em uso acima do capital)', lx, ly + 3 * 13 * k, 7, C.ambar, 'left');
-    // realizado e aberto por lado
-    var yb = cy + R + 12 * k;
-    var col = r0.w / 2;
-    [['acções', a], ['cripto', c]].forEach(function (par, i) {
-      var x = r0.x + i * col + 2 * k;
-      rotuloPequeno(g, k, par[0], x, yb, C.ciano, 'left');
-      linhaMono(g, k, 'realizado ' + sinal(par[1].realizado, 2), x, yb + 11 * k, 8, corPnl(par[1].realizado), 'left');
-      linhaMono(g, k, 'aberto ' + sinal(par[1].aberto, 2), x, yb + 21 * k, 8, corPnl(par[1].aberto), 'left');
-      linhaMono(g, k, 'capital ' + (par[1].capital == null ? '—' : num(par[1].capital, 2)), x, yb + 31 * k, 7, C.cinza, 'left');
-    });
+    var k = Math.max(1, W / 260);
+    var r0 = moldura(g, W, H, k, TITULOS.sr_stark, d.t_brt, extra.idadeMin);
+    var ac = obj(d.acoes), cr = obj(d.cripto);
+    var emUso = (n(ac.em_uso) || 0) + (n(cr.em_uso) || 0), cap = n(d.capital_casa);
+    var r = Math.min(r0.w / 7.2, r0.h / 3.4);
+    var cy = r0.y + r + 14 * k, passo = r0.w / 3;
+    anel(g, k, r0.x + passo * 0.5, cy, r, cap ? emUso / cap : null, C.ciano, 'capital em uso', 'US$ ' + num(emUso, 2));
+    anel(g, k, r0.x + passo * 1.5, cy, r, emUso ? (n(cr.em_uso) || 0) / emUso : null, C.verde, 'cripto', 'US$ ' + num(cr.em_uso, 2));
+    anel(g, k, r0.x + passo * 2.5, cy, r, emUso ? (n(ac.em_uso) || 0) / emUso : null, C.ambar, 'acções', 'US$ ' + num(ac.em_uso, 2));
+    var y = cy + r + 30 * k;
+    if (y < r0.y + r0.h - 6 * k) {
+      linhaMono(g, k, 'livre ' + num(d.livre, 2) + ' · casa ' + num(cap, 2) + ' US$', r0.x, y, 7.5, C.textoM, 'left');
+      linhaMono(g, k, d.existe ? 'Sr. Stark aplica' : 'Sr. Stark não aplica — a fatia é do alocador',
+        r0.x, Math.min(r0.y + r0.h - 2 * k, y + 10 * k), 7, C.cinzaF, 'left');
+    }
     varrimento(g, W, H, k);
-    return { total: total };
   }
 
-  // ---------------------------------------------------------------- 4. RISCO
+  // ---------------------------------------------------------------- 4. MODULOS ACTIVOS (era o Risco)
+  // As barras de "active modules" do canal, com as CADEIRAS reais e o medidor do tecto de perda do dia.
   function risco(g, W, H, d, extra) {
     d = obj(d); extra = obj(extra);
-    var k = Math.max(1, W / 220);
-    var r0 = moldura(g, W, H, k, TITULOS.risco, d.t_brt, extra.idadeMin);
-    var x = r0.x + 2 * k, y = r0.y + 6 * k, w = r0.w - 4 * k;
-    // a barra "perda do dia usada": so quando o realizado e negativo
-    var real = Number(d.realizado), stop = Number(d.perda_dia);
-    rotuloPequeno(g, k, 'perda do dia usada', x, y, C.cinza, 'left');
-    g.fillStyle = 'rgba(255,255,255,.07)'; g.fillRect(x, y + 4 * k, w, 6 * k);
-    if (isFinite(real) && real < 0 && isFinite(stop) && stop < 0) {
-      var f = Math.min(1, real / stop);
-      g.fillStyle = f > 0.8 ? C.vermelho : C.ambar; g.fillRect(x, y + 4 * k, w * f, 6 * k);
-      linhaMono(g, k, sinal(real, 2) + ' de ' + num(stop, 2) + ' (' + Math.round(f * 100) + '%)', x + w, y, 7.5, C.textoM, 'right');
-    } else {
-      g.fillStyle = 'rgba(62,207,142,.35)'; g.fillRect(x, y + 4 * k, 2 * k, 6 * k);
-      linhaMono(g, k, (isFinite(real) ? 'realizado ' + sinal(real, 2) : 'sem realizado') + ' · stop ' + (isFinite(stop) ? num(stop, 2) : '—'), x + w, y, 7.5, C.textoM, 'right');
-    }
-    // N efectivo, recusas, spread
-    var y2 = y + 24 * k;
-    numero(g, k, d.n_ef == null ? '—' : num(d.n_ef, 2), x, y2 + 8 * k, 16, d.n_ef != null && d.n_ef < 1.5 ? C.ambar : C.ciano, 'left');
-    rotuloPequeno(g, k, 'N efectivo', x, y2 + 17 * k, C.cinza, 'left');
-    var xr = x + w * 0.36;
-    rotuloPequeno(g, k, 'recusas hoje', xr, y2, C.cinza, 'left');
-    var rec = lista(d.recusas);
-    if (!rec.length) linhaMono(g, k, 'nenhuma', xr, y2 + 10 * k, 7.5, C.textoM, 'left');
-    rec.slice(0, 2).forEach(function (p, i) { linhaMono(g, k, corta(g, S(p[0]), w * 0.28) + ' ' + num(p[1], 0), xr, y2 + 10 * k + i * 9 * k, 7.5, C.textoM, 'left'); });
-    var xs = x + w * 0.70;
-    rotuloPequeno(g, k, 'pior spread', xs, y2, C.cinza, 'left');
-    var sp = lista(d.spread)[0];
-    linhaMono(g, k, sp ? corta(g, S(sp[0]), w * 0.28) : 'sem dado', xs, y2 + 10 * k, 7.5, C.textoM, 'left');
-    if (sp) linhaMono(g, k, num(sp[1], 1) + ' pb', xs, y2 + 19 * k, 8, sp[1] > 50 ? C.ambar : C.textoM, 'left');
-    // as 8 cadeiras
-    var y3 = y2 + 30 * k, cad = lista(d.cadeiras);
-    rotuloPequeno(g, k, 'cadeiras', x, y3, C.cinza, 'left');
-    var cw = w / 4, ch = 13 * k;
-    cad.slice(0, 8).forEach(function (c, i) {
-      var cx = x + (i % 4) * cw, cy = y3 + 5 * k + Math.floor(i / 4) * (ch + 2 * k);
-      var alerta = String(c.estado).toUpperCase() === 'ALERT';
-      var cor = alerta ? C.ambar : (String(c.estado).toUpperCase() === 'IDLE' ? C.cinzaF : C.ciano);
-      g.fillStyle = alerta ? 'rgba(232,176,75,.16)' : 'rgba(90,200,250,.06)';
-      g.fillRect(cx, cy, cw - 3 * k, ch);
-      g.fillStyle = cor; g.fillRect(cx, cy, 2 * k, ch);
-      linhaMono(g, k, corta(g, S(c.nome), cw - 22 * k), cx + 5 * k, cy + 9 * k, 6.5, alerta ? C.ambar : C.textoM, 'left');
-      linhaMono(g, k, c.hoje == null ? '' : num(c.hoje, 0), cx + cw - 6 * k, cy + 9 * k, 6.5, cor, 'right');
+    var k = Math.max(1, W / 260);
+    var real = n(d.realizado), perda = n(d.perda_dia);
+    var alerta = (real != null && perda != null && perda !== 0 && real <= perda * 0.8) ? 'perto do tecto do dia' : '';
+    var r0 = moldura(g, W, H, k, TITULOS.risco, d.t_brt, extra.idadeMin, alerta);
+    var y = r0.y + (alerta ? 16 : 8) * k;
+    var usado = (perda && real != null && real < 0) ? Math.min(1, real / perda) : 0;
+    rotuloPequeno(g, k, 'uso do tecto do dia', r0.x, y, C.cinza);
+    numero(g, k, Math.round(usado * 100) + '%', r0.x + r0.w, y, 9, usado > 0.6 ? C.vermelho : C.texto, 'right');
+    y += 5 * k;
+    g.fillStyle = 'rgba(255,255,255,.08)'; cantoRedondo(g, r0.x, y, r0.w, 5 * k, 2.5 * k); g.fill();
+    g.fillStyle = usado > 0.6 ? C.vermelho : C.ambar;
+    cantoRedondo(g, r0.x, y, Math.max(2 * k, r0.w * usado), 5 * k, 2.5 * k); g.fill();
+    y += 10 * k;
+    linhaMono(g, k, 'dia ' + sinal(real, 2) + ' · tecto ' + num(perda, 2) + ' US$ · ' + num(d.n_ef, 2) + ' apostas efectivas', r0.x, y, 7, C.textoM, 'left');
+    y += 9 * k;
+    var cs = lista(d.cadeiras).slice(0, 8);
+    var maxH = Math.max.apply(null, cs.map(function (c) { return n(c.hoje) || 0; }).concat([1]));
+    var alt = Math.max(9 * k, Math.min(14 * k, (r0.y + r0.h - y - 2 * k) / Math.max(1, cs.length)));
+    cs.forEach(function (c) {
+      if (y + alt > r0.y + r0.h) return;
+      var activo = String(c.estado || '').toUpperCase() !== 'IDLE', h = n(c.hoje) || 0;
+      g.fillStyle = activo ? C.verde : C.cinzaF;
+      g.beginPath(); g.arc(r0.x + 2 * k, y + alt * 0.45, 1.8 * k, 0, Math.PI * 2); g.fill();
+      linhaMono(g, k, corta(g, S(c.nome), 40 * k), r0.x + 7 * k, y + alt * 0.62, 7.5, activo ? C.texto : C.cinza, 'left');
+      var bx = r0.x + 52 * k, bw = r0.w - 52 * k - 16 * k;
+      g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(bx, y + alt * 0.28, bw, 3.4 * k);
+      g.fillStyle = activo ? C.ciano : 'rgba(90,200,250,.35)';
+      g.fillRect(bx, y + alt * 0.28, Math.max(1.5 * k, bw * (h / maxH)), 3.4 * k);
+      linhaMono(g, k, String(h), r0.x + r0.w, y + alt * 0.62, 7.5, C.textoM, 'right');
+      y += alt;
     });
     varrimento(g, W, H, k);
-    return { cadeiras: cad.length };
   }
 
-  // ---------------------------------------------------------------- 5. MESA
+  // ---------------------------------------------------------------- 5. FITA DE OPERACOES (era a Mesa)
+  // A "live tape" do canal: as ultimas linhas do feed a rolar, a mais nova acesa e com barra a esquerda.
+  var COR_TIPO = { entrada: '#3ecf8e', alvo: '#3ecf8e', saida: '#e8b04b', stop: '#ff5a5f', sinapse: '#5ac8fa',
+                   batimento: '#5b6573', spread_acima_do_tecto: '#e8b04b', capital_esgotado: '#ff5a5f' };
   function mesa(g, W, H, d, extra) {
     d = obj(d); extra = obj(extra);
-    var k = Math.max(1, W / 220);
+    var k = Math.max(1, W / 260);
     var r0 = moldura(g, W, H, k, TITULOS.mesa, d.t_brt, extra.idadeMin);
-    var x = r0.x + 2 * k, y = r0.y + 2 * k, w = r0.w - 4 * k;
-    linhaMono(g, k, (d.n_linhas == null ? '—' : num(d.n_linhas, 0)) + ' estratégias · ' + sinal(d.realizado, 2) + ' realizado · ' +
-      (d.n == null ? '—' : num(d.n, 0)) + ' op.', x, y + 6 * k, 7.5, C.textoM, 'left');
-    // as 6 com mais realizado, em barras
-    var ls = lista(d.linhas), maxAbs = 0.01;
-    ls.forEach(function (l) { maxAbs = Math.max(maxAbs, Math.abs(Number(l.realizado) || 0)); });
-    var yb = y + 12 * k, bh = 8 * k, larg = w * 0.42, xb = x + w * 0.40;
-    ls.forEach(function (l, i) {
-      var yy = yb + i * (bh + 2.4 * k), v = Number(l.realizado) || 0;
-      g.font = '500 ' + (6.8 * k) + 'px ' + MONO;
-      linhaMono(g, k, corta(g, S(l.nome), w * 0.30), x, yy + bh - 1.5 * k, 6.8, C.textoM, 'left');
-      rotuloPequeno(g, k, S(l.classe).slice(0, 3), xb - 4 * k, yy + bh - 1.5 * k, C.cinzaF, 'right');
-      g.fillStyle = 'rgba(255,255,255,.05)'; g.fillRect(xb, yy, larg, bh);
-      var f = Math.abs(v) / maxAbs;
-      g.fillStyle = corPnl(v); g.fillRect(xb, yy, Math.max(1.5 * k, larg * f), bh);
-      linhaMono(g, k, sinal(v, 2), xb + larg + 4 * k, yy + bh - 1.5 * k, 6.8, corPnl(v), 'left');
+    var y = r0.y + 8 * k;
+    rotuloPequeno(g, k, 'hora', r0.x, y, C.cinzaF);
+    rotuloPequeno(g, k, 'quem', r0.x + 30 * k, y, C.cinzaF);
+    rotuloPequeno(g, k, 'o que', r0.x + 74 * k, y, C.cinzaF);
+    rotuloPequeno(g, k, 'valor', r0.x + r0.w, y, C.cinzaF, 'right');
+    y += 4 * k;
+    g.strokeStyle = 'rgba(90,200,250,.25)'; g.lineWidth = k;
+    g.beginPath(); g.moveTo(r0.x, y); g.lineTo(r0.x + r0.w, y); g.stroke();
+    y += 3 * k;
+    var f = lista(d.fita), alt = 11 * k, desl = extra.desl == null ? 0 : (Number(extra.desl) || 0);
+    g.save(); g.beginPath(); g.rect(r0.x - 2 * k, y, r0.w + 4 * k, Math.max(0, r0.y + r0.h - y - 10 * k)); g.clip();
+    f.forEach(function (e, i) {
+      var yy = y + i * alt + desl * alt;
+      if (yy < y - alt || yy > r0.y + r0.h) return;
+      var cor = COR_TIPO[e.tipo] || C.textoM, novo = i === 0;
+      if (novo) { g.fillStyle = 'rgba(90,200,250,.10)'; g.fillRect(r0.x - 2 * k, yy, r0.w + 4 * k, alt); }
+      g.fillStyle = cor; g.fillRect(r0.x - 2 * k, yy + 1.5 * k, 1.8 * k, alt - 3 * k);
+      linhaMono(g, k, e.t, r0.x + 2 * k, yy + alt * 0.72, 7, novo ? C.texto : C.cinza, 'left');
+      linhaMono(g, k, corta(g, S(e.origem).toUpperCase(), 40 * k), r0.x + 30 * k, yy + alt * 0.72, 7, C.textoM, 'left');
+      var oque = S(e.simbolo) ? (S(e.simbolo) + ' ' + S(e.tipo).replace(/_/g, ' ')) : S(e.texto || e.tipo).replace(/_/g, ' ');
+      linhaMono(g, k, corta(g, oque, r0.w - 108 * k), r0.x + 74 * k, yy + alt * 0.72, 7, novo ? C.texto : C.textoM, 'left');
+      if (e.valor != null) linhaMono(g, k, num(e.valor, 2), r0.x + r0.w, yy + alt * 0.72, 7, cor, 'right');
     });
-    if (!ls.length) linhaMono(g, k, 'sem linhas da mesa no torre.json', x, yb + 8 * k, 7.5, C.cinza, 'left');
-    // o livro de posicoes abertas
-    var yp = yb + Math.max(ls.length, 1) * (bh + 2.4 * k) + 8 * k;
-    rotuloPequeno(g, k, 'posições abertas · ' + lista(d.posicoes).length, x, yp, C.ciano, 'left');
-    var cols = [x, x + w * 0.30, x + w * 0.52, x + w * 0.70, x + w];
-    lista(d.posicoes).forEach(function (p, i) {
-      var yy = yp + 9 * k + i * 8.4 * k;
-      linhaMono(g, k, S(p.simbolo), cols[0], yy, 6.8, C.texto, 'left');
-      linhaMono(g, k, sinal(p.pnl, 2), cols[1], yy, 6.8, corPnl(p.pnl), 'left');
-      linhaMono(g, k, p.pct == null ? '' : sinal(p.pct, 2) + '%', cols[2], yy, 6.8, corPnl(p.pct), 'left');
-      linhaMono(g, k, S(p.origem), cols[3], yy, 6.8, C.cinza, 'left');
-      linhaMono(g, k, p.valor == null ? '' : num(p.valor, 0), cols[4], yy, 6.8, C.cinzaF, 'right');
-    });
-    if (!lista(d.posicoes).length) linhaMono(g, k, 'nenhuma posição aberta', x, yp + 9 * k, 6.8, C.cinza, 'left');
+    g.restore();
+    if (!f.length) rotuloPequeno(g, k, 'sem eventos', r0.x, y + 12 * k, C.cinza);
+    linhaMono(g, k, 'Σ ' + sinal(d.realizado, 2) + ' US$ · ' + num(d.n, 0) + ' op · ' + num(d.n_linhas, 0) + ' estratégias',
+      r0.x, r0.y + r0.h - 2 * k, 7, C.textoM, 'left');
     varrimento(g, W, H, k);
-    return { linhas: ls.length, posicoes: lista(d.posicoes).length };
   }
 
-  // ---------------------------------------------------------------- 6. LABORATORIO
+  // ---------------------------------------------------------------- 6. MALHA DAS FAMILIAS (era o Laboratorio)
+  // A "strategy lattice" do canal: os nos sao as FAMILIAS de genes, as arestas ligam vizinhos, e a malha RODA
+  // sempre - e o objecto que continua vivo mesmo quando nenhum numero mudou. O no da familia dominante cresce
+  // com a monocultura: a 100% ve-se uma bola gigante e o resto em pontos, que e exactamente o que se passa.
   function laboratorio(g, W, H, d, extra) {
     d = obj(d); extra = obj(extra);
-    var k = Math.max(1, W / 220);
+    var k = Math.max(1, W / 260);
     var r0 = moldura(g, W, H, k, TITULOS.laboratorio, d.t_brt, extra.idadeMin);
-    var x = r0.x + 2 * k, y = r0.y + 2 * k, w = r0.w - 4 * k;
-    numero(g, k, d.geracao_actual == null ? 'MARK —' : 'MARK ' + num(d.geracao_actual, 0), x, y + 14 * k, 14, C.ciano, 'left');
-    rotuloPequeno(g, k, 'geração actual', x, y + 23 * k, C.cinza, 'left');
-    var gs = lista(d.geracoes), ult = gs[gs.length - 1];
-    var xr = x + w * 0.42;
-    linhaMono(g, k, (d.n_genes == null ? '—' : num(d.n_genes, 0)) + ' genes · ' + (d.n_familias == null ? '—' : num(d.n_familias, 0)) + ' famílias', xr, y + 8 * k, 7.5, C.textoM, 'left');
-    linhaMono(g, k, (d.robustos_alguma_vez == null ? '—' : num(d.robustos_alguma_vez, 0)) + ' robustos alguma vez', xr, y + 17 * k, 7.5, C.textoM, 'left');
-    if (ult) {
-      var mono = Number(ult.monocultura_pct);
-      linhaMono(g, k, 'monocultura ' + (isFinite(mono) ? num(mono, 0) + '%' : '—') + ' · ' + corta(g, S(ult.familia_maior) || '—', w * 0.34),
-        xr, y + 26 * k, 7.5, isFinite(mono) && mono > 80 ? C.ambar : C.textoM, 'left');
+    var nF = Math.max(3, Math.min(48, n(d.n_familias) || 8));
+    var ang = Number(extra.angulo); if (!isFinite(ang)) ang = 0;
+    var cx = r0.x + r0.w * 0.5, cy = r0.y + r0.h * 0.42, R = Math.min(r0.w * 0.36, r0.h * 0.30);
+    var mono = n(d.monocultura_pct), dom = Math.max(0, Math.min(1, (mono == null ? 0 : mono) / 100));
+    var pts = [], i;
+    for (i = 0; i < nF; i++) {
+      var a = ang + i * Math.PI * 2 / nF;
+      pts.push({ x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R * 0.42 - Math.sin(a * 2 + ang) * R * 0.16, z: Math.sin(a) });
     }
-    // as ultimas 8 geracoes: pares de barras avaliados / robustos
-    var yb = y + 34 * k, hb = r0.h - 40 * k, maxAv = 1;
-    gs.forEach(function (gg) { maxAv = Math.max(maxAv, Number(gg.avaliados) || 0); });
-    rotuloPequeno(g, k, 'avaliados', x, yb - 2 * k, C.cinzaF, 'left');
-    g.fillStyle = C.ciano; g.fillRect(x + 40 * k, yb - 6 * k, 5 * k, 4 * k);
-    rotuloPequeno(g, k, 'robustos', x + 48 * k, yb - 2 * k, C.cinzaF, 'left');
-    var slot = w / Math.max(1, gs.length), bw = Math.max(2 * k, slot * 0.34);
-    gs.forEach(function (gg, i) {
-      var bx = x + i * slot + slot * 0.12, av = Number(gg.avaliados) || 0, rb = Number(gg.robustos) || 0;
-      var hA = hb * av / maxAv, hR = hb * rb / maxAv;
-      g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(bx, yb + hb - hA, bw, hA);
-      var mono = Number(gg.monocultura_pct);
-      g.fillStyle = isFinite(mono) && mono > 80 ? C.ambar : C.ciano; g.fillRect(bx + bw + 1 * k, yb + hb - hR, bw, hR);
-      linhaMono(g, k, num(gg.geracao, 0), bx + bw, yb + hb + 8 * k, 6.5, C.cinza, 'center');
-    });
-    if (!gs.length) linhaMono(g, k, 'sem gerações no torre.json', x, yb + 12 * k, 7.5, C.cinza, 'left');
+    g.lineWidth = 0.9 * k;
+    for (i = 0; i < nF; i++) {
+      [1, 5].forEach(function (salto) {
+        var j = (i + salto) % nF, p = pts[i], q = pts[j], prof = (p.z + q.z) / 2;
+        g.strokeStyle = 'rgba(90,200,250,' + (0.10 + 0.20 * (prof + 1) / 2).toFixed(3) + ')';
+        g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); g.stroke();
+      });
+    }
+    for (i = 0; i < nF; i++) {
+      var p2 = pts[i], grande = i === 0, rr = grande ? (2.2 + 5.5 * dom) * k : 1.7 * k;
+      g.fillStyle = grande ? C.ambar : 'rgba(150,224,255,' + (0.45 + 0.4 * (p2.z + 1) / 2).toFixed(2) + ')';
+      g.beginPath(); g.arc(p2.x, p2.y, rr, 0, Math.PI * 2); g.fill();
+      if (grande) { g.globalAlpha = 0.25; g.beginPath(); g.arc(p2.x, p2.y, rr * 2.1, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
+    }
+    if (d.familia_maior) linhaMono(g, k, corta(g, S(d.familia_maior), r0.w), cx, cy + R * 0.42 + 14 * k, 7.5, C.ambar, 'center');
+    var yb = r0.y + r0.h - 20 * k;
+    linhaMono(g, k, 'geração ' + num(d.geracao_actual, 0) + ' · ' + num(d.n_genes, 0) + ' genes · ' + nF + ' famílias', r0.x, yb, 7.5, C.textoM, 'left');
+    linhaMono(g, k, 'monocultura ' + (mono == null ? 'sem dado' : num(mono, 0) + '%') + ' · robustas alguma vez ' + num(d.robustos_alguma_vez, 0),
+      r0.x, yb + 9 * k, 7, mono != null && mono >= 90 ? C.vermelho : C.cinza, 'left');
     varrimento(g, W, H, k);
-    return { geracoes: gs.length };
   }
-
-  // Quantos pixeis do canvas tem tinta (alfa > 16): a prova de "textura nao vazia" do arreio (>= 2%).
   // ---------------------------------------------------------------- 7. NUMEROS (v5d, 18/09)
   // Ordem dele: "ganhos realizados, perdas realizadas, volatil, entrou hoje, saiu hoje, saldo do dia, saldo realizado
   // desde o inicio, se fechasse agora, plano ate a saida... cards animados e vivos, 3D holograficos".
