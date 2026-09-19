@@ -162,13 +162,23 @@
     return { x: m + 8 * k, y: m + 22 * k, w: W - 2 * m - 16 * k, h: H - 2 * m - 30 * k, m: m, inc: inc };
   }
 
-  // as linhas de varrimento por cima do que ja esta desenhado (source-atop: so onde ha tinta, nunca no vazio)
+  // as linhas de varrimento por cima do que ja esta desenhado (source-atop: so onde ha tinta, nunca no vazio).
+  // 19/09: a fase ANDA (fase(v), chamada pelo predio.js a cada quadro) e ha uma BANDA mais clara a descer - e o
+  // que faz um painel do canal parecer ligado mesmo quando nenhum numero mudou. Medido: sem isto, a nossa torre
+  // movia 0,26 por fotograma contra os 2,10 do clipe.
+  var _fase = 0;
+  function fase(v) { v = Number(v); if (isFinite(v)) _fase = v - Math.floor(v); }
   function varrimento(g, W, H, k) {
     g.save();
     g.globalCompositeOperation = 'source-atop';
+    var passo = Math.max(2, Math.round(3 * k)), desl = Math.round(_fase * passo);
     g.fillStyle = C.fundoLinha;
-    var passo = Math.max(2, Math.round(3 * k));
-    for (var y = 0; y < H; y += passo) g.fillRect(0, y, W, Math.max(1, Math.round(k * 0.8)));
+    for (var y = -passo; y < H; y += passo) g.fillRect(0, y + desl, W, Math.max(1, Math.round(k * 0.8)));
+    var yb = (_fase * (H + 120 * k)) - 60 * k, gr = g.createLinearGradient(0, yb - 30 * k, 0, yb + 30 * k);
+    gr.addColorStop(0, 'rgba(90,200,250,0)');
+    gr.addColorStop(0.5, 'rgba(120,215,255,.085)');
+    gr.addColorStop(1, 'rgba(90,200,250,0)');
+    g.fillStyle = gr; g.fillRect(0, yb - 30 * k, W, 60 * k);
     g.restore();
   }
 
@@ -531,7 +541,7 @@
   }
 
   var DESENHOS = { velocimetro: velocimetro, trilho: trilho, sr_stark: srStark, risco: risco, mesa: mesa, laboratorio: laboratorio, numeros: numeros };
-  var api = { fatia: fatia, DESENHOS: DESENHOS, TITULOS: TITULOS, ANDAR_DO_HOLO: ANDAR_DO_HOLO, moldura: moldura,
+  var api = { fatia: fatia, DESENHOS: DESENHOS, TITULOS: TITULOS, ANDAR_DO_HOLO: ANDAR_DO_HOLO, moldura: moldura, fase: fase,
               fraccaoOpaca: fraccaoOpaca, COR: C, num: num, sinal: sinal };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   raiz.PredioHolo = api;

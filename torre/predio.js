@@ -1717,7 +1717,7 @@
     h.tex.needsUpdate = true;
   }
   function actualizarHologramas(forcar) { NOMES_HOLO.forEach(function (n) { desenharHolo(holos[n], forcar); }); pintarSeparador(); }
-  var ultimoTrilho = 0, ultimoNumeros = 0, ultimoVivo = 0, ultimoLab = 0, ultimoMesa = 0;
+  var ultimoTrilho = 0, ultimoNumeros = 0, ultimoVivo = 0, ultimoLab = 0, ultimoMesa = 0, ultimoVarre = 0;
   var cicloPausadoAte = 0;   // v6: o arreio pausa o ciclo enquanto injecta dados (senao o ficheiro real pisa a prova a meio)
   // 🔴 19/09, ordem dele repetida tres vezes: "o predio tem de mudar de segundo em segundo". Entre eventos a
   // torre estava imovel - so o batimento, que e subtil. Agora as duas fitas tem uma BANDA DE LUZ que nunca
@@ -1752,6 +1752,13 @@
     // com a ancora da Binance de pe, o numero muda ao segundo: sem este toque so se redesenhava de 2 em 2 s (o
     // ciclo do ficheiro). O hash ja trava o desenho quando o valor nao mexeu, logo isto nao custa fotogramas.
     correrFitas(agora);
+    // 19/09: o varrimento anda e TODOS os hologramas se redesenham a ~6 por segundo. E o que o canal faz: os
+    // paineis nunca estao parados. O custo e 7 telas pequenas por 6 vezes por segundo - medido no arreio.
+    if (agora - ultimoVarre > 160) {
+      ultimoVarre = agora;
+      PH.fase(agora / 1600);
+      NOMES_HOLO.forEach(function (nm2) { var hh = holos[nm2]; if (hh && hh.sprite.visible) desenharHolo(hh, true); });
+    }
     var lb = holos.laboratorio;
     if (lb && lb.sprite.visible && agora - ultimoLab > 110) { ultimoLab = agora; desenharHolo(lb, true); }
     var ms = holos.mesa;
