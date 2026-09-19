@@ -1536,7 +1536,11 @@
     L.bandaDir = W - 12 - wvel - 8;
     // v5d: os NUMEROS do Pointer por baixo do trilho, ate a linha dos contadores; sem 96 px de altura nao se desenha
     var tN = topoFita + hvel + 8 + ht + 8, fN = Math.min(H - 34, tN + Math.round(wvel * 0.95));   // tecto: medido em N3 a ocupar meio ecra
-    if (fN - tN >= 72) L.rects.numeros      // 19/09: era 96; com a fita no topo o painel desaparecia no ecra apertado = { esq: W - 12 - wvel, topo: tN, dir: W - 12, fundo: fN, coluna: 'dir' };
+    // 19/09: o minimo era 96 px; com a fita no topo o painel dos numeros deixava de caber e desaparecia.
+    // 🔴 E ATENCAO: o comentario que estava AQUI ficou no MEIO da instrucao e comeu-lhe a atribuicao - a
+    // linha passou a ser so uma expressao, o painel nunca recebeu rectangulo, e o arreio acusou '6 de 7
+    // hologramas'. Um // a meio de uma linha apaga o resto dela sem erro nenhum.
+    if (fN - tN >= 72) L.rects.numeros = { esq: W - 12 - wvel, topo: tN, dir: W - 12, fundo: fN, coluna: 'dir' };
     if (k === 0) {
       var wD = clamp(0.20 * W, 160, 236), hD = Math.min((H - 24 - 8 - 30) / 2, 0.78 * wD);
       DIRECTORES.forEach(function (n, i) {
