@@ -610,7 +610,7 @@ body.lado-fechado .lado-toggle { transform: rotate(180deg); }
 /* v6 (19/09): a fita de cotacoes - o movimento continuo que o canal tem e nos nao tinhamos (medido: eles
    2,10 por fotograma, nos 0,28). Anda sozinha; os numeros dentro dela vem do preco vivo. */
 .fita-cot {
-  margin: 0 12px 6px; height: 26px; overflow: hidden; position: relative;
+  position: absolute; top: 6px; left: 10px; right: 10px; z-index: 4; height: 24px; overflow: hidden;
   border: 1px solid var(--l); border-radius: 7px; background: linear-gradient(180deg, rgba(12,18,26,.95), rgba(8,11,15,.95));
 }
 .fita-mov { display: flex; gap: 26px; align-items: center; height: 100%; white-space: nowrap; width: max-content; animation: fitaCorre 38s linear infinite; }

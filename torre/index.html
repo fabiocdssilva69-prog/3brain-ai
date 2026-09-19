@@ -1,5 +1,5 @@
 <!-- TORRE STARK - copia publica e SANEADA: as chaves dos genes sao hashes, a receita fica em casa.
-     Gerada por tesouraria/mercado/publicar_torre.py em 19/09 12:10:23. Actualiza-se sozinha.
+     Gerada por tesouraria/mercado/publicar_torre.py em 19/09 12:11:27. Actualiza-se sozinha.
      Nao listada: <meta robots noindex> nesta pagina e Disallow em /robots.txt. -->
 <!doctype html>
 <html lang="pt">
@@ -41,15 +41,14 @@
   <span><u>passagens</u><b id="k_pas">—</b><i id="k_pas_s">—</i></span>
 </div>
 
-<!-- v6 (19/09): A FITA DE COTACOES. Medido contra o canal: o que nos faltava era movimento CONTINUO, e no
-     canal e uma fita a correr no topo. Esta leva as posicoes abertas com o preco vivo da Binance. -->
-<div class="fita-cot" id="fita_cot" aria-label="posições abertas, ao vivo"><div class="fita-mov" id="fita_mov"></div></div>
 
 <!-- ===================== a torre (3D) + a coluna do lado + os cartoes ===================== -->
 <div class="pred-envol">
 
   <div class="pred-palco" id="palco">
     <canvas id="cena" aria-label="A Torre Stark: 100 andares por ordem de importância, a base em baixo e a coroa no topo"></canvas>
+    <!-- v6: a fita FLUTUA por cima do palco (medido: a ocupar altura propria tirava 34 px e a coroa saia) -->
+    <div class="fita-cot" id="fita_cot" aria-label="posições abertas, ao vivo"><div class="fita-mov" id="fita_mov"></div></div>
     <div class="pred-vinheta" aria-hidden="true"></div>
 
     <!-- etiqueta de andar sob o cursor -->
