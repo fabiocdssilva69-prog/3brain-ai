@@ -1620,12 +1620,33 @@
     var sep = $('holo_sep'); if (sep) sep.hidden = !telemovel;
   }
 
+  // 🔴 19/09, queixa dele: "o velocimetro e os numeros estao parados, o pointer actualiza ao segundo".
+  // A CAUSA: a torre lia SO o ficheiro (torre.json: 15 s em casa, 1-3 min no site), enquanto o instrumento do
+  // Pointer - que vive DENTRO desta pagina, na gaveta "Dados", desenhado pelo reactor.js - ja busca os precos
+  // directamente a Binance e recalcula o dia AO SEGUNDO. Estava tudo ca, sem ninguem a ligar as duas pontas.
+  // `window.__md.S.real` e o resultado do dia com precos vivos; `S.fech` e a parte ja fechada (facto, do
+  // ficheiro); a diferenca e o aberto. `window.__mdVivo` so fica true quando a ancora da Binance esta de pe.
+  function vivoDoInstrumento() {
+    try {
+      if (!window.__mdVivo || !window.__md || !window.__md.S) return null;
+      var S = window.__md.S, r = Number(S.real), fe = Number(S.fech);
+      if (!isFinite(r)) return null;
+      return { agora: r, fechado: isFinite(fe) ? fe : null, aberto: isFinite(fe) ? r - fe : null };
+    } catch (e) { return null; }
+  }
   function desenharHolo(h, forcar) {
     if (!h.sprite.visible || !h.canvas.width) return;
     var f = PH.fatia(h.nome, T, D);
     var idade = PG.idadeEmMinutos(T && T.t_iso, Date.now());
     if (h.nome === 'velocimetro') {
-      var d = f.dados, esc = PG.escalaDoVelocimetro([d.agora, d.pico, d.vale, d.esperado, d.stop]);
+      var d = f.dados, vv = vivoDoInstrumento();
+      if (vv) {                                   // o ficheiro manda no que ja fechou; o preco vivo manda no aberto
+        d.agora = vv.agora;
+        if (vv.fechado != null) d.realizado = vv.fechado;
+        if (vv.aberto != null) d.aberto = vv.aberto;
+        f.hash += '|vivo' + vv.agora.toFixed(4);  // entra no hash: so se redesenha quando o numero MUDA mesmo
+      }
+      var esc = PG.escalaDoVelocimetro([d.agora, d.pico, d.vale, d.esperado, d.stop]);
       var alvo = PG.anguloDaAgulha(d.agora, esc);
       h.esc = esc;
       if (h.primeira) { h.angulo = alvo; h.anguloAlvo = alvo; h.primeira = false; }
@@ -1646,7 +1667,13 @@
     } else if (h.nome === 'numeros') {
       // v5d: CADA NUMERO ANDA quando muda (tween registada, o arreio conta-a) e o ladrilho brilha 2,6 s; na primeira
       // leitura contam de zero ate ao valor. O varrimento lento so corre enquanto o dado tem menos de 2 min.
-      var dn = f.dados, agoraMs = performance.now(), ks = Object.keys(dn), brilho = {}, algum = false;
+      var dn = f.dados, vvN = vivoDoInstrumento();
+      if (vvN) {
+        if (vvN.aberto != null) dn.volatil = vvN.aberto;
+        if (vvN.fechado != null) dn.saldo_dia = vvN.fechado;
+        f.hash += '|vivo' + vvN.agora.toFixed(4);
+      }
+      var agoraMs = performance.now(), ks = Object.keys(dn), brilho = {}, algum = false;
       ks.forEach(function (kk) {
         var v = dn[kk]; if (typeof v !== 'number' || !isFinite(v)) return;
         var primeira = !(kk in h.valores);
@@ -1669,7 +1696,7 @@
     h.tex.needsUpdate = true;
   }
   function actualizarHologramas(forcar) { NOMES_HOLO.forEach(function (n) { desenharHolo(holos[n], forcar); }); pintarSeparador(); }
-  var ultimoTrilho = 0, ultimoNumeros = 0;
+  var ultimoTrilho = 0, ultimoNumeros = 0, ultimoVivo = 0;
   function animarHolos(agora) {
     if (!T) return;
     var v = holos.velocimetro; if (v && v.redesenha) desenharHolo(v, false);
@@ -1677,6 +1704,13 @@
     if (t && t.sprite.visible && agora - ultimoTrilho > 80) { ultimoTrilho = agora; desenharHolo(t, false); }
     var nm = holos.numeros;
     if (nm && nm.sprite.visible && (nm.redesenha || nm.vivo) && agora - ultimoNumeros > 90) { ultimoNumeros = agora; desenharHolo(nm, false); }
+    // com a ancora da Binance de pe, o numero muda ao segundo: sem este toque so se redesenhava de 2 em 2 s (o
+    // ciclo do ficheiro). O hash ja trava o desenho quando o valor nao mexeu, logo isto nao custa fotogramas.
+    if (window.__mdVivo && agora - ultimoVivo > 330) {
+      ultimoVivo = agora;
+      if (v && v.sprite.visible) desenharHolo(v, false);
+      if (nm && nm.sprite.visible) desenharHolo(nm, false);
+    }
     if (agora - ultimoRedesenhoHolos > 60000) { ultimoRedesenhoHolos = agora; actualizarHologramas(true); }   // a idade do dado
   }
   // o separador do telemovel: os hologramas que nao cabem ao lado da torre, num canvas plano, um de cada vez
@@ -2419,7 +2453,7 @@
     if (agora - ultimoBatimento < PASSO_BAT_MS) return;     // 20 Hz chegam: e uma respiracao, nao um contador
     ultimoBatimento = agora;
     if (!_corTmp) { _corTmp = new THREE.Color(); _branco = new THREE.Color(0xffffff); }
-    var vivo = PG.pulsa(T && T.t_iso, Date.now());
+    var vivo = PG.pulsa(T && T.t_iso, Date.now()) || !!window.__mdVivo;   // com precos vivos, a torre bate com forca toda
     var amp = calmo ? 0 : (vivo ? 1 : 0.3);
     var fase = (agora % PERIODO_BAT_MS) / PERIODO_BAT_MS, w = ondaCardiaca(fase);
     batimento.amp = amp; batimento.fase = fase; batimento.w = w; batimento.vivo = vivo;
