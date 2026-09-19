@@ -1736,8 +1736,8 @@
       var g = degrauInfo[i];
       var u = g.lado ? (1 - g.u) : g.u;                        // um lado sobe, o outro desce
       var d = Math.abs(((u - faseFita) % 1 + 1) % 1);
-      var f = d < 0.12 ? (1 - d / 0.12) : 0;                   // a banda tem 12% da fita
-      _corFita.setHex(g.cor).lerp(_brancoFita, 0.75 * f * f);
+      var f = d < 0.20 ? (1 - d / 0.20) : 0;                   // a banda tem 20% da fita (medido: a 12% quase nao se via)
+      _corFita.setHex(g.cor).lerp(_brancoFita, 0.92 * f);
       instDegraus.setColorAt(i, _corFita); mexeu = true;
     }
     if (mexeu && instDegraus.instanceColor) instDegraus.instanceColor.needsUpdate = true;
@@ -2767,7 +2767,29 @@
   // BRT e NY sao RELOGIOS e mostravam a hora do FICHEIRO, logo ficavam parados entre leituras e a pagina parecia
   // morta. Passam a andar ao segundo, e ao lado do estado passa a contar-se A IDADE DO DADO - que e honesto: diz
   // quando a ultima leitura chegou em vez de fingir que chegou agora.
+  // A FITA DE COTACOES: as posicoes abertas com o preco VIVO (window.__md.S.cr traz o ultimo preco da Binance
+  // ancorado ao da corretora). Reescreve-se ao segundo; a translacao e do CSS e nunca para.
+  var fitaAss = '';
+  function pintarFita() {
+    var el = document.getElementById('fita_mov'); if (!el) return;
+    var pos = lista(obj(obj(T).reactor).posicoes), vivos = {};
+    try { if (window.__md && window.__md.S && window.__md.S.cr) vivos = window.__md.S.cr; } catch (e) { }
+    var pecas = pos.map(function (p) {
+      var s = String(p.simbolo || ''), c = obj(vivos[s]);
+      var preco = (c.bin != null && c.basis != null) ? (c.bin + c.basis) : Number(p.agora);
+      var pnl = Number(p.pnl_aberto_usd), pct = Number(p.pnl_aberto_pct);
+      var cls = !isFinite(pnl) ? '' : (pnl > 0 ? 'up' : (pnl < 0 ? 'dn' : ''));
+      return '<span><u>' + escH(s) + '</u><b>' + (isFinite(preco) ? num(preco, preco > 100 ? 2 : 4) : '—') + '</b>' +
+             '<i class="' + cls + '">' + (isFinite(pct) ? sinal(pct, 2) + '%' : '') + '</i>' +
+             '<i class="' + cls + '">' + (isFinite(pnl) ? sinal(pnl, 2) + ' US$' : '') + '</i></span>';
+    });
+    if (!pecas.length) pecas = ['<span><u>sem posições abertas</u></span>'];
+    var html = pecas.join('') + pecas.join('');   // duas voltas: a translacao de -50% fecha o ciclo sem salto
+    if (html === fitaAss) return;
+    fitaAss = html; el.innerHTML = html;
+  }
   function relogio() {
+    pintarFita();
     var a = new Date(), hora = function (tz) { try { return a.toLocaleTimeString('pt-PT', { timeZone: tz, hour12: false }); } catch (e) { return '—'; } };
     txt($('b_brt'), hora('America/Sao_Paulo'));
     txt($('b_ny'), hora('America/New_York'));
