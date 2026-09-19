@@ -162,6 +162,7 @@
   var renderer = null, cena = null, camara = null, raio = null, rato = new THREE.Vector2(-2, -2);
   var grupoTorre = null, grupoRotulos = null, grupoGuias = null, grupoFitas = null, grupoReserva = null, grupoObras = null;
   var instMoradores = null, instSecretarias = null, instPontos = null, instDegraus = null;
+  var degrauInfo = [], ultimaFita = 0, faseFita = 0;   // a luz que corre pelas fitas (v6, 19/09)
   // v5e: o escritorio de perto - cabecas, cadeiras e encostos dos moradores (sentados) e os ESTAFETAS que andam
   var instCabecas = null, instCadeiras = null, instEncostos = null, instAndantes = null, instAndantesCab = null;
   // v5f (a print da invista.ja): cabelo, gravata, divisoria, monitor com grafico, pe do monitor, teclado; estafetas com
@@ -1011,6 +1012,7 @@
       degraus.push({ it: it, cor: COR_ESTADO[it.estado] != null ? COR_ESTADO[it.estado] : COR.cinza });
     });
     // OS DEGRAUS: a aresta da frente de cada laje, com a cor do estado (instanciados: 35 num so desenho)
+    degrauInfo = [];
     instDegraus = new THREE.InstancedMesh(new THREE.BoxGeometry(LARG, 0.30, 0.30), new THREE.MeshBasicMaterial({}), Math.max(1, degraus.length));
     var m = new THREE.Matrix4(), c = new THREE.Color();
     degraus.forEach(function (d, i) {
@@ -1018,6 +1020,7 @@
       var r = rodar(0, PROF / 2, d.it.ang);
       m.setPosition(r.x, d.it.y + 0.2, r.z);
       instDegraus.setMatrixAt(i, m); c.setHex(d.cor); instDegraus.setColorAt(i, c);
+      degrauInfo.push({ cor: d.cor, u: degraus.length > 1 ? i / (degraus.length - 1) : 0, lado: d.lado == null ? (i % 2) : d.lado });
       d.it.degrauIdx = i; d.it.corDegrau = d.cor;   // v6: a onda de dados acende o degrau de cada andar (obras incluidas)
     });
     instDegraus.count = degraus.length; instDegraus.instanceMatrix.needsUpdate = true;
@@ -1716,6 +1719,29 @@
   function actualizarHologramas(forcar) { NOMES_HOLO.forEach(function (n) { desenharHolo(holos[n], forcar); }); pintarSeparador(); }
   var ultimoTrilho = 0, ultimoNumeros = 0, ultimoVivo = 0, ultimoLab = 0, ultimoMesa = 0;
   var cicloPausadoAte = 0;   // v6: o arreio pausa o ciclo enquanto injecta dados (senao o ficheiro real pisa a prova a meio)
+  // 🔴 19/09, ordem dele repetida tres vezes: "o predio tem de mudar de segundo em segundo". Entre eventos a
+  // torre estava imovel - so o batimento, que e subtil. Agora as duas fitas tem uma BANDA DE LUZ que nunca
+  // para: sobe na dos dados, desce na das decisoes. Nao inventa dado: e a mesma fita, com o brilho a andar.
+  // A VELOCIDADE diz a verdade - com dado fresco (ou com a ancora da Binance de pe) corre ao dobro.
+  var _corFita = new THREE.Color(), _brancoFita = new THREE.Color(0xffffff);
+  function correrFitas(agora) {
+    if (!instDegraus || !degrauInfo.length) return;
+    if (agora - ultimaFita < 55) return;                       // ~18 vezes por segundo chega para o olho
+    var dt = ultimaFita ? Math.min(200, agora - ultimaFita) : 16;
+    ultimaFita = agora;
+    var vivo = (T && PG.pulsa(T.t_iso, Date.now())) || !!window.__mdVivo;
+    faseFita = (faseFita + dt / (vivo ? 2600 : 5200)) % 1;
+    var i, n = degrauInfo.length, mexeu = false;
+    for (i = 0; i < n; i++) {
+      var g = degrauInfo[i];
+      var u = g.lado ? (1 - g.u) : g.u;                        // um lado sobe, o outro desce
+      var d = Math.abs(((u - faseFita) % 1 + 1) % 1);
+      var f = d < 0.12 ? (1 - d / 0.12) : 0;                   // a banda tem 12% da fita
+      _corFita.setHex(g.cor).lerp(_brancoFita, 0.75 * f * f);
+      instDegraus.setColorAt(i, _corFita); mexeu = true;
+    }
+    if (mexeu && instDegraus.instanceColor) instDegraus.instanceColor.needsUpdate = true;
+  }
   function animarHolos(agora) {
     if (!T) return;
     var v = holos.velocimetro; if (v && v.redesenha) desenharHolo(v, false);
@@ -1725,6 +1751,7 @@
     if (nm && nm.sprite.visible && (nm.redesenha || nm.vivo) && agora - ultimoNumeros > 90) { ultimoNumeros = agora; desenharHolo(nm, false); }
     // com a ancora da Binance de pe, o numero muda ao segundo: sem este toque so se redesenhava de 2 em 2 s (o
     // ciclo do ficheiro). O hash ja trava o desenho quando o valor nao mexeu, logo isto nao custa fotogramas.
+    correrFitas(agora);
     var lb = holos.laboratorio;
     if (lb && lb.sprite.visible && agora - ultimoLab > 110) { ultimoLab = agora; desenharHolo(lb, true); }
     var ms = holos.mesa;

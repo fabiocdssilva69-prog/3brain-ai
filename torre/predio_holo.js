@@ -443,7 +443,10 @@
     var nF = Math.max(3, Math.min(48, n(d.n_familias) || 8));
     var ang = Number(extra.angulo); if (!isFinite(ang)) ang = 0;
     var cx = r0.x + r0.w * 0.5, cy = r0.y + r0.h * 0.42, R = Math.min(r0.w * 0.36, r0.h * 0.30);
-    var mono = n(d.monocultura_pct), dom = Math.max(0, Math.min(1, (mono == null ? 0 : mono) / 100));
+    var ug = lista(d.geracoes)[lista(d.geracoes).length - 1] || {};   // a monocultura vive na ULTIMA geracao,
+    var mono = n(d.monocultura_pct); if (mono == null) mono = n(ug.monocultura_pct);   // nao no topo da fatia
+    var famMaior = d.familia_maior || ug.familia_maior;
+    var dom = Math.max(0, Math.min(1, (mono == null ? 0 : mono) / 100));
     var pts = [], i;
     for (i = 0; i < nF; i++) {
       var a = ang + i * Math.PI * 2 / nF;
@@ -463,7 +466,7 @@
       g.beginPath(); g.arc(p2.x, p2.y, rr, 0, Math.PI * 2); g.fill();
       if (grande) { g.globalAlpha = 0.25; g.beginPath(); g.arc(p2.x, p2.y, rr * 2.1, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
     }
-    if (d.familia_maior) linhaMono(g, k, corta(g, S(d.familia_maior), r0.w), cx, cy + R * 0.42 + 14 * k, 7.5, C.ambar, 'center');
+    if (famMaior) linhaMono(g, k, corta(g, S(famMaior), r0.w), cx, cy + R * 0.42 + 14 * k, 7.5, C.ambar, 'center');
     var yb = r0.y + r0.h - 20 * k;
     linhaMono(g, k, 'geração ' + num(d.geracao_actual, 0) + ' · ' + num(d.n_genes, 0) + ' genes · ' + nF + ' famílias', r0.x, yb, 7.5, C.textoM, 'left');
     linhaMono(g, k, 'monocultura ' + (mono == null ? 'sem dado' : num(mono, 0) + '%') + ' · robustas alguma vez ' + num(d.robustos_alguma_vez, 0),
