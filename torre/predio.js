@@ -31,6 +31,10 @@
 
   var PG = window.PredioGeo, PH = window.PredioHolo, PF = window.PredioFeed;
   var F_PREDIO = 'predio.json', F_TORRE = 'torre.json';
+  // 19/09 (ordem dele: "deixa bem leve"): UM interruptor para a animacao continua que eu tinha metido e que
+  // travava a pagina. Desligado, fica o que e barato: agulha viva, fita de cotacoes (CSS), balao do cartao,
+  // batimento e onda de dados. Volta a ligar quando ele mostrar por video o que quer.
+  var ANIMACAO_PESADA = false;
   var PERIODO_MS = 2000;      // 19/09: era 5 s. A pagina le de 2 em 2 s; o que limita a frescura e quem escreve.
   var MAX_PACOTES = 40, MAX_LEITURAS = 60, ARRANQUE_RAPIDO = 10;
   var DUR_PACOTE_MS = 2600, PULSO_MS = 1500;
@@ -1139,6 +1143,7 @@
 
   // ---------------------------------------------------------------- moradores (por nivel, com culling)
   function largarMoradores() {
+    largarPeoes();
     moradores.forEach(function (mo) { if (mo.etq) largarSprite(mo.etq); });
     moradores = [];
     TODAS_AS_PECAS().forEach(function (o) { if (o) { cena.remove(o); o.geometry.dispose(); o.material.dispose(); } });
@@ -1280,6 +1285,7 @@
     });
     construirAndantes(porAndar, c);
     construirVasos(porAndar, c);
+    construirPeoes(modo);
   }
   // os vasos de planta nos quatro cantos de cada andar da janela (a print tem-nos; sao o que diz "escritorio" e nao "laje")
   function construirVasos(porAndar, c) {
@@ -1302,6 +1308,63 @@
     if (instFolhas.instanceColor) instFolhas.instanceColor.needsUpdate = true;
     cena.add(instVasos); cena.add(instFolhas);
   }
+  // 🔴 19/09, MEDIDO com a sonda: a torre desenhava 56 figuras em 14 andares e o organograma tem 2.957 peoes
+  // em 28 andares (o Lab. Reversao a Media sozinho tem 246). Faltava desenhar os PEOES - os genes, regras e
+  // scripts que enchem cada andar e que nao tem tarefa propria no agendador. Sao malha instanciada, um corpo
+  // por peao, e a densidade desce com a distancia: de longe bastam alguns para o andar parecer habitado.
+  var instPeoes = null, instPeoesCab = null;
+  function largarPeoes() {
+    [instPeoes, instPeoesCab].forEach(function (o) { if (o) { cena.remove(o); o.geometry.dispose(); o.material.dispose(); } });
+    instPeoes = instPeoesCab = null;
+  }
+  function construirPeoes(modo) {
+    largarPeoes();
+    if (!projecto) return;
+    var perto = modo === 'completo';
+    var janela = perto ? janelaDeOrdens() : null;
+    var lote = [];
+    projecto.lista.forEach(function (it) {
+      if (it.tipo === 'reservado' || it.tipo === 'em_obras') return;
+      var d = obj(it.dados), n = Number(d.n_funcionarios) || 0;
+      if (n <= 0) return;
+      var noFoco = janela && janela[it.ordem];
+      var quantos = perto ? (noFoco ? Math.min(n, 300) : 0) : Math.min(n, Math.max(6, Math.round(n * 0.10)));
+      if (quantos <= 0) return;
+      lote.push({ it: it, n: n, q: quantos });
+    });
+    var total = lote.reduce(function (s, x) { return s + x.q; }, 0);
+    if (!total) return;
+    var alt = perto ? 0.9 : 1.0, raio = perto ? 0.17 : 0.22;
+    instPeoes = new THREE.InstancedMesh(new THREE.CylinderGeometry(raio, raio * 1.25, alt, 5), new THREE.MeshLambertMaterial({}), total);
+    if (perto) instPeoesCab = new THREE.InstancedMesh(new THREE.SphereGeometry(raio * 1.25, 6, 5), new THREE.MeshLambertMaterial({}), total);
+    var m = new THREE.Matrix4(), c = new THREE.Color(), k = 0;
+    var utilX = LARG - 2.4, utilZ = PROF - 2.2;
+    lote.forEach(function (x) {
+      var it = x.it, cols = Math.max(4, Math.ceil(Math.sqrt(x.q * (utilX / utilZ))));
+      var linhas = Math.max(1, Math.ceil(x.q / cols));
+      var px = cols > 1 ? utilX / (cols - 1) : 0, pz = linhas > 1 ? utilZ / (linhas - 1) : 0;
+      var corBase = COR_MORADOR[it.estado] != null ? COR_MORADOR[it.estado] : COR_MORADOR.ok;
+      for (var i = 0; i < x.q; i++) {
+        var col = i % cols, lin = Math.floor(i / cols);
+        var lx = cols > 1 ? (-utilX / 2 + col * px) : 0, lz = linhas > 1 ? (-utilZ / 2 + lin * pz) : 0;
+        var r = rodar(lx, lz, it.ang);
+        m.makeRotationY(it.ang); m.setPosition(r.x, it.y + 0.30 + alt / 2, r.z); instPeoes.setMatrixAt(k, m);
+        c.setHex(corBase).lerp(_brancoPeao, ((semente(it.ordem + ':' + i) % 100) / 100) * 0.35);
+        instPeoes.setColorAt(k, c);
+        if (instPeoesCab) {
+          m.makeRotationY(it.ang); m.setPosition(r.x, it.y + 0.30 + alt + raio, r.z); instPeoesCab.setMatrixAt(k, m);
+          c.setHex(PELES[semente('p' + it.ordem + ':' + i) % PELES.length]); instPeoesCab.setColorAt(k, c);
+        }
+        k++;
+      }
+    });
+    [instPeoes, instPeoesCab].forEach(function (o) {
+      if (!o) return; o.count = k; o.instanceMatrix.needsUpdate = true;
+      if (o.instanceColor) o.instanceColor.needsUpdate = true; cena.add(o);
+    });
+  }
+  var _brancoPeao = new THREE.Color(0xdfe7f0);
+
   // v5e/v5f: os ESTAFETAS - figurantes que andam nos dois corredores de cada andar da janela (15% dos moradores, 2 a 6
   // por andar), com pernas que balancam, param a falar com alguem e voltam. Sem numero nem etiqueta: nao sao do REGISTO,
   // sao a vida do escritorio. Deterministicos pela semente (andar, indice).
@@ -1731,7 +1794,8 @@
   var _corFita = new THREE.Color(), _brancoFita = new THREE.Color(0xffffff);
   function correrFitas(agora) {
     if (!instDegraus || !degrauInfo.length) return;
-    if (agora - ultimaFita < 55) return;                       // ~18 vezes por segundo chega para o olho
+    if (!ANIMACAO_PESADA) return;                              // 19/09: a luz das fitas custava 18 passagens por segundo por TODOS os degraus
+    if (agora - ultimaFita < 55) return;
     var dt = ultimaFita ? Math.min(200, agora - ultimaFita) : 16;
     ultimaFita = agora;
     var vivo = (T && PG.pulsa(T.t_iso, Date.now())) || !!window.__mdVivo;
@@ -1759,13 +1823,13 @@
     correrFitas(agora);
     // 19/09: o varrimento anda e TODOS os hologramas se redesenham a ~6 por segundo. E o que o canal faz: os
     // paineis nunca estao parados. O custo e 7 telas pequenas por 6 vezes por segundo - medido no arreio.
-    if (agora - ultimoVarre > 160) {
+    if (ANIMACAO_PESADA && agora - ultimoVarre > 160) {
       ultimoVarre = agora;
       PH.fase(agora / 1600);
       NOMES_HOLO.forEach(function (nm2) { var hh = holos[nm2]; if (hh && hh.sprite.visible) desenharHolo(hh, true); });
     }
     var lb = holos.laboratorio;
-    if (lb && lb.sprite.visible && agora - ultimoLab > 110) { ultimoLab = agora; desenharHolo(lb, true); }
+    if (lb && lb.sprite.visible && agora - ultimoLab > (ANIMACAO_PESADA ? 110 : 2000)) { ultimoLab = agora; desenharHolo(lb, true); }
     var ms = holos.mesa;
     if (ms && ms.sprite.visible && ms.deslT0 && agora - ms.deslT0 < 620 && agora - ultimoMesa > 60) { ultimoMesa = agora; desenharHolo(ms, true); }
     if (window.__mdVivo && agora - ultimoVivo > 330) {
