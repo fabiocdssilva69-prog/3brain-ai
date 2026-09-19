@@ -1,0 +1,582 @@
+/* predio.css — o que a torre.css nao tinha: o palco 3D, a coluna das leituras, o painel de andar e o
+   directorio. Tudo o resto (barras, blocos, cores, tipos) vem da torre.css, que ele ja aprovou. Duas folhas
+   de estilo com as mesmas cores seriam duas paletas a divergir no primeiro retoque. */
+
+.predio { padding-bottom: 46px; }
+
+/* 17/09: o aviso de "sem WebGL" nasceu com o atributo `hidden` E com `display:flex` numa classe. A classe
+   vence a regra [hidden] do browser, e o aviso ficou SEMPRE por cima da cena - opaco, a tapar o predio
+   inteiro, sem um unico erro na consola. O arreio de prova apanhou-o pela captura, nao pelos numeros: a
+   contagem dizia 13 lajes e 83 moradores enquanto o ecra mostrava um rectangulo vazio.
+   A regra abaixo devolve ao `hidden` o poder que ele devia ter tido sempre. */
+[hidden] { display: none !important; }
+
+/* ---------------------------------------------------------------- palco + leituras */
+.pred-envol {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 10px;
+  max-width: 1900px;
+  margin: 10px auto 0;
+  padding: 0 12px;
+  height: calc(100vh - 92px);      /* 92px = barra de cima + barra de baixo. O predio ocupa o ecra todo:
+                                      uma sala de comando com scroll nao e uma sala de comando. */
+  min-height: 420px;
+}
+.pred-palco {
+  position: relative;
+  border: 1px solid var(--l);
+  border-radius: 10px;
+  background: radial-gradient(120% 80% at 50% 0%, #0e131a 0%, #05070c 60%, #04060a 100%);
+  overflow: hidden;
+  min-width: 0;
+}
+.pred-palco canvas { display: block; width: 100%; height: 100%; }
+
+.pred-cont {
+  position: absolute; left: 12px; top: 10px;
+  display: flex; flex-direction: column; gap: 4px;
+  font-family: var(--mono); font-size: 11px;
+  pointer-events: none;
+}
+.pred-cont span { display: flex; align-items: baseline; gap: 7px; }
+.pred-cont u {
+  text-decoration: none; color: var(--d); font-size: 9px; letter-spacing: .14em;
+  text-transform: uppercase; font-family: var(--sans); min-width: 132px;
+}
+.pred-cont b { color: var(--t); font-weight: 500; }
+.pred-cont b.mau { color: var(--dn); }
+
+.pred-etiq {
+  position: absolute; pointer-events: none; z-index: 3;
+  background: rgba(8, 11, 15, .92); border: 1px solid var(--l2); border-radius: 6px;
+  padding: 5px 8px; font-family: var(--mono); font-size: 11px; color: var(--t);
+  max-width: 280px; line-height: 1.4;
+}
+.pred-etiq u { text-decoration: none; display: block; color: var(--d); font-size: 9px;
+  letter-spacing: .14em; text-transform: uppercase; font-family: var(--sans); }
+.pred-etiq em { font-style: normal; color: var(--m); }
+
+.pred-aviso {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 24px; color: var(--m); font-size: 13px; background: var(--b);
+}
+.pred-aviso a { color: var(--cy); }
+
+.pred-leituras {
+  display: flex; flex-direction: column; min-width: 0;
+  background: linear-gradient(180deg, var(--b2), #090b0e);
+  border: 1px solid var(--l); border-radius: 10px; overflow: hidden;
+}
+.pred-lista { overflow: auto; padding: 6px 10px 10px; }
+.pred-lin {
+  padding: 5px 0; border-bottom: 1px solid rgba(255, 255, 255, .04);
+  font-size: 11.5px; line-height: 1.45; color: var(--m);
+}
+.pred-lin:last-child { border-bottom: 0; }
+.pred-lin b { color: var(--t); font-weight: 500; }
+.pred-lin i {
+  font-style: normal; font-family: var(--mono); font-size: 10px; color: var(--d);
+  margin-right: 6px;
+}
+.pred-lin.up b { color: var(--up); }
+.pred-lin.dn b { color: var(--dn); }
+.pred-lin.am b { color: var(--am); }
+.pred-lin.nova { animation: pred-entra .5s ease-out; }
+@keyframes pred-entra { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pred-lin.nova { animation: none; } }
+
+/* ---------------------------------------------------------------- painel de andar */
+/* Fica SEMPRE no DOM e com layout (opacity + pointer-events), nunca display:none: um painel sem layout
+   mede 0x0, e o que vier a desenhar-se la dentro nasce com o tamanho errado. */
+.pred-painel {
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; background: rgba(4, 6, 10, .72);
+  opacity: 0; pointer-events: none; transition: opacity .18s ease-out;
+}
+.pred-painel.aberto { opacity: 1; pointer-events: auto; }
+.pred-painel-cx {
+  width: min(1100px, 100%); max-height: 100%; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, var(--b2), #090b0e);
+  border: 1px solid var(--l2); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .6);
+}
+.pred-painel-corpo { overflow: auto; padding: 10px 14px 16px; }
+.pred-fechar {
+  margin-left: 10px; background: none; border: 1px solid var(--l2); border-radius: 4px;
+  color: var(--m); cursor: pointer; font: 500 12px var(--mono); padding: 1px 7px;
+}
+.pred-fechar:hover { color: var(--t); border-color: var(--m); }
+
+.pred-tab { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11.5px; }
+.pred-tab th {
+  text-align: left; padding: 5px 8px 5px 0; color: var(--d); font: 500 9.5px var(--sans);
+  letter-spacing: .12em; text-transform: uppercase; border-bottom: 1px solid var(--l);
+  position: sticky; top: 0; background: #0b0e12;
+}
+.pred-tab td { padding: 4px 8px 4px 0; border-bottom: 1px solid rgba(255, 255, 255, .04); color: var(--m); }
+.pred-tab td.n { color: var(--t); }
+.pred-tab tr:hover td { background: rgba(255, 255, 255, .02); }
+.pt-ok { color: var(--up); }
+.pt-erro { color: var(--dn); }
+.pt-atrasado { color: var(--am); }
+.pt-a_correr { color: var(--cy); }
+.pt-a_dormir, .pt-sem_tarefa { color: var(--d); }
+
+/* ---------------------------------------------------------------- directorio dos andares */
+.pred-dir { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.pred-and {
+  display: inline-flex; align-items: baseline; gap: 5px; cursor: pointer;
+  border: 1px solid var(--l2); border-radius: 999px; padding: 1px 8px;
+  font: 500 10px var(--mono); color: var(--m); background: none;
+}
+.pred-and:hover { color: var(--t); border-color: var(--m); }
+.pred-and u { text-decoration: none; color: var(--d); font-size: 9px; }
+.pred-and.ok { border-color: rgba(62, 207, 142, .35); }
+.pred-and.erro { border-color: rgba(255, 90, 95, .55); color: var(--dn); }
+.pred-and.atrasado { border-color: rgba(232, 176, 75, .5); color: var(--am); }
+
+/* ---------------------------------------------------------------- telemovel */
+@media (max-width: 900px) {
+  .pred-envol {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(260px, 52vh) minmax(0, 1fr);
+    height: auto; padding: 0 16px;   /* 16px de goteira, e nunca scroll horizontal */
+  }
+  .pred-leituras { max-height: 46vh; }
+  /* 🔴 18/09: no telemóvel os 14 nomes dos andares passavam POR CIMA deste painel — o palco tem 390 px de
+     largura e a coluna dos nomes começa no canto superior esquerdo, exactamente onde ele estava. Desce
+     para o rodapé do palco (que está vazio) e passa a uma linha que se enrola. A prova mede: nenhum nome
+     de andar sobrepõe a caixa dos contadores. */
+  .pred-cont {
+    top: auto; bottom: 8px; left: 10px; right: 10px;
+    flex-direction: row; flex-wrap: wrap; gap: 2px 14px;
+    font-size: 10px;
+  }
+  .pred-cont u { min-width: 0; font-size: 8.5px; }
+  .pred-painel { padding: 0; }
+  .pred-painel-cx { width: 100%; height: 100%; max-height: 100%; border-radius: 0; border: 0; }
+}
+
+
+/* ================================================================ v3, 18/09/2026
+   Ele reprovou a v2 inteira: "ficou uma merda, odiei a visualização". O que faltava não era efeito, era
+   INFORMAÇÃO COLADA A CADA COISA — na ref_02 todas as secretárias têm um número a flutuar por cima, e na
+   ref_03 há uma fila de cartões de papel e um acorde de passagens. É isso que estas regras vestem. */
+
+/* ---------------------------------------------------------------- os cinco números da casa (ref_11) */
+.casa-num {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  max-width: 1900px;
+  margin: 8px auto 0;
+  padding: 0 12px;
+  background: none;
+}
+.casa-num span {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 6px 12px;
+  border: 1px solid var(--l); border-radius: 8px;
+  background: linear-gradient(180deg, var(--b2), #090b0e);
+  min-width: 0;
+}
+.casa-num u {
+  text-decoration: none; color: var(--d); font: 500 9px var(--sans);
+  letter-spacing: .15em; text-transform: uppercase;
+}
+.casa-num b {
+  font: 600 21px var(--mono); color: var(--t); line-height: 1.12;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.casa-num b.up { color: var(--up); }
+.casa-num b.dn { color: var(--dn); }
+.casa-num i {
+  font-style: normal; font: 400 10px var(--mono); color: var(--m);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------- a grelha nova: cena | lado, cartões em baixo */
+/* 18/09: com `auto` na linha dos cartões a primeira captura da v3 mostrou-os cortados a meio — via-se a
+   aresta de cima e mais nada. A linha dos cartões passa a ter altura FIXA (é uma fila de cartões do mesmo
+   tamanho, não texto que cresce) e a cena fica com o que sobrar. */
+.pred-envol {
+  grid-template-columns: minmax(0, 1fr) 352px;
+  /* `auto` outra vez, e agora funciona: a fila de cartões pede a altura que o conteúdo precisa e o palco
+     fica com o resto. Da primeira vez isto colapsou — mas a culpa não era do `auto`, era de a página
+     inteira ser mais alta que a janela e a fila cair por baixo da barra de baixo. Corrigida a coluna
+     flexível, o número fixo deixou de ser preciso: com 152 px a descrição do cartão ainda saa cortada a
+     meio da segunda linha, e qualquer número que eu escolhesse ficaria errado com outra fonte. */
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+/* 🔴 A PÁGINA É UMA COLUNA FLEXÍVEL, e não um `calc(100vh - N)` acertado a olho.
+   MEDIDO em 18/09: a barra de baixo tem 110 px e não 46 — os chips do directório partem em duas linhas —
+   e por isso a fila de cartões ficava POR BAIXO dela, com a página a crescer para 1031 px numa janela de
+   900. Qualquer número que eu escrevesse ali ficaria errado no dia em que nascesse mais um andar ou ele
+   mudasse a largura da janela. Assim não há número para acertar: as barras ocupam o que precisam e o
+   palco fica com o resto. (As barras são `sticky`, logo contam no fluxo — se fossem `fixed` isto não
+   funcionava e o desconto a olho seria mesmo a única saída.) */
+@media (min-width: 901px) {
+  body.predio {
+    display: flex; flex-direction: column;
+    height: 100vh; overflow: hidden; padding-bottom: 0;
+  }
+  body.predio > .barra, body.predio > .casa-num { flex: 0 0 auto; }
+  .pred-envol { flex: 1 1 auto; min-height: 0; height: auto; margin-bottom: 8px; }
+}
+.pred-palco { grid-column: 1; grid-row: 1; }
+.pred-lado  { grid-column: 2; grid-row: 1 / span 2; }
+.cartoes-fx { grid-column: 1; grid-row: 2; }
+
+.pred-lado {
+  display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0;
+}
+.lado-bl {
+  display: flex; flex-direction: column; min-height: 0; min-width: 0;
+  background: linear-gradient(180deg, var(--b2), #090b0e);
+  border: 1px solid var(--l); border-radius: 10px; overflow: hidden;
+}
+.lado-bl.cresce { flex: 1 1 auto; }
+
+/* ---------------------------------------------------------------- acorde de passagens */
+.ac-cv { display: block; width: 100%; height: auto; }
+.ac-leg {
+  display: flex; flex-wrap: wrap; gap: 3px 9px;
+  padding: 0 10px 8px; font: 400 10px var(--mono); color: var(--m);
+}
+.ac-leg b { color: var(--t); font-weight: 500; }
+.ac-leg .fi { color: var(--cy); }
+.ac-leg .hi { color: var(--am); }
+
+/* ---------------------------------------------------------------- sem número */
+.sn-lista {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 2px 10px 9px; max-height: 90px; overflow: auto;   /* 90 = 4 filas inteiras de chips; 96 cortava
+                                                                 a quinta a meio e parecia defeito */
+}
+.sn-lista span {
+  border: 1px dashed var(--l2); border-radius: 999px; padding: 1px 7px;
+  font: 400 10px var(--mono); color: var(--d); white-space: nowrap;
+}
+.sn-lista span u { text-decoration: none; color: var(--m); margin-right: 4px; }
+
+/* ---------------------------------------------------------------- a fila de cartões de papel (ref_03) */
+.cartoes-fx {
+  display: flex; flex-direction: column; gap: 5px; min-width: 0;
+  padding-top: 2px;
+}
+.cartoes-tit {
+  display: flex; align-items: baseline; gap: 8px;
+  font: 500 9px var(--sans); letter-spacing: .15em; text-transform: uppercase; color: var(--d);
+}
+.cartoes-tit u { text-decoration: none; }
+.cartoes-tit b { font: 500 11px var(--mono); color: var(--t); letter-spacing: 0; text-transform: none; }
+.cartoes-tit em {
+  font-style: normal; font: 400 10px var(--mono); color: var(--d);
+  letter-spacing: 0; text-transform: none;
+}
+/* 18/09: `overflow-x: auto` fazia da fila um deslizador e o último cartão ficava cerceado a meio pela
+   coluna do lado — e o arreio contava 14 cartões sem nunca perguntar se algum estava visível. Agora quem
+   corta é a conta (cartoesQueCabem) e o que sobra vira o chip "+N": não há nada cortado para esconder. */
+.cartoes {
+  display: flex; gap: 7px; overflow: hidden;
+  padding-bottom: 5px; min-width: 0;
+}
+/* CARTÃO DE PAPEL: fundo claro, como na ref_03. É de propósito que destoa do resto — papel numa sala
+   escura lê-se primeiro, e estes cartões são a resposta à pergunta "quem é quem e quanto vale". */
+.cartao {
+  flex: 0 0 auto; width: 144px; text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 7px 9px 8px;
+  border: 1px solid #cdd4dd; border-top: 3px solid #b6bfcb; border-radius: 7px;
+  background: linear-gradient(180deg, #f6f7f9, #e7eaef);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+  font-family: var(--mono);
+}
+.cartao:hover { border-color: #8e9aa8; box-shadow: 0 3px 12px rgba(0, 0, 0, .5); }
+.cartao u {
+  text-decoration: none; font: 600 9px var(--mono); color: #8794a4; letter-spacing: .1em;
+}
+.cartao b {
+  font: 600 11.5px var(--mono); color: #11161d; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cartao em {
+  font-style: normal; font: 500 8.5px var(--sans); letter-spacing: .12em; text-transform: uppercase;
+  color: #5d6b7c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* 🔴 MEDIDO em 18/09: o nome do cartão (<b>) estava a ser desenhado com 2 px DE ALTURA — a cor estava
+   certa (rgb(17,22,29)) e o texto estava lá no HTML, mas o cartão é uma coluna flexível com altura fixa e
+   os filhos encolheram todos para caber. A linha que encolhe tem de ser a DESCRIÇÃO, que está cortada a
+   duas linhas de qualquer maneira — nunca o nome de quem é dono da falha. É a mesma família de defeito do
+   aviso de WebGL: nada na consola, tudo aparentemente certo, e o ecrã a esconder o que interessa. */
+.cartao > * { flex: 0 0 auto; }
+.cartao .falha {
+  font: 400 9.5px var(--sans); color: #6b7889; line-height: 1.3; margin: 2px 0 3px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1 1 auto; min-height: 0;
+}
+.cartao .num {
+  font: 700 16px var(--mono); line-height: 1.1; color: #11161d;
+  border-top: 1px solid #d3d9e1; padding-top: 3px;
+}
+.cartao .fonte { font: 400 8.5px var(--sans); color: #8794a4; }
+/* a cor do número diz de onde ele vem — a mesma convenção das etiquetas do piso */
+.cartao.up .num { color: #067647; }
+.cartao.dn .num { color: #b3261e; }
+.cartao.cap .num { color: #0b5f96; }
+.cartao.imp .num { color: #8a5a00; }
+.cartao.hora .num { color: #46525f; }
+.cartao.up { border-top-color: #14a06a; }
+.cartao.dn { border-top-color: #d7373a; }
+.cartao.cap { border-top-color: #2a8fd0; }
+.cartao.imp { border-top-color: #d9a43a; }
+
+/* o "+N": o lugar dos cartões que não cabem INTEIROS nesta largura. Antes ficava meio cartão cortado pela
+   coluna do lado, com o texto partido a meio — que se lê como defeito e não como "há mais para o lado". */
+.cartao-mais {
+  flex: 0 0 auto; align-self: stretch; display: flex; align-items: center; justify-content: center;
+  min-width: 46px; padding: 0 12px;
+  border: 1px dashed var(--l2); border-radius: 7px;
+  font: 600 13px var(--mono); color: var(--m); background: rgba(255, 255, 255, .02);
+}
+
+@media (max-width: 900px) {
+  .casa-num { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 16px; }
+  .casa-num b { font-size: 17px; }
+  .pred-envol {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(300px, 56vh) auto minmax(0, 1fr);   /* 46vh dava 388 px de palco para 55
+       etiquetas: nao ha arrumacao que as separe todas nesse espaco */
+    height: auto;
+  }
+  .pred-palco { grid-column: 1; grid-row: 1; }
+  .cartoes-fx { grid-column: 1; grid-row: 2; }
+  .pred-lado  { grid-column: 1; grid-row: 3; }
+  .sn-lista { max-height: 74px; }
+}
+
+/* ---------------------------------------------------------------- o cartão do andar (ref_10) */
+/* "Um cartão por posto, com a conta e o fechado do dia. É o que o nosso painel de andar devia ser: não
+   uma tabela, um cartão." A tabela dos funcionários continua por baixo — o cartão é que vem primeiro. */
+.and-cartao {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px;
+  margin: 2px 0 12px;
+}
+.and-cartao span {
+  display: flex; flex-direction: column; gap: 1px; min-width: 0;
+  padding: 7px 10px; border: 1px solid var(--l); border-radius: 7px;
+  background: rgba(255, 255, 255, .02);
+}
+.and-cartao u {
+  text-decoration: none; color: var(--d); font: 500 8.5px var(--sans);
+  letter-spacing: .14em; text-transform: uppercase;
+}
+.and-cartao b {
+  font: 600 15px var(--mono); color: var(--t); line-height: 1.15;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+@media (max-width: 900px) { .and-cartao { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ================================================================ v4, 18/09/2026 — a torre
+   "Falta sofisticacao, falta profissionalismo": fundo escuro profundo com vinheta, HUD do torre.css, a coluna
+   do lado a 300 px e colapsavel, os botoes dos niveis, o separador de hologramas do telemovel. */
+.pred-palco { background: #070b12; }
+.pred-vinheta {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(120% 95% at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,.28) 100%);
+}
+.pred-envol { grid-template-columns: minmax(0, 1fr) 300px; }
+body.lado-fechado .pred-envol { grid-template-columns: minmax(0, 1fr) 34px; }
+body.lado-fechado .pred-lado .lado-bl { display: none; }
+body.lado-fechado .pred-lado .lado-bl:first-child { display: flex; }
+body.lado-fechado .pred-lado .lado-bl:first-child > *:not(.bh) { display: none; }
+body.lado-fechado .pred-lado .bh h2, body.lado-fechado .pred-lado .bh .kn { display: none; }
+.lado-toggle {
+  margin-left: auto; background: none; border: 1px solid var(--l2); border-radius: 4px; color: var(--m);
+  cursor: pointer; font: 500 11px var(--mono); padding: 0 6px; line-height: 18px;
+}
+.lado-toggle:hover { color: var(--t); border-color: var(--m); }
+body.lado-fechado .lado-toggle { transform: rotate(180deg); }
+
+/* os botoes dos niveis: em baixo, ao centro, fora da torre e das colunas */
+.pred-niveis {
+  position: absolute; right: 12px; bottom: 8px; z-index: 3;   /* em baixo a direita: o canto que nenhuma coluna usa */
+  display: flex; align-items: center; gap: 4px; padding: 3px 6px;
+  background: rgba(7,11,18,.82); border: 1px solid var(--l2); border-radius: 999px;
+}
+.pred-niveis u { text-decoration: none; color: var(--d); font: 500 9px var(--sans); letter-spacing: .15em; text-transform: uppercase; margin: 0 4px 0 6px; }
+.pred-niveis button {
+  background: none; border: 1px solid transparent; border-radius: 999px; color: var(--m); cursor: pointer;
+  font: 500 10.5px var(--mono); padding: 2px 9px;
+}
+.pred-niveis button:hover { color: var(--t); border-color: var(--l2); }
+.pred-niveis button.on { color: #071019; background: var(--cy); border-color: var(--cy); font-weight: 700; }
+
+/* os contadores passam a UMA linha em baixo, a esquerda (a coluna dos hologramas vive em cima) */
+.pred-cont {
+  top: auto; bottom: 10px; left: 12px; right: auto; z-index: 3;
+  flex-direction: row; flex-wrap: wrap; gap: 2px 12px; font-size: 10.5px; max-width: 58%;
+}
+.pred-cont u { min-width: 0; font-size: 8.5px; }
+
+/* o directorio: os habitados, um chip para os 21 em obras e um para os reservados */
+.pred-and.obras { border-color: rgba(232,176,75,.55); color: var(--am); }
+.pred-and.reservado { border-style: dashed; color: var(--d); cursor: default; }
+
+/* o separador de hologramas do telemovel (escondido no ecra grande pelo [hidden]) */
+.holo-sep { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.holo-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.holo-tabs button {
+  background: none; border: 1px solid var(--l2); border-radius: 999px; color: var(--m); cursor: pointer;
+  font: 500 10px var(--mono); padding: 2px 9px;
+}
+.holo-tabs button.on { color: #071019; background: var(--cy); border-color: var(--cy); }
+#holo_cv { display: block; width: 100%; height: auto; background: #070b12; border: 1px solid var(--l); border-radius: 8px; }
+
+@media (max-width: 900px) {
+  /* a regra v4 de cima (1fr 300px) vinha DEPOIS da media query da v3 e vencia-a: o palco ficava com 240 px
+     num ecra de 390 (medido). Uma coluna, outra vez, aqui, depois de tudo. */
+  .pred-envol { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(300px, 56vh) auto auto minmax(0, 1fr); }
+  .pred-palco { grid-column: 1; grid-row: 1; }
+  .holo-sep { grid-column: 1; grid-row: 2; }
+  .cartoes-fx { grid-column: 1; grid-row: 3; }
+  .pred-lado { grid-column: 1; grid-row: 4; }
+  .pred-niveis { bottom: 34px; padding: 2px 4px; }
+  .pred-niveis u { display: none; }
+  .pred-niveis button { padding: 2px 6px; font-size: 10px; }
+  .pred-cont { max-width: 100%; right: 10px; bottom: 8px; }
+  .lado-toggle { display: none; }
+}
+
+/* 18/09 v4: a barra de baixo media 110 px (o directorio partia em 3 linhas) e roubava a altura que o N1 precisa
+   para os 35 nomes. Passa a UMA linha: o que nao cabe corta-se pela direita e continua no painel de cada andar. */
+.barra.baixo { flex-wrap: nowrap; overflow: hidden; }
+.barra.baixo .pred-dir { flex-wrap: nowrap; overflow: hidden; min-width: 0; flex: 1 1 auto; }
+.barra.baixo .pred-and { white-space: nowrap; flex: 0 0 auto; }
+.barra.baixo .dir { flex: 0 0 auto; }
+@media (max-width: 1500px) { .barra.baixo .dir .cel.z { display: none; } }
+
+/* 18/09 noite: a partir do nivel 1 o palco precisa de altura para os 47 andares (as filas voltam no nivel 0) */
+.predio.nivel-alto .casa-num, .predio.nivel-alto .cartoes-fx, .predio.nivel-alto .barra.baixo { display: none; }
+
+/* v5: a gaveta do Pointer (o instrumento completo, ao vivo, dentro da torre) e o botão que a abre */
+.pointer-btn { margin-left: 10px; border-color: rgba(232, 176, 75, .55) !important; color: #ffd479 !important; }
+.pointer-gaveta { position: absolute; inset: 0; z-index: 40; background: rgba(7, 11, 18, .97); display: flex; flex-direction: column; border-radius: 10px; }
+.pointer-gaveta .pg-bh { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--l); font: 700 11px/1 var(--mono, monospace); letter-spacing: .08em; text-transform: uppercase; color: #ffd479; }
+.pointer-gaveta .pg-bh span { font-weight: 400; color: #8b95a7; text-transform: none; letter-spacing: 0; }
+.pointer-gaveta .pg-bh button { margin-left: auto; background: transparent; border: 1px solid var(--l); color: #cfd7e2; border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+.pointer-gaveta iframe { flex: 1 1 auto; width: 100%; border: 0; background: #0a0c0f; }
+/* v5: o avatar dos 10 cargos de topo (desenhado, sem imagens do MCU) */
+.cartao .avatar { display: inline-flex; width: 26px; height: 26px; border-radius: 50%; align-items: center; justify-content: center; font: 700 10px/1 var(--mono, monospace); color: #0b1018; margin-bottom: 4px; font-style: normal; }
+.pointer-gaveta { overflow: auto; }
+.pointer-gaveta .pointer-envol { padding: 10px 12px 24px; }
+
+/* v5: os cartoes dos 10 de topo, ao estilo do atsmatrix: busto desenhado, titulo grande, selo e barras */
+.cartao.topo { min-width: 236px; max-width: 236px; text-align: left; padding: 10px 11px 9px; }
+.cartao .cab { display: flex; gap: 9px; align-items: flex-start; width: 100%; }
+.cartao .cab .avatar { flex: 0 0 56px; width: 56px; height: 56px; margin: 0; background: transparent; border-radius: 10px; }
+.cartao .cab .avatar svg { display: block; }
+.cartao .ident { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.cartao .ident u { font: 600 8.5px/1.1 var(--mono, monospace); letter-spacing: .1em; color: #7b8695; text-decoration: none; text-transform: uppercase; }
+.cartao .ident b { display: block !important; font: 800 12px/1.15 var(--mono, monospace) !important; letter-spacing: .04em; color: #eef3f8 !important; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; max-width: none !important; height: auto !important; max-height: none !important; -webkit-line-clamp: unset !important; margin: 0 !important; }
+.cartao .ident em { font: 500 9px/1.2 var(--sans, sans-serif); color: #8fb3c9; font-style: normal; white-space: normal; }
+.cartao .selo { display: inline-block; align-self: flex-start; margin-top: 2px; padding: 1px 6px; border: 1px solid; border-radius: 999px; font: 700 7.5px/1.4 var(--mono, monospace); letter-spacing: .12em; text-decoration: none; }
+.cartao.zero .selo { opacity: .55; }
+.cartao .metricas { display: flex; flex-direction: column; gap: 3px; width: 100%; margin: 6px 0 2px; }
+.cartao .mtr { display: grid; grid-template-columns: 62px 1fr 34px; align-items: center; gap: 6px; }
+.cartao .mtr u { font: 600 7.5px/1 var(--mono, monospace); letter-spacing: .08em; color: #6f7d8c; text-decoration: none; text-transform: uppercase; }
+.cartao .mtr i { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; }
+.cartao .mtr i b { display: block; height: 100%; background: linear-gradient(90deg, #5ac8fa, #3ecf8e); }
+.cartao .mtr em { font: 700 9px/1 var(--mono, monospace); color: #cfe3f2; text-align: right; font-style: normal; }
+.cartao.topo .num { font-size: 15px; margin-top: 2px; }
+
+/* ================================================================ v6, 18/09 noite
+   OS 10 DE TOPO TODOS VISIVEIS E VIVOS: duas filas de 5 quando a fila tem >= 1200 px, senao uma faixa com scroll
+   horizontal e snap (nunca um "+6" a esconder gente); o selo "A CORRER" brilha quando alguem dos andares do cargo
+   correu ha <= 5 min; o cartao pulsa 1,2 s quando um funcionario seu corre. E o canvas nao deixa o browser fazer
+   gestos por cima do toque (pan com 1 dedo, pinch com 2). */
+.pred-palco canvas { touch-action: none; }
+.cartoes.faixa { overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: thin; padding-bottom: 6px; }
+.cartoes.faixa .cartao { scroll-snap-align: start; }
+.cartoes.duas-filas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: auto; overflow: visible; }
+.cartoes.duas-filas .cartao.topo { width: auto; min-width: 0; max-width: none; }
+.cartao .act { display: flex; align-items: center; gap: 5px; font: 500 8.5px/1.2 var(--mono, monospace); color: #8fb3c9; margin: 1px 0 0; }
+.cartao .act i { width: 6px; height: 6px; border-radius: 50%; background: #5b6573; flex: 0 0 auto; }
+.cartao.corre .act i { background: #3ecf8e; box-shadow: 0 0 6px #3ecf8e; }
+.cartao .selo.corre { color: #3ecf8e !important; border-color: #3ecf8e !important; box-shadow: 0 0 8px rgba(62,207,142,.6); animation: selo-brilha 1.15s ease-in-out infinite alternate; }
+.cartao.pulsa { animation: cartao-pulsa 1.2s ease-out; }
+@keyframes cartao-pulsa {
+  0% { box-shadow: 0 0 0 0 rgba(90,200,250,.85); transform: translateY(0); }
+  30% { box-shadow: 0 0 24px 5px rgba(90,200,250,.6); transform: translateY(-2px); }
+  100% { box-shadow: 0 2px 10px rgba(0,0,0,.55); transform: none; }
+}
+@keyframes selo-brilha { from { box-shadow: 0 0 4px rgba(62,207,142,.35); } to { box-shadow: 0 0 12px rgba(62,207,142,.95); } }
+@media (prefers-reduced-motion: reduce) { .cartao.pulsa, .cartao .selo.corre { animation: none; } }
+
+/* v5d (18/09, medido na foto do cartao): o cartao base e CLARO e o titulo novo era quase branco - "SR. STARK" estava la,
+   com 14 px de altura e cor rgb(238,243,248), invisivel sobre #f6f7f9. Os cartoes de topo passam a ESCUROS, como os do
+   atsmatrix: vidro, neon ciano, numero claro. O resto dos cartoes (por andar) fica como estava. */
+.cartao.topo { background: linear-gradient(180deg, rgba(16,22,31,.97), rgba(9,13,19,.97)); border: 1px solid rgba(90,200,250,.28); border-top: 3px solid rgba(90,200,250,.75); box-shadow: 0 2px 10px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.03); }
+.cartao.topo:hover { border-color: rgba(90,200,250,.6); box-shadow: 0 0 18px rgba(90,200,250,.25); }
+.cartao.topo.up { border-top-color: #3ecf8e; }
+.cartao.topo.dn { border-top-color: #ff5a5f; }
+.cartao.topo .num { color: #eef3f8; border-top-color: rgba(255,255,255,.1); }
+.cartao.topo.up .num { color: #3ecf8e; }
+.cartao.topo.dn .num { color: #ff5a5f; }
+.cartao.topo .fonte, .cartao.topo .falha { color: #8794a4; }
+
+/* ---------------------------------------------------------------- v6 (18/09): o CHAT dos funcionarios em "Leituras"
+   Ordem dele: "igual um chat com os funcionarios lancando essas informacoes e conversando entre si". Estilo atsmatrix:
+   cartao escuro, borda neon fina, busto ilustrado, numeros em mono a cor. Escrito por predio_chat.js; as linhas
+   .pred-lin do predio.js continuam no mesmo contentor, mais discretas. */
+.chat-msg {
+  display: flex; gap: 8px; align-items: flex-start; margin: 6px 0;
+  padding: 7px 8px 8px; border-radius: 9px;
+  background: rgba(12, 17, 24, .92); border: 1px solid rgba(90, 200, 250, .22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .02); min-width: 0;
+}
+.chat-msg .avatar { flex: 0 0 34px; width: 34px; height: 34px; display: block; border-radius: 7px; overflow: hidden; }
+.chat-msg .avatar svg { width: 34px; height: 34px; display: block; }
+.chat-msg .corpo { flex: 1 1 auto; min-width: 0; }
+.chat-msg .cab { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.chat-msg .nome { font-size: 13px; font-weight: 600; color: var(--t); letter-spacing: .01em; line-height: 1.2; }
+.chat-msg .hora { font-style: normal; font: 500 10px var(--mono); color: var(--d); }
+.chat-msg .etq {
+  text-decoration: none; margin-left: auto; font: 600 8.5px var(--mono); letter-spacing: .14em;
+  padding: 1px 5px; border-radius: 3px; border: 1px solid var(--l2); color: var(--m);
+}
+.chat-msg .sub { font-size: 10px; color: var(--d); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-msg .txt { font-size: 11.5px; line-height: 1.45; color: var(--m); margin-top: 4px; overflow-wrap: anywhere; }
+.chat-msg .txt .num { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--t); font-weight: 500; }
+.chat-msg .txt .num.up { color: var(--up); }
+.chat-msg .txt .num.dn { color: var(--dn); }
+.chat-msg .resp { font: 500 10px var(--mono); color: var(--cy); margin-top: 3px; }
+.chat-msg.resposta { margin-left: 18px; border-left: 2px solid rgba(90, 200, 250, .45); }
+/* a cor da etiqueta e da borda por tipo */
+.chat-msg.tipo-mercado { border-color: rgba(90, 200, 250, .30); }      .chat-msg.tipo-mercado .etq { color: var(--cy); border-color: rgba(90, 200, 250, .5); }
+.chat-msg.tipo-lucro { border-color: rgba(62, 207, 142, .45); }        .chat-msg.tipo-lucro .etq { color: var(--up); border-color: rgba(62, 207, 142, .6); }
+.chat-msg.tipo-perda { border-color: rgba(255, 90, 95, .45); }         .chat-msg.tipo-perda .etq { color: var(--dn); border-color: rgba(255, 90, 95, .6); }
+.chat-msg.tipo-director { border-color: rgba(232, 176, 75, .40); }     .chat-msg.tipo-director .etq { color: var(--am); border-color: rgba(232, 176, 75, .6); }
+.chat-msg.tipo-contratacao { border-color: rgba(181, 140, 255, .40); } .chat-msg.tipo-contratacao .etq { color: #b58cff; border-color: rgba(181, 140, 255, .6); }
+.chat-msg.tipo-inauguracao { border-color: rgba(255, 212, 121, .35); } .chat-msg.tipo-inauguracao .etq { color: #ffd479; border-color: rgba(255, 212, 121, .55); }
+.chat-msg.tipo-lab { border-color: rgba(125, 211, 252, .35); }         .chat-msg.tipo-lab .etq { color: #7dd3fc; border-color: rgba(125, 211, 252, .55); }
+.chat-msg.tipo-risco { border-color: rgba(255, 138, 91, .40); }        .chat-msg.tipo-risco .etq { color: #ff8a5b; border-color: rgba(255, 138, 91, .6); }
+.chat-msg.tipo-resposta .etq { color: var(--m); }
+/* entrada: desliza e brilha 1,2 s */
+.chat-msg.nova { animation: chat-entra 1.2s ease-out; }
+@keyframes chat-entra {
+  0%   { opacity: 0; transform: translateX(14px); box-shadow: 0 0 0 0 rgba(90, 200, 250, 0); }
+  25%  { opacity: 1; transform: none; box-shadow: 0 0 14px 2px rgba(90, 200, 250, .45); }
+  100% { box-shadow: 0 0 0 0 rgba(90, 200, 250, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .chat-msg.nova { animation: none; } }
+.chat-vazio { padding: 8px 2px; font: 500 11px var(--mono); color: var(--d); }
+/* telemovel (390 px): a coluna e a largura toda; o cartao encolhe sem cortar */
+@media (max-width: 900px) {
+  .chat-msg { padding: 6px 7px 7px; }
+  .chat-msg .nome { font-size: 12.5px; }
+  .chat-msg.resposta { margin-left: 12px; }
+}

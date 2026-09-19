@@ -1,0 +1,287 @@
+/* -*- coding: utf-8 -*-
+   torre.css — TORRE STARK. A paleta e a do instrumento v3 que ele aprovou em 13/09; NADA daqui e novo
+   excepto as tres cores de acento das cadeiras novas (YINSEN, VERONICA, KILLIAN), marcadas em baixo.
+
+   O QUE SE ADOPTOU DAS REFERENCIAS (dados/sala_brief.md):
+     · ALGORY HUD — a ESTRUTURA e a DENSIDADE: grelha 2x3 por baixo do mostrador, cabecalho de bloco com
+       titulo + 2-3 numeros-chave em linha, tabela densa com o nome em duas linhas, barra de estado em baixo.
+     · FOMO FLOOR — as CADEIRAS: cartao com numero + funcao + estado (IDLE/BUSY/ALERT) e ultimo evento.
+     · Clodds — o feed com larguras FIXAS na hora e a accao a cor (nao a linha inteira).
+     · OpenTerminal — "escuro, denso, teclado": atalhos 1..9 e um pisca de 200 ms quando um numero muda.
+   O QUE NAO SE ADOPTOU, e porque: o neon vermelho do Algory (e o motivo de aquele ecra parecer um jogo —
+   ele recusou "joguinho" em 13/09), os cantos recortados e o texto a brilhar (ilegiveis a 11px), a sala
+   isometrica do FOMO com mesas e bonecos (a metafora da sala vive no NOME e nas cadeiras, nao em pixeis
+   de mobilia), e as abas de navegacao (a Torre e UM ecra; se nao cabe, corta-se, nao se esconde).
+
+   FONTES — sem CDN (regra da planta), logo so fontes do sistema. NUNCA Inter (ordem dele): as cinco
+   ocorrencias que vinham coladas no instrumento v3 foram trocadas por var(--sans) mais abaixo.
+   A regra "todos os numeros em mono tabular" mantem-se: e ela que faz as colunas alinharem e os numeros
+   pararem de dancar quando mudam. Se ele quiser a JetBrains Mono igual a do site, basta por o .woff2 em
+   sala/fontes/ e acrescentar um @font-face — o resto do desenho nao muda.
+*/
+:root{
+  --b:#0a0c0f; --b2:#0d1014; --l:#1c222a; --l2:#2a313b;
+  --t:#e6e9ee; --m:#8a94a3; --d:#5b6573;
+  --up:#3ecf8e; --dn:#ff5a5f; --am:#e8b04b; --cy:#5ac8fa;
+  /* ✳️ tres cores NOVAS, derivadas da paleta do v3 (mesma saturacao e luminosidade) para as cadeiras que
+     ainda nao tinham cor. NAO foram aprovadas por ele — ver "O QUE FICA PARA ELE" no fim do torre.js. */
+  --vi:#9b8cff;   /* YINSEN  — tamanho/risco */
+  --tq:#7fd1c6;   /* VERONICA — prazo/guarda a saida */
+  --te:#d98a5a;   /* KILLIAN — custo & spread */
+  --mono:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",monospace;
+  --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--b);color:var(--t);font-family:var(--sans)}
+body{font-size:13px;line-height:1.45;padding:0 0 42px;-webkit-font-smoothing:antialiased}
+/* 42px em baixo = a altura da barra de estado. Sem isto a barra fixa TAPA a ultima linha do ecra —
+   e uma linha tapada num painel e uma linha que ninguem sabe que existe. */
+.num,table,.feed,.kv b,.sub{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.p{color:var(--up)} .n{color:var(--dn)} .a{color:var(--am)} .c{color:var(--cy)} .z{color:var(--m)}
+
+/* --------- pisca de 200 ms quando um numero muda (OpenTerminal). E a versao discreta do que ele pediu
+   em 13/09 para o ponteiro: "tem que trocar de cor quando mexe", aplicado ao ecra todo. */
+@keyframes pisca-up{from{background:rgba(62,207,142,.30)}to{background:transparent}}
+@keyframes pisca-dn{from{background:rgba(255,90,95,.30)}to{background:transparent}}
+.pisca-up{animation:pisca-up .2s ease-out} .pisca-dn{animation:pisca-dn .2s ease-out}
+@media (prefers-reduced-motion:reduce){.pisca-up,.pisca-dn{animation:none}}
+
+/* --------- barras de topo e de baixo */
+.barra.topo{position:sticky;top:0;z-index:6}   /* o mostrador de cota e a hora nunca saem do ecra (Algory) */
+.barra{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:7px 16px;background:#090b0e;
+  border-bottom:1px solid var(--l);font-size:11px;color:var(--m)}
+.barra.baixo{border-bottom:0;border-top:1px solid var(--l);position:sticky;bottom:0;z-index:5}
+.marca{font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--t);font-size:12px}
+.marca small{display:block;font:500 9px var(--mono);letter-spacing:.12em;color:var(--d)}
+.led{width:7px;height:7px;border-radius:50%;background:#3a434e;display:inline-block;margin-right:6px;vertical-align:middle}
+.led.ok{background:var(--up);box-shadow:0 0 0 3px rgba(62,207,142,.12)}
+.led.mau{background:var(--dn);box-shadow:0 0 0 3px rgba(255,90,95,.12)}
+.led.at{background:var(--am);box-shadow:0 0 0 3px rgba(232,176,75,.12)}
+.barra .dir{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.barra .cel{display:inline-flex;align-items:baseline;gap:6px;font-family:var(--mono);font-size:11px}
+.barra .cel i{font-style:normal;color:var(--d);letter-spacing:.12em;text-transform:uppercase;font-size:9.5px;font-family:var(--sans)}
+.barra .cel b{color:var(--t);font-weight:500}
+.jar{display:inline-flex;align-items:center;gap:5px}
+.jar u{text-decoration:none;color:var(--d);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase}
+.jbar{width:52px;height:4px;background:var(--l);border-radius:2px;overflow:hidden;display:inline-block}
+.jbar i{display:block;height:100%;background:var(--cy);width:0}
+.jbar.at i{background:var(--am)} .jbar.mau i{background:var(--dn)}
+
+/* --------- grelha geral */
+.envol{max-width:1900px;margin:0 auto;padding:0 12px}
+.zb{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(0,1fr);gap:10px;margin:10px 0}
+.zb .dir{display:grid;grid-template-rows:auto auto auto minmax(0,1fr);gap:10px;min-width:0}
+.bloco{background:linear-gradient(180deg,var(--b2),#090b0e);border:1px solid var(--l);border-radius:10px;
+  overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.bloco:focus-visible{outline:1px solid var(--m);outline-offset:-1px}
+.bh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--l);
+  background:rgba(255,255,255,.012)}
+.bh h2{margin:0;font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--t)}
+.bh h2 em{font-style:normal;color:var(--d);letter-spacing:.04em;text-transform:none;font-weight:500;
+  font-size:10.5px;margin-left:6px;font-family:var(--sans)}
+.bh .kn{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap;font:500 11px var(--mono);color:var(--m);
+  font-variant-numeric:tabular-nums}
+.bh .kn b{color:var(--t);font-weight:500}
+.bh .tecla{font:500 9px var(--mono);color:var(--d);border:1px solid var(--l2);border-radius:3px;padding:0 4px}
+.bcorpo{padding:8px 12px 10px;min-width:0;overflow:auto}
+.diag{padding:6px 12px 2px;font-size:11.5px;line-height:1.5;color:var(--m);border-bottom:1px solid rgba(255,255,255,.04)}
+
+/* --------- pastilhas e barrinhas */
+.pil{display:inline-block;padding:1px 6px;border-radius:999px;border:1px solid var(--l2);font:500 9.5px var(--mono);
+  letter-spacing:.06em;color:var(--m);white-space:nowrap}
+.pil.on{color:var(--t);border-color:var(--m);background:rgba(255,255,255,.04)}
+.pil.posicionada{color:var(--up);border-color:rgba(62,207,142,.45)}
+.pil.espera{color:var(--cy);border-color:rgba(90,200,250,.4)}
+.pil.fora{color:var(--d)} .pil.controlo{color:var(--d);border-style:dashed}
+button.pil{background:#11151a;cursor:pointer;font-family:var(--mono)}
+button.pil:hover{color:var(--t);border-color:#3d4652}
+.mini{position:relative;height:3px;background:var(--l);border-radius:2px;overflow:hidden;min-width:34px}
+.mini i{position:absolute;left:0;top:0;bottom:0;background:var(--cy)}
+.mini i.at{background:var(--am)} .mini i.mau{background:var(--dn)}
+
+/* --------- PEPPER */
+.pep-topo{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:6px 12px;border-bottom:1px solid var(--l)}
+.somas{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto;font:500 11px var(--mono)}
+/* Σ ESTRATEGIAS e Σ CONTROLO ficam SEMPRE lado a lado, mesmo corpo, mesmo fundo: o controlo e o placebo da
+   mesa e o dia mau tem de ser tao visivel como o bom. Esconder o placebo foi a armadilha de 13/09. */
+.soma{background:rgba(255,255,255,.03);border:1px solid var(--l);border-radius:6px;padding:3px 9px;color:var(--m)}
+.soma b{color:var(--t);font-weight:600;margin:0 4px}
+/* A tabela ROLA por dentro, nunca a pagina — e o principio do Algory: o mostrador nao sai do ecra.
+   `flex:1` faz a tabela ocupar a altura que o bloco ao lado (EXTREMIS+VINGADORES+KILLIAN+FEED) impoe:
+   sem isso sobrava um palmo de vazio por baixo das 10 linhas e viam-se menos estrategias do que cabiam. */
+.pep-corpo{flex:1 1 auto;overflow:auto;max-height:min(72vh,780px);min-height:220px}
+table.tab{width:100%;border-collapse:collapse;font:500 11.5px var(--mono);font-variant-numeric:tabular-nums}
+table.tab th{position:sticky;top:0;z-index:1;background:#0c1013;font:600 9.5px var(--sans);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--d);text-align:right;padding:6px 7px;border-bottom:1px solid var(--l);white-space:nowrap}
+table.tab td{text-align:right;padding:4px 7px;border-bottom:1px solid rgba(255,255,255,.035);white-space:nowrap;color:var(--t)}
+table.tab th:first-child,table.tab td:first-child{text-align:left;position:sticky;left:0;background:linear-gradient(90deg,#0c1013 88%,rgba(12,16,19,0))}
+table.tab tr.linha{cursor:pointer}
+table.tab tr.linha:hover td{background:rgba(255,255,255,.028)}
+table.tab tr.ctr td{background:rgba(255,255,255,.015);color:var(--m)}
+table.tab tr.ctr td:first-child{background:linear-gradient(90deg,#0d1114 88%,rgba(13,17,20,0))}
+.nomec{display:block;color:var(--t)} .famc{display:block;font-size:9.5px;color:var(--d);letter-spacing:.02em}
+tr.sep td{background:#0b0e12;color:var(--d);font:600 9.5px var(--sans);letter-spacing:.16em;text-transform:uppercase;
+  padding:5px 7px;text-align:left;border-bottom:1px solid var(--l);border-top:1px solid var(--l)}
+tr.gav td{background:#0b0e12;padding:8px 12px;text-align:left;white-space:normal}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 14px;font-size:11px;color:var(--m)}
+.kv span{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,255,255,.04);padding:1px 0}
+.kv b{color:var(--t);font-weight:500}
+
+/* --------- EXTREMIS (barras por geracao) */
+.ger{display:flex;align-items:flex-end;gap:5px;height:76px;padding:4px 0 0}
+.ger .g{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;height:100%}
+.ger .col{width:100%;background:var(--l2);border-radius:2px 2px 0 0;position:relative;overflow:hidden}
+.ger .col i{position:absolute;left:0;right:0;bottom:0;background:var(--up)}
+.ger .g u{text-decoration:none;font:500 8.5px var(--mono);color:var(--d)}
+.ger .g.mono .col i{background:var(--am)}      /* geracao dominada por UMA familia: e aviso, nao vitoria */
+
+/* --------- cadeiras (zona C) */
+.zc{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin:0 0 10px}
+.cad{background:linear-gradient(180deg,var(--b2),#090b0e);border:1px solid var(--l);border-radius:8px;padding:8px 9px 9px;
+  position:relative;overflow:hidden;min-width:0}
+.cad:before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--ac,var(--m))}
+.cad .cn{display:flex;align-items:center;gap:6px;font:600 10px var(--sans);letter-spacing:.14em;color:var(--t)}
+.cad .cn i{font:500 9px var(--mono);color:var(--d);font-style:normal}
+.cad .cp{font-size:10px;color:var(--d);margin:1px 0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cad .ce{font:500 9.5px var(--mono);letter-spacing:.1em;color:var(--d)}
+.cad.BUSY{border-color:rgba(90,200,250,.45)} .cad.BUSY .ce{color:var(--cy)}
+.cad.ALERT{border-color:rgba(255,90,95,.5);background:linear-gradient(180deg,#140d0f,#090b0e)} .cad.ALERT .ce{color:var(--dn)}
+.cad .cu{font:500 10px var(--mono);color:var(--m);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cad .ct{color:var(--d)}
+.cad[data-nome="JERICHO"]{--ac:var(--up)} .cad[data-nome="MANDARIM"]{--ac:var(--am)}
+.cad[data-nome="HAPPY"]{--ac:var(--dn)}   .cad[data-nome="RHODEY"]{--ac:var(--cy)}
+.cad[data-nome="YINSEN"]{--ac:var(--vi)}  .cad[data-nome="VERONICA"]{--ac:var(--tq)}
+.cad[data-nome="DUM-E"]{--ac:var(--m)}    .cad[data-nome="U"]{--ac:var(--d)}
+
+/* --------- FEED (larguras fixas na hora — o Algory deixa correr livre e fica ilegivel) */
+.feed{font:500 11px var(--mono);max-height:min(34vh,330px);overflow:auto}
+.feed .e{display:grid;grid-template-columns:66px 74px 1fr auto;gap:8px;padding:2px 0;
+  border-bottom:1px solid rgba(255,255,255,.03);color:var(--m)}
+.feed time{color:var(--d)} .feed .pp{font-size:9.5px;letter-spacing:.08em;color:var(--d);white-space:nowrap;overflow:hidden}
+.feed .ac{color:var(--t)} .feed .vl{color:var(--m)}
+.feed .e[data-papel="JERICHO"] .pp{color:var(--up)} .feed .e[data-papel="HAPPY"] .pp{color:var(--dn)}
+.feed .e[data-papel="RHODEY"] .pp{color:var(--cy)} .feed .e[data-papel="MANDARIM"] .pp{color:var(--am)}
+.feed .e[data-papel="YINSEN"] .pp{color:var(--vi)} .feed .e[data-papel="VERONICA"] .pp{color:var(--tq)}
+.feed .e[data-papel="KILLIAN"] .pp{color:var(--te)}
+.feed .e.entrada .ac{color:var(--cy)} .feed .e.alvo .ac{color:var(--up)}
+.feed .e.stop .ac{color:var(--dn)} .feed .e.recusa .ac{color:var(--am)}
+
+/* --------- listas simples (KILLIAN, VINGADORES) */
+.lin{display:grid;grid-template-columns:minmax(0,1fr) 52px 74px;align-items:center;gap:8px;padding:2.5px 0;
+  border-bottom:1px solid rgba(255,255,255,.035);font:500 11px var(--mono);color:var(--m)}
+.lin b{color:var(--t);font-weight:500;text-align:right}
+.grande{font:600 26px var(--mono);color:var(--t);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.grande small{font:500 10px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--d);margin-left:8px}
+.vazio{color:var(--d);font-size:11px;padding:6px 0}
+.avisos{padding:6px 0 0;font-size:11.5px;line-height:1.5;color:var(--m)}
+.avisos div{padding:2px 0}
+
+/* --------- telemovel: uma coluna, cadeiras 2x4 logo a seguir ao REACTOR, PEPPER com 5 colunas.
+   PORQUE as cadeiras sobem: no ecra grande sao resumo; no telemovel sao o que ele consulta de passagem
+   ("esta alguem a trabalhar e ha algum ALERT?"). A tabela densa e trabalho de secretaria.
+   E o custo esta medido: em 13/09 o medidor sozinho levou o telemovel de 109 para 75 fps e so voltou a 89
+   com textos a 1 Hz, canvas a redesenhar so quando muda e DPR<=1,5 — por isso aqui o feed nao pisca. */
+@media (max-width:900px){
+  .zb{grid-template-columns:1fr}
+  .zc{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .envol{padding:0 8px}
+}
+@media (max-width:640px){
+  body{font-size:12.5px}
+  .zc{grid-template-columns:repeat(2,minmax(0,1fr));order:-1}
+  .cad .cp{display:none}
+  .pisca-up,.pisca-dn{animation:none}                 /* 60 linhas a piscar rebentam o telemovel */
+  .pep-corpo{max-height:none}
+  table.tab td.op,table.tab th.op{display:none}       /* so ESTRATEGIA · EST · N · REALIZADO · VISION */
+  .feed .e{grid-template-columns:58px 1fr auto} .feed .pp{display:none}
+  .barra{padding:6px 10px;gap:10px} .barra .dir{gap:10px}
+}
+
+/* ---------------------------------------------------------------------------------------------------
+   Daqui para baixo: o CSS do INSTRUMENTO v3, copiado de 3brain-ai/pointer-4f1c/index.html (bloco <style>
+   imediatamente antes de <section class="ins">). Copia fiel, com UMA alteracao: as 5 ocorrencias da fonte
+   Inter (.ins, .md-tip, .ins-btn, .ins-pos th, .ins-pos td small) passaram a var(--sans). Ordem dele:
+   nunca Inter — e sem CDN nem sequer chegaria a carregar, ficando um fallback silencioso e diferente.
+   O bloco redefine os seus proprios tokens (--b, --l, --t, ...) dentro de .ins: e de proposito, para o
+   REACTOR ficar identico ao que ele aprovou mesmo que a Torre um dia mude de paleta.
+   --------------------------------------------------------------------------------------------------- */
+    .ins{--b:#0a0c0f;--l:#1c222a;--l2:#2a313b;--t:#e6e9ee;--m:#8a94a3;--d:#5b6573;--up:#3ecf8e;--dn:#ff5a5f;--am:#e8b04b;--cy:#5ac8fa;
+      position:relative;margin:14px 0 12px;background:linear-gradient(180deg,#0d1014,#090b0e);border:1px solid var(--l);border-radius:12px;overflow:hidden;
+      font-family:var(--sans);color:var(--t);contain:layout paint}
+    .ins *{box-sizing:border-box}
+    .ins .p{color:var(--up)!important} .ins .n{color:var(--dn)!important} .ins .a{color:var(--am)!important}
+    .ins-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid var(--l);background:rgba(255,255,255,.012)}
+    .ins-tit{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--m)} .ins-tit b{color:var(--t);font-weight:700}
+    .ins-st{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap;font:500 11px/1 "JetBrains Mono",ui-monospace,monospace;color:var(--m)}
+    .ins-st span{display:inline-flex;align-items:center;gap:6px} .ins-st em{font-style:normal;color:var(--d)}
+    .ins-dot{width:6px;height:6px;border-radius:50%;background:#3a434e;display:inline-block} .ins-dot.ok{background:var(--up);box-shadow:0 0 0 3px rgba(62,207,142,.12)}
+    .ins-g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr)}
+    .ins-col{padding:12px 16px 14px;min-width:0} .ins-col+.ins-col{border-left:1px solid var(--l)}
+    .ins-h{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--d);margin:2px 0 4px;display:flex;justify-content:space-between;gap:8px}
+    .ins-h span{letter-spacing:.04em;text-transform:none;font:500 10px "JetBrains Mono",monospace}
+    .ins-h+.ins-r{border-top:1px solid var(--l)}
+    .ins-r{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:var(--m)}
+    .ins-r[data-m]{cursor:pointer} .ins-r[data-m]:hover span{color:var(--t)}
+    .ins-r b{font:500 13px/1.25 "JetBrains Mono",ui-monospace,monospace;color:var(--t);font-variant-numeric:tabular-nums;white-space:nowrap}
+    .ins-r i{font:400 10.5px "JetBrains Mono",monospace;color:var(--d);font-style:normal;margin-left:6px}
+    .ins-r.big{padding:6px 0 7px} .ins-r.big b{font-size:22px;font-weight:600;letter-spacing:-.01em}
+    .ins-k{display:inline-block;width:9px;height:2px;vertical-align:middle;margin-right:7px;position:relative;top:-2px}
+    .ins-bar{position:relative;height:3px;background:var(--l);border-radius:2px;overflow:hidden;margin:2px 0 6px} .ins-bar i{position:absolute;top:0;bottom:0;left:0;width:0}
+    .ins-sep{height:10px}
+    .ins-dial{display:flex;flex-direction:column;align-items:center;padding:10px 12px 12px}
+    .ins-palco{position:relative;width:100%;max-width:470px;aspect-ratio:1/1;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;outline:none}
+    .ins-palco:focus-visible{box-shadow:0 0 0 1px var(--m);border-radius:50%}
+    #md_cv{position:absolute;inset:0;width:100%;height:100%;max-height:none;display:block}
+    #md_trilho{width:100%;height:60px;max-height:none;display:block;margin:2px 0 2px}
+    .md-tip{position:absolute;left:0;top:0;z-index:3;max-width:250px;padding:7px 9px;border-radius:6px;background:rgba(10,12,15,.96);border:1px solid var(--l2);color:var(--t);font:500 11px/1.45 var(--sans);pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+    .md-tip b{display:block;font:600 12px "JetBrains Mono",monospace;margin-bottom:2px}
+    .ins-bt{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+    .ins-btn{font:500 11px var(--sans);letter-spacing:.03em;color:var(--m);background:#11151a;border:1px solid var(--l2);border-radius:6px;padding:5px 10px;cursor:pointer}
+    .ins-btn:hover{color:var(--t);border-color:#3d4652} .ins-btn.on{color:var(--t);border-color:var(--m)}
+    .ins-pos{border-top:1px solid var(--l);padding:10px 16px 12px}
+    .ins-pos .wrap2{overflow-x:auto}
+    .ins-pos table{width:100%;border-collapse:collapse;font:500 12px "JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+    .ins-pos th{font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--d);text-align:right;padding:6px 8px;border-bottom:1px solid var(--l);white-space:nowrap}
+    .ins-pos td{text-align:right;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04);white-space:nowrap;color:var(--t)}
+    .ins-pos th:first-child,.ins-pos td:first-child{text-align:left}
+    .ins-pos td small{font:500 9.5px var(--sans);letter-spacing:.08em;color:var(--d);margin-left:6px}
+    .ins-prog{width:86px;height:3px;background:var(--l);border-radius:2px;position:relative;display:inline-block;vertical-align:middle;overflow:hidden} .ins-prog i{position:absolute;left:0;top:0;bottom:0;background:var(--cy)}
+    .ins-rod{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);border-top:1px solid var(--l)}
+    .ins-log{padding:10px 16px 12px;min-width:0}
+    .ins-log div.e{display:grid;grid-template-columns:70px 1fr auto;gap:12px;padding:3px 0;font:500 11.5px "JetBrains Mono",monospace;color:var(--m);border-bottom:1px solid rgba(255,255,255,.03)}
+    .ins-log time{color:var(--d)} .ins-log b{font-weight:500;color:var(--t)}
+    .ins-ctl{padding:10px 16px 12px;border-left:1px solid var(--l);font-size:11px;color:var(--d);line-height:1.55} .ins-ctl b{color:var(--m);font-weight:600}
+    .md-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+    .ins.full{position:fixed;inset:0;z-index:60;margin:0;border-radius:0;overflow:auto}
+    .ins.full .ins-palco{max-width:min(78vh,640px)}
+    @media (max-width:1000px){.ins-g{grid-template-columns:1fr 1fr}.ins-dial{grid-column:1/-1;order:-1;border-bottom:1px solid var(--l)}.ins-g .ins-col+.ins-col{border-left:0}.ins-g .ins-col:last-child{border-left:1px solid var(--l)}}
+    @media (max-width:640px){.ins-g{grid-template-columns:1fr}.ins-g .ins-col:last-child{border-left:0;border-top:1px solid var(--l)}.ins-rod{grid-template-columns:1fr}.ins-ctl{border-left:0;border-top:1px solid var(--l)}.ins-st{margin-left:0;gap:10px}.ins-log div.e{grid-template-columns:62px 1fr auto}}
+
+/* ---------------------------------------------------------------------------------------------------
+   AJUSTES DE TAMANHO do REACTOR dentro da Torre — regras NOVAS, escritas aqui em baixo de proposito:
+   a copia do instrumento v3 acima fica igual a do site, linha por linha, e o que muda esta a vista.
+   NAO se mexe no desenho, so no ESPACO que ele ocupa; o instrumento ja se remede sozinho (ResizeObserver).
+   PORQUE: no site o mostrador vive numa pagina que rola; aqui tem de caber num ecra com a mesa por baixo.
+   min(470px, 42vh) da 470 (o tamanho original) num monitor de 1080p e encolhe num portatil de 800px, em
+   vez de empurrar o PEPPER para fora do ecra.
+   --------------------------------------------------------------------------------------------------- */
+.ins{margin:8px 0 0}
+.ins-palco{max-width:min(470px,42vh)}
+.ins-pos .wrap2{max-height:min(30vh,240px);overflow:auto}
+.ins-log{max-height:150px;overflow:auto}
+@media (max-width:640px){.ins-palco{max-width:min(470px,52vh)}.ins-pos .wrap2{max-height:none}}
+
+/* ---------------------------------------------------------------------------------------------------
+   TELEMOVEL (<=640px): as CADEIRAS sobem para logo a seguir ao REACTOR.
+   PORQUE: no ecra grande as cadeiras sao resumo; no telemovel sao o que ele consulta de passagem —
+   "esta alguem a trabalhar e ha algum ALERT?". A tabela densa e trabalho de secretaria, fica em baixo.
+   (`order` so funciona com o pai em flex: por isso o .envol muda de display aqui, e so aqui.)
+   A barra de estado deixa de ser fixa: num ecra de 844px, duas linhas presas em baixo custam 5% do ecra
+   para repetir o que esta a um dedo de distancia.
+   --------------------------------------------------------------------------------------------------- */
+@media (max-width:640px){
+  .envol{display:flex;flex-direction:column}
+  #medidor{order:-2} .zc{order:-1} .zb{order:0} #bl_friday{order:1}
+  .barra.baixo{position:static}
+  body{padding-bottom:6px}
+}
