@@ -2294,7 +2294,7 @@
     var m = obj(ev && ev.detail), a = obj(m.autor);
     var c = cartaoDoAndar(a.andar);
     if (!c) return;
-    acenderCartao(c, S(a.titulo) + ': ' + S(m.texto), S(m.tipo));
+    acenderCartao(c, String(a.titulo || '') + ': ' + String(m.texto || ''), String(m.tipo || ''));
   });
   setInterval(function () {
     var agora = Date.now();

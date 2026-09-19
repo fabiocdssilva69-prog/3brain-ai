@@ -588,7 +588,9 @@ body.lado-fechado .lado-toggle { transform: rotate(180deg); }
    copiado quadro a quadro do canal @atsmatrix, onde o agente que age ganha uma faixa acesa por cima. */
 .cartao.topo { position: relative; overflow: visible; }
 .cartao .balao {
-  position: absolute; left: 6px; right: 6px; bottom: calc(100% + 5px); z-index: 6;
+  /* 19/09, MEDIDO: por cima do cartao (bottom: 100%) o balao era CORTADO pela faixa dos cartoes, que tem de
+     esconder o que transborda para o deslize horizontal funcionar. Fica DENTRO do cartao, por cima do cabecalho. */
+  position: absolute; left: 6px; right: 6px; top: 5px; z-index: 6;
   padding: 5px 7px; border: 1px solid rgba(90,200,250,.7); border-radius: 6px;
   background: rgba(8,14,22,.96); box-shadow: 0 0 14px rgba(90,200,250,.35);
   font: 500 9px/1.25 var(--sans, sans-serif); color: #dfeaf5; text-align: left;
@@ -596,7 +598,7 @@ body.lado-fechado .lado-toggle { transform: rotate(180deg); }
 }
 .cartao .balao.up { border-color: rgba(62,207,142,.8); box-shadow: 0 0 14px rgba(62,207,142,.35); }
 .cartao .balao.dn { border-color: rgba(255,90,95,.8); box-shadow: 0 0 14px rgba(255,90,95,.35); }
-@keyframes balaoEntra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes balaoEntra { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .cartao.topo.acende { animation: cartaoAcende 1.5s ease-out; }
 @keyframes cartaoAcende {
   0%   { box-shadow: 0 0 0 rgba(90,200,250,0), 0 2px 10px rgba(0,0,0,.55); border-top-color: rgba(90,200,250,.75); }
