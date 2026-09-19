@@ -932,7 +932,7 @@
     if (!g) return;
     var filhos = g.children.slice();
     filhos.forEach(function (o) {
-      o.traverse(function (m) { if (m.geometry) m.geometry.dispose(); if (m.material) { if (m.material.map) m.material.map.dispose(); if (lista(m.material).length) m.material.forEach(function (x) { x.dispose(); }); else m.material.dispose(); } });
+      o.traverse(function (m) { if (m.geometry) m.geometry.dispose(); if (m.material) { if (m.material.map && typeof m.material.map.dispose === 'function') m.material.map.dispose(); if (lista(m.material).length) m.material.forEach(function (x) { x.dispose(); }); else m.material.dispose(); } });
       g.remove(o);
     });
   }
@@ -1527,7 +1527,7 @@
       L.bandaEsq = 4; L.bandaDir = k >= 2 ? W : W - 8 - wv - 6;
       return L;
     }
-    var topoFita = 34;                                      // a fita flutua no topo do palco: a coluna comeca abaixo dela
+    var topoFita = 26;                                      // a fita flutua no topo do palco: a coluna comeca abaixo dela
     var hvel = k >= 2 ? 120 : clamp(0.26 * H - topoFita / 2, 180, 340);
     var wvel = Math.min(1.45 * hvel, 0.30 * W); hvel = wvel / 1.45;
     var ht = Math.round(hvel * 0.62);
@@ -1536,7 +1536,7 @@
     L.bandaDir = W - 12 - wvel - 8;
     // v5d: os NUMEROS do Pointer por baixo do trilho, ate a linha dos contadores; sem 96 px de altura nao se desenha
     var tN = topoFita + hvel + 8 + ht + 8, fN = Math.min(H - 34, tN + Math.round(wvel * 0.95));   // tecto: medido em N3 a ocupar meio ecra
-    if (fN - tN >= 96) L.rects.numeros = { esq: W - 12 - wvel, topo: tN, dir: W - 12, fundo: fN, coluna: 'dir' };
+    if (fN - tN >= 72) L.rects.numeros      // 19/09: era 96; com a fita no topo o painel desaparecia no ecra apertado = { esq: W - 12 - wvel, topo: tN, dir: W - 12, fundo: fN, coluna: 'dir' };
     if (k === 0) {
       var wD = clamp(0.20 * W, 160, 236), hD = Math.min((H - 24 - 8 - 30) / 2, 0.78 * wD);
       DIRECTORES.forEach(function (n, i) {
