@@ -7,7 +7,7 @@
 // Nada e inventado aqui: texto, numeros, autor e tipo vem do JSON; quando falta, escreve-se "sem dado".
 (function () {
   'use strict';
-  var URL_CONVERSA = 'conversa.json', CADA_MS = 5000, MAX_DOM = 80, BRILHO_MS = 1300;
+  var URL_CONVERSA = 'conversa.json', CADA_MS = 5000, MAX_DOM = 40, BRILHO_MS = 1300;
   var ETIQUETA = { mercado: 'MERCADO', lucro: 'LUCRO', perda: 'PERDA', director: 'DIRECTOR', contratacao: 'CONTRATACAO',
     inauguracao: 'INAUGURACAO', lab: 'LAB', risco: 'RISCO', resposta: 'RESPOSTA' };
   var vistos = {};            // id -> true: o que ja esta (ou esteve) no DOM

@@ -36,7 +36,7 @@
   // batimento e onda de dados. Volta a ligar quando ele mostrar por video o que quer.
   var ANIMACAO_PESADA = false;
   var PERIODO_MS = 2000;      // 19/09: era 5 s. A pagina le de 2 em 2 s; o que limita a frescura e quem escreve.
-  var MAX_PACOTES = 40, MAX_LEITURAS = 60, ARRANQUE_RAPIDO = 10;
+  var MAX_PACOTES = 40, MAX_LEITURAS = 30, ARRANQUE_RAPIDO = 10;   // 19/09: 60 linhas eram ~2.000 nos de DOM
   var DUR_PACOTE_MS = 2600, PULSO_MS = 1500;
   var DUR_TWEEN_NUM_MS = 900, DUR_TWEEN_AGULHA_MS = 700, DUR_CAMARA_MS = 600;
   var MAX_TWEENS_LEMBRADAS = 20;
@@ -152,7 +152,7 @@
   // v6 (18/09 noite): o predio BATE como um coracao (52 bpm; a forca e a frescura do dado), uma ONDA DE DADOS sobe do
   // Atrio ao atico quando chega um torre.json novo, cada andar tem o seu material de arestas para acender, e a COROA
   // (penthouse em consola, letreiro STARK, reactor arc) vive acima do atico. O batimento actualiza a 20 Hz, nao a 60.
-  var BPM = 52, PERIODO_BAT_MS = 60000 / BPM, PASSO_BAT_MS = 50;
+  var BPM = 52, PERIODO_BAT_MS = 60000 / BPM, PASSO_BAT_MS = 100;   // 19/09: era 50 (20 Hz); a 10 Hz le-se igual e custa metade
   var batimento = { amp: 0, fase: 0, w: 0, vivo: false, bpm: BPM }, ultimoBatimento = 0, vidroOpacidade = 0.32;
   var vidroMat = null, ondaDados = { v: null, t_iso: '' }, ondasDeDados = 0;
   var coroa = null, grupoCoroa = null;
@@ -2812,9 +2812,15 @@
   // ---------------------------------------------------------------- laco
   var ultimoQuadro = 0, ultimoHUD = 0, escondido = false;
   document.addEventListener('visibilitychange', function () { escondido = document.hidden; });
+  // 19/09, MEDIDO com o CDP: 83% da linha principal ocupada em regime (16,6 s de tarefa em 20 s). O laco
+  // desenhava a cada fotograma do ecra - 50 a 60 por segundo - e o desenho e o item mais caro. Um painel de dados
+  // le-se igual a 30. TECTO DE 30 DESENHOS POR SEGUNDO: corta metade do trabalho sem o olho notar.
+  var MS_POR_QUADRO = 1000 / 30, ultimoDesenho = 0;
   function quadro(agora) {
     requestAnimationFrame(quadro);
     if (escondido || !renderer) return;
+    if (agora - ultimoDesenho < MS_POR_QUADRO - 1) return;
+    ultimoDesenho = agora;
     if (ultimoQuadro) { var dt = agora - ultimoQuadro; fpsAmostras.push(1000 / dt); if (fpsAmostras.length > 120) fpsAmostras.shift(); }
     ultimoQuadro = agora;
     if (precisaEnquadrar && projecto) { enquadrarN0(); aplicarVista(); }
