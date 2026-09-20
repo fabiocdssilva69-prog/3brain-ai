@@ -691,3 +691,12 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
   100% { transform: none; box-shadow: 0 2px 10px rgba(0,0,0,.55); }
 }
 @media (prefers-reduced-motion: reduce) { .cartao.topo.acende { animation: none; } }
+
+/* v6 (19/09, ordem dele): as seccoes da coluna dobram-se. Acorde e Sem numero nascem fechados; as Leituras
+   ficam abertas - e a conversa dos funcionarios, a unica que ele quer sempre a correr. */
+.lado-bl > .bh { cursor: pointer; user-select: none; }
+.lado-bl > .bh h2::after { content: ' −'; color: rgba(90,200,250,.55); font: 700 11px var(--mono); }
+.lado-bl.dobrado > .bh h2::after { content: ' +'; }
+.lado-bl.dobrado > *:not(.bh) { display: none !important; }
+.lado-bl.dobrado { flex: 0 0 auto; min-height: 0; padding-bottom: 4px; }
+.lado-bl.cresce.dobrado { flex: 0 0 auto; }

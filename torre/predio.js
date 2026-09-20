@@ -2349,6 +2349,8 @@
   var MAX_CARTOES = 14;
   function pintarAcorde() {
     var el = $('acorde'); if (!el || !D) return;
+    // dobrado nao se pinta: esconder um canvas e continuar a desenha-lo e pagar o custo sem ver o resultado.
+    if (el.closest && el.closest('.lado-bl') && el.closest('.lado-bl').classList.contains('dobrado')) return;
     var andarDe = {}; lista(D.funcionarios).forEach(function (f) { andarDe[f.id] = andarTorreDe(f); });
     var nomeDe = {}; lista(D.andares_torre && D.andares_torre.length ? D.andares_torre : D.andares).forEach(function (a) { nomeDe[a.n] = a.nome; });
     var ac = acordeDoGrafo(D.ligacoes, andarDe);
@@ -2479,6 +2481,25 @@
     var t = 'm';
     try { t = localStorage.getItem('torre_cartao_tam') || 'm'; } catch (e) { }
     aplicarTamanhoCartoes(t);
+  })();
+  // 19/09 (ordem dele): as seccoes da coluna dobram-se ao clique no titulo. Nascem fechadas menos as Leituras.
+  (function () {
+    var lado = $('lado'); if (!lado) return;
+    var blocos = lado.querySelectorAll('.lado-bl');
+    var guardado = null;
+    try { guardado = JSON.parse(localStorage.getItem('torre_lado_dobrado') || 'null'); } catch (e) { }
+    Array.prototype.forEach.call(blocos, function (s, i) {
+      var fecha = guardado ? !!guardado[i] : (i !== blocos.length - 1);   // por omissao so as Leituras abertas
+      s.classList.toggle('dobrado', fecha);
+      var bh = s.querySelector('.bh'); if (!bh) return;
+      bh.addEventListener('click', function (e) {
+        if (e.target && e.target.closest && e.target.closest('button')) return;   // o recolher da coluna e outro botao
+        s.classList.toggle('dobrado');
+        var est = []; Array.prototype.forEach.call(blocos, function (x) { est.push(x.classList.contains('dobrado') ? 1 : 0); });
+        try { localStorage.setItem('torre_lado_dobrado', JSON.stringify(est)); } catch (e2) { }
+        if (!s.classList.contains('dobrado')) { try { pintarAcorde(); } catch (e3) { } }
+      });
+    });
   })();
   addEventListener('torre:mensagem', function (ev) {
     var m = obj(ev && ev.detail), a = obj(m.autor);
