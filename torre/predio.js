@@ -2118,9 +2118,15 @@
     novos.forEach(function (p, idx) {
       var ev = p.ev; marcarVisto(p.chave);
       var tipo = String(ev.tipo || ''), rota = CAMINHOS.hasOwnProperty(tipo) ? CAMINHOS[tipo] : undefined;
-      if (rota === null) { pulsarAndar(andarDaOrigem(ev.origem) || 9); escreverLeitura(ev); return; }
+      if (rota === null) { var na = andarDaOrigem(ev.origem) || 9; pulsarAndar(na);
+        try { acenderCartao(cartaoDoAndar(andarAntigoParaTorre(na))); corridasVistas++; } catch (e) { }
+        escreverLeitura(ev); return; }
       if (rota === undefined) { var n = andarDaOrigem(ev.origem); if (n != null) lancarPacote(0, n, 'outro', idx < 3); semCaminho++; escreverLeitura(ev); return; }
       lancarPacote(rota[0], rota[1], rota[2], idx < 3);
+      // 20/09 (queixa dele: os cartoes reagem pouco): o FEED e a batida rapida - chega no torre.json de 2 em 2 s,
+      // enquanto o predio.json so se reescreve ao minuto. Cada evento novo acende o cartao do cargo que manda no
+      // andar de DESTINO do evento. E a mesma reaccao, alimentada pela fonte que mexe mais.
+      try { acenderCartao(cartaoDoAndar(andarAntigoParaTorre(rota[1]))); corridasVistas++; } catch (e) { }
       if (tipo === 'doc' || tipo === 'professor' || tipo === 'aprendizado' || tipo === 'live') ondaDaFonte(ev.origem);
       if (tipo === 'evolucao' || tipo === 'geracao' || tipo === 'avaliacao') pulsarAndar(7);
       escreverLeitura(ev);
