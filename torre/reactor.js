@@ -249,6 +249,17 @@ const US=v=>v==null||!isFinite(v)?'—':sgn(v);
 const dist=x=>(S.real==null||x==null)?'':'Δ '+sgn(S.real-x);
 function textos(){ if(S.real==null) return; const ab=S.real-(S.fech||0);
   put('md_dia_data',S.dataDia||''); put('md_agora',US(S.real)); sinal('md_agora',S.real); put('md_fech',US(S.fech)); sinal('md_fech',S.fech); put('md_aberto',US(ab)); sinal('md_aberto',ab);
+  // 20/09 (ordem dele): os CARTOES do saldo. Mesma fonte do mostrador - aqui so se escolhe o que vai em grande.
+  // Nao ha conta nova nenhuma: `ab` e o mesmo aberto do md_aberto e S.je e o acumulado dos fills da corretora.
+  const gn=S.gn||{}, jea=S.je||{};   // jea: o nome je ja e usado mais abaixo nesta mesma funcao
+  const kv=(id,v)=>{ const e=$(id); if(!e) return; const t=US(v); if(cacheTxt[id]!==t){ cacheTxt[id]=t; e.textContent=t; }
+                     const k=v==null?'':(v>0.004?'p':(v<-0.004?'n':'')); if(cacheCls[id]!==k){ cacheCls[id]=k; e.className='v'+(k?' '+k:''); } };
+  kv('k_ent',gn.entrou_hoje_usd); put('k_ent_det',(gn.n_entrou_hoje||0)+' entrada(s) hoje');
+  kv('k_sai',gn.saiu_hoje_usd); put('k_sai_det',(gn.n_saiu_hoje||0)+' saída(s) hoje');
+  kv('k_hoje',S.fech);
+  kv('k_entrou',jea.liquido); put('k_entrou_det',(jea.operacoes!=null?jea.operacoes+' operações':'')+(jea.acerto_pct!=null?' · acerto '+Number(jea.acerto_pct).toFixed(1)+'%':''));
+  kv('k_aberto',ab); put('k_aberto_det',S.pos.length+' posição(ões) aberta(s)');
+  kv('k_prev',S.esp); put('k_prev_det',dist(S.esp));
   const desde=(S.serie&&S.serie.length&&String(S.serie[0][0])>'00:30')?' · registo desde '+S.serie[0][0]:'';
   put('md_pico',US(S.pico)); put('md_pico_t',(S.picoT||'')+desde); put('md_vale',US(S.vale)); put('md_vale_t',S.valeT||'');
   const rec=S.pico!=null?S.real-S.pico:null; put('md_recuo',rec==null?'—':sgn(rec)); sinal('md_recuo',rec); put('md_ritmo',sgn(S.ritmoV,2)+' /h'); sinal('md_ritmo',S.ritmoV);

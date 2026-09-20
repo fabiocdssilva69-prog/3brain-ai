@@ -1,5 +1,5 @@
 <!-- TORRE STARK - copia publica e SANEADA: as chaves dos genes sao hashes, a receita fica em casa.
-     Gerada por tesouraria/mercado/publicar_torre.py em 20/09 08:14:22. Actualiza-se sozinha.
+     Gerada por tesouraria/mercado/publicar_torre.py em 20/09 08:15:28. Actualiza-se sozinha.
      Nao listada: <meta robots noindex> nesta pagina e Disallow em /robots.txt. -->
 <!doctype html>
 <html lang="pt">
@@ -143,6 +143,18 @@
       <div class="ins-ctl"><div class="ins-h">Instrumento</div><span id="md_fonte"></span><br><b>Arraste na horizontal</b> sobre o mostrador para testar um cenário de mercado (a venda no alvo entra na conta) · passe o cursor sobre a escala para ler qualquer valor e sobre as marcas para ver o que são · ← → testam cenários pelo teclado · + − ajustam a meta.</div>
     </div>
     <div class="md-sr" id="md_sr" aria-live="polite"></div>
+  </section>
+
+  <!-- ===================== os CARTOES do saldo (ordem dele, 20/09) =====================
+       Vieram da pagina publica antiga do Pointer, onde ele os via. O mostrador acima diz o MESMO em linhas
+       pequenas; ele quer o numero grande, de relance. Os ids k_* sao o contrato com o reactor.js. -->
+  <section class="kpis" aria-label="Saldos">
+    <div class="kpi" style="border-left:3px solid #4ade80"><div class="l">&#8593; Entrou hoje</div><div class="v" id="k_ent">&#8212;</div><div class="s" id="k_ent_det"></div></div>
+    <div class="kpi" style="border-left:3px solid #ff6b6b"><div class="l">&#8595; Saiu hoje</div><div class="v" id="k_sai">&#8212;</div><div class="s" id="k_sai_det"></div></div>
+    <div class="kpi"><div class="l">Saldo do dia <i>fechado</i></div><div class="v" id="k_hoje">&#8212;</div><div class="s">opera&ccedil;&otilde;es FECHADAS hoje, j&aacute; com as taxas</div></div>
+    <div class="kpi" style="border-color:#ffd23f"><div class="l">Saldo realizado <i>desde o in&iacute;cio</i></div><div class="v" id="k_entrou">&#8212;</div><div class="s" id="k_entrou_det"></div><div class="s">opera&ccedil;&otilde;es fechadas, dos fills da corretora &middot; sem estimativa</div></div>
+    <div class="kpi"><div class="l">Se fechasse agora</div><div class="v" id="k_aberto">&#8212;</div><div class="s" id="k_aberto_det"></div><div class="s" id="k_aberto_seg"></div><div class="s">o que entrava na conta se tudo fosse vendido a este pre&ccedil;o, j&aacute; com as taxas &middot; muda com o pre&ccedil;o</div></div>
+    <div class="kpi"><div class="l">Plano at&eacute; &agrave; sa&iacute;da</div><div class="v" id="k_prev">&#8212;</div><div class="s" id="k_prev_det"></div><div class="s">o que o backtest espera no FIM de cada posi&ccedil;&atilde;o, com a taxa real &middot; fixo desde a entrada: n&atilde;o mexe com o pre&ccedil;o &middot; n&atilde;o &eacute; promessa</div></div>
   </section>
 
   <!-- ===================== ZONA B — a mesa (grelha 2x3, como o Algory) ======================== -->

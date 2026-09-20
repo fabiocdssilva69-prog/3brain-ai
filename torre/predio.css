@@ -711,3 +711,18 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
 }
 .cartoes.duas-filas .cartao.topo:not(.aberto) { width: auto; min-width: 0; max-width: none; }
 .cartoes.duas-filas .cartao.topo.aberto { grid-column: span 2; }
+
+/* os CARTOES do saldo (20/09, ordem dele) - o mesmo desenho da pagina antiga do Pointer, com as cores da
+   torre. Numero grande porque o ponto e ler de relance; o mostrador ao lado ja tem o detalhe. */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 10px; margin: 12px 0 14px; }
+.kpi {
+  background: linear-gradient(180deg, rgba(16,22,31,.97), rgba(9,13,19,.97));
+  border: 1px solid rgba(90,200,250,.28); border-radius: 12px; padding: 11px 13px;
+}
+.kpi .l { color: #8794a4; font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+.kpi .l i { font-style: normal; color: #5f6d7e; text-transform: none; letter-spacing: 0; }
+.kpi .v { font: 650 24px var(--mono); margin-top: 3px; letter-spacing: -.01em; color: #eef3f8; }
+.kpi .v.p { color: #3ecf8e; }
+.kpi .v.n { color: #ff5a5f; }
+.kpi .s { color: #8794a4; font-size: 11px; margin-top: 2px; line-height: 1.35; }
+@media (max-width: 640px) { .kpi .v { font-size: 20px; } }

@@ -1634,7 +1634,9 @@
       holos[nome] = { nome: nome, canvas: c, g: c.getContext('2d'), tex: sp.userData.tex, sprite: sp, hash: '', dados: null, sw: 0, sh: 0,
                       rect: null, guia: null, coluna: null, angulo: 0, anguloAlvo: 0, primeira: true, andar: PH.ANDAR_DO_HOLO[nome], pulsaAte: 0, valores: {}, alvos: {}, mudou: {}, vivo: false,
                       // 19/09: nasce MINIMIZADO - so a barra do titulo. O velocimetro fica aberto: e o numero do dia.
-                      min: nome !== 'velocimetro' };
+                      // 20/09: o NUMEROS nasce aberto com o velocimetro - e o cartao do saldo na torre, e foi
+                      // por ter ficado minimizado ontem que ele disse que 'agora nao tem mais'.
+                      min: (nome !== 'velocimetro' && nome !== 'numeros') };
     });
   }
   // 18/09 noite: na torre de 47 os marcos e os hologramas encontram o andar pela ESPECIALIDADE ou pelo prefixo do
