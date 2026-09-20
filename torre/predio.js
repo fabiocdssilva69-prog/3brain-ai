@@ -961,13 +961,31 @@
     var alturaLaje = ALTURA - 0.18;
     var degraus = [], obrasTracos = [], obrasMont = [], reservaPts = [], reservaCor = [], nObras = 0;
     vidroMat = new THREE.MeshBasicMaterial({ color: COR.vidro, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.FrontSide });
+    // 🔴 19/09, MEDIDO: a caixa de vidro tinha SEIS materiais (quatro lados + topo e fundo invisiveis) e uma
+    // caixa com seis materiais custa SEIS CHAMADAS DE DESENHO. Com 49 andares eram ~294 chamadas so no vidro,
+    // de 376 no total ao nivel 0 - o grosso do peso que ele sentia. Agora o vidro e uma geometria com AS QUATRO
+    // PAREDES E MAIS NADA (8 vertices, 8 triangulos, um material): UMA chamada por andar.
     var semTopo = new THREE.MeshBasicMaterial({ visible: false });
-    var vidroMats = [vidroMat, vidroMat, semTopo, semTopo, vidroMat, vidroMat];
+    var vidroMats = [vidroMat, vidroMat, semTopo, semTopo, vidroMat, vidroMat];   // (mantido: ninguem o usa)
     var arestasMat = new THREE.LineBasicMaterial({ color: COR.ciano, transparent: true, opacity: 0.72, depthWrite: false });
     var lajeMat = new THREE.MeshLambertMaterial({ color: PISO.laje }), ruaMat = new THREE.MeshLambertMaterial({ color: PISO.laje_rua });
     var paredeMat = new THREE.MeshLambertMaterial({ color: PISO.parede }), rodapeMat = new THREE.MeshLambertMaterial({ color: PISO.parede_alt });
     var montanteMat = new THREE.MeshLambertMaterial({ color: PISO.montante });
     var geoLaje = new THREE.BoxGeometry(LARG, 0.30, PROF), geoVidro = new THREE.BoxGeometry(LARG, alturaLaje, PROF);
+    var geoParedes = (function (lx, ly, lz) {                 // so as 4 paredes: sem topo nem fundo, um material
+      var x = lx / 2, y = ly / 2, z = lz / 2, g = new THREE.BufferGeometry();
+      var p = [], n2 = [], faces = [[[-x, -y, z], [x, -y, z], [x, y, z], [-x, y, z], [0, 0, 1]],
+                                    [[x, -y, -z], [-x, -y, -z], [-x, y, -z], [x, y, -z], [0, 0, -1]],
+                                    [[x, -y, z], [x, -y, -z], [x, y, -z], [x, y, z], [1, 0, 0]],
+                                    [[-x, -y, -z], [-x, -y, z], [-x, y, z], [-x, y, -z], [-1, 0, 0]]];
+      faces.forEach(function (f) {
+        var a1 = f[0], b1 = f[1], c1 = f[2], d1 = f[3], nn = f[4];
+        [a1, b1, c1, a1, c1, d1].forEach(function (v) { p.push(v[0], v[1], v[2]); n2.push(nn[0], nn[1], nn[2]); });
+      });
+      g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(n2, 3));
+      return g;
+    })(LARG, alturaLaje, PROF);
     var geoArestas = new THREE.EdgesGeometry(geoVidro);
     var geoParede = new THREE.BoxGeometry(LARG, ALTURA - 0.45, 0.16), geoRodape = new THREE.BoxGeometry(LARG, 0.34, 0.06);
     var geoMont = new THREE.BoxGeometry(0.22, ALTURA - 0.5, 0.22);
@@ -1014,7 +1032,7 @@
         var parede = new THREE.Mesh(geoParede, paredeMat); parede.position.set(0, (ALTURA - 0.45) / 2 + 0.15, -PROF / 2 + 0.1); grupo.add(parede);
         var rodape = new THREE.Mesh(geoRodape, rodapeMat); rodape.position.set(0, 0.34, -PROF / 2 + 0.2); grupo.add(rodape);
         [-1, 1].forEach(function (s) { var mt = new THREE.Mesh(geoMont, montanteMat); mt.position.set(s * (LARG / 2 - 0.3), (ALTURA - 0.5) / 2 + 0.15, -PROF / 2 + 0.35); grupo.add(mt); });
-        var vidro = new THREE.Mesh(geoVidro, vidroMats); vidro.position.set(0, alturaLaje / 2, 0); vidro.userData.ordem = it.ordem; vidro.renderOrder = 2; grupo.add(vidro);
+        var vidro = new THREE.Mesh(geoParedes, vidroMat); vidro.position.set(0, alturaLaje / 2, 0); vidro.userData.ordem = it.ordem; vidro.renderOrder = 2; grupo.add(vidro);
         // v6: um material de arestas POR ANDAR - e assim que a onda de dados e a corrida de um funcionario acendem um so andar
         var am = arestasMat.clone(); it.arestasMat = am;
         var ar = new THREE.LineSegments(geoArestas, am); ar.position.set(0, alturaLaje / 2, 0); grupo.add(ar);
