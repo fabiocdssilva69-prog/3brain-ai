@@ -3008,6 +3008,8 @@
         ortografica: !!(camara && camara.isOrthographicCamera), fps: Math.round(fps()), temD: !!D, temT: !!T, telemovel: telemovel,
         // 19/09: o custo do 3D mede-se em CHAMADAS DE DESENHO, nao em objectos. Sem este numero nao se sabe
         // o que aliviar - e foi por medi-lo que se percebeu onde estava o peso.
+        // 19/09: o inventario por tipo, para se saber O QUE faz as chamadas de desenho (e nao so quantas sao)
+        inventario: (function () { var c = {}; if (cena) cena.traverse(function (o) { if (o.visible) c[o.type] = (c[o.type] || 0) + 1; }); return c; })(),
         desenho: renderer ? { chamadas: renderer.info.render.calls, triangulos: renderer.info.render.triangles,
                               geometrias: renderer.info.memory.geometries, texturas: renderer.info.memory.textures,
                               objectos: cena ? cena.children.length : 0 } : null,
