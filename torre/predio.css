@@ -649,6 +649,7 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
    corre nao depende de estar aberto: e a borda e o brilho, que se veem fechado na mesma. */
 .cartao.topo { cursor: pointer; transition: box-shadow .18s ease; }
 .cartao.topo:not(.aberto) { min-width: calc(132px * var(--cartao-esc)); max-width: calc(132px * var(--cartao-esc)); padding-bottom: 8px; }
+.cartao.topo:not(.aberto) .act,
 .cartao.topo:not(.aberto) .falha,
 .cartao.topo:not(.aberto) .metricas,
 .cartao.topo:not(.aberto) .num,
