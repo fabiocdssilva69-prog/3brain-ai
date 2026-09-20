@@ -2970,12 +2970,13 @@
   // 19/09: 30 desenhos por segundo ENQUANTO ALGO MEXE; parado, 10 - que e a cadencia do batimento, a unica coisa
   // que continua a mudar com a torre quieta. Corta dois tercos do desenho em repouso, e e em repouso que ela passa
   // a maior parte do tempo (os dados chegam ao minuto).
-  var MS_ACTIVO = 1000 / 30, MS_PARADO = 1000 / 10, ultimoDesenho = 0, ultimoMexeu = 0;
+  var MS_ACTIVO = 1000 / 30, MS_PARADO = 1000 / 10, ultimoDesenho = 0, ultimoMexeu = 0, cadenciaActual = 'parado';
   function marcarMovimento() { ultimoMexeu = performance.now(); }
   function quadro(agora) {
     requestAnimationFrame(quadro);
     if (escondido || !renderer) return;
     var mexe = !!camTween || tweens.length > 0 || pacotesVivos.length > 0 || (agora - ultimoMexeu) < 1500;
+    cadenciaActual = mexe ? 'activo' : 'parado';   // 20/09: a prova precisa de saber em que regime esta a medir
     if (agora - ultimoDesenho < (mexe ? MS_ACTIVO : MS_PARADO) - 1) return;
     ultimoDesenho = agora;
     if (ultimoQuadro) { var dt = agora - ultimoQuadro; fpsAmostras.push(1000 / dt); if (fpsAmostras.length > 120) fpsAmostras.shift(); }
@@ -3126,6 +3127,7 @@
         tweens: nTweens, tweensActivas: tweens.length, guias: nGuias, presas: rotulosPx.filter(function (sp) { return sp.visible && sp.userData.px && sp.userData.px.preso; }).length,
         cartoes: $('cartoes') ? $('cartoes').children.length : 0, maxCartoes: MAX_CARTOES, leituras: $('leituras').children.length, vistos: ordemVistos.length,
         ortografica: !!(camara && camara.isOrthographicCamera), fps: Math.round(fps()), temD: !!D, temT: !!T, telemovel: telemovel,
+        cadencia: cadenciaActual,   // 'activo' = 30 desenhos/s porque algo mexe; 'parado' = 10/s de proposito
         // 19/09: o custo do 3D mede-se em CHAMADAS DE DESENHO, nao em objectos. Sem este numero nao se sabe
         // o que aliviar - e foi por medi-lo que se percebeu onde estava o peso.
         // 19/09: o inventario por tipo, para se saber O QUE faz as chamadas de desenho (e nao so quantas sao)
