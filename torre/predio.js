@@ -360,10 +360,16 @@
       var b = e.target; while (b && b !== this && !(b.dataset && b.dataset.k != null)) b = b.parentNode;
       if (b && b !== this) irParaNivel(Number(b.dataset.k), null, !calmo);
     });
+    // 19/09 (ordem dele): o cartao abre e fecha AO CLIQUE - fechado e so o busto e o nome. So um fica aberto de
+    // cada vez, senao volta o amontoado. Para ir ao ANDAR daquele cargo usa-se o proprio predio, que e onde o
+    // andar existe; o cartao passou a servir para ler quem e e o que faz.
     $('cartoes').addEventListener('click', function (e) {
       var b = e.target;
       while (b && b !== this && String(b.className).indexOf('cartao') < 0) b = b.parentNode;
-      if (b && b !== this && b.dataset && b.dataset.andar != null) abrirPainel(Number(b.dataset.andar));
+      if (!b || b === this) return;
+      var jaAberto = b.classList.contains('aberto');
+      Array.prototype.forEach.call(this.querySelectorAll('.cartao.aberto'), function (x) { x.classList.remove('aberto'); });
+      if (!jaAberto) b.classList.add('aberto');
     });
     $('pn_fechar').addEventListener('click', fecharPainel);
     $('painel').addEventListener('click', function (e) { if (e.target === $('painel')) fecharPainel(); });
@@ -1511,6 +1517,7 @@
   }
   // "Torre · Andar · Sector · Funcionario" (600 ms) - teclas 0-3; o arreio chama nivel(k) sem animacao
   function irParaNivel(k, ordem, animar) {
+    marcarMovimento();
     // 18/09 noite: o palco cresce ANTES de se calcular o zoom do nivel (sincrono; mudarNivel so muda a classe,
     // porque redimensionar -> aplicarVista -> mudarNivel e o ciclo que estourou a pilha as 18:40)
     if (document.body) {
@@ -1968,6 +1975,7 @@
     return out;
   }
   function aplicarDados(novoPredio, novaTorre) {
+    marcarMovimento();
     if (novoPredio) {
       var ass = assinaturaDaEstrutura(novoPredio);
       var corridas = corridasNovas(novoPredio);
@@ -2841,11 +2849,16 @@
   // 19/09, MEDIDO com o CDP: 83% da linha principal ocupada em regime (16,6 s de tarefa em 20 s). O laco
   // desenhava a cada fotograma do ecra - 50 a 60 por segundo - e o desenho e o item mais caro. Um painel de dados
   // le-se igual a 30. TECTO DE 30 DESENHOS POR SEGUNDO: corta metade do trabalho sem o olho notar.
-  var MS_POR_QUADRO = 1000 / 30, ultimoDesenho = 0;
+  // 19/09: 30 desenhos por segundo ENQUANTO ALGO MEXE; parado, 10 - que e a cadencia do batimento, a unica coisa
+  // que continua a mudar com a torre quieta. Corta dois tercos do desenho em repouso, e e em repouso que ela passa
+  // a maior parte do tempo (os dados chegam ao minuto).
+  var MS_ACTIVO = 1000 / 30, MS_PARADO = 1000 / 10, ultimoDesenho = 0, ultimoMexeu = 0;
+  function marcarMovimento() { ultimoMexeu = performance.now(); }
   function quadro(agora) {
     requestAnimationFrame(quadro);
     if (escondido || !renderer) return;
-    if (agora - ultimoDesenho < MS_POR_QUADRO - 1) return;
+    var mexe = !!camTween || tweens.length > 0 || pacotesVivos.length > 0 || (agora - ultimoMexeu) < 1500;
+    if (agora - ultimoDesenho < (mexe ? MS_ACTIVO : MS_PARADO) - 1) return;
     ultimoDesenho = agora;
     if (ultimoQuadro) { var dt = agora - ultimoQuadro; fpsAmostras.push(1000 / dt); if (fpsAmostras.length > 120) fpsAmostras.shift(); }
     ultimoQuadro = agora;

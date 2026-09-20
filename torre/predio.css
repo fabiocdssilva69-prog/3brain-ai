@@ -643,3 +643,25 @@ body.lado-fechado .lado-toggle { transform: rotate(180deg); }
 .cartao.topo .mtr em { font-size: calc(9px * var(--cartao-esc)); }
 body.cart-s { --cartao-larg: 186px; --cartao-esc: .86; }
 body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
+
+/* v6 (19/09, ordem dele): o cartao nasce FECHADO - so o busto, o nome e o selo. Um clique abre-o. Fechado
+   ocupa metade da largura, e e assim que os dez cabem sem ficar tudo amontoado. Acender quando alguem
+   corre nao depende de estar aberto: e a borda e o brilho, que se veem fechado na mesma. */
+.cartao.topo { cursor: pointer; transition: box-shadow .18s ease; }
+.cartao.topo:not(.aberto) { min-width: calc(132px * var(--cartao-esc)); max-width: calc(132px * var(--cartao-esc)); padding-bottom: 8px; }
+.cartao.topo:not(.aberto) .falha,
+.cartao.topo:not(.aberto) .metricas,
+.cartao.topo:not(.aberto) .num,
+.cartao.topo:not(.aberto) .fonte { display: none; }
+.cartao.topo:not(.aberto) .cab { flex-direction: column; align-items: center; gap: 5px; text-align: center; }
+.cartao.topo:not(.aberto) .ident { align-items: center; text-align: center; }
+.cartao.topo:not(.aberto) .ident em { display: none; }
+.cartao.topo:not(.aberto) .ident u { font-size: calc(7.5px * var(--cartao-esc)); }
+.cartao.topo:not(.aberto)::after {
+  content: '+'; position: absolute; right: 6px; top: 5px;
+  font: 700 11px var(--mono); color: rgba(90,200,250,.5);
+}
+.cartao.topo.aberto::after { content: '−'; position: absolute; right: 8px; top: 5px; font: 700 11px var(--mono); color: rgba(90,200,250,.7); }
+.cartao.topo.aberto { box-shadow: 0 0 16px rgba(90,200,250,.28), 0 2px 10px rgba(0,0,0,.55); }
+/* respiro: a fila deixa de ficar amontoada */
+.cartoes { gap: 10px; }
