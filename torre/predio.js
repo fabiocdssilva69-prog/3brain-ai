@@ -318,6 +318,22 @@
     cv.addEventListener('click', function (e) {
       if (orbita.moved) return;
       if (orbita.t0 && performance.now() - orbita.t0 > 400) return;
+      // 19/09 (ordem dele): um clique EM CIMA DE UM PAINEL abre/fecha esse painel. So se o clique nao acertar em
+      // nenhum e que vai ao andar. Os paineis tem rectangulo em pixeis (layoutHolos), logo isto e so geometria.
+      var b2 = cv.getBoundingClientRect(), px = e.clientX - b2.left, py = e.clientY - b2.top;
+      var alvo = null;
+      NOMES_HOLO.forEach(function (nm) {
+        var h = holos[nm], r = h && h.rect;
+        if (!r || !h.sprite.visible) return;
+        if (px >= r.esq && px <= r.dir && py >= r.topo && py <= r.fundo) alvo = h;
+      });
+      if (alvo) {
+        alvo.min = !alvo.min;
+        alvo.hash = ''; alvo.sw = 0; alvo.sh = 0;      // forca recriar a tela no tamanho novo
+        disporHologramas(mundoPorPx()); desenharHolo(alvo, true);
+        marcarMovimento();
+        return;
+      }
       apontarRato(e.clientX, e.clientY);
       var o = andarSobOCursor(); if (o != null) abrirPainelOrdem(o);
     });
@@ -1588,7 +1604,9 @@
       var sp = novoSprite(c, 300); sp.visible = false;
       grupoRotulos.add(sp);
       holos[nome] = { nome: nome, canvas: c, g: c.getContext('2d'), tex: sp.userData.tex, sprite: sp, hash: '', dados: null, sw: 0, sh: 0,
-                      rect: null, guia: null, coluna: null, angulo: 0, anguloAlvo: 0, primeira: true, andar: PH.ANDAR_DO_HOLO[nome], pulsaAte: 0, valores: {}, alvos: {}, mudou: {}, vivo: false };
+                      rect: null, guia: null, coluna: null, angulo: 0, anguloAlvo: 0, primeira: true, andar: PH.ANDAR_DO_HOLO[nome], pulsaAte: 0, valores: {}, alvos: {}, mudou: {}, vivo: false,
+                      // 19/09: nasce MINIMIZADO - so a barra do titulo. O velocimetro fica aberto: e o numero do dia.
+                      min: nome !== 'velocimetro' };
     });
   }
   // 18/09 noite: na torre de 47 os marcos e os hologramas encontram o andar pela ESPECIALIDADE ou pelo prefixo do
@@ -1699,6 +1717,9 @@
       if (!r) { h.sprite.visible = false; h.rect = null; h.guia = null; return; }
       var it = andarDoHolo(h);
       if (nivelActual === 1 && !telemovel && DIRECTORES.indexOf(nome) >= 0 && it && !it.emVista) { h.sprite.visible = false; h.rect = null; h.guia = null; return; }
+      if (h.min) {                                   // minimizado: uma barra de 26 px no topo do lugar dele
+        r = { esq: r.esq, dir: r.dir, topo: r.topo, fundo: r.topo + 26, coluna: r.coluna };
+      }
       h.sprite.visible = true; h.rect = r; h.coluna = r.coluna;
       var sw = Math.round(r.dir - r.esq), sh = Math.round(r.fundo - r.topo);
       if (sw !== h.sw || sh !== h.sh) {
@@ -1742,6 +1763,15 @@
     if (!h.sprite.visible || !h.canvas.width) return;
     var f = PH.fatia(h.nome, T, D);
     var idade = PG.idadeEmMinutos(T && T.t_iso, Date.now());
+    if (h.min) {                                     // so a barra do titulo; o corpo nao se desenha
+      var chaveMin = 'min|' + f.hash;
+      if (chaveMin === h.hash && !forcar) return;
+      h.hash = chaveMin; h.dados = f.dados;
+      PH.moldura(h.g, h.canvas.width, h.canvas.height, Math.max(1, h.canvas.width / 260),
+                 PH.TITULOS[h.nome] + '  +', f.dados.t_brt, idade);
+      h.tex.needsUpdate = true;
+      return;
+    }
     if (h.nome === 'velocimetro') {
       var d = f.dados, vv = vivoDoInstrumento();
       if (vv) {                                   // o ficheiro manda no que ja fechou; o preco vivo manda no aberto
