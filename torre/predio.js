@@ -1753,9 +1753,9 @@
         porCol[r.coluna === 'esq' ? 'esq' : 'dir'].push({ nome: nome, r: r });
       });
       Object.keys(porCol).forEach(function (c) {
-        var y = 8;
+        var y = 34;                                  // por baixo do teletipo de precos, que se sobrepoe ao palco
         porCol[c].sort(function (x, z) { return x.r.topo - z.r.topo; }).forEach(function (x) {
-          var t = Math.max(y, Math.min(x.r.topo, Math.max(8, vistaH - ALT_MIN - 8)));
+          var t = Math.max(y, Math.min(x.r.topo, Math.max(34, vistaH - ALT_MIN - 8)));
           minPos[x.nome] = { esq: x.r.esq, dir: x.r.dir, topo: t, fundo: t + ALT_MIN, coluna: x.r.coluna };
           y = t + ALT_MIN + 6;
         });
