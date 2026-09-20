@@ -3006,6 +3006,11 @@
         tweens: nTweens, tweensActivas: tweens.length, guias: nGuias, presas: rotulosPx.filter(function (sp) { return sp.visible && sp.userData.px && sp.userData.px.preso; }).length,
         cartoes: $('cartoes') ? $('cartoes').children.length : 0, maxCartoes: MAX_CARTOES, leituras: $('leituras').children.length, vistos: ordemVistos.length,
         ortografica: !!(camara && camara.isOrthographicCamera), fps: Math.round(fps()), temD: !!D, temT: !!T, telemovel: telemovel,
+        // 19/09: o custo do 3D mede-se em CHAMADAS DE DESENHO, nao em objectos. Sem este numero nao se sabe
+        // o que aliviar - e foi por medi-lo que se percebeu onde estava o peso.
+        desenho: renderer ? { chamadas: renderer.info.render.calls, triangulos: renderer.info.render.triangles,
+                              geometrias: renderer.info.memory.geometries, texturas: renderer.info.memory.textures,
+                              objectos: cena ? cena.children.length : 0 } : null,
         // v6: o batimento, a onda de dados, a coroa e a disposicao dos cartoes
         batimento: { amp: batimento.amp, fase: batimento.fase, w: batimento.w, vivo: batimento.vivo, bpm: batimento.bpm }, vidroOpacidade: vidroOpacidade,
         ondasDeDados: ondasDeDados, ondaActiva: ondaDados.v != null, letreiro: !!(coroa && coroa.planos.length >= 1 && grupoCoroa && grupoCoroa.visible),   // v6b: era '=== 2' (os dois planos das faces); o facto e HAVER letreiro, nao como esta feito
