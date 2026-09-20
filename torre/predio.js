@@ -2010,20 +2010,6 @@
     var ass = comNumero.map(function (d) { return d.f.id; }).join(',');
     if (ass !== assinaturaNumeros) { assinaturaNumeros = ass; if (nivelActual >= 1) construirMoradores(nivelActual === 1 ? 'pontos' : 'completo'); dimensionarRotulos(true); }
     var porId = {}; lista(D.funcionarios).forEach(function (f) { porId[f.id] = f; });
-    // 🔴 20/09 (queixa dele: "nao estao acendendo/reagindo quando em actividade"): a deteccao estava presa aos
-    // MORADORES 3D, que so existem a partir do nivel 1 - e ele olha para o nivel 0, onde o array esta VAZIO.
-    // Resultado: nenhum cartao acendia nunca, por mais que a torre trabalhasse. Agora a deteccao e do DADO e
-    // vale em qualquer nivel. A primeira leitura nao acende: a pagina abria com os dez a piscar de uma vez, e
-    // dez cartoes a piscar ao mesmo tempo nao dizem nada.
-    lista(D.funcionarios).forEach(function (f) {
-      var q = f.ultima_corrida_brt;
-      if (!q) return;
-      if (ultimaCorridaPorId[f.id] === undefined) { ultimaCorridaPorId[f.id] = q; return; }
-      if (ultimaCorridaPorId[f.id] === q) return;
-      ultimaCorridaPorId[f.id] = q;
-      corridasVistas++;
-      try { acenderCartao(cartaoDoAndar(andarTorreDe(f))); } catch (e) { }
-    });
     var nuPorId = {}; comNumero.forEach(function (d) { nuPorId[d.f.id] = d.nu; });
     var c = new THREE.Color(), agora = performance.now();
     moradores.forEach(function (mo) {
@@ -2092,7 +2078,15 @@
       var corridas = corridasNovas(novoPredio);
       D = novoPredio;
       if (ass !== assinaturaEstrutura) { assinaturaEstrutura = ass; construirTorre(); } else actualizarMoradores();
-      corridas.forEach(function (f) { var n = andarTorreDe(f); acenderAndar(andarPorN[n]); pulsarCartaoDoAndar(n); });
+      // 20/09 (queixa dele: "nao estao acendendo/reagindo"): `corridasNovas` ja dizia quem correu, mas o cartao
+      // so levava um `pulsa` discreto. Passa a ACENDER com a mesma animacao do resto - e e a unica coisa que o
+      // cartao diz, porque o texto do que aconteceu ficou no chat, por ordem dele.
+      corridas.forEach(function (f) {
+        var n = andarTorreDe(f);
+        acenderAndar(andarPorN[n]); pulsarCartaoDoAndar(n);
+        corridasVistas++;
+        try { acenderCartao(cartaoDoAndar(n)); } catch (e) { }
+      });
     }
     if (novaTorre) {
       var tIsoNovo = String(novaTorre.t_iso || ''), chegou = !!tIsoNovo && (!T || String(T.t_iso || '') !== tIsoNovo);
@@ -2470,8 +2464,11 @@
   // acende. Aqui a frase vem da conversa do predio (conversa.json) e o cartao e o do cargo que manda no
   // andar de quem falou. Guarda-se o ultimo topo para saber que cargo cuida de que andar.
   var topoActual = [], balaoAte = {};
-  // 20/09: a ultima hora de corrida que JA vimos de cada funcionario. E isto que diz "este agiu agora".
-  var ultimaCorridaPorId = {}, corridasVistas = 0;
+  // 20/09: quantas corridas de funcionarios este ecra ja viu desde que abriu. NAO se declara aqui o mapa das
+  // horas: ele ja existe (`ultimaCorridaPorId`, usado por corridasNovas) e declarar outro com o mesmo nome foi
+  // o que matou a minha primeira tentativa - a corridasNovas substitui o mapa INTEIRO antes, logo a comparacao
+  // seguinte dava sempre igual e nao disparava nunca.
+  var corridasVistas = 0;
   function cartaoDoAndar(andar) {
     if (andar == null) return null;
     var achado = null;
