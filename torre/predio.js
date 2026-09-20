@@ -1740,14 +1740,33 @@
   function disporHologramas(mpp) {
     if (!vistaW) return;
     var L = layoutHolos(nivelActual < 0 ? 0 : nivelActual);
+    // 19/09: os painéis MINIMIZADOS empilham-se em coluna. Cada um nascia no sitio do seu andar e, nos andares
+    // altos, o sitio fica ACIMA do palco - duas barras apareciam cortadas por cima do teletipo. Empilhados, ficam
+    // dentro do palco, pela ordem do andar, sem se taparem; a guia continua a apontar ao andar de cada um, que e
+    // o que liga a barra ao sitio.
+    var ALT_MIN = 26, minPos = {};
+    (function () {
+      var porCol = { esq: [], dir: [] };
+      NOMES_HOLO.forEach(function (nome) {
+        var h = holos[nome], r = L.rects[nome];
+        if (!h || !h.min || !r) return;
+        porCol[r.coluna === 'esq' ? 'esq' : 'dir'].push({ nome: nome, r: r });
+      });
+      Object.keys(porCol).forEach(function (c) {
+        var y = 8;
+        porCol[c].sort(function (x, z) { return x.r.topo - z.r.topo; }).forEach(function (x) {
+          var t = Math.max(y, Math.min(x.r.topo, Math.max(8, vistaH - ALT_MIN - 8)));
+          minPos[x.nome] = { esq: x.r.esq, dir: x.r.dir, topo: t, fundo: t + ALT_MIN, coluna: x.r.coluna };
+          y = t + ALT_MIN + 6;
+        });
+      });
+    })();
     NOMES_HOLO.forEach(function (nome) {
       var h = holos[nome], r = L.rects[nome];
       if (!r) { h.sprite.visible = false; h.rect = null; h.guia = null; return; }
       var it = andarDoHolo(h);
       if (nivelActual === 1 && !telemovel && DIRECTORES.indexOf(nome) >= 0 && it && !it.emVista) { h.sprite.visible = false; h.rect = null; h.guia = null; return; }
-      if (h.min) {                                   // minimizado: uma barra de 26 px no topo do lugar dele
-        r = { esq: r.esq, dir: r.dir, topo: r.topo, fundo: r.topo + 26, coluna: r.coluna };
-      }
+      if (h.min) r = minPos[nome] || { esq: r.esq, dir: r.dir, topo: r.topo, fundo: r.topo + ALT_MIN, coluna: r.coluna };
       h.sprite.visible = true; h.rect = r; h.coluna = r.coluna;
       var sw = Math.round(r.dir - r.esq), sh = Math.round(r.fundo - r.topo);
       if (sw !== h.sw || sh !== h.sh) {
