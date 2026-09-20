@@ -673,7 +673,7 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
 .casa-num { display: none !important; }
 
 /* o cartao fechado a METADE: so o busto, o nome e o selo */
-.cartao.topo:not(.aberto) { min-width: calc(68px * var(--cartao-esc)); max-width: calc(68px * var(--cartao-esc)); padding: 6px 4px 6px; }
+.cartao.topo:not(.aberto) { min-width: calc(118px * var(--cartao-esc)); max-width: calc(118px * var(--cartao-esc)); padding: 6px 5px 6px; }
 .cartao.topo:not(.aberto) .cab .avatar { flex-basis: calc(34px * var(--cartao-esc)); width: calc(34px * var(--cartao-esc)); height: calc(34px * var(--cartao-esc)); }
 .cartao.topo:not(.aberto) .cab .avatar svg { width: 100%; height: 100%; }
 .cartao.topo:not(.aberto) .ident b { font-size: calc(8px * var(--cartao-esc)); line-height: 1.1; }
@@ -700,3 +700,14 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
 .lado-bl.dobrado > *:not(.bh) { display: none !important; }
 .lado-bl.dobrado { flex: 0 0 auto; min-height: 0; padding-bottom: 4px; }
 .lado-bl.cresce.dobrado { flex: 0 0 auto; }
+
+/* grelha do cartao fechado (19/09): em duas filas a regra `.cartoes.duas-filas .cartao.topo { width:auto }`
+   e MAIS ESPECIFICA do que a do cartao fechado e esticava-o para a largura da coluna - era por isso que
+   encolher o cartao nao se via. A grelha passa a ter colunas da LARGURA DO CARTAO FECHADO: os dez cabem
+   numa unica fila de 1.600 px e liberta-se metade da altura que a fila ocupava. O aberto ocupa duas. */
+.cartoes.duas-filas {
+  grid-template-columns: repeat(auto-fit, minmax(0, calc(118px * var(--cartao-esc))));
+  justify-content: start; align-content: start; gap: 8px;
+}
+.cartoes.duas-filas .cartao.topo:not(.aberto) { width: auto; min-width: 0; max-width: none; }
+.cartoes.duas-filas .cartao.topo.aberto { grid-column: span 2; }
