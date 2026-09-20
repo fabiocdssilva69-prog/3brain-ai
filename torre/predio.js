@@ -222,6 +222,7 @@
     if (!renderer) return;
     var b = palco.getBoundingClientRect();
     var w = Math.max(240, Math.round(b.width)), h = Math.max(200, Math.round(b.height));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, QUALIDADES[passoQ]));
     renderer.setSize(w, h, false);
     // 18/09 noite: depois de o palco crescer o compositor do Chrome ficava com o canvas PRETO (o buffer tinha
     // 66 mil pixeis desenhados e a captura nada). Tocar no estilo do canvas obriga-o a refrescar a camada.
@@ -232,6 +233,33 @@
     if (nivelActual <= 0 || nivelActual === -1) precisaEnquadrar = true;
     var cxC = $('cartoes'); if (cxC && cxC.querySelector('.cartao.topo')) disporCartoes(cxC, cxC.querySelectorAll('.cartao.topo').length);   // v6
     aplicarVista();
+  }
+
+  // ---------------------------------------------------------------- resolucao adaptativa (19/09)
+  // MEDIDO com o amostrador do V8: o JS ocupa 12% do tempo e a linha principal esta ociosa em 62% das
+  // amostras - o peso esta na RASTERIZACAO, e quem manda nela e o numero de pixeis. A pagina mede o custo do
+  // seu proprio desenho e escolhe a resolucao que a maquina aguenta. Nao ha valor fixo que sirva as duas
+  // maquinas: um numero baixo estraga a nitidez de quem tem folga, e um alto trava quem nao tem.
+  var QUALIDADES = [1.5, 1.25, 1, 0.85, 0.7];
+  var passoQ = 0, custosDesenho = [], ultimaMudancaQ = 0, descidasQ = 0;
+  function aplicarQualidade(i) {
+    passoQ = Math.max(0, Math.min(QUALIDADES.length - 1, i));
+    if (!renderer) return;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, QUALIDADES[passoQ]));
+    renderer.setSize(vistaW || 800, vistaH || 600, false);
+    cv.style.width = (vistaW || 800) + 'px'; cv.style.height = (vistaH || 600) + 'px';
+  }
+  function medirDesenho(ms, agora) {
+    custosDesenho.push(ms); if (custosDesenho.length > 90) custosDesenho.shift();
+    if (custosDesenho.length < 45 || (agora - ultimaMudancaQ) < 3000) return;
+    var v = custosDesenho.slice().sort(function (x, y) { return x - y; });
+    var mediano = v[Math.floor(v.length / 2)];
+    // orcamento: a 30 desenhos por segundo cada fotograma tem 33 ms; o desenho nao deve passar de metade.
+    if (mediano > 16 && passoQ < QUALIDADES.length - 1) { aplicarQualidade(passoQ + 1); descidasQ++; }
+    // so sobe se estiver FOLGADO e nunca volta ao passo que ja falhou duas vezes - senao oscila.
+    else if (mediano < 7 && passoQ > 0 && descidasQ < 2) { aplicarQualidade(passoQ - 1); }
+    else return;
+    ultimaMudancaQ = agora; custosDesenho.length = 0;
   }
 
   function mundoPorPx() { return vistaH ? (2 * orbita.meia) / vistaH : 0.05; }
@@ -2918,7 +2946,9 @@
     animarHolos(agora);
     animarBatimento(agora);       // v6: 20 Hz - o vidro, as arestas, o letreiro e a onda de dados
     if (arrumarPendente && !camTween) dimensionarRotulos(true);
+    var t0d = performance.now();
     renderer.render(cena, camara);
+    medirDesenho(performance.now() - t0d, agora);
     if (agora - ultimoHUD > 500) { ultimoHUD = agora; txt($('c_pac'), String(pacotesVivos.length)); txt($('c_part'), String(particulasVivas)); txt($('c_fps'), fpsAmostras.length ? String(Math.round(fps())) : '-'); }
   }
   function fps() { if (!fpsAmostras.length) return 0; var v = fpsAmostras.slice().sort(function (a, b) { return a - b; }); return v[Math.floor(v.length / 2)]; }
@@ -3058,6 +3088,8 @@
         // o que aliviar - e foi por medi-lo que se percebeu onde estava o peso.
         // 19/09: o inventario por tipo, para se saber O QUE faz as chamadas de desenho (e nao so quantas sao)
         inventario: (function () { var c = {}; if (cena) cena.traverse(function (o) { if (o.visible) c[o.type] = (c[o.type] || 0) + 1; }); return c; })(),
+        qualidade: { passo: passoQ, escala: QUALIDADES[passoQ], descidas: descidasQ,
+                     custo_mediano_ms: custosDesenho.length ? Number(custosDesenho.slice().sort(function (x, y) { return x - y; })[Math.floor(custosDesenho.length / 2)].toFixed(2)) : null },
         desenho: renderer ? { chamadas: renderer.info.render.calls, triangulos: renderer.info.render.triangles,
                               geometrias: renderer.info.memory.geometries, texturas: renderer.info.memory.textures,
                               objectos: cena ? cena.children.length : 0 } : null,
