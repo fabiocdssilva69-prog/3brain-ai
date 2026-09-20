@@ -2010,6 +2010,20 @@
     var ass = comNumero.map(function (d) { return d.f.id; }).join(',');
     if (ass !== assinaturaNumeros) { assinaturaNumeros = ass; if (nivelActual >= 1) construirMoradores(nivelActual === 1 ? 'pontos' : 'completo'); dimensionarRotulos(true); }
     var porId = {}; lista(D.funcionarios).forEach(function (f) { porId[f.id] = f; });
+    // 🔴 20/09 (queixa dele: "nao estao acendendo/reagindo quando em actividade"): a deteccao estava presa aos
+    // MORADORES 3D, que so existem a partir do nivel 1 - e ele olha para o nivel 0, onde o array esta VAZIO.
+    // Resultado: nenhum cartao acendia nunca, por mais que a torre trabalhasse. Agora a deteccao e do DADO e
+    // vale em qualquer nivel. A primeira leitura nao acende: a pagina abria com os dez a piscar de uma vez, e
+    // dez cartoes a piscar ao mesmo tempo nao dizem nada.
+    lista(D.funcionarios).forEach(function (f) {
+      var q = f.ultima_corrida_brt;
+      if (!q) return;
+      if (ultimaCorridaPorId[f.id] === undefined) { ultimaCorridaPorId[f.id] = q; return; }
+      if (ultimaCorridaPorId[f.id] === q) return;
+      ultimaCorridaPorId[f.id] = q;
+      corridasVistas++;
+      try { acenderCartao(cartaoDoAndar(andarTorreDe(f))); } catch (e) { }
+    });
     var nuPorId = {}; comNumero.forEach(function (d) { nuPorId[d.f.id] = d.nu; });
     var c = new THREE.Color(), agora = performance.now();
     moradores.forEach(function (mo) {
@@ -2022,7 +2036,7 @@
         // 19/09 (queixa dele: "os cards nao estao reagindo"): ate aqui o cartao so acendia com uma mensagem
         // da conversa - poucas por hora. Agora acende sempre que alguem dos seus andares CORRE, que e o que
         // acontece a cada ciclo. E a mesma reaccao do canal: o agente age, o cartao dele acende.
-        try { acenderCartao(cartaoDoAndar(andarTorreDe(f)), (obj(f.elenco).titulo_curto || f.id) + ' correu', ''); } catch (e) { }
+        try { acenderCartao(cartaoDoAndar(andarTorreDe(f))); } catch (e) { }   // (a deteccao principal e a do dado, acima)
         if (f.andar === 6) ondaDaFonte(f.id);
         escreverLeituraDeCorrida(f);
       }
@@ -2456,6 +2470,8 @@
   // acende. Aqui a frase vem da conversa do predio (conversa.json) e o cartao e o do cargo que manda no
   // andar de quem falou. Guarda-se o ultimo topo para saber que cargo cuida de que andar.
   var topoActual = [], balaoAte = {};
+  // 20/09: a ultima hora de corrida que JA vimos de cada funcionario. E isto que diz "este agiu agora".
+  var ultimaCorridaPorId = {}, corridasVistas = 0;
   function cartaoDoAndar(andar) {
     if (andar == null) return null;
     var achado = null;
@@ -2466,17 +2482,12 @@
     });
     return achado;
   }
-  function acenderCartao(c, texto, tipo) {
+  // 20/09 (ordem dele): "a informacao do chat fica so no chat, no cartao e somente reagir/acender". O balao
+  // com o texto do que aconteceu SAIU - dizia duas vezes a mesma coisa e tapava o cartao do lado.
+  function acenderCartao(c) {
     if (!c) return;
     var el = document.querySelector('.cartao.topo[data-id="' + String(c.id).replace(/"/g, '') + '"]');
     if (!el) return;
-    var b = el.querySelector('.balao');
-    if (b) {
-      b.textContent = String(texto || '').slice(0, 96);
-      b.className = 'balao ' + (tipo === 'lucro' ? 'up' : (tipo === 'perda' ? 'dn' : ''));
-      b.hidden = false;
-      balaoAte[c.id] = Date.now() + 5200;
-    }
     el.classList.remove('acende');
     void el.offsetWidth;                       // reinicia a animacao mesmo que ja estivesse a correr
     el.classList.add('acende');
@@ -2526,7 +2537,7 @@
     var m = obj(ev && ev.detail), a = obj(m.autor);
     var c = cartaoDoAndar(a.andar);
     if (!c) return;
-    acenderCartao(c, String(a.titulo || '') + ': ' + String(m.texto || ''), String(m.tipo || ''));
+    acenderCartao(c);                      // so acende; o texto da mensagem fica no chat
   });
   setInterval(function () {
     var agora = Date.now();
@@ -3128,6 +3139,9 @@
         cartoes: $('cartoes') ? $('cartoes').children.length : 0, maxCartoes: MAX_CARTOES, leituras: $('leituras').children.length, vistos: ordemVistos.length,
         ortografica: !!(camara && camara.isOrthographicCamera), fps: Math.round(fps()), temD: !!D, temT: !!T, telemovel: telemovel,
         cadencia: cadenciaActual,   // 'activo' = 30 desenhos/s porque algo mexe; 'parado' = 10/s de proposito
+        // 20/09: quantas corridas de funcionarios o ecra JA VIU desde que abriu, e quantos cartoes
+        // acenderam. Sem isto, "os cartoes nao reagem" nao se distingue de "ninguem correu".
+        corridasVistas: corridasVistas, acesos: document.querySelectorAll('.cartao.topo.acende').length,
         // 19/09: o custo do 3D mede-se em CHAMADAS DE DESENHO, nao em objectos. Sem este numero nao se sabe
         // o que aliviar - e foi por medi-lo que se percebeu onde estava o peso.
         // 19/09: o inventario por tipo, para se saber O QUE faz as chamadas de desenho (e nao so quantas sao)
