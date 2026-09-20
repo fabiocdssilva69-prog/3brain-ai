@@ -726,3 +726,19 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
 .kpi .v.n { color: #ff5a5f; }
 .kpi .s { color: #8794a4; font-size: 11px; margin-top: 2px; line-height: 1.35; }
 @media (max-width: 640px) { .kpi .v { font-size: 20px; } }
+
+/* O DINHEIRO (20/09, pela foto dele): a tabela facto-contra-estimativa e a linha do 'comecamos com'. */
+.dinheiro {
+  background: linear-gradient(180deg, rgba(16,22,31,.97), rgba(9,13,19,.97));
+  border: 1px solid rgba(90,200,250,.28); border-left: 4px solid #3ecf8e; border-radius: 12px;
+  padding: 12px 14px; margin: 0 0 14px;
+}
+.dinheiro h3 { margin: 0 0 8px; font: 650 13px var(--mono); color: #eef3f8; }
+.dinheiro h3 small { font: 400 11px var(--mono); color: #8794a4; margin-left: 6px; }
+.dinheiro table { border-collapse: collapse; width: 100%; font: 500 13px var(--mono); }
+.dinheiro th, .dinheiro td { padding: 6px 8px; border-bottom: 1px solid rgba(90,200,250,.14); text-align: right; white-space: nowrap; }
+.dinheiro th { color: #8794a4; font-weight: 500; font-size: 11px; }
+.dinheiro td:first-child, .dinheiro th:first-child { text-align: left; color: #cfd8ea; }
+.dinheiro td.pos { color: #3ecf8e; } .dinheiro td.neg { color: #ff5a5f; }
+.dinheiro-resumo { margin: 8px 0 0; font: 500 12px var(--mono); color: #8794a4; }
+.dinheiro-resumo b { color: #eef3f8; }

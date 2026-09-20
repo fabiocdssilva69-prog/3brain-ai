@@ -1,5 +1,5 @@
 <!-- TORRE STARK - copia publica e SANEADA: as chaves dos genes sao hashes, a receita fica em casa.
-     Gerada por tesouraria/mercado/publicar_torre.py em 20/09 09:16:32. Actualiza-se sozinha.
+     Gerada por tesouraria/mercado/publicar_torre.py em 20/09 09:16:47. Actualiza-se sozinha.
      Nao listada: <meta robots noindex> nesta pagina e Disallow em /robots.txt. -->
 <!doctype html>
 <html lang="pt">
@@ -155,6 +155,20 @@
     <div class="kpi" style="border-color:#ffd23f"><div class="l">Saldo realizado <i>desde o in&iacute;cio</i></div><div class="v" id="k_entrou">&#8212;</div><div class="s" id="k_entrou_det"></div><div class="s">opera&ccedil;&otilde;es fechadas, dos fills da corretora &middot; sem estimativa</div></div>
     <div class="kpi"><div class="l">Se fechasse agora</div><div class="v" id="k_aberto">&#8212;</div><div class="s" id="k_aberto_det"></div><div class="s" id="k_aberto_seg"></div><div class="s">o que entrava na conta se tudo fosse vendido a este pre&ccedil;o, j&aacute; com as taxas &middot; muda com o pre&ccedil;o</div></div>
     <div class="kpi"><div class="l">Plano at&eacute; &agrave; sa&iacute;da</div><div class="v" id="k_prev">&#8212;</div><div class="s" id="k_prev_det"></div><div class="s">o que o backtest espera no FIM de cada posi&ccedil;&atilde;o, com a taxa real &middot; fixo desde a entrada: n&atilde;o mexe com o pre&ccedil;o &middot; n&atilde;o &eacute; promessa</div></div>
+  </section>
+
+  <!-- os tres do meio da pagina antiga: o que ja e FACTO contra o que ainda e ESTIMATIVA -->
+  <section class="kpis" aria-label="Ganhos, perdas e vol&aacute;til">
+    <div class="kpi" style="border:2px solid #3ecf8e"><div class="l">Ganhos realizados</div><div class="v" id="k_gan">&#8212;</div><div class="s" id="k_gan_det"></div></div>
+    <div class="kpi" style="border:2px solid #ff5a5f"><div class="l">Perdas realizadas</div><div class="v" id="k_per">&#8212;</div><div class="s" id="k_per_det"></div><div class="s" id="k_res"></div></div>
+    <div class="kpi" style="border:2px dashed #ffd23f"><div class="l">Vol&aacute;til &#8212; ainda n&atilde;o &eacute; dinheiro</div><div class="v" id="k_vol">&#8212;</div><div class="s" id="k_vol_det"></div><div class="s" style="color:#ffd23f">pre&ccedil;o de mercado &middot; muda ao segundo &middot; pode ir a zero</div></div>
+  </section>
+
+  <!-- O DINHEIRO: a tabela e a linha do "comecamos com... vale agora..." que ele deu por falta na foto de 20/09 -->
+  <section class="dinheiro" id="card_dinheiro">
+    <h3>O dinheiro <small>quanto o capital vale agora &#8212; o que j&aacute; entrou &eacute; facto, o que est&aacute; em aberto &eacute; estimativa</small></h3>
+    <div class="wrap2"><table id="t_dinheiro"><thead><tr><th></th><th>A&ccedil;&otilde;es</th><th>Cripto</th><th>Total</th></tr></thead><tbody></tbody></table></div>
+    <p class="dinheiro-resumo" id="dinheiro_resumo"></p>
   </section>
 
   <!-- ===================== ZONA B — a mesa (grelha 2x3, como o Algory) ======================== -->

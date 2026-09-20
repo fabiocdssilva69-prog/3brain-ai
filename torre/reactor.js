@@ -223,6 +223,7 @@ window.medidorVivo=function(v){ try{
   const gn=v.ganho||{}, pl=v.cartao_plano||{}, pos=v.posicoes||[], md=v.medidor||{}, lim=v.limites||{};
   const fech=Number(gn.liquido_realista_usd!=null?gn.liquido_realista_usd:(gn.realizado_usd||0));
   const novo={}; pos.filter(p=>p.cripto&&p.qty).forEach(p=>{ const s=String(p.simbolo), ant=S.cr[s]||{}; novo[s]={bin:ant.bin,basis:ant.bin!=null?Number(p.agora)-ant.bin:null,agora:Number(p.agora)}; });
+  S.pat=v.patrimonio||{}; S.gv=((v.gv||{}).garantido)||{};   // 20/09: o bloco O dinheiro e os tres cartoes
   S.cr=novo; S.pos=pos; S.plano=pl; S.gn=gn; S.je=v.ja_entrou||{}; S.aloc=v.alocacao||{}; S.nAcoes=pos.filter(p=>!p.cripto).length; S.bolsa=!!(v.precos||{}).bolsa_aberta;
   S.alvoPor={}; (pl.posicoes||[]).forEach(x=>{ if(x.alvo) S.alvoPor[x.simbolo]=Number(x.alvo); });
   if(S.fech!=null&&S.pronto){ if(fech>S.fech+0.005) evento('fecho_ganho',fech-S.fech); else if(fech<S.fech-0.005) evento('fecho_perda',fech-S.fech); }
@@ -260,6 +261,27 @@ function textos(){ if(S.real==null) return; const ab=S.real-(S.fech||0);
   kv('k_entrou',jea.liquido); put('k_entrou_det',(jea.operacoes!=null?jea.operacoes+' operações':'')+(jea.acerto_pct!=null?' · acerto '+Number(jea.acerto_pct).toFixed(1)+'%':''));
   kv('k_aberto',ab); put('k_aberto_det',S.pos.length+' posição(ões) aberta(s)');
   kv('k_prev',S.esp); put('k_prev_det',dist(S.esp));
+  // ganhos, perdas e volatil: o mesmo corte que a pagina antiga fazia - FACTO contra ESTIMATIVA.
+  const gv=S.gv||{};
+  kv('k_gan',gv.ganhos_usd); put('k_gan_det',(gv.n_ganhos||0)+' opera\u00e7\u00f5es com lucro'+(gv.ganho_medio_usd!=null?' \u00b7 m\u00e9dia '+US(gv.ganho_medio_usd):''));
+  kv('k_per',gv.perdas_usd); put('k_per_det',(gv.n_perdas||0)+' opera\u00e7\u00f5es com preju\u00edzo'+(gv.perda_media_usd!=null?' \u00b7 m\u00e9dia '+US(gv.perda_media_usd):''));
+  put('k_res',gv.valor_usd!=null?'resultado '+US(gv.valor_usd)+' (com a taxa)'+(gv.acerto_pct!=null?' \u00b7 acerto '+Number(gv.acerto_pct).toFixed(1)+'%':''):'');
+  const pt=S.pat||{};
+  kv('k_vol',(pt.total||{}).em_aberto); put('k_vol_det','a\u00e7\u00f5es '+US((pt.acoes||{}).em_aberto)+' \u00b7 cripto '+US((pt.cripto||{}).em_aberto));
+  // a TABELA e a linha do 'comecamos com' - o que ele deu por falta na foto de 20/09
+  if(pt.total){
+    const lin=[['j\u00e1 entrou (facto)','ja_entrou'],['em aberto (estimativa)','em_aberto'],['soma','soma']];
+    const cel=(o,c)=>'<td class="'+(Number((o||{})[c]||0)<0?'neg':'pos')+'">'+US((o||{})[c])+'</td>';
+    const html=lin.map(([rot,c])=>'<tr><td>'+rot+'</td>'+cel(pt.acoes,c)+cel(pt.cripto,c)+cel(pt.total,c).replace('>','><b>').replace('</td>','</b></td>')+'</tr>').join('');
+    const tb=document.querySelector('#t_dinheiro tbody');
+    if(tb&&cacheTxt.t_dinheiro!==html){ cacheTxt.t_dinheiro=html; tb.innerHTML=html; }
+    const res='Come\u00e7\u00e1mos com <b>'+US(pt.capital_inicial)+' US$</b> \u00b7 vale agora <b>'+US(pt.valor_agora)+' US$</b>'
+      +(pt.variacao_pct!=null?' ('+US(pt.variacao_pct)+'%)':'')
+      +' \u00b7 s\u00f3 com o que j\u00e1 entrou: <b>'+US(pt.valor_so_realizado)+' US$</b>'
+      +(pt.variacao_realizada_pct!=null?' ('+US(pt.variacao_realizada_pct)+'%)':'');
+    const dr=$('dinheiro_resumo');
+    if(dr&&cacheTxt.dinheiro_resumo!==res){ cacheTxt.dinheiro_resumo=res; dr.innerHTML=res; }
+  }
   const desde=(S.serie&&S.serie.length&&String(S.serie[0][0])>'00:30')?' · registo desde '+S.serie[0][0]:'';
   put('md_pico',US(S.pico)); put('md_pico_t',(S.picoT||'')+desde); put('md_vale',US(S.vale)); put('md_vale_t',S.valeT||'');
   const rec=S.pico!=null?S.real-S.pico:null; put('md_recuo',rec==null?'—':sgn(rec)); sinal('md_recuo',rec); put('md_ritmo',sgn(S.ritmoV,2)+' /h'); sinal('md_ritmo',S.ritmoV);
