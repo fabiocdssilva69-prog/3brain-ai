@@ -156,10 +156,7 @@
   var batimento = { amp: 0, fase: 0, w: 0, vivo: false, bpm: BPM }, ultimoBatimento = 0, vidroOpacidade = 0.32;
   var vidroMat = null, ondaDados = { v: null, t_iso: '' }, ondasDeDados = 0;
   var coroa = null, grupoCoroa = null;
-  // 20/09: a folga da coroa passou de 1,9 para 2,6 andares. A torre CRESCEU (151 funcionarios) e a coroa comecou
-  // a encostar ao topo do palco - o arreio mediu-a 5 px acima dele, a tapar os nomes do atico e do Conselho em
-  // 5x13 e 5x10 px. Mais folga no enquadramento afasta-a dos nomes sem mexer na geometria da torre.
-  var ALTURA_COROA = 2.0 * ALTURA, COROA_ANDARES = ALTURA_COROA / ALTURA + 2.6;   // +1,9: a coroa mais o letreiro que fica por cima dela   // o que a coroa acrescenta ao enquadramento (com folga)
+  var ALTURA_COROA = 2.0 * ALTURA, COROA_ANDARES = ALTURA_COROA / ALTURA + 1.9;   // +1,9: a coroa mais o letreiro que fica por cima dela   // o que a coroa acrescenta ao enquadramento (com folga)
   var ultimaCorridaPorId = null;  // id -> ultima_corrida_brt da leitura anterior: a deteccao de corridas para TODOS os funcionarios
   var cartoesTopo = {};           // id -> {el, titulo, andares, dependentes, elegiveis, robustos, activos60, aCorrer} (os 10 de topo, vivos)
   var _corTmp = null, _branco = null;
@@ -1612,7 +1609,10 @@
                  cx: k >= 2 ? 0 : (vistaW / 2 - bc) * mppAlvo,
                  cy: k === 0 ? 0 : (andarPorOrdem[o].y + ALTURA * 0.45 - orbita.alvoY) * _eixoY.y };
     // N1: se os 35 nomes cabem no palco, centra-se a TORRE (os nomes vao da ordem 0 a 34); senao o andar alvo
-    if (k === 1 && (projecto.nomeados + COROA_ANDARES) * px <= vistaH * 0.97) para.cy = 0.95 * _eixoY.y;
+    // 20/09: 0,95 -> 0,80. Com a torre a crescer (151 funcionarios) este enquadramento punha a COROA 5 px ACIMA
+    // do palco, a tapar os nomes do atico e do Conselho (medido pelo arreio: 5x13 e 5x10 px). Baixar o alvo da
+    // camara faz a coroa descer para dentro do palco sem mexer na geometria da torre nem no N0.
+    if (k === 1 && (projecto.nomeados + COROA_ANDARES) * px <= vistaH * 0.97) para.cy = 0.80 * _eixoY.y;
     if (!animar) { orbita.meia = para.meia; orbita.theta = para.theta; orbita.cx = para.cx; orbita.cy = para.cy; camTween = null; aplicarVista(); dimensionarRotulos(true); return; }
     camTween = { t0: performance.now(), dur: DUR_CAMARA_MS, de: { meia: orbita.meia, theta: orbita.theta, cx: orbita.cx, cy: orbita.cy }, para: para };
     registarTween('camara->N' + k, 0, 1, DUR_CAMARA_MS, null, null);
