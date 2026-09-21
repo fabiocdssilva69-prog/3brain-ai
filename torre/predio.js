@@ -156,7 +156,10 @@
   var batimento = { amp: 0, fase: 0, w: 0, vivo: false, bpm: BPM }, ultimoBatimento = 0, vidroOpacidade = 0.32;
   var vidroMat = null, ondaDados = { v: null, t_iso: '' }, ondasDeDados = 0;
   var coroa = null, grupoCoroa = null;
-  var ALTURA_COROA = 2.0 * ALTURA, COROA_ANDARES = ALTURA_COROA / ALTURA + 1.9;   // +1,9: a coroa mais o letreiro que fica por cima dela   // o que a coroa acrescenta ao enquadramento (com folga)
+  // 20/09: a folga da coroa passou de 1,9 para 2,6 andares. A torre CRESCEU (151 funcionarios) e a coroa comecou
+  // a encostar ao topo do palco - o arreio mediu-a 5 px acima dele, a tapar os nomes do atico e do Conselho em
+  // 5x13 e 5x10 px. Mais folga no enquadramento afasta-a dos nomes sem mexer na geometria da torre.
+  var ALTURA_COROA = 2.0 * ALTURA, COROA_ANDARES = ALTURA_COROA / ALTURA + 2.6;   // +1,9: a coroa mais o letreiro que fica por cima dela   // o que a coroa acrescenta ao enquadramento (com folga)
   var ultimaCorridaPorId = null;  // id -> ultima_corrida_brt da leitura anterior: a deteccao de corridas para TODOS os funcionarios
   var cartoesTopo = {};           // id -> {el, titulo, andares, dependentes, elegiveis, robustos, activos60, aCorrer} (os 10 de topo, vivos)
   var _corTmp = null, _branco = null;
