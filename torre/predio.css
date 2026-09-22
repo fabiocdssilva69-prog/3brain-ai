@@ -287,6 +287,31 @@
   display: flex; gap: 7px; overflow: hidden;
   padding-bottom: 5px; min-width: 0;
 }
+/* 21/09 (ordem dele): "nos cards so esta os 10 mais importantes; quero que apareca TODOS os que forem
+   activados, cada funcionario com o seu card, que aparece e some para dar espaco a outro - e para eu ver
+   quem esta a trabalhar em tempo real". A fila passa a ter DOIS modos e este selector escolhe. */
+.ct-modo { display: inline-flex; gap: 2px; margin-left: auto; }
+.ct-modo button {
+  font: 500 8.5px var(--sans); letter-spacing: .12em; color: var(--d); cursor: pointer;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(144,164,186,.28); border-radius: 4px;
+  padding: 2px 7px;
+}
+.ct-modo button.on { color: #0b1117; background: #5ac8fa; border-color: #5ac8fa; }
+.ct-tam { margin-left: 4px; }
+
+/* O CARTAO AO VIVO: entra pela direita, vive, e sai. A vida do cartao E a informacao - um cartao que ainda
+   esta la quer dizer "correu ha pouco". Por isso a barra de vida esgota-se a vista, e nao se apaga de um golpe. */
+@keyframes cartaoEntra { from { opacity: 0; transform: translateX(26px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes cartaoSai   { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(-18px) scale(.92); } }
+.cartao.vivo { animation: cartaoEntra .34s cubic-bezier(.2,.8,.3,1) both; position: relative; overflow: hidden; }
+.cartao.vivo.a-sair { animation: cartaoSai .38s ease-in both; }
+.cartao.vivo .vida {
+  position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
+  background: linear-gradient(90deg, #5ac8fa, #3ecf8e); transform-origin: left center;
+}
+.cartao.vivo .quando { font: 500 8.5px var(--mono); color: #5c6b7c; }
+.cartao.vivo.repete { box-shadow: 0 0 0 2px rgba(90,200,250,.55), 0 2px 6px rgba(0,0,0,.35); }
+
 /* CARTÃO DE PAPEL: fundo claro, como na ref_03. É de propósito que destoa do resto — papel numa sala
    escura lê-se primeiro, e estes cartões são a resposta à pergunta "quem é quem e quanto vale". */
 .cartao {
