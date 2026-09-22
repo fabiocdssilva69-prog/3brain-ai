@@ -896,6 +896,20 @@
       var cx = caixaNoEcra(sp, e, mpp);
       if (!cx) continue;
       p.caixa = cx;
+      // 21/09: A COROA E UM CANTILEVER e o seu canto ESQUERDO fica a esquerda da coluna dos nomes (medido a
+      // 1400x900 no N1: coroa[412..558], nomes a acabarem em 421 - 9 px por baixo do penthouse). Os nomes dos
+      // andares nao sao `movel`, logo o arrumador NUNCA os tirava dali por muito que a coroa estivesse nas
+      // caixas fixas: uma caixa fixa so afasta quem se pode mexer. Aqui empurra-se o nome para a esquerda o
+      // EXACTO que falta, medido no ecra - nao um recuo adivinhado, que voltaria a falhar quando a torre crescer.
+      if (lr && !p.movel && a.modo === 'direita' && cx.dir > lr.esq - FOLGA_ETQ_PX && cx.esq < lr.dir + FOLGA_ETQ_PX
+          && cx.fundo > lr.topo - FOLGA_ETQ_PX && cx.topo < lr.fundo + FOLGA_ETQ_PX) {
+        var fuga = cx.dir - (lr.esq - FOLGA_ETQ_PX);
+        if (fuga > 0 && cx.esq - fuga >= 0) {
+          sp.position.addScaledVector(_eixoX, -fuga * mpp);
+          cx = { esq: cx.esq - fuga, dir: cx.dir - fuga, topo: cx.topo, fundo: cx.fundo };
+          p.caixa = cx;
+        }
+      }
       if (p.movel && (cx.fundo < 0 || cx.topo > vistaH || cx.dir < 0 || cx.esq > vistaW)) { sp.visible = false; continue; }
       if (p.movel) etqs.push({ sp: sp, caixa: cx, peso: p.peso || 0 });
       else fixas.push({ esq: cx.esq, dir: cx.dir, topo: cx.topo + (p.topo || 0) * (cx.fundo - cx.topo), fundo: cx.topo + (p.fundo || 1) * (cx.fundo - cx.topo) });
@@ -1616,16 +1630,37 @@
                  cy: k === 0 ? 0 : (andarPorOrdem[o].y + ALTURA * 0.45 - orbita.alvoY) * _eixoY.y };
     // N1: se os 35 nomes cabem no palco, centra-se a TORRE (os nomes vao da ordem 0 a 34); senao o andar alvo
     if (k === 1 && (projecto.nomeados + COROA_ANDARES) * px <= vistaH * 0.97) para.cy = 0.95 * _eixoY.y;
-    if (!animar) { orbita.meia = para.meia; orbita.theta = para.theta; orbita.cx = para.cx; orbita.cy = para.cy; camTween = null; aplicarVista(); dimensionarRotulos(true); return; }
+    if (!animar) { orbita.meia = para.meia; orbita.theta = para.theta; orbita.cx = para.cx; orbita.cy = para.cy; camTween = null; aplicarVista(); enquadrarACoroa(); dimensionarRotulos(true); return; }
     camTween = { t0: performance.now(), dur: DUR_CAMARA_MS, de: { meia: orbita.meia, theta: orbita.theta, cx: orbita.cx, cy: orbita.cy }, para: para };
     registarTween('camara->N' + k, 0, 1, DUR_CAMARA_MS, null, null);
+  }
+  // 21/09: O ENQUADRAMENTO DO TOPO DEIXA DE SER UM NUMERO AFINADO A MAO. O `para.cy = 0.95` do N1 foi acertado
+  // quando a torre tinha 35 andares nomeados; hoje tem 51, a torre e mais alta e a coroa saia 10 px ACIMA do
+  // palco. Uma constante afinada a olho envelhece em silencio a cada andar que se contrata - e ninguem repara
+  // ate alguem olhar para uma captura. Aqui MEDE-SE a caixa da coroa depois de a camara parar e corrige-se o
+  // que falta, uma vez so (nao no laco: um ajuste por fotograma oscila). Se descer a coroa cortasse a base,
+  // nao se desce - mais vale a coroa espreitada do que a torre sem chao.
+  var MARGEM_COROA_PX = 8;
+  function enquadrarACoroa() {
+    if (!coroa || !camara || !vistaH || nivelActual >= 2) return;
+    var lr = letreiroRect(); if (!lr) return;
+    var falta = (MARGEM_COROA_PX - lr.topo);
+    if (falta <= 0) return;
+    var base = baseNoEcra();
+    if (base != null && base - falta > vistaH - MARGEM_COROA_PX) return;   // desceria o chao para fora do palco
+    orbita.cy -= falta * mundoPorPx() * _eixoY.y;
+    aplicarVista();
+  }
+  // o y de ecra do CHAO da torre (ordem 0), para saber se ainda ha espaco para descer a vista
+  function baseNoEcra() {
+    try { return ecraDoMundo(new THREE.Vector3(0, -0.2, 0)).y; } catch (e) { return null; }
   }
   function animarCamara(agora) {
     if (!camTween) return;
     var t = (agora - camTween.t0) / camTween.dur, d = camTween.de, p = camTween.para;
     orbita.meia = PG.tween(d.meia, p.meia, t); orbita.theta = PG.tween(d.theta, p.theta, t);
     orbita.cx = PG.tween(d.cx, p.cx, t); orbita.cy = PG.tween(d.cy, p.cy, t);
-    if (t >= 1) { camTween = null; aplicarVista(); dimensionarRotulos(true); return; }
+    if (t >= 1) { camTween = null; aplicarVista(); enquadrarACoroa(); dimensionarRotulos(true); return; }
     aplicarVista();
   }
 
