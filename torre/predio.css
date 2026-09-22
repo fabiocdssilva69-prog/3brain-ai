@@ -804,6 +804,11 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
   .pg-bh { display: none !important; }
   .pred-envol { display: block !important; height: auto !important; }
 
+  /* 🔴 SO O QUE ELE PEDIU: o velocimetro e os cartoes dos numeros. A zona B (livro da Pepper, Extremis,
+     Vingadores, Killian, Feed) sao tabelas largas feitas para um ecra grande - num telemovel enchiam 5.000 px
+     de scroll e nao se liam. Ficam para o computador, como ele disse. */
+  .zb, .ins-pos, .ins-rod, .ins-bt, #md_trilho, .ins-st { display: none !important; }
+
   /* uma coluna so */
   .ins-g { grid-template-columns: 1fr !important; }
   .kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; }
