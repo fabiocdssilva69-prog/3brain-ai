@@ -1645,12 +1645,17 @@
     if (!coroa || !camara || !vistaH || nivelActual >= 2) return;
     // ate 4 passos: o factor entre pixel de ecra e `cy` nao e exacto (a projeccao isometrica mistura os eixos),
     // e uma correccao MEDIDA que se repete converge onde uma formula fechada erraria por alguns pixeis.
+    // A REGRA: reparte-se a FOLGA que sobra igualmente por cima e por baixo. Nao e uma margem fixa - a 14,05 px
+    // por andar (o minimo legivel do N1) 51 andares + coroa medem 782 px num palco de 798, e uma margem fixa de
+    // 8 px em cima nao cabe com 8 em baixo. Centrar o que ha resolve os dois casos: sobra folga, divide-se;
+    // nao sobra, a coroa fica encostada ao topo (e a coroa que identifica a torre, o chao nao).
     for (var passo = 0; passo < 4; passo++) {
       var lr = letreiroRect(); if (!lr) return;
-      var falta = MARGEM_COROA_PX - lr.topo;
-      if (falta <= 0.5) return;
-      var base = baseNoEcra();
-      if (base != null && base + falta > vistaH - MARGEM_COROA_PX) return;   // desceria o chao para fora do palco
+      var base = baseNoEcra(); if (base == null) return;
+      var alto = base - lr.topo;                      // quanto mede a torre inteira no ecra, coroa incluida
+      var querTopo = Math.max(0, (vistaH - alto) / 2);
+      var falta = querTopo - lr.topo;
+      if (Math.abs(falta) <= 0.5) return;
       orbita.cy += falta * mundoPorPx() * _eixoY.y;
       aplicarVista();
     }
