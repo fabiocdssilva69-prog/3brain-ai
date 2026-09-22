@@ -2819,8 +2819,12 @@
     var largura = cx.clientWidth || 1000, gap = 7;
     var est = window.getComputedStyle ? window.getComputedStyle(cx) : null;
     if (est && est.gap) { var g = parseFloat(est.gap); if (isFinite(g)) gap = g; }
+    // 22/09: `offsetWidth` e nao `getBoundingClientRect().width`. O segundo inclui a ESCALA da animacao de
+    // entrada (`scale(.94)`), logo um cartao a entrar media 6% menos, cabiam 12 em vez de 11, e o numero de
+    // lugares oscilava entre leituras - com cartoes a ser deitados fora a cada oscilacao. **Medir uma coisa
+    // a meio de uma animacao e medir a animacao.**
     var prim = cx.querySelector('.cartao.vivo');
-    var larg = (prim && prim.getBoundingClientRect().width) || 132;
+    var larg = (prim && prim.offsetWidth) || 132;
     return Math.max(4, Math.min(MAX_CADEIRAS, Math.floor((largura + gap) / (larg + gap))));
   }
   // `vivos` passa a ser AS CADEIRAS, por ordem de ecra. Cada uma: {id, el, f, aceso_em}
