@@ -224,6 +224,7 @@
     ligarGavetaDoPointer();
   }
 
+  var reenquadrando = false;
   function redimensionar() {
     if (!renderer) return;
     var b = palco.getBoundingClientRect();
@@ -237,6 +238,20 @@
     telemovel = !!(window.matchMedia && matchMedia('(max-width: 900px)').matches);
     Object.keys(holos).forEach(function (k) { holos[k].hash = ''; });   // a resolucao do canvas muda com o palco
     if (nivelActual <= 0 || nivelActual === -1) precisaEnquadrar = true;
+    // 🔴 22/09, DEFEITO ANTIGO QUE O CARTAO NOVO DESTAPOU: so o N0 se reenquadrava depois de o palco mudar de
+    // tamanho. Nos niveis 1 a 3 a camara guardava o `meia` ANTIGO - que e uma medida do MUNDO - e os pixeis
+    // por andar sao `vistaH / meia`: encolher o palco fazia-os cair SOZINHOS. Medido: a fila de cartoes ficou
+    // mais alta, o palco perdeu ~80 px, e o "Andar" passou a mostrar 12,6 px/andar quando o minimo legivel e
+    // 14,05 - ou seja, o botao N1 deixou de dar N1 sem ninguem lhe tocar. O nivel e um ALVO em pixeis: se o
+    // palco muda, o alvo tem de ser recalculado, senao o nivel e uma etiqueta que deixou de descrever o ecra.
+    // No quadro SEGUINTE, e com guarda: chamar irParaNivel() daqui dentro fazia recursao (visto em 18/09).
+    if (nivelActual >= 1 && !reenquadrando) {
+      reenquadrando = true;
+      requestAnimationFrame(function () {
+        reenquadrando = false;
+        try { irParaNivel(nivelActual, alvoOrdem, false); } catch (e) { }
+      });
+    }
     var cxC = $('cartoes'); if (cxC && cxC.querySelector('.cartao.topo')) disporCartoes(cxC, cxC.querySelectorAll('.cartao.topo').length);   // v6
     aplicarVista();
   }
