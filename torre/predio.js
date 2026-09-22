@@ -2702,21 +2702,68 @@
     if (!isFinite(m) || m < 0) return null;
     return m * 60000 + Math.max(0, performance.now() - lidoEm);
   }
+  function corHex(n) { return '#' + ('000000' + (Number(n) >>> 0).toString(16)).slice(-6); }
+  // a cor do cartao E o estado do funcionario - a mesma que a figura dele tem dentro da torre
+  var COR_ESTADO_CSS = { ok: '#5ac8fa', a_correr: '#3ecf8e', atrasado: '#e8b04b', erro: '#ff5a5f',
+                         a_dormir: '#98a2b0', sem_tarefa: '#7b8695' };
+  function corDoFuncionario(f) { return COR_ESTADO_CSS[f && f.estado] || '#5ac8fa'; }
+  function quandoCorreu(f) {
+    var m = Number(f && f.minutos_desde_ultima);
+    if (!isFinite(m)) return 'sem carimbo de corrida';
+    var s = m < 1 ? 'agora mesmo' : (m < 60 ? 'há ' + Math.round(m) + ' min' : 'há ' + (m / 60).toFixed(1) + ' h');
+    var p = Number(f.minutos_para_proxima);
+    if (isFinite(p) && p >= 0) s += ' · volta em ' + (p < 60 ? Math.round(p) + ' min' : (p / 60).toFixed(1) + ' h');
+    return s;
+  }
+  function seloDoFuncionario(f) {
+    var m = Number(f && f.minutos_desde_ultima);
+    if (isFinite(m) && m <= 5) return 'A CORRER';
+    return String((f && f.estado) || 'sem estado').replace(/_/g, ' ').toUpperCase();
+  }
+  // 22/09: o cartao ao vivo E um `.cartao.topo` - a MESMA classe dos 10, nao uma imitacao. Quem imita diverge
+  // no dia em que alguem corrigir o original; quem herda a classe herda tambem as correccoes.
   function cartaoVivoEl(f, nu, andar) {
     var el = document.createElement('button');
     el.type = 'button';
-    el.className = 'cartao vivo ' + escH((nu && nu.classe) || 'hora');
+    el.className = 'cartao topo vivo ' + escH((nu && nu.classe) || 'hora');
     el.dataset.id = f.id; el.dataset.andar = (andar == null ? '' : andar);
-    el.title = f.id + ' - ' + (f.dono_da_falha || 'sem falha declarada');
-    el.innerHTML = '<u>' + escH((andar == null ? 'torre' : 'andar ' + andar) + ' \u00b7 ' + String(f.sector || '')) + '</u>' +
-      '<b>' + escH(String(f.nome || f.id).toUpperCase()) + '</b>' +
-      '<em>' + escH(String(f.cargo || f.sector || '')) + '</em>' +
-      '<span class="falha">' + escH(f.dono_da_falha || 'sem falha declarada') + '</span>' +
-      '<span class="num">' + escH((nu && nu.texto) || '\u2014') + '</span>' +
-      '<span class="fonte">' + escH((nu && nu.fonte) || f.fonte_do_relogio || '') + ' <span class="quando">agora</span></span>' +
-      '<span class="vida"></span>';
+    el.title = f.id + ' — ' + (f.dono_da_falha || 'sem falha declarada');
+    el.innerHTML = corpoDoCartaoVivo(f, nu, andar);
     return el;
   }
+  function corpoDoCartaoVivo(f, nu, andar) {
+    var el_ = obj(f.elenco), cor = corDoFuncionario(f), eq = obj(f.equipa);
+    var nProp = num0(eq.n_propriedades), nCasos = num0(eq.n_casos), nTar = lista(f.tarefas).length;
+    var nome = String(el_.titulo_curto || el_.heroi || f.nome || f.id);
+    return '<span class="cab"><span class="avatar">' + avatarSVG(el_.personagem || el_.heroi || f.id, cor, !!el_.feminino) + '</span>' +
+      '<span class="ident"><u>' + escH((andar == null ? 'torre' : 'andar ' + andar) + ' / ' + String(f.sector || '')) + '</u>' +
+      '<b>' + escH(nome.toUpperCase()) + '</b>' +
+      '<em>' + escH(String(f.id) + (f.cargo ? ' · ' + f.cargo : '')) + '</em>' +
+      '<s class="selo" style="border-color:' + cor + ';color:' + cor + '">' + escH(seloDoFuncionario(f)) + '</s></span></span>' +
+      '<span class="falha">' + escH(f.dono_da_falha || 'sem falha declarada') + '</span>' +
+      '<span class="act"><i></i><span>' + escH(quandoCorreu(f) + ' · ' + (f.fonte_do_relogio || 'sem prova')) + '</span></span>' +
+      '<span class="metricas">' +
+        barraMetrica('propriedades', nProp, Math.max(1, maxVivo('prop'))) +
+        barraMetrica('casos', nCasos, Math.max(1, maxVivo('casos'))) +
+        barraMetrica('tarefas', nTar, Math.max(1, maxVivo('tarefas'))) + '</span>' +
+      '<span class="num">' + escH((nu && nu.texto) || '—') + '</span>' +
+      '<span class="fonte">' + escH((nu && nu.fonte) || f.fonte_do_relogio || '') + ' <span class="quando">agora</span></span>' +
+      '<span class="vida"></span>';
+  }
+  // o maximo de cada barra e o maximo DA FILA, nao um numero inventado: a barra compara quem esta ao lado
+  var maximosVivos = { prop: 1, casos: 1, tarefas: 1 };
+  function maxVivo(k) { return maximosVivos[k] || 1; }
+  function recalcularMaximosVivos() {
+    var m = { prop: 1, casos: 1, tarefas: 1 };
+    vivos.forEach(function (v) {
+      var eq = obj(v.f && v.f.equipa);
+      m.prop = Math.max(m.prop, num0(eq.n_propriedades));
+      m.casos = Math.max(m.casos, num0(eq.n_casos));
+      m.tarefas = Math.max(m.tarefas, lista(v.f && v.f.tarefas).length);
+    });
+    maximosVivos = m;
+  }
+
   // REFAZ A FILA a partir dos dados. Quem ja la esta nao se recria (recriar matava a animacao de entrada e
   // fazia a fila piscar toda a cada leitura); quem saiu da janela sai com animacao; quem e novo entra.
   function refazerFilaViva() {
@@ -2754,6 +2801,17 @@
       return v;
     });
     vivos = nova;
+    // os maximos das barras sao os da FILA, e a fila acabou de mudar -> repintam-se os corpos. Repinta-se o
+    // INTERIOR e nao o elemento: trocar o elemento mataria a animacao de entrada e a fila piscaria inteira.
+    recalcularMaximosVivos();
+    vivos.forEach(function (v) {
+      var ass = JSON.stringify([v.f.estado, v.f.minutos_desde_ultima, v.f.minutos_para_proxima,
+                                (numeroDe(v.id) || {}).texto, maximosVivos]);
+      if (v.ass === ass) return;
+      v.ass = ass;
+      v.el.innerHTML = corpoDoCartaoVivo(v.f, numeroDe(v.id), andarTorreDe(v.f));
+      v.el.className = 'cartao topo vivo ' + escH((numeroDe(v.id) || {}).classe || 'hora') + (v.el.classList.contains('acende') ? ' acende' : '');
+    });
     if (modoCartoes === 'vivo' && cx) {
       // reordenar sem apagar: appendChild de um no que ja esta no pai MOVE-O, e mover nao reinicia a animacao
       vivos.forEach(function (v) { if (v.el.parentNode !== cx) cx.appendChild(v.el); else cx.appendChild(v.el); });
