@@ -201,7 +201,6 @@
     try { return !!(window.matchMedia && matchMedia('(max-width: 900px)').matches); } catch (e) { return false; }
   }
   function iniciar3D() {
-    if (ecraPequeno()) { telemovel = true; return false; }   // ver aplicarModo(): reavalia-se no resize
     renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !telemovel, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setClearColor(COR.fundo, 1);      // fundo escuro profundo; a vinheta e CSS por cima (nao entra no readPixels)
@@ -2995,7 +2994,7 @@
   function marcarMovimento() { ultimoMexeu = performance.now(); }
   function quadro(agora) {
     requestAnimationFrame(quadro);
-    if (escondido || !renderer) return;
+    if (escondido || !renderer || modoNumeros) return;   // em modo telemovel a torre existe mas nao se pinta
     var mexe = !!camTween || tweens.length > 0 || pacotesVivos.length > 0 || (agora - ultimoMexeu) < 1500;
     cadenciaActual = mexe ? 'activo' : 'parado';   // 20/09: a prova precisa de saber em que regime esta a medir
     if (agora - ultimoDesenho < (mexe ? MS_ACTIVO : MS_PARADO) - 1) return;
@@ -3045,25 +3044,26 @@
   // nascesse estreita e crescesse depois (o arreio faz exactamente isso, e um telemovel a rodar tambem), a
   // torre nunca arrancava - o arreio apanhou-a com `telemovel: true` num ecra de 1400 px. Uma decisao que
   // depende do tamanho da janela tem de ser REAVALIADA quando a janela muda.
+  // 🔴 21/09, DUAS TENTATIVAS FALHADAS ANTES DESTA, e a licao vale mais que o codigo: eu tentei NAO ARRANCAR o
+  // 3D em ecra pequeno. Parti o desktop duas vezes - o arreio apanhou `telemovel: true` num ecra de 1400 px,
+  // porque a decisao era tomada UMA VEZ no arranque e a janela muda depois (o arreio testa a 390 e a 1400 na
+  // mesma pagina; um telemovel a rodar faz o mesmo).
+  // O SIMPLES FUNCIONA: a torre arranca sempre, e o que se decide a cada fotograma e se ela se DESENHA. A
+  // poupanca de bateria e a mesma - o custo esta em pintar, nao em existir - e nao ha estado que possa ficar
+  // dessincronizado da largura da janela.
   var modoNumeros = false;
   function aplicarModo() {
     var pequeno = ecraPequeno();
-    if (pequeno === modoNumeros) return;                  // nada mudou
+    if (pequeno === modoNumeros) return;
     modoNumeros = pequeno;
     document.body.classList.toggle('so-numeros', pequeno);
-    var gav = $('pointer_dados'); if (gav) gav.hidden = !pequeno && !gav.dataset.abertoPeloBotao;
-    if (!pequeno && !renderer && temWebGL()) {            // cresceu: a torre nasce agora
-      telemovel = false;
-      if (iniciar3D() !== false) { criarHologramas(); requestAnimationFrame(quadro); }
-    }
+    var gav = $('pointer_dados');
+    if (gav && pequeno) gav.hidden = false;      // no telemovel a gaveta E a pagina
   }
-  if (ecraPequeno()) {
-    modoNumeros = true;
-    document.body.classList.add('so-numeros');
-    var _gav = $('pointer_dados'); if (_gav) _gav.hidden = false;   // a gaveta passa a ser a pagina
-  } else if (!temWebGL()) { $('aviso_webgl').hidden = false; }
-  else { iniciar3D(); criarHologramas(); requestAnimationFrame(quadro); }
+  aplicarModo();
   addEventListener('resize', aplicarModo);
+  if (!temWebGL()) { $('aviso_webgl').hidden = false; }
+  else { iniciar3D(); criarHologramas(); requestAnimationFrame(quadro); }
   // 🔴 19/09, queixa dele: "os numeros nao estao em tempo real a cada segundo". Metade disso era o ecra: os campos
   // BRT e NY sao RELOGIOS e mostravam a hora do FICHEIRO, logo ficavam parados entre leituras e a pagina parecia
   // morta. Passam a andar ao segundo, e ao lado do estado passa a contar-se A IDADE DO DADO - que e honesto: diz
