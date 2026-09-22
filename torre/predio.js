@@ -2855,8 +2855,26 @@
                                 (numeroDe(v.id) || {}).texto, maximosVivos]);
       if (v.ass === ass) return;
       v.ass = ass;
-      v.el.innerHTML = corpoDoCartaoVivo(v.f, numeroDe(v.id), andarTorreDe(v.f));
-      v.el.className = 'cartao topo vivo ' + escH((numeroDe(v.id) || {}).classe || 'hora') + (v.el.classList.contains('acende') ? ' acende' : '');
+      // 🔴 22/09: ISTO ERA `innerHTML = ...` E ERA UMA FUGA DE MEMORIA. Cada leitura de dados (20 em 20 s)
+      // refazia o interior de CADA cartao; o Chrome contava 20.559 nos quando a arvore visivel tinha 4.792 -
+      // quinze mil nos DESTACADOS, removidos do ecra mas ainda presos. Crescia com o tempo, e era por isso
+      // que a torre travava cada vez mais quanto mais tempo estivesse aberta: medido 10.553 nos numa corrida
+      // e 20.559 na seguinte. **Refazer o HTML e a maneira mais cara de mudar um numero.**
+      // Agora troca-se o TEXTO de cada campo. O numero de nos deixa de crescer: sao sempre os mesmos.
+      var nu2 = numeroDe(v.id) || {};
+      txt(v.el.querySelector('.num'), nu2.texto || '—');
+      txt(v.el.querySelector('.act > span'), quandoCorreu(v.f) + ' · ' + (v.f.fonte_do_relogio || 'sem prova'));
+      var selo = v.el.querySelector('.selo');
+      if (selo) { txt(selo, seloDoFuncionario(v.f)); var c2 = corDoFuncionario(v.f); selo.style.borderColor = c2; selo.style.color = c2; }
+      var eq2 = obj(v.f.equipa);
+      pintarMetricaDoCartao({ el: v.el }, 'propriedades', num0(eq2.n_propriedades), Math.max(1, maxVivo('prop')));
+      pintarMetricaDoCartao({ el: v.el }, 'casos', num0(eq2.n_casos), Math.max(1, maxVivo('casos')));
+      pintarMetricaDoCartao({ el: v.el }, 'tarefas', lista(v.f.tarefas).length, Math.max(1, maxVivo('tarefas')));
+      var classeNum = escH(nu2.classe || 'hora');
+      if (v.classeNum !== classeNum) {
+        ['up', 'dn', 'cap', 'imp', 'hora'].forEach(function (k) { v.el.classList.remove(k); });
+        v.el.classList.add(classeNum); v.classeNum = classeNum;
+      }
     });
     if (modoCartoes === 'vivo' && cx) {
       // reordenar sem apagar: appendChild de um no que ja esta no pai MOVE-O, e mover nao reinicia a animacao
