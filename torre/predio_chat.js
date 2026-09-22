@@ -97,9 +97,40 @@
     var el = document.createElement('div'); el.className = 'chat-vazio'; el.textContent = 'sem conversa ainda';
     cx.insertBefore(el, cx.firstChild); estado.vazio = true;
   }
+  // 22/09, 2.a volta da queixa dele ("so vejo 4 sectores"): o ficheiro ja vinha justo - 15 sectores, ~11
+  // mensagens cada - e o ECRA continuava a mostrar 4. A causa estava AQUI: a poda cortava pelo fim da
+  // lista, ou seja por antiguidade, e as 40 que sobravam eram as 40 corridas mais recentes. Se quatro
+  // sectores correram as ultimas 40 vezes, sao esses quatro que se veem - e isso e verdade, mas nao e a
+  // torre.
+  //
+  // A poda passa a ter QUOTA POR SECTOR, em rondas: guarda-se a mais recente de cada sector, depois a
+  // segunda de cada sector, ate encher os 40. A ordem no ecra continua a ser a cronologica (nao se mexe
+  // no DOM), logo continua a ler-se como uma conversa; o que muda e QUEM cabe nela.
   function podar(cx) {
     var ms = cx.querySelectorAll('.chat-msg');
-    for (var i = ms.length - 1; i >= MAX_DOM; i--) ms[i].parentNode.removeChild(ms[i]);
+    if (ms.length <= MAX_DOM) return;
+    var filas = {}, ordem = [];
+    for (var i = 0; i < ms.length; i++) {                 // ja estao do mais recente para o mais antigo
+      var s = ms[i].getAttribute('data-sector') || '?';
+      if (!filas[s]) { filas[s] = []; ordem.push(s); }
+      filas[s].push(ms[i]);
+    }
+    var fica = [], ronda = 0, levou = true;
+    while (fica.length < MAX_DOM && levou) {
+      levou = false;
+      for (var k = 0; k < ordem.length && fica.length < MAX_DOM; k++) {
+        var f = filas[ordem[k]];
+        if (ronda < f.length) { fica.push(f[ronda]); levou = true; }
+      }
+      ronda++;
+    }
+    var guardar = {};
+    for (var j = 0; j < fica.length; j++) guardar[fica[j].getAttribute('data-id') || j] = fica[j];
+    for (var x = 0; x < ms.length; x++) {
+      var ok = false;
+      for (var y = 0; y < fica.length; y++) { if (fica[y] === ms[x]) { ok = true; break; } }
+      if (!ok && ms[x].parentNode) ms[x].parentNode.removeChild(ms[x]);
+    }
   }
   // #lei_kn e partilhado com predio.js ("N evento(s)"); aqui manda o chat, e o observador reescreve se o outro
   // passar por cima. O guarda (texto == ultimoKn) impede o laco observador -> escrita -> observador.
