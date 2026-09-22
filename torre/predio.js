@@ -3692,7 +3692,10 @@
       if (andar) { cx.scrollLeft = Math.max(0, cx.scrollLeft + Number(andar)); }
       if (andar === 0) { passeioAte = 0; passeioSobre = false; }   // o arreio pede para nao esperar a pausa
       return { scrollLeft: Math.round(cx.scrollLeft), scrollWidth: cx.scrollWidth, clientWidth: cx.clientWidth,
-               cartoes: cx.querySelectorAll('.cartao.vivo').length,
+               // quem esta A SAIR ja nao pertence a fila: saiu da janela e o elemento so fica no DOM os
+               // 400 ms da animacao. Conta-lo era contar um cartao que ja nao representa ninguem.
+               cartoes: cx.querySelectorAll('.cartao.vivo:not(.a-sair)').length,
+               a_sair: cx.querySelectorAll('.cartao.vivo.a-sair').length,
                escondidos: Array.prototype.filter.call(cx.querySelectorAll('.cartao.vivo'), function (e) { return e.style.display === 'none'; }).length,
                mais: !!cx.querySelector('.cartao-mais'), velocidade: VEL_CARROSSEL,
                pausado: passeioSobre || performance.now() < passeioAte,
