@@ -2810,10 +2810,18 @@
   // Um numero FIXO de lugares. Quem reage acende no seu lugar; quem chega com os lugares cheios senta-se no
   // do MAIS ANTIGO. A fila e o TEMPO e nao o espaco - por isso nao ha rolagem nem "+N": nunca ha mais
   // cartoes do que lugares.
-  var LARG_CADEIRA = 140;            // o cartao fechado, com a folga da grelha
+  // 22/09: quantos lugares cabem MEDE-SE, nao se supoe. Ele quer 13/14; num ecra de 1400 o cartao fechado
+  // mede ~140 px e so cabem 7 - o numero de lugares e o que a largura DELE der, ate 14. Uma constante fixa
+  // ou mentia (cartoes cortados) ou desperdicava metade da linha.
+  var MAX_CADEIRAS = 14;
   function quantasCadeiras(cx) {
-    var largura = (cx && cx.clientWidth) || 1000;
-    return Math.max(4, Math.min(14, Math.floor(largura / LARG_CADEIRA)));
+    if (!cx) return 8;
+    var largura = cx.clientWidth || 1000, gap = 7;
+    var est = window.getComputedStyle ? window.getComputedStyle(cx) : null;
+    if (est && est.gap) { var g = parseFloat(est.gap); if (isFinite(g)) gap = g; }
+    var prim = cx.querySelector('.cartao.vivo');
+    var larg = (prim && prim.getBoundingClientRect().width) || 132;
+    return Math.max(4, Math.min(MAX_CADEIRAS, Math.floor((largura + gap) / (larg + gap))));
   }
   // `vivos` passa a ser AS CADEIRAS, por ordem de ecra. Cada uma: {id, el, f, aceso_em}
   function sentar(f) {
