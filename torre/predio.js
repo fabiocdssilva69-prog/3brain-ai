@@ -3341,6 +3341,19 @@
   // ---------------------------------------------------------------- laco
   var ultimoQuadro = 0, ultimoHUD = 0, escondido = false;
   document.addEventListener('visibilitychange', function () { escondido = document.hidden; });
+  // 🔴 22/09, a reproducao QUE ELE ME DEU: "o travamento e com o instrumento aberto e os cartoes a reagir".
+  // MEDIDO: 40% de ocupacao da linha principal com a gaveta aberta contra 18% fechada - **mais do dobro**.
+  // A causa e a mesma especie que eu corrigi para o telemovel e nao apliquei aqui: com a gaveta aberta a
+  // TORRE 3D CONTINUA A SER DESENHADA por tras dela, tapada a 100%. Trinta desenhos por segundo de uma cena
+  // que ninguem ve, a disputar a linha principal com o instrumento que ele esta mesmo a olhar.
+  // Uma cena tapada nao se desenha. O batimento, as tweens e os dados continuam a andar - so o DESENHO para,
+  // e volta no fotograma seguinte a fechar a gaveta.
+  // ⚠️ Perguntar-lhe O QUE estava a fazer valeu mais do que tres rondas de medicoes minhas no caso comodo.
+  var _gavetaEl = null;
+  function gavetaAberta() {
+    if (!_gavetaEl) _gavetaEl = $('pointer_dados');
+    return !!(_gavetaEl && !_gavetaEl.hidden && _gavetaEl.offsetParent !== null);
+  }
   // 19/09, MEDIDO com o CDP: 83% da linha principal ocupada em regime (16,6 s de tarefa em 20 s). O laco
   // desenhava a cada fotograma do ecra - 50 a 60 por segundo - e o desenho e o item mais caro. Um painel de dados
   // le-se igual a 30. TECTO DE 30 DESENHOS POR SEGUNDO: corta metade do trabalho sem o olho notar.
@@ -3351,7 +3364,7 @@
   function marcarMovimento() { ultimoMexeu = performance.now(); }
   function quadro(agora) {
     requestAnimationFrame(quadro);
-    if (escondido || !renderer || modoNumeros) return;   // em modo telemovel a torre existe mas nao se pinta
+    if (escondido || !renderer || modoNumeros || gavetaAberta()) return;   // telemovel ou gaveta aberta: existe, nao se pinta
     var mexe = !!camTween || tweens.length > 0 || pacotesVivos.length > 0 || (agora - ultimoMexeu) < 1500;
     cadenciaActual = mexe ? 'activo' : 'parado';   // 20/09: a prova precisa de saber em que regime esta a medir
     if (agora - ultimoDesenho < (mexe ? MS_ACTIVO : MS_PARADO) - 1) return;
