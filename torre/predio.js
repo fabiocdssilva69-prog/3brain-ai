@@ -3508,6 +3508,21 @@
     aCorrer: function () { return moradores.filter(function (m) { return m.estado === 'a_correr'; }).map(function (m) { return { id: m.id, escalaY: m.escalaY == null ? 1 : m.escalaY }; }); },
     semNumero: function () { return semNumero.slice(); },
     capital: function () { var c = capitalExclusivo(D ? lista(D.funcionarios) : [], capitalDaCasa()); return { casa: capitalDaCasa(), ok: Object.keys(c.ok), porque: c.porque }; },
+    // 21/09: a fila ao vivo, para o arreio poder prova-la e trocar de modo sem clicar
+    modoCartoes: function (m) { if (m) aplicarModoCartoes(m, false); return modoCartoes; },
+    vivos: function () {
+      return vivos.map(function (v) {
+        var r = v.el.getBoundingClientRect();
+        return { id: v.id, nome: (v.el.querySelector('b') || {}).textContent || '',
+                 numero: (v.el.querySelector('.num') || {}).textContent || '',
+                 falha: (v.el.querySelector('.falha') || {}).textContent || '',
+                 quando: (v.el.querySelector('.quando') || {}).textContent || '',
+                 vida: (function () { var x = v.el.querySelector('.vida'); return x ? x.style.transform : ''; })(),
+                 minutos: Number(v.f && v.f.minutos_desde_ultima),
+                 visivel: v.el.style.display !== 'none' && r.width > 0 };
+      });
+    },
+    janelaViva: function () { return JANELA_VIVO_MIN; },
     cartoes: function () {
       var cx = $('cartoes'); if (!cx) return [];
       return Array.prototype.slice.call(cx.querySelectorAll('.cartao')).map(function (b) {
