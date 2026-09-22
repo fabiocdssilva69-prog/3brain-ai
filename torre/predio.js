@@ -224,7 +224,7 @@
     ligarGavetaDoPointer();
   }
 
-  var reenquadrando = false;
+  var reenquadrando = false, precisaReenquadrarNivel = false, nivelPedido = -1;
   function redimensionar() {
     if (!renderer) return;
     var b = palco.getBoundingClientRect();
@@ -245,12 +245,20 @@
     // 14,05 - ou seja, o botao N1 deixou de dar N1 sem ninguem lhe tocar. O nivel e um ALVO em pixeis: se o
     // palco muda, o alvo tem de ser recalculado, senao o nivel e uma etiqueta que deixou de descrever o ecra.
     // No quadro SEGUINTE, e com guarda: chamar irParaNivel() daqui dentro fazia recursao (visto em 18/09).
-    if (nivelActual >= 1 && !reenquadrando) {
-      reenquadrando = true;
-      requestAnimationFrame(function () {
-        reenquadrando = false;
-        try { irParaNivel(nivelActual, alvoOrdem, false); } catch (e) { }
-      });
+    // 🔴 e o nivel que conta aqui e o PEDIDO, nao o medido. `nivelActual` sai de `PG.nivelDe(px)`, ou seja do
+    // que o ecra mostra AGORA - durante a viagem para o N1 ele ainda vale 0. A 1a versao disto lia `nivelActual`
+    // e reenquadrava para o N0 a meio da viagem: o botao "Andar" deixou de chegar ao Andar (10,2 px/andar em
+    // vez de 14,1) e os nomes nunca se construiam. Um alvo nao se le no sitio de onde se partiu.
+    // E se a camara estiver a andar, nao se lhe toca: marca-se, e reenquadra-se quando ela parar.
+    if (nivelPedido >= 1) {
+      if (camTween) precisaReenquadrarNivel = true;
+      else if (!reenquadrando) {
+        reenquadrando = true;
+        requestAnimationFrame(function () {
+          reenquadrando = false;
+          try { irParaNivel(nivelPedido, alvoOrdem, false); } catch (e) { }
+        });
+      }
     }
     var cxC = $('cartoes'); if (cxC && cxC.querySelector('.cartao.topo')) disporCartoes(cxC, cxC.querySelectorAll('.cartao.topo').length);   // v6
     aplicarVista();
@@ -1633,6 +1641,7 @@
     }
     if (!projecto || !vistaW) return;
     k = Math.max(0, Math.min(3, Math.floor(Number(k) || 0)));
+    nivelPedido = k;                 // para onde a camara vai; `nivelActual` so diz onde ela ja esta
     var px = PG.alvoDoNivel(k, vistaH, projecto.nomeados + COROA_ANDARES, EXTRA_ANDARES);
     var meia = PG.mundoPorPxPara(px, ALTURA, orbita.phi) * vistaH / 2;
     var o = ordem;
@@ -1684,7 +1693,12 @@
     var t = (agora - camTween.t0) / camTween.dur, d = camTween.de, p = camTween.para;
     orbita.meia = PG.tween(d.meia, p.meia, t); orbita.theta = PG.tween(d.theta, p.theta, t);
     orbita.cx = PG.tween(d.cx, p.cx, t); orbita.cy = PG.tween(d.cy, p.cy, t);
-    if (t >= 1) { camTween = null; aplicarVista(); enquadrarACoroa(); dimensionarRotulos(true); return; }
+    if (t >= 1) {
+      camTween = null; aplicarVista(); enquadrarACoroa(); dimensionarRotulos(true);
+      // o palco mudou de tamanho enquanto a camara andava: agora que ela parou, refaz-se o alvo
+      if (precisaReenquadrarNivel) { precisaReenquadrarNivel = false; try { irParaNivel(nivelPedido, alvoOrdem, false); } catch (e) { } }
+      return;
+    }
     aplicarVista();
   }
 
