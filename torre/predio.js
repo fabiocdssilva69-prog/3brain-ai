@@ -2775,7 +2775,15 @@
     // fechado nem mostra a letra pequena. Ele lia GERENTE em todos e concluia, com razao, que so havia
     // gerentes. **O cartao mostrava o disfarce e escondia o funcionario.**
     // Agora: em cima o SECTOR (o que ele quer ver), em grande o FUNCIONARIO, e o personagem por baixo.
-    var nome = String(f.nome || f.id);
+    // 🔴 22/09, ele outra vez, e tem razao nas duas: "os cartoes dos funcionarios nao estao com nomes,
+    // lembra que eu falei que os importantes teriam nomes dos personagens, e quanto menor o cargo o nome
+    // seria de FIGURANTE". De manha eu tinha trocado o nome do personagem pelo id cru (`sentinela`,
+    // `conversa`, `cartoes`) para resolver a queixa de que so se viam "Gerente" e "Supervisor" - e resolvi
+    // essa estragando outra. **A queixa dele nunca foi o NOME: era nao ver o SECTOR.** O sector ja esta na
+    // linha de cima desde entao; o nome volta a ser o do elenco.
+    // Usa-se o APELIDO e nao o titulo completo: "KARPOV" cabe no cartao, "Gerente Karpov" nao - e era o
+    // "Gerente" repetido em todos que lhe dava a impressao de so haver gerentes.
+    var nome = String(el_.apelido || el_.personagem || el_.heroi || f.nome || f.id);
     var persona = String(el_.titulo_curto || el_.heroi || '');
     return '<span class="cab"><span class="avatar">' + avatarSVG(el_.personagem || el_.heroi || f.id, cor, !!el_.feminino) + '</span>' +
       '<span class="ident"><u>' + escH(String(f.sector || 'torre').toUpperCase() + (andar == null ? '' : ' · ' + andar)) + '</u>' +

@@ -516,7 +516,20 @@ body.lado-fechado .lado-toggle { transform: rotate(180deg); }
 .cartao .cab .avatar svg { display: block; }
 .cartao .ident { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
 .cartao .ident u { font: 600 8.5px/1.1 var(--mono, monospace); letter-spacing: .1em; color: #7b8695; text-decoration: none; text-transform: uppercase; }
-.cartao .ident b { display: block !important; font: 800 12px/1.15 var(--mono, monospace) !important; letter-spacing: .04em; color: #eef3f8 !important; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; max-width: none !important; height: auto !important; max-height: none !important; -webkit-line-clamp: unset !important; margin: 0 !important; }
+/* 🔴 22/09, visto na FOTO do ecra dele: os nomes TRANSBORDAVAM o cartao e escreviam por cima do vizinho -
+   "CARTOES" colado a "SERVIDOR_PAINEL", "PUBLICAR_TORRE" cortado a meio. A causa estava escrita aqui em
+   letra grande: `overflow: visible !important; max-width: none !important`. Esses `!important` nasceram em
+   18/09 para resolver o oposto (o nome aparecia com 2 px), e ao curar aquilo abriu-se este.
+   **Um `!important` resolve o problema de hoje e cria o de amanha.** O nome quebra linha DENTRO do cartao
+   e, se ainda assim nao couber, corta-se com reticencias - nunca sai para cima do vizinho. */
+.cartao .ident b {
+  display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  font: 800 12px/1.15 var(--mono, monospace) !important; letter-spacing: .02em; color: #eef3f8 !important;
+  overflow: hidden !important; text-overflow: ellipsis !important;
+  max-width: 100% !important; word-break: break-word; overflow-wrap: anywhere; margin: 0 !important;
+}
+.cartao .ident { overflow: hidden; }
+.cartao.topo { overflow: hidden; }
 .cartao .ident em { font: 500 9px/1.2 var(--sans, sans-serif); color: #8fb3c9; font-style: normal; white-space: normal; }
 .cartao .selo { display: inline-block; align-self: flex-start; margin-top: 2px; padding: 1px 6px; border: 1px solid; border-radius: 999px; font: 700 7.5px/1.4 var(--mono, monospace); letter-spacing: .12em; text-decoration: none; }
 .cartao.zero .selo { opacity: .55; }
