@@ -1643,13 +1643,17 @@
   var MARGEM_COROA_PX = 8;
   function enquadrarACoroa() {
     if (!coroa || !camara || !vistaH || nivelActual >= 2) return;
-    var lr = letreiroRect(); if (!lr) return;
-    var falta = (MARGEM_COROA_PX - lr.topo);
-    if (falta <= 0) return;
-    var base = baseNoEcra();
-    if (base != null && base - falta > vistaH - MARGEM_COROA_PX) return;   // desceria o chao para fora do palco
-    orbita.cy -= falta * mundoPorPx() * _eixoY.y;
-    aplicarVista();
+    // ate 4 passos: o factor entre pixel de ecra e `cy` nao e exacto (a projeccao isometrica mistura os eixos),
+    // e uma correccao MEDIDA que se repete converge onde uma formula fechada erraria por alguns pixeis.
+    for (var passo = 0; passo < 4; passo++) {
+      var lr = letreiroRect(); if (!lr) return;
+      var falta = MARGEM_COROA_PX - lr.topo;
+      if (falta <= 0.5) return;
+      var base = baseNoEcra();
+      if (base != null && base + falta > vistaH - MARGEM_COROA_PX) return;   // desceria o chao para fora do palco
+      orbita.cy += falta * mundoPorPx() * _eixoY.y;
+      aplicarVista();
+    }
   }
   // o y de ecra do CHAO da torre (ordem 0), para saber se ainda ha espaco para descer a vista
   function baseNoEcra() {
