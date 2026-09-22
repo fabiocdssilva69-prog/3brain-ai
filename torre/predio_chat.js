@@ -68,10 +68,20 @@
     var el = document.createElement('div');
     el.className = 'chat-msg tipo-' + tipo.replace(/[^a-z_]/g, '') + (m.responde_a ? ' resposta' : '') + ' nova';
     el.setAttribute('data-id', String(m.id || '')); el.setAttribute('data-tipo', tipo); el.setAttribute('data-titulo', titulo);
-    var sub = [a.heroi, a.sector, a.andar != null ? 'andar ' + a.andar : null].filter(function (x) { return x != null && x !== ''; });
+    el.setAttribute('data-funcionario', String(a.id || '')); el.setAttribute('data-sector', String(a.sector || ''));
+    // 🔴 22/09, queixa dele: "so vejo supervisor e gerente conversando ali, quando o chat e pra ser de TODOS
+    // os funcionarios". MEDIDO: o chat ja tinha 20 autores de 9 sectores diferentes - Atrio, Estatistica,
+    // Macro, Laboratorio, Recrutamento, Imprensa, Antenas, Auditoria, Direccao. Mas TODOS apareciam como
+    // "Gerente X" / "Supervisor Y", porque o nome que se mostrava era o do PERSONAGEM do elenco.
+    // **Ele estava a ler a fantasia, nao o funcionario** - exactamente o mesmo engano que eu ja tinha
+    // cometido nos cartoes, no mesmo dia, e que ele ja me tinha apontado uma vez.
+    // Agora: em grande o FUNCIONARIO e o que ele faz; o personagem vai na linha de baixo, onde pertence.
+    var quemE = String(a.id || titulo).toUpperCase();
+    var sub = [a.cargo, a.sector, a.andar != null ? 'andar ' + a.andar : null, titulo]
+      .filter(function (x) { return x != null && x !== ''; });
     var html = '<span class="avatar" style="--c:' + cor + '">' + busto(a.heroi || titulo, cor, !!a.feminino) + '</span>' +
       '<div class="corpo">' +
-      '<div class="cab"><b class="nome">' + escH(titulo) + '</b><i class="hora">' + escH(semDado(m.t_brt).slice(0, 5)) + '</i><u class="etq">' + escH(etq) + '</u></div>' +
+      '<div class="cab"><b class="nome">' + escH(quemE) + '</b><i class="hora">' + escH(semDado(m.t_brt).slice(0, 5)) + '</i><u class="etq">' + escH(etq) + '</u></div>' +
       '<div class="sub">' + escH(sub.length ? sub.join(' · ') : 'sem dado') + '</div>';
     if (m.responde_a) html += '<div class="resp">↳ responde a ' + escH(titulos[m.responde_a] || 'sem dado') + '</div>';
     html += '<div class="txt">' + colorir(m.texto, sinalDaMensagem(m)) + '</div></div>';
