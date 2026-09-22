@@ -2713,7 +2713,6 @@
   // e ele tambem se queixou de a torre travar - um tecto tem de existir. O que nao pode existir e um tecto
   // MUDO: esconder cartoes sem o dizer foi exactamente a queixa dele sobre o "+N".
   var TETO_VIVOS = 80;
-  var ultimoCorte = 0;               // quantos ficaram de fora por causa do tecto, para a legenda dizer
   var vivos = [];                    // [{id, el, ms, repetiu}] - o mais recente primeiro
   var vivosVistos = {}, vivosTotal = 0, lidoEm = 0;
 
@@ -2807,92 +2806,83 @@
     maximosVivos = m;
   }
 
-  // REFAZ A FILA a partir dos dados. Quem ja la esta nao se recria (recriar matava a animacao de entrada e
-  // fazia a fila piscar toda a cada leitura); quem saiu da janela sai com animacao; quem e novo entra.
-  function refazerFilaViva() {
-    if (!D) return;
-    var cx = $('cartoes');
-    var dentro = [], porId = {};
-    lista(D.funcionarios).forEach(function (f) {
-      if (!f.ultima_corrida_brt) return;
-      var idade = idadeDoTrabalho(f);
-      if (idade == null || idade > JANELA_VIVO_MIN * 60000) return;
-      porId[f.id] = f; dentro.push({ f: f, idade: idade });
-    });
-    dentro.sort(function (a, b) { return a.idade - b.idade; });
-    ultimoCorte = Math.max(0, dentro.length - TETO_VIVOS);
-    if (dentro.length > TETO_VIVOS) dentro = dentro.slice(0, TETO_VIVOS);
-    var tenho = {}; vivos.forEach(function (v) { tenho[v.id] = v; });
-    // sai quem deixou de estar na janela
-    for (var i = vivos.length - 1; i >= 0; i--) {
-      if (porId[vivos[i].id]) continue;
-      var vv = vivos[i];
-      if (!vv.aSair) {
-        vv.aSair = true; vv.el.classList.add('a-sair');
-        setTimeout((function (el) { return function () { if (el.parentNode) el.parentNode.removeChild(el); }; })(vv.el), 400);
-      }
-      vivos.splice(i, 1);
-    }
-    // entra quem e novo, pela ordem certa
-    var nova = dentro.map(function (d) {
-      var v = tenho[d.f.id];
-      if (!v) {
-        if (!vivosVistos[d.f.id]) { vivosVistos[d.f.id] = true; vivosTotal++; }
-        v = { id: d.f.id, el: cartaoVivoEl(d.f, numeroDe(d.f.id), andarTorreDe(d.f)), repetiu: 0 };
-        // chegou alguem: o passeio volta ao principio e espera, para o que acabou de acontecer ser visto
-        var _cx = $('cartoes'); if (_cx) _cx.scrollLeft = 0;
-        passeioAte = performance.now() + PAUSA_APOS_CHEGADA;
-      }
-      v.f = d.f; v.idade = d.idade;
-      return v;
-    });
-    vivos = nova;
-    // os maximos das barras sao os da FILA, e a fila acabou de mudar -> repintam-se os corpos. Repinta-se o
-    // INTERIOR e nao o elemento: trocar o elemento mataria a animacao de entrada e a fila piscaria inteira.
-    recalcularMaximosVivos();
-    vivos.forEach(function (v) {
-      var ass = JSON.stringify([v.f.estado, v.f.minutos_desde_ultima, v.f.minutos_para_proxima,
-                                (numeroDe(v.id) || {}).texto, maximosVivos]);
-      if (v.ass === ass) return;
-      v.ass = ass;
-      // 🔴 22/09: ISTO ERA `innerHTML = ...` E ERA UMA FUGA DE MEMORIA. Cada leitura de dados (20 em 20 s)
-      // refazia o interior de CADA cartao; o Chrome contava 20.559 nos quando a arvore visivel tinha 4.792 -
-      // quinze mil nos DESTACADOS, removidos do ecra mas ainda presos. Crescia com o tempo, e era por isso
-      // que a torre travava cada vez mais quanto mais tempo estivesse aberta: medido 10.553 nos numa corrida
-      // e 20.559 na seguinte. **Refazer o HTML e a maneira mais cara de mudar um numero.**
-      // Agora troca-se o TEXTO de cada campo. O numero de nos deixa de crescer: sao sempre os mesmos.
-      var nu2 = numeroDe(v.id) || {};
-      txt(v.el.querySelector('.num'), nu2.texto || '—');
-      txt(v.el.querySelector('.act > span'), quandoCorreu(v.f) + ' · ' + (v.f.fonte_do_relogio || 'sem prova'));
-      var selo = v.el.querySelector('.selo');
-      if (selo) { txt(selo, seloDoFuncionario(v.f)); var c2 = corDoFuncionario(v.f); selo.style.borderColor = c2; selo.style.color = c2; }
-      var eq2 = obj(v.f.equipa);
-      pintarMetricaDoCartao({ el: v.el }, 'propriedades', num0(eq2.n_propriedades), Math.max(1, maxVivo('prop')));
-      pintarMetricaDoCartao({ el: v.el }, 'casos', num0(eq2.n_casos), Math.max(1, maxVivo('casos')));
-      pintarMetricaDoCartao({ el: v.el }, 'tarefas', lista(v.f.tarefas).length, Math.max(1, maxVivo('tarefas')));
-      var classeNum = escH(nu2.classe || 'hora');
-      if (v.classeNum !== classeNum) {
-        ['up', 'dn', 'cap', 'imp', 'hora'].forEach(function (k) { v.el.classList.remove(k); });
-        v.el.classList.add(classeNum); v.classeNum = classeNum;
-      }
-    });
-    if (modoCartoes === 'vivo' && cx) {
-      // reordenar sem apagar: appendChild de um no que ja esta no pai MOVE-O, e mover nao reinicia a animacao
-      vivos.forEach(function (v) { cx.appendChild(v.el); });   // appendChild de um no que ja la esta MOVE-o
-    }
-    tiquesDaFilaViva();
+  // ---------------------------------------------------------------- AS CADEIRAS (o desenho dele, 22/09)
+  // Um numero FIXO de lugares. Quem reage acende no seu lugar; quem chega com os lugares cheios senta-se no
+  // do MAIS ANTIGO. A fila e o TEMPO e nao o espaco - por isso nao ha rolagem nem "+N": nunca ha mais
+  // cartoes do que lugares.
+  var LARG_CADEIRA = 140;            // o cartao fechado, com a folga da grelha
+  function quantasCadeiras(cx) {
+    var largura = (cx && cx.clientWidth) || 1000;
+    return Math.max(4, Math.min(14, Math.floor(largura / LARG_CADEIRA)));
   }
-  // um funcionario correu AGORA: o cartao dele acende e sobe para a frente da fila
-  function acenderNoVivo(f) {
-    if (!f || !f.id) return;
-    var v = null; vivos.forEach(function (x) { if (x.id === f.id) v = x; });
-    if (!v) return;
-    v.repetiu++;
-    v.el.classList.add('repete');
+  // `vivos` passa a ser AS CADEIRAS, por ordem de ecra. Cada uma: {id, el, f, aceso_em}
+  function sentar(f) {
+    if (!f || !f.id) return null;
+    var cx = $('cartoes'); if (!cx) return null;
+    var n = quantasCadeiras(cx);
+    var ja = null; vivos.forEach(function (v) { if (v.id === f.id) ja = v; });
+    if (ja) {                                   // ja esta sentado: acende e actualiza
+      ja.f = f; ja.aceso_em = performance.now();
+      actualizarCadeira(ja);
+      acenderCadeira(ja);
+      return ja;
+    }
+    if (!vivosVistos[f.id]) { vivosVistos[f.id] = true; vivosTotal++; }
+    if (vivos.length < n) {                     // ha lugar livre
+      var el = cartaoVivoEl(f, numeroDe(f.id), andarTorreDe(f));
+      var v = { id: f.id, el: el, f: f, aceso_em: performance.now() };
+      vivos.push(v);
+      if (modoCartoes === 'vivo') cx.appendChild(el);
+      acenderCadeira(v);
+      return v;
+    }
+    // lugares cheios: senta-se no do MAIS ANTIGO (ordem dele: "vao aparecendo em cima dos que ja apareceram")
+    var velho = vivos[0];
+    vivos.forEach(function (v) { if (v.aceso_em < velho.aceso_em) velho = v; });
+    velho.id = f.id; velho.f = f; velho.aceso_em = performance.now(); velho.ass = null;
+    velho.el.dataset.id = f.id;
+    velho.el.innerHTML = corpoDoCartaoVivo(f, numeroDe(f.id), andarTorreDe(f));
+    velho.el.classList.remove('reentra'); void velho.el.offsetWidth; velho.el.classList.add('reentra');
+    acenderCadeira(velho);
+    return velho;
+  }
+  function acenderCadeira(v) {
     v.el.classList.remove('acende'); void v.el.offsetWidth; v.el.classList.add('acende');
   }
-  // O relogio da fila: esvazia as barras, escreve o "ha N", e esconde o que nao cabe na largura.
-  // 4 Hz - o suficiente para a barra parecer continua, barato o bastante para nao disputar com o desenho.
+  // so o TEXTO muda: refazer o HTML de um cartao a cada leitura foi a fuga de nos que se corrigiu hoje
+  function actualizarCadeira(v) {
+    var ass = JSON.stringify([v.f.estado, v.f.minutos_desde_ultima, v.f.minutos_para_proxima,
+                              (numeroDe(v.id) || {}).texto, maximosVivos]);
+    if (v.ass === ass) return;
+    v.ass = ass;
+    var nu2 = numeroDe(v.id) || {};
+    txt(v.el.querySelector('.num'), nu2.texto || '\u2014');
+    txt(v.el.querySelector('.act > span'), quandoCorreu(v.f) + ' \u00b7 ' + (v.f.fonte_do_relogio || 'sem prova'));
+    var selo = v.el.querySelector('.selo');
+    if (selo) { txt(selo, seloDoFuncionario(v.f)); var c2 = corDoFuncionario(v.f); selo.style.borderColor = c2; selo.style.color = c2; }
+    var eq2 = obj(v.f.equipa);
+    pintarMetricaDoCartao({ el: v.el }, 'propriedades', num0(eq2.n_propriedades), Math.max(1, maxVivo('prop')));
+    pintarMetricaDoCartao({ el: v.el }, 'casos', num0(eq2.n_casos), Math.max(1, maxVivo('casos')));
+    pintarMetricaDoCartao({ el: v.el }, 'tarefas', lista(v.f.tarefas).length, Math.max(1, maxVivo('tarefas')));
+  }
+  // a cada leitura: quem correu senta-se. Nao se "refaz a fila" - a fila e o historico dos lugares.
+  function refazerFilaViva() {
+    if (!D) return;
+    recalcularMaximosVivos();
+    var cx = $('cartoes');
+    // encolher se a janela ficou estreita (nunca ha mais cartoes do que lugares)
+    if (cx) {
+      var n = quantasCadeiras(cx);
+      while (vivos.length > n) {
+        var fora = vivos.pop();
+        if (fora.el.parentNode) fora.el.parentNode.removeChild(fora.el);
+      }
+    }
+    vivos.forEach(actualizarCadeira);
+    tiquesDaFilaViva();
+  }
+  function acenderNoVivo(f) { try { sentar(f); } catch (e) { } }
+
   function tiquesDaFilaViva() {
     var cx = $('cartoes');
     vivos.forEach(function (v) {
@@ -2902,44 +2892,13 @@
       var q = v.el.querySelector('.quando'); if (q) txt(q, haQuanto(idade));
     });
     if (modoCartoes !== 'vivo' || !cx) return;
-    // 22/09: NINGUEM SE ESCONDE. Antes, quem nao cabia levava `display:none` e um chip "+N" dizia quantos
-    // eram - uma lista com resumo, nao um carrossel. O "+N" era a confissao de que a fila nao mostrava o
-    // que prometia. Agora todos estao na linha e a LINHA e que anda.
-    vivos.forEach(function (v) { if (v.el.style.display === 'none') v.el.style.display = ''; });
     var mais = cx.querySelector('.cartao-mais');
-    if (mais && mais.parentNode) mais.parentNode.removeChild(mais);
+    if (mais && mais.parentNode) mais.parentNode.removeChild(mais);   // nunca ha "+N": os lugares sao fixos
     var tot = D ? lista(D.funcionarios).length : 0;
-    var cortados = Math.max(0, ultimoCorte);
     txt($('ct_kn'), vivos.length
-      ? (vivos.length + ' a reagir \u00b7 \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre'
-         + (cortados ? ' \u00b7 ' + cortados + ' n\u00e3o cabem na mem\u00f3ria do ecr\u00e3' : ''))
-      : ('ningu\u00e9m reagiu nos \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre'));
+      ? (vivos.length + ' lugares \u00b7 ' + vivosTotal + ' funcion\u00e1rios j\u00e1 passaram por aqui \u00b7 ' + tot + ' na torre')
+      : ('\u00e0 espera da primeira rea\u00e7\u00e3o \u00b7 ' + tot + ' na torre'));
   }
-
-  // ---------------------------------------------------------------- O PASSEIO (o carrossel propriamente dito)
-  // A linha anda sozinha para a esquerda. Nao e uma animacao CSS porque o conteudo muda a toda a hora e um
-  // `@keyframes` com largura fixa saltaria a cada chegada; e um passo por fotograma sobre `scrollLeft`, que
-  // sobrevive a lista crescer e encolher por baixo dele.
-  var VEL_CARROSSEL = 18;        // px por segundo: lento o bastante para se ler um nome ao passar
-  var PAUSA_APOS_CHEGADA = 6000; // quem acaba de reagir fica a vista este tempo antes de o passeio seguir
-  var passeioT = 0, passeioAte = 0, passeioSobre = false;
-  function passearCarrossel(agora) {
-    var cx = $('cartoes');
-    if (!cx || modoCartoes !== 'vivo' || passeioSobre || !vivos.length) { passeioT = agora; return; }
-    if (agora < passeioAte) { passeioT = agora; return; }     // a pausa de quem chegou agora
-    var dt = Math.min(250, agora - (passeioT || agora)); passeioT = agora;
-    var sobra = cx.scrollWidth - cx.clientWidth;
-    if (sobra <= 1) { cx.scrollLeft = 0; return; }            // cabem todos: nao ha nada para passear
-    var x = cx.scrollLeft + VEL_CARROSSEL * dt / 1000;
-    cx.scrollLeft = x >= sobra ? 0 : x;                        // ao fim da linha, volta ao principio
-  }
-  (function () {
-    var cx = $('cartoes'); if (!cx) return;
-    // o rato manda: com o ponteiro em cima nao se passeia, senao nao se le nem se clica
-    cx.addEventListener('mouseenter', function () { passeioSobre = true; });
-    cx.addEventListener('mouseleave', function () { passeioSobre = false; });
-    cx.addEventListener('touchstart', function () { passeioSobre = true; }, { passive: true });
-  })();
 
   function aplicarModoCartoes(m, guardar) {
     modoCartoes = (m === 'cadeia') ? 'cadeia' : 'vivo';
@@ -3354,7 +3313,6 @@
   var MS_ACTIVO = 1000 / 30, MS_PARADO = 1000 / 10, ultimoDesenho = 0, ultimoMexeu = 0, cadenciaActual = 'parado';
   function marcarMovimento() { ultimoMexeu = performance.now(); }
   function quadro(agora) {
-    try { passearCarrossel(agora); } catch (e) { }
     requestAnimationFrame(quadro);
     if (escondido || !renderer || modoNumeros) return;   // em modo telemovel a torre existe mas nao se pinta
     var mexe = !!camTween || tweens.length > 0 || pacotesVivos.length > 0 || (agora - ultimoMexeu) < 1500;
@@ -3722,16 +3680,17 @@
     carrossel: function (andar) {
       var cx = $('cartoes'); if (!cx) return null;
       if (andar) { cx.scrollLeft = Math.max(0, cx.scrollLeft + Number(andar)); }
-      if (andar === 0) { passeioAte = 0; passeioSobre = false; }   // o arreio pede para nao esperar a pausa
       return { scrollLeft: Math.round(cx.scrollLeft), scrollWidth: cx.scrollWidth, clientWidth: cx.clientWidth,
                // quem esta A SAIR ja nao pertence a fila: saiu da janela e o elemento so fica no DOM os
                // 400 ms da animacao. Conta-lo era contar um cartao que ja nao representa ninguem.
                cartoes: cx.querySelectorAll('.cartao.vivo:not(.a-sair)').length,
                a_sair: cx.querySelectorAll('.cartao.vivo.a-sair').length,
                escondidos: Array.prototype.filter.call(cx.querySelectorAll('.cartao.vivo'), function (e) { return e.style.display === 'none'; }).length,
-               mais: !!cx.querySelector('.cartao-mais'), velocidade: VEL_CARROSSEL,
-               pausado: passeioSobre || performance.now() < passeioAte,
-               pausa_resta_ms: Math.max(0, Math.round(passeioAte - performance.now())) };
+               mais: !!cx.querySelector('.cartao-mais'),
+               // 22/09: o passeio deixou de existir (o desenho dele passou a lugares FIXOS). Estes campos
+               // ficam a dizer a verdade nova em vez de desaparecerem: quem le o arreio ve que nao ha rolagem.
+               lugares: quantasCadeiras(cx), rola: cx.scrollWidth > cx.clientWidth + 1,
+               velocidade: 0, pausado: false, pausa_resta_ms: 0 };
     },
     cartoes: function () {
       var cx = $('cartoes'); if (!cx) return [];
