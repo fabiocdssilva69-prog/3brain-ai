@@ -2874,6 +2874,30 @@
     pintarMetricaDoCartao({ el: v.el }, 'tarefas', lista(v.f.tarefas).length, Math.max(1, maxVivo('tarefas')));
   }
   // a cada leitura: quem correu senta-se. Nao se "refaz a fila" - a fila e o historico dos lugares.
+  //
+  // 🔴 22/09, REGRESSAO MINHA, apanhada por ele em minutos: ao passar para lugares fixos, o UNICO caminho
+  // para alguem se sentar ficou a ser `corridasNovas` - uma corrida detectada ENTRE DUAS LEITURAS. Ao abrir
+  // a pagina nao ha "entre duas leituras": a primeira leitura so estabelece a base. Resultado: **a fila
+  // aparecia VAZIA e so enchia ao fim de minutos**, um funcionario de cada vez. Os cartoes "sumiram".
+  // A versao anterior enchia a fila a partir da JANELA e por isso nunca teve este problema; ao trocar o
+  // desenho, deitei fora a parte que o desenho novo tambem precisava.
+  // Agora: os lugares LIVRES enchem-se com quem correu mais recentemente na janela. O lugar so se DISPUTA
+  // quando estao todos ocupados - e ai vale a regra dele, entra por cima do mais antigo.
+  function encherLugaresLivres() {
+    var cx = $('cartoes'); if (!cx || !D) return;
+    var n = quantasCadeiras(cx);
+    if (vivos.length >= n) return;
+    var sentados = {}; vivos.forEach(function (v) { sentados[v.id] = true; });
+    var candidatos = [];
+    lista(D.funcionarios).forEach(function (f) {
+      if (!f.ultima_corrida_brt || sentados[f.id]) return;
+      var idade = idadeDoTrabalho(f);
+      if (idade == null || idade > JANELA_VIVO_MIN * 60000) return;
+      candidatos.push({ f: f, idade: idade });
+    });
+    candidatos.sort(function (a, b) { return a.idade - b.idade; });   // o mais recente primeiro
+    for (var i = 0; i < candidatos.length && vivos.length < n; i++) sentar(candidatos[i].f);
+  }
   function refazerFilaViva() {
     if (!D) return;
     recalcularMaximosVivos();
@@ -2887,6 +2911,7 @@
       }
     }
     vivos.forEach(actualizarCadeira);
+    encherLugaresLivres();
     tiquesDaFilaViva();
   }
   function acenderNoVivo(f) { try { sentar(f); } catch (e) { } }
