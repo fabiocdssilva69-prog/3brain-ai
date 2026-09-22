@@ -2705,7 +2705,10 @@
   // quando via o carimbo MUDAR em directo, e quem abrisse a pagina olhava para uma fila vazia ate ao ciclo
   // seguinte. Pior, a barra de vida media o tempo desde que o CARTAO nasceu no ecra - dois funcionarios com
   // trabalhos de horas diferentes tinham a mesma barra. Agora a barra mede o que diz que mede.
-  var JANELA_VIVO_MIN = 20;          // 20 min: larga o bastante para os ciclos de 10 min caberem
+  // 22/09: 60 min em vez de 20. Com as 20 tarefas novas de hoje, muitos funcionarios correm UMA VEZ POR DIA
+  // - numa janela de 20 min nunca apareceriam, e ele quer ver TODOS. Medido: 34 dos 156 cabiam em 20 min.
+  // A janela e a definicao de "reagiu ha pouco"; alarga-la mostra mais gente sem inventar actividade nenhuma.
+  var JANELA_VIVO_MIN = 60;
   // 22/09: o tecto sobe para 80 e passa a ser DITO na legenda quando morde. Cada cartao sao ~25 nos de DOM,
   // e ele tambem se queixou de a torre travar - um tecto tem de existir. O que nao pode existir e um tecto
   // MUDO: esconder cartoes sem o dizer foi exactamente a queixa dele sobre o "+N".
@@ -2766,11 +2769,19 @@
   function corpoDoCartaoVivo(f, nu, andar) {
     var el_ = obj(f.elenco), cor = corDoFuncionario(f), eq = obj(f.equipa);
     var nProp = num0(eq.n_propriedades), nCasos = num0(eq.n_casos), nTar = lista(f.tarefas).length;
-    var nome = String(el_.titulo_curto || el_.heroi || f.nome || f.id);
+    // 🔴 22/09, queixa dele: "so ta a mostrar os gerentes e diretores, quando eu quero TODOS os funcionarios -
+    // auditoria, cerebro, pesquisa, rh e todo o resto". MEDIDO: o carrossel ja cobria 13 dos 15 sectores. O
+    // problema era o que eu tinha escrito NO CARTAO: o nome grande era o do PERSONAGEM (`Gerente Barnes`,
+    // `Director Rhodes`) e a funcao real (`risco`, `cortex`, `auditoria`) ia em letra pequena - e o cartao
+    // fechado nem mostra a letra pequena. Ele lia GERENTE em todos e concluia, com razao, que so havia
+    // gerentes. **O cartao mostrava o disfarce e escondia o funcionario.**
+    // Agora: em cima o SECTOR (o que ele quer ver), em grande o FUNCIONARIO, e o personagem por baixo.
+    var nome = String(f.nome || f.id);
+    var persona = String(el_.titulo_curto || el_.heroi || '');
     return '<span class="cab"><span class="avatar">' + avatarSVG(el_.personagem || el_.heroi || f.id, cor, !!el_.feminino) + '</span>' +
-      '<span class="ident"><u>' + escH((andar == null ? 'torre' : 'andar ' + andar) + ' / ' + String(f.sector || '')) + '</u>' +
+      '<span class="ident"><u>' + escH(String(f.sector || 'torre').toUpperCase() + (andar == null ? '' : ' · ' + andar)) + '</u>' +
       '<b>' + escH(nome.toUpperCase()) + '</b>' +
-      '<em>' + escH(String(f.id) + (f.cargo ? ' · ' + f.cargo : '')) + '</em>' +
+      '<em>' + escH((f.cargo || '') + (persona ? ' · ' + persona : '')) + '</em>' +
       '<s class="selo" style="border-color:' + cor + ';color:' + cor + '">' + escH(seloDoFuncionario(f)) + '</s></span></span>' +
       '<span class="falha">' + escH(f.dono_da_falha || 'sem falha declarada') + '</span>' +
       '<span class="act"><i></i><span>' + escH(quandoCorreu(f) + ' · ' + (f.fonte_do_relogio || 'sem prova')) + '</span></span>' +
