@@ -3368,9 +3368,22 @@
         (p.porque ? '<em>' + escH(p.porque) + '</em>' : '') +
         (p.falta ? '<s>' + escH(p.falta) + '</s>' : '') + '</div>';
     }).join('');
-    [['pendencias', 'bl_pend'], ['pendencias_tel', 'card_pendencias']].forEach(function (par) {
+    // 22/09: NO TELEMOVEL SO AS PESADAS. A lista cresceu de 7 para 10 e a pagina passou de 3.168 para 3.337 px
+    // - acima do tecto de tres ecras que ele pediu. Um lembrete que empurra os NUMEROS para fora da vista
+    // deixa de ser um lembrete e passa a ser um estorvo. Ficam as de peso maxima e alta, e diz-se quantas
+    // faltam; a lista inteira esta no computador e no PENDENCIAS.md.
+    var pesadas = itens.filter(function (p) { return p.peso === 'maxima' || p.peso === 'alta'; });
+    var htmlTel = pesadas.map(function (p) {
+      var dele = String(p.quem || '') === 'ele';
+      return '<div class="pd-it ' + escH(p.peso || 'media') + '">' +
+        '<i class="' + (dele ? 'dele' : '') + '">' + escH(p.peso || '') + ' · ' + (dele ? 'depende dele' : (p.quem === 'eu' ? 'e comigo' : 'dos dois')) + '</i>' +
+        '<b>' + escH(p.titulo || '') + '</b></div>';
+    }).join('') + (itens.length > pesadas.length
+      ? '<div class="pd-it media"><i>e mais ' + (itens.length - pesadas.length) + ' de peso médio</i><b>no computador e no PENDENCIAS.md</b></div>'
+      : '');
+    [['pendencias', 'bl_pend', html], ['pendencias_tel', 'card_pendencias', htmlTel]].forEach(function (par) {
       var cx = $(par[0]), bl = $(par[1]);
-      if (cx) cx.innerHTML = html;
+      if (cx) cx.innerHTML = par[2];
       if (bl) bl.hidden = !itens.length;
     });
     var dele = itens.filter(function (p) { return p.quem === 'ele'; }).length;
