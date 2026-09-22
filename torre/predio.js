@@ -2675,6 +2675,8 @@
   var TETO_VIVOS = 48;               // guarda contra uma rajada: o DOM nao cresce sem limite
   var vivos = [];                    // [{id, el, ms, repetiu}] - o mais recente primeiro
   var vivosVistos = {}, vivosTotal = 0, lidoEm = 0;
+  var TURNO_MS = 5000;               // 5 s de cena para quem nao coube: tempo de ler o nome e o numero
+  var turnoVivo = 0, turnoEm = 0;    // qual a volta da roda, e quando ela mudou
   var modoCartoes = 'vivo';
   function lerModoCartoes() {
     try { var m = localStorage.getItem('torre_cartao_modo'); if (m === 'cadeia' || m === 'vivo') return m; } catch (e) { }
@@ -2741,6 +2743,7 @@
       if (!v) {
         if (!vivosVistos[d.f.id]) { vivosVistos[d.f.id] = true; vivosTotal++; }
         v = { id: d.f.id, el: cartaoVivoEl(d.f, numeroDe(d.f.id), andarTorreDe(d.f)), repetiu: 0 };
+        turnoVivo = 0; turnoEm = 0;   // chegou alguem: a roda volta ao principio, primeiro ve-se quem chegou
       }
       v.f = d.f; v.idade = d.idade;
       return v;
@@ -2773,17 +2776,34 @@
       var q = v.el.querySelector('.quando'); if (q) txt(q, haQuanto(idade));
     });
     if (modoCartoes !== 'vivo' || !cx) return;
-    var cabem = cartoesVivosQueCabem(cx);
-    vivos.forEach(function (v, i) { v.el.style.display = i < cabem ? '' : 'none'; });
-    var fora = Math.max(0, vivos.length - cabem);
+    var cabem = cartoesVivosQueCabem(cx), agora = performance.now();
+    var sobram = Math.max(0, vivos.length - cabem);
+    if (sobram > 0) {
+      if (!turnoEm) turnoEm = agora;
+      if (agora - turnoEm >= TURNO_MS) { turnoVivo++; turnoEm = agora; }
+    } else { turnoVivo = 0; turnoEm = 0; }
+    // o lugar 1 e sempre do mais recente; os restantes rodam pelos que nao couberam
+    var emCena = {};
+    if (vivos.length) emCena[0] = true;
+    var lugares = Math.max(0, cabem - 1), resto = Math.max(1, vivos.length - 1);
+    for (var j = 0; j < lugares; j++) emCena[1 + ((turnoVivo + j) % resto)] = true;
+    vivos.forEach(function (v, i) {
+      var mostra = !!emCena[i];
+      if (v.emCena === mostra) return;
+      v.emCena = mostra;
+      v.el.style.display = mostra ? '' : 'none';
+      // quem volta a cena volta a ENTRAR: sem isto aparecia de repente, no meio da fila, como um erro de pintura
+      if (mostra) { v.el.classList.remove('reentra'); void v.el.offsetWidth; v.el.classList.add('reentra'); }
+    });
     var mais = cx.querySelector('.cartao-mais');
-    if (fora > 0) {
+    if (sobram > 0) {
       if (!mais) { mais = document.createElement('span'); mais.className = 'cartao-mais'; cx.appendChild(mais); }
-      mais.textContent = '+' + fora; mais.title = fora + ' a trabalhar que nao cabem nesta largura';
+      mais.textContent = '+' + sobram; mais.title = sobram + ' a trabalhar a espera de vez \u2014 a fila roda de ' + (TURNO_MS / 1000) + ' em ' + (TURNO_MS / 1000) + ' s';
     } else if (mais && mais.parentNode) mais.parentNode.removeChild(mais);
     var tot = D ? lista(D.funcionarios).length : 0;
     txt($('ct_kn'), vivos.length
-      ? (vivos.length + ' a trabalhar \u00b7 \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre')
+      ? (vivos.length + ' a trabalhar \u00b7 \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre'
+         + (sobram ? ' \u00b7 a fila roda' : ''))
       : ('ningu\u00e9m correu nos \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre'));
   }
   function cartoesVivosQueCabem(cx) {
@@ -3523,6 +3543,7 @@
       });
     },
     janelaViva: function () { return JANELA_VIVO_MIN; },
+    rodaViva: function (saltar) { if (saltar) { turnoVivo += Number(saltar) || 0; turnoEm = performance.now(); tiquesDaFilaViva(); } return { turno: turnoVivo, turnoMs: TURNO_MS }; },
     cartoes: function () {
       var cx = $('cartoes'); if (!cx) return [];
       return Array.prototype.slice.call(cx.querySelectorAll('.cartao')).map(function (b) {

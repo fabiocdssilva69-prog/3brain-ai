@@ -305,6 +305,8 @@
 @keyframes cartaoSai   { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(-18px) scale(.92); } }
 .cartao.vivo { animation: cartaoEntra .34s cubic-bezier(.2,.8,.3,1) both; position: relative; overflow: hidden; }
 .cartao.vivo.a-sair { animation: cartaoSai .38s ease-in both; }
+/* a roda: quem nao coube espera a vez e volta a ENTRAR quando chega - nao aparece do nada a meio da fila */
+.cartao.vivo.reentra { animation: cartaoEntra .3s cubic-bezier(.2,.8,.3,1) both; }
 .cartao.vivo .vida {
   position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
   background: linear-gradient(90deg, #5ac8fa, #3ecf8e); transform-origin: left center;
