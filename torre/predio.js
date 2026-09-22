@@ -799,6 +799,16 @@
 
   // O CARTAO DO FUNCIONARIO (N3): nome, cargo, dono da falha, numero grande, ultima corrida e estado. Sem
   // sparkline: nao ha serie por morador em nenhum dos dois ficheiros, e nao se inventa uma.
+  // 22/09, pergunta dele: "os andares dizem 200+ funcionarios e tu dizes 154 - o que puseste na torre?".
+  // Ele tinha razao. O numero do andar somava genes REJEITADOS (medidos uma vez e postos de lado) com quem
+  // trabalha. A partir daqui o ecra mostra SEMPRE os dois, porque um numero que so se pode acreditar depois
+  // de o desmontar nao serve para decidir nada. Quem separa e organograma.peao_activo.
+  function etiquetaDoQuadro(d) {
+    var act = d && d.n_activos, hist = d && d.n_historico;
+    if (act == null) return String((d && d.n_funcionarios) || 0) + ' func';
+    return String(act) + ' no quadro' + (hist ? ' · ' + String(hist) + ' hist.' : '');
+  }
+
   function cartaoMorador(f, nu, ancora) {
     var K = 2, CW = 168 * K, CH = 98 * K;
     var c = document.createElement('canvas'); c.width = CW; c.height = CH;
@@ -1214,7 +1224,7 @@
       nomesAndares.push(item);
       // a pilula da laje: n gerentes · n propriedades · capital (habitados) | fase · alvara (obras)
       var texto = it.tipo === 'em_obras' ? ('obras · fase ' + String(d.fase == null ? '?' : d.fase) + ' · ' + String(d.de_onde || '').split(' ')[0])
-        : d.n_funcionarios != null && it.tipo !== 'rua' ? (String(d.n_funcionarios) + ' func · ' + String(d.n_sectores || 0) + ' sect' + (d.abaixo_do_minimo ? ' · contratar ' + d.abaixo_do_minimo : ''))
+        : d.n_funcionarios != null && it.tipo !== 'rua' ? (etiquetaDoQuadro(d) + ' · ' + String(d.n_sectores || 0) + ' sect' + (d.abaixo_do_minimo ? ' · contratar ' + d.abaixo_do_minimo : ''))
         : it.tipo === 'rua' ? 'a rua · o mercado'
         : (String(d.n_gerentes || 0) + ' ger · ' + String(d.n_propriedades || 0) + ' prop' + (Number(d.capital_usd) > 0 ? ' · ' + num(d.capital_usd, 0) + ' US$' : ''));
       var pil = { ordem: it.ordem, sp: rotuloTexto(texto, { modo: 'esquerda', x: 0, y: it.y + 0.95, z: 0, lado: 1, recuo: recuo },
@@ -3113,6 +3123,7 @@
     var esp = String(d.especialidade || '');
     html += '<div class="and-cartao">' + cel(n === -1 ? 'cave' : 'andar ' + n, it.nome) + cel('cargo', d.cargo || d.gerente_nome || '—') + cel('capital em uso', d.capital_usd ? num(d.capital_usd, 2) + ' US$' : '—') +
       cel('importância', num(d.importancia, 2)) + cel('moradores com número', comN + ' de ' + meus.length) + cel(torre ? 'peões · sectores' : 'propriedades · casos', torre ? ((d.n_funcionarios || 0) + ' · ' + (d.n_sectores || 0)) : ((d.n_propriedades || 0) + ' · ' + (d.n_casos || 0))) +
+      (torre && d.n_activos != null ? cel('no quadro · histórico', d.n_activos + ' · ' + (d.n_historico || 0)) : '') +
       cel('última corrida', ult.length ? ult[ult.length - 1] : '—') + cel('estado', String(d.estado || '—'), 'pt-' + d.estado) + '</div>';
     if (T && (torre ? (esp === 'sr_stark' || esp === 'conselho' || esp === 'socios_directores') : n === 11)) html += blocoDireccao();
     if (T && (torre ? esp === 'risco' : n === 10)) html += blocoRisco();
