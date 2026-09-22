@@ -787,8 +787,10 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
   /* a torre e tudo o que a rodeia: fora */
   /* 🔴 NAO se esconde o .pred-palco: a gaveta com o instrumento vive DENTRO dele. Esconde-se o CANVAS da
      torre e as sobreposicoes - foi assim que o telemovel ficou em branco na primeira tentativa. */
-  #cv, #aviso_webgl, .pred-niveis, .pred-hud, .pred-lado, .cartoes-fx, .casa-num, .pred-dir,
-  .barra.baixo .dir, #btn_pointer, #pg_fechar, .pred-painel, .fita-mov { display: none !important; }
+  /* 🔴 o canvas chama-se #cena, NAO #cv - eu tinha escrito o nome errado e por isso ficava um vazio preto de
+     150 px no topo. O nome vem do HTML, nao da memoria. */
+  #cena, #aviso_webgl, .pred-niveis, .pred-etiq, .pred-vinheta, .fita-cot, .pred-lado, .cartoes-fx,
+  .casa-num, .pred-dir, .barra.baixo, #btn_pointer, #pg_fechar, .pred-painel { display: none !important; }
   .pred-palco { position: static !important; height: auto !important; min-height: 0 !important;
                 background: transparent !important; }
 
@@ -822,7 +824,8 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
   .ins-dial { order: -1; }                    /* o mostrador primeiro: e o que ele olha */
 
   /* tabelas largas rolam DENTRO do bloco, nao arrastam a pagina */
-  .wrap, .wrap2, .pep-corpo { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .wrap, .wrap2, .pep-corpo, .dinheiro .wrap2 { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .dinheiro table { min-width: 340px; }          /* a tabela rola dentro do bloco em vez de ser cortada */
   body.predio { overflow-x: hidden; }
 
   /* a barra de cima encolhe para uma linha util */
