@@ -3388,7 +3388,10 @@
     // - acima do tecto de tres ecras que ele pediu. Um lembrete que empurra os NUMEROS para fora da vista
     // deixa de ser um lembrete e passa a ser um estorvo. Ficam as de peso maxima e alta, e diz-se quantas
     // faltam; a lista inteira esta no computador e no PENDENCIAS.md.
-    var pesadas = itens.filter(function (p) { return p.peso === 'maxima' || p.peso === 'alta'; });
+    // 22/09: no telemovel so as QUATRO mais pesadas. A lista cresceu para 16 e a pagina passou dos 3 ecras
+    // outra vez - um lembrete que empurra os numeros para fora da vista deixa de ser um lembrete. As que
+    // ficam de fora sao contadas na ultima linha, nunca escondidas em silencio.
+    var pesadas = itens.filter(function (p) { return p.peso === 'maxima' || p.peso === 'alta'; }).slice(0, 4);
     var htmlTel = pesadas.map(function (p) {
       var dele = String(p.quem || '') === 'ele';
       return '<div class="pd-it ' + escH(p.peso || 'media') + '">' +
