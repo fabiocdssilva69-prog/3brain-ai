@@ -807,13 +807,15 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
   /* 🔴 SO O QUE ELE PEDIU: o velocimetro e os cartoes dos numeros. A zona B (livro da Pepper, Extremis,
      Vingadores, Killian, Feed) sao tabelas largas feitas para um ecra grande - num telemovel enchiam 5.000 px
      de scroll e nao se liam. Ficam para o computador, como ele disse. */
-  .zb, .ins-pos, .ins-rod, .ins-bt, #md_trilho, .ins-st { display: none !important; }
+  .zb, .zc, #bl_friday, .ins-pos, .ins-rod, .ins-bt, #md_trilho, .ins-st { display: none !important; }
 
   /* uma coluna so */
   .ins-g { grid-template-columns: 1fr !important; }
   .kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; }
-  .zb, .dir { display: block !important; }
-  .zb > section, .dir > section { margin-bottom: 12px; }
+  /* 🔴 esta regra dizia `.zb { display: block }` e vinha DEPOIS da que a esconde - em CSS ganha a ultima, e a
+     zona B continuava la com 2.091 px. Fica so o `.dir`, que e uma coluna de dentro do instrumento. */
+  .dir { display: block !important; }
+  .dir > section { margin-bottom: 12px; }
 
   /* o velocimetro ocupa a largura toda e fica quadrado */
   .ins-palco { width: 100% !important; aspect-ratio: 1 / 1; max-height: 62vw; }
