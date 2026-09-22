@@ -866,3 +866,22 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
   /* a barra de cima encolhe para uma linha util */
   .barra.topo .cel:not(.essencial) { display: none; }
 }
+
+/* ===== PENDENCIAS (21/09) ==========================================================================
+   Ordem dele: "tu nao pode me deixar esquecer". O peso da pendencia e a COR da barra da esquerda, e o
+   dono dela (ele ou eu) esta escrito: uma lista onde nao se ve de quem e a vez nao move nada. ========= */
+.pd-lista { display: flex; flex-direction: column; gap: 6px; }
+.pd-it {
+  border-left: 3px solid #5ac8fa; border-radius: 0 6px 6px 0;
+  background: rgba(255,255,255,.035); padding: 6px 8px 7px;
+}
+.pd-it.maxima { border-left-color: #ff5a5f; background: rgba(255,90,95,.07); }
+.pd-it.alta   { border-left-color: #e8b04b; }
+.pd-it.media  { border-left-color: #5ac8fa; }
+.pd-it b { display: block; font: 600 11.5px var(--mono); color: #eef3f8; }
+.pd-it i { font-style: normal; font: 500 8.5px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: #8794a4; }
+.pd-it i.dele { color: #ff8a8f; }
+.pd-it em { display: block; font-style: normal; font: 400 10px var(--mono); color: #a7bcd2; margin-top: 3px; }
+.pd-it s { display: block; text-decoration: none; font: 400 9.5px var(--mono); color: #8794a4; margin-top: 3px; }
+.pd-it s::before { content: 'falta: '; color: #5c6b7c; }
+@media (max-width: 900px) { .pd-telemovel[hidden] { display: block !important; } }

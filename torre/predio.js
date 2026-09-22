@@ -3261,7 +3261,39 @@
   // e que traz os numeros que mudam ao segundo, e esse continua de 2 em 2 s.
   var CADENCIA_PREDIO_MS = 20000;
   var ultimoPredio = 0;
+  // 21/09: AS PENDENCIAS. Le-se uma vez por minuto (mudam de sessao em sessao, nao de segundo em segundo) e
+  // pinta-se nos DOIS sitios: a coluna do lado no computador, e um bloco proprio no telemovel - onde a coluna
+  // nao existe. Se o ficheiro nao estiver la, o bloco desaparece em vez de mostrar uma lista vazia com ar de
+  // "nao ha nada pendente", que seria a mentira mais cara desta pagina.
+  var PEND = null, ultimaPend = 0;
+  function pintarPendencias() {
+    var itens = lista(PEND && PEND.itens);
+    var html = itens.map(function (p) {
+      var dele = String(p.quem || '') === 'ele';
+      return '<div class="pd-it ' + escH(p.peso || 'media') + '">' +
+        '<i class="' + (dele ? 'dele' : '') + '">' + escH(p.peso || '') + ' \u00b7 ' + (dele ? 'depende dele' : (p.quem === 'eu' ? 'e comigo' : 'dos dois')) + '</i>' +
+        '<b>' + escH(p.titulo || '') + '</b>' +
+        (p.porque ? '<em>' + escH(p.porque) + '</em>' : '') +
+        (p.falta ? '<s>' + escH(p.falta) + '</s>' : '') + '</div>';
+    }).join('');
+    [['pendencias', 'bl_pend'], ['pendencias_tel', 'card_pendencias']].forEach(function (par) {
+      var cx = $(par[0]), bl = $(par[1]);
+      if (cx) cx.innerHTML = html;
+      if (bl) bl.hidden = !itens.length;
+    });
+    var dele = itens.filter(function (p) { return p.quem === 'ele'; }).length;
+    txt($('pd_kn'), itens.length ? (itens.length + ' em aberto \u00b7 ' + dele + ' dependem dele') : '');
+  }
+  function buscarPendencias() {
+    var agora = Date.now();
+    if (agora - ultimaPend < 60000) return;
+    ultimaPend = agora;
+    // o ficheiro vive em `sala/` e nao em `dados/` por uma razao mecanica: o servidor serve a pasta `sala` e
+    // recusa subir um nivel (e bem). Fonte unica na pasta servida vale mais do que fonte "certa" e inalcancavel.
+    buscar('pendencias.json').then(function (p) { PEND = p; pintarPendencias(); }).catch(function () { });
+  }
   function ciclo() {
+    buscarPendencias();
     if (cicloPausadoAte > Date.now()) return;
     var agora = Date.now();
     var querPredio = !D || (agora - ultimoPredio) >= CADENCIA_PREDIO_MS;
@@ -3407,7 +3439,7 @@
         ondas: imprensa ? imprensa.ondas.length : 0, nos: imprensa ? imprensa.ordem.length : 0, barras: anel ? anel.barras.length : 0, geracoes: ordemGeracoes.length,
         tweens: nTweens, tweensActivas: tweens.length, guias: nGuias, presas: rotulosPx.filter(function (sp) { return sp.visible && sp.userData.px && sp.userData.px.preso; }).length,
         cartoes: $('cartoes') ? $('cartoes').children.length : 0, maxCartoes: MAX_CARTOES,
-        cartoesVivos: vivos.length, cartoesVivosVisiveis: vivos.filter(function (v) { return v.el.style.display !== 'none'; }).length,
+        pendencias: (PEND && lista(PEND.itens).length) || 0, cartoesVivos: vivos.length, cartoesVivosVisiveis: vivos.filter(function (v) { return v.el.style.display !== 'none'; }).length,
         cartoesVivosTotal: vivosTotal, modoCartoes: modoCartoes, leituras: $('leituras').children.length, vistos: ordemVistos.length,
         ortografica: !!(camara && camara.isOrthographicCamera), fps: Math.round(fps()), temD: !!D, temT: !!T, telemovel: telemovel,
         cadencia: cadenciaActual,   // 'activo' = 30 desenhos/s porque algo mexe; 'parado' = 10/s de proposito
