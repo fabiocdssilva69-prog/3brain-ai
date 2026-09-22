@@ -871,6 +871,9 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
    Ordem dele: "tu nao pode me deixar esquecer". O peso da pendencia e a COR da barra da esquerda, e o
    dono dela (ele ou eu) esta escrito: uma lista onde nao se ve de quem e a vez nao move nada. ========= */
 .pd-lista { display: flex; flex-direction: column; gap: 6px; }
+/* na coluna do computador a lista ROLA DENTRO DO BLOCO. Aberta por inteiro empurrava a pagina 592 px para
+   baixo e punha a torre a precisar de scroll vertical - medido pelo arreio. Aqui rola a lista, nao a pagina. */
+#bl_pend .pd-lista { max-height: 34vh; overflow-y: auto; padding-right: 4px; }
 .pd-it {
   border-left: 3px solid #5ac8fa; border-radius: 0 6px 6px 0;
   background: rgba(255,255,255,.035); padding: 6px 8px 7px;
