@@ -194,7 +194,14 @@
     catch (e) { return false; }
   }
 
+  // 21/09 (ordem dele): NO TELEMOVEL O 3D NEM ARRANCA. Nao basta esconder o canvas: um WebGL escondido
+  // continua a ser desenhado, e num telemovel isso sente-se na bateria e no calor, nao so nos fotogramas.
+  // `ecraPequeno()` le a MESMA regra do CSS (max-width: 900px), para nunca haver desacordo entre os dois.
+  function ecraPequeno() {
+    try { return !!(window.matchMedia && matchMedia('(max-width: 900px)').matches); } catch (e) { return false; }
+  }
   function iniciar3D() {
+    if (ecraPequeno()) { telemovel = true; return false; }
     renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !telemovel, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setClearColor(COR.fundo, 1);      // fundo escuro profundo; a vinheta e CSS por cima (nao entra no readPixels)

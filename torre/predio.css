@@ -777,3 +777,43 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
   .cartao.topo.acende { animation: none; border-color: #7fd4ff; box-shadow: 0 0 18px rgba(90,200,250,.6); }
   .cartao.topo.acende .ident b, .cartao.topo.acende .ident u, .cartao.topo.acende .selo { animation: none; }
 }
+
+/* ===== TELEMOVEL (21/09/2026, ordem dele) =========================================================
+   'nao precisa aparecer a torre no mobile; so o velocimetro e os cards de numero'.
+   Medido antes: 5.545 px de altura num ecra de 844. A torre 3D, a coluna do lado, a fila de cartoes e o
+   directorio nao cabem num telemovel - e espremidos nao informam, atrapalham.
+   O que fica e o INSTRUMENTO, que ja existia dentro da gaveta e nao precisa de WebGL. ================ */
+@media (max-width: 900px) {
+  /* a torre e tudo o que a rodeia: fora */
+  .pred-envol > .pred-palco, .pred-lado, .cartoes-fx, .casa-num, .pred-dir,
+  .barra.baixo .dir, #btn_pointer, #pg_fechar, .pred-painel { display: none !important; }
+
+  /* a gaveta deixa de ser gaveta: e a pagina */
+  .pointer-gaveta {
+    display: block !important; position: static !important; inset: auto !important;
+    width: 100% !important; max-width: 100% !important; height: auto !important;
+    max-height: none !important; overflow: visible !important; transform: none !important;
+    background: transparent !important; border: 0 !important; box-shadow: none !important;
+    padding: 0 10px 18px !important; z-index: auto !important;
+  }
+  .pointer-gaveta[hidden] { display: block !important; }   /* no telemovel nunca esta escondida */
+  .pg-bh { display: none !important; }
+  .pred-envol { display: block !important; height: auto !important; }
+
+  /* uma coluna so */
+  .ins-g { grid-template-columns: 1fr !important; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; }
+  .zb, .dir { display: block !important; }
+  .zb > section, .dir > section { margin-bottom: 12px; }
+
+  /* o velocimetro ocupa a largura toda e fica quadrado */
+  .ins-palco { width: 100% !important; aspect-ratio: 1 / 1; max-height: 62vw; }
+  .ins-dial { order: -1; }                    /* o mostrador primeiro: e o que ele olha */
+
+  /* tabelas largas rolam DENTRO do bloco, nao arrastam a pagina */
+  .wrap, .wrap2, .pep-corpo { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  body.predio { overflow-x: hidden; }
+
+  /* a barra de cima encolhe para uma linha util */
+  .barra.topo .cel:not(.essencial) { display: none; }
+}
