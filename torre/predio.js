@@ -806,7 +806,10 @@
   function etiquetaDoQuadro(d) {
     var act = d && d.n_activos, hist = d && d.n_historico;
     if (act == null) return String((d && d.n_funcionarios) || 0) + ' func';
-    return String(act) + ' no quadro' + (hist ? ' · ' + String(hist) + ' hist.' : '');
+    // 22/09, 2.a volta: 'historico' dizia PARADO, e depois da rota de revisao ninguem esta parado - cada
+    // gene volta a ser medido com dados novos. A divisao que resta nao e trabalha/nao-trabalha, e
+    // passou-a-fasquia / ainda-nao. Por isso a palavra mudou: APROVADOS e EM AVALIACAO.
+    return String(act) + ' aprovados' + (hist ? ' · ' + String(hist) + ' em aval.' : '');
   }
 
   function cartaoMorador(f, nu, ancora) {
@@ -3123,7 +3126,8 @@
     var esp = String(d.especialidade || '');
     html += '<div class="and-cartao">' + cel(n === -1 ? 'cave' : 'andar ' + n, it.nome) + cel('cargo', d.cargo || d.gerente_nome || '—') + cel('capital em uso', d.capital_usd ? num(d.capital_usd, 2) + ' US$' : '—') +
       cel('importância', num(d.importancia, 2)) + cel('moradores com número', comN + ' de ' + meus.length) + cel(torre ? 'peões · sectores' : 'propriedades · casos', torre ? ((d.n_funcionarios || 0) + ' · ' + (d.n_sectores || 0)) : ((d.n_propriedades || 0) + ' · ' + (d.n_casos || 0))) +
-      (torre && d.n_activos != null ? cel('no quadro · histórico', d.n_activos + ' · ' + (d.n_historico || 0)) : '') +
+      (torre && d.n_activos != null ? cel('aprovados · em avaliação', d.n_activos + ' · ' + (d.n_historico || 0)) : '') +
+      (torre && d.n_revistos != null ? cel('já revistos pela rota', String(d.n_revistos)) : '') +
       cel('última corrida', ult.length ? ult[ult.length - 1] : '—') + cel('estado', String(d.estado || '—'), 'pt-' + d.estado) + '</div>';
     if (T && (torre ? (esp === 'sr_stark' || esp === 'conselho' || esp === 'socios_directores') : n === 11)) html += blocoDireccao();
     if (T && (torre ? esp === 'risco' : n === 10)) html += blocoRisco();
