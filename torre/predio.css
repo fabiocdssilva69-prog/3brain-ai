@@ -21,6 +21,11 @@
   padding: 0 12px;
   height: calc(100vh - 92px);      /* 92px = barra de cima + barra de baixo. O predio ocupa o ecra todo:
                                       uma sala de comando com scroll nao e uma sala de comando. */
+  /* 22/09: as linhas passam a ser DECLARADAS. Sem isto o browser repartia a altura por sua conta e a fila de
+     cartoes ficava com menos do que precisava - os cartoes apareciam CORTADOS A MEIO (via-se o avatar e o
+     nome, e o numero, a falha e as barras ficavam de fora). A fila leva o que precisa (`auto`) e o palco
+     leva o RESTO (`minmax(0,1fr)`); o palco encolhe e a camara reenquadra-se sozinha desde hoje. */
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 420px;
 }
 .pred-palco {
