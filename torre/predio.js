@@ -2136,6 +2136,7 @@
         acenderAndar(andarPorN[n]); pulsarCartaoDoAndar(n);
         corridasVistas++;
         try { acenderCartao(cartaoDoAndar(n)); } catch (e) { }
+        try { entrarNoVivo(f); } catch (e) { }   // 21/09: e este funcionario, com nome, que ganha o seu cartao
       });
     }
     if (novaTorre) {
@@ -2654,7 +2655,137 @@
     var t30 = obj(D.torre_30), tt = obj(t30.totais), tot = (tt.lideres || 0) + (tt.gerentes_andar || 0) + (tt.supervisores_operacoes || 0) + (tt.gerentes_operacoes || 0) + (tt.directores || 0) + 1;
     txt($('ct_kn'), topo.length + ' de ' + tot + ' cargos · toda a cadeia · ' + (modo === 'duas-filas' ? 'duas filas' : 'faixa'));
   }
+  // ================================================================ 21/09: A FILA AO VIVO
+  // ORDEM DELE: "no modo de visualizacao dos cards so esta os 10 mais importantes; quero que apareca TODOS os
+  // que forem activados da Torre Stark. Cada funcionario vai ter um card, vai aparecer e vai sumir para dar
+  // espaco a outro. Isso e para eu ver quem esta a trabalhar em tempo real."
+  //
+  // A FONTE E A MESMA DOS ANDARES QUE ACENDEM, e isso e deliberado: `corridasNovas()` compara o carimbo
+  // `ultima_corrida_brt` de cada funcionario entre duas leituras do predio.json. Um cartao aqui significa
+  // exactamente uma coisa - ESTE funcionario correu desde a leitura anterior. Nao e uma amostra, nao e uma
+  // ordenacao por importancia, nao e uma animacao decorativa: e um evento com carimbo, ou nao aparece.
+  //
+  // PORQUE CADUCA: se os cartoes ficassem, em dez minutos a fila era a lista dos 152 e deixava de responder a
+  // pergunta dele ("quem esta a trabalhar AGORA"). A vida do cartao E a informacao, e por isso a barra de vida
+  // esvazia-se a vista em vez de o cartao desaparecer de repente - quem olha de relance ve quem chegou ha
+  // pouco e quem esta de saida.
+  var VIDA_CARTAO_MS = 90000;        // 90 s: mais do que o ciclo do predio (~60 s), logo a fila nunca fica vazia
+  var TETO_VIVOS = 40;               // guarda contra uma rajada: o DOM nao cresce sem limite
+  var vivos = [];                    // [{id, el, t0, repetiu}] - o mais recente primeiro
+  var vivosVistos = {}, vivosTotal = 0;
+  var modoCartoes = 'vivo';
+  function lerModoCartoes() {
+    try { var m = localStorage.getItem('torre_cartao_modo'); if (m === 'cadeia' || m === 'vivo') return m; } catch (e) { }
+    return 'vivo';
+  }
+  function haQuanto(ms) {
+    var s = Math.max(0, Math.round(ms / 1000));
+    return s < 60 ? ('ha ' + s + ' s') : ('ha ' + Math.floor(s / 60) + ' min');
+  }
+  function numeroDe(id) {
+    var achado = null;
+    comNumero.forEach(function (d) { if (!achado && d.f.id === id) achado = d.nu; });
+    return achado;
+  }
+  // Um funcionario CORREU. Se ja esta na fila, nao se duplica: renova-se o relogio e marca-se que repetiu -
+  // duas linhas do mesmo nome diriam que sao dois, e sao um que trabalhou duas vezes.
+  function entrarNoVivo(f) {
+    if (!f || !f.id) return null;
+    var cx = $('cartoes'); if (!cx) return null;
+    if (!vivosVistos[f.id]) { vivosVistos[f.id] = true; vivosTotal++; }
+    var ja = null; vivos.forEach(function (v) { if (v.id === f.id) ja = v; });
+    if (ja) {
+      ja.t0 = performance.now(); ja.repetiu++;
+      ja.el.classList.remove('a-sair'); ja.el.classList.add('repete');
+      ja.el.classList.remove('acende'); void ja.el.offsetWidth; ja.el.classList.add('acende');
+      if (modoCartoes === 'vivo' && cx.firstChild !== ja.el) cx.insertBefore(ja.el, cx.firstChild);
+      return ja;
+    }
+    var nu = numeroDe(f.id) || {};
+    var andar = andarTorreDe(f);
+    var el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'cartao vivo ' + escH(nu.classe || 'hora');
+    el.dataset.id = f.id; el.dataset.andar = (andar == null ? '' : andar);
+    el.title = f.id + ' - ' + (f.dono_da_falha || 'sem falha declarada');
+    el.innerHTML = '<u>' + escH((andar == null ? 'torre' : 'andar ' + andar) + ' \u00b7 ' + String(f.sector || '')) + '</u>' +
+      '<b>' + escH(String(f.nome || f.id).toUpperCase()) + '</b>' +
+      '<em>' + escH(String(f.cargo || f.sector || '')) + '</em>' +
+      '<span class="falha">' + escH(f.dono_da_falha || 'sem falha declarada') + '</span>' +
+      '<span class="num">' + escH(nu.texto || '\u2014') + '</span>' +
+      '<span class="fonte">' + escH(nu.fonte || f.fonte_do_relogio || '') + ' <span class="quando">agora</span></span>' +
+      '<span class="vida"></span>';
+    var v = { id: f.id, el: el, t0: performance.now(), repetiu: 0 };
+    vivos.unshift(v);
+    if (modoCartoes === 'vivo') cx.insertBefore(el, cx.firstChild);
+    return v;
+  }
+  // O relogio da fila: esvazia as barras de vida, actualiza o "ha N s", deita fora quem passou da validade e
+  // esconde o que nao cabe na largura. Corre a 4 Hz - o suficiente para a barra parecer continua, barato o
+  // bastante para nao disputar com o desenho da torre.
+  function tiquesDaFilaViva() {
+    var agora = performance.now(), cx = $('cartoes');
+    for (var i = vivos.length - 1; i >= 0; i--) {
+      var v = vivos[i], idade = agora - v.t0, resta = 1 - idade / VIDA_CARTAO_MS;
+      if (resta <= 0 || i >= TETO_VIVOS) {
+        if (!v.aSair) {
+          v.aSair = true; v.el.classList.add('a-sair');
+          setTimeout((function (el) { return function () { if (el.parentNode) el.parentNode.removeChild(el); }; })(v.el), 400);
+        }
+        vivos.splice(i, 1);
+        continue;
+      }
+      var barra = v.el.querySelector('.vida'); if (barra) barra.style.transform = 'scaleX(' + resta.toFixed(3) + ')';
+      var q = v.el.querySelector('.quando'); if (q) txt(q, haQuanto(idade) + (v.repetiu ? ' \u00b7 ' + (v.repetiu + 1) + 'x' : ''));
+    }
+    if (modoCartoes === 'vivo' && cx) {
+      var cabem = cartoesVivosQueCabem(cx);
+      vivos.forEach(function (v, i) { v.el.style.display = i < cabem ? '' : 'none'; });
+      var fora = Math.max(0, vivos.length - cabem);
+      var mais = cx.querySelector('.cartao-mais');
+      if (fora > 0) {
+        if (!mais) { mais = document.createElement('span'); mais.className = 'cartao-mais'; cx.appendChild(mais); }
+        mais.textContent = '+' + fora; mais.title = fora + ' a trabalhar que nao cabem nesta largura';
+      } else if (mais && mais.parentNode) mais.parentNode.removeChild(mais);
+      txt($('ct_kn'), vivos.length ? (vivos.length + ' a trabalhar agora \u00b7 ' + vivosTotal + ' desde que abriu \u00b7 ' +
+        (D ? lista(D.funcionarios).length : 0) + ' na torre')
+        : ('a espera da primeira corrida \u00b7 ' + (D ? lista(D.funcionarios).length : 0) + ' na torre'));
+    }
+  }
+  function cartoesVivosQueCabem(cx) {
+    var prim = vivos.length ? vivos[0].el : null; if (!prim) return 0;
+    var larg = prim.getBoundingClientRect().width || 144, gap = 7;
+    var est = window.getComputedStyle ? window.getComputedStyle(cx) : null;
+    if (est && est.gap) { var g = parseFloat(est.gap); if (isFinite(g)) gap = g; }
+    var disp = cx.clientWidth - MARGEM_CARTAO_PX;
+    var n = cartoesQueCabem(disp, larg, gap, vivos.length);
+    if (n < vivos.length) n = cartoesQueCabem(disp - LARG_MAIS_PX - gap, larg, gap, vivos.length);
+    return Math.max(1, n);
+  }
+  function aplicarModoCartoes(m, guardar) {
+    modoCartoes = (m === 'cadeia') ? 'cadeia' : 'vivo';
+    if (guardar !== false) { try { localStorage.setItem('torre_cartao_modo', modoCartoes); } catch (e) { } }
+    var bx = $('ct_modo');
+    if (bx) Array.prototype.forEach.call(bx.querySelectorAll('button'), function (x) { x.classList.toggle('on', x.dataset.modo === modoCartoes); });
+    var cx = $('cartoes'); if (!cx) return;
+    while (cx.firstChild) cx.removeChild(cx.firstChild);
+    cx.dataset.ass = '';
+    if (modoCartoes === 'vivo') {
+      vivos.forEach(function (v) { cx.appendChild(v.el); });
+      tiquesDaFilaViva();
+    } else pintarCartoes();
+  }
+  (function () {
+    var bx = $('ct_modo'); if (!bx) return;
+    bx.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('button[data-modo]') : null;
+      if (b) aplicarModoCartoes(b.dataset.modo, true);
+    });
+  })();
+  setInterval(tiquesDaFilaViva, 250);
+
   function pintarCartoes() {
+    if (modoCartoes === 'vivo') return;          // no modo ao vivo a fila e da `entrarNoVivo`, nao desta
     var cx = $('cartoes'); if (!cx || !D) return;
     var topo = lista(obj(D.torre_30).cargos_de_topo);
     if (topo.length) return pintarCartoesDaCadeia(cx, topo);
@@ -3214,7 +3345,9 @@
         pacotesVivos: pacotesVivos.length, semCaminho: semCaminho, particulas: particulasVivas,
         ondas: imprensa ? imprensa.ondas.length : 0, nos: imprensa ? imprensa.ordem.length : 0, barras: anel ? anel.barras.length : 0, geracoes: ordemGeracoes.length,
         tweens: nTweens, tweensActivas: tweens.length, guias: nGuias, presas: rotulosPx.filter(function (sp) { return sp.visible && sp.userData.px && sp.userData.px.preso; }).length,
-        cartoes: $('cartoes') ? $('cartoes').children.length : 0, maxCartoes: MAX_CARTOES, leituras: $('leituras').children.length, vistos: ordemVistos.length,
+        cartoes: $('cartoes') ? $('cartoes').children.length : 0, maxCartoes: MAX_CARTOES,
+        cartoesVivos: vivos.length, cartoesVivosVisiveis: vivos.filter(function (v) { return v.el.style.display !== 'none'; }).length,
+        cartoesVivosTotal: vivosTotal, modoCartoes: modoCartoes, leituras: $('leituras').children.length, vistos: ordemVistos.length,
         ortografica: !!(camara && camara.isOrthographicCamera), fps: Math.round(fps()), temD: !!D, temT: !!T, telemovel: telemovel,
         cadencia: cadenciaActual,   // 'activo' = 30 desenhos/s porque algo mexe; 'parado' = 10/s de proposito
         // 20/09: quantas corridas de funcionarios o ecra JA VIU desde que abriu, e quantos cartoes
