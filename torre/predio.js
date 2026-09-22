@@ -2567,6 +2567,7 @@
     var t = 'm';
     try { t = localStorage.getItem('torre_cartao_tam') || 'm'; } catch (e) { }
     aplicarTamanhoCartoes(t);
+    aplicarModoCartoes(lerModoCartoes(), false);   // 21/09: a fila nasce AO VIVO, salvo se ele escolheu a cadeia
   })();
   // 19/09 (ordem dele): as seccoes da coluna dobram-se ao clique no titulo. Nascem fechadas menos as Leituras.
   (function () {
@@ -2785,7 +2786,12 @@
   setInterval(tiquesDaFilaViva, 250);
 
   function pintarCartoes() {
-    if (modoCartoes === 'vivo') return;          // no modo ao vivo a fila e da `entrarNoVivo`, nao desta
+    if (modoCartoes === 'vivo') {
+      // o `topoActual` tem de continuar a existir mesmo sem cartoes de cadeia no ecra: e ele que diz que CARGO
+      // cuida de que andar, e disso depende o acender do andar. Sai-se cedo do DESENHO, nao do que se sabe.
+      if (D) topoActual = lista(obj(D.torre_30).cargos_de_topo);
+      return;
+    }
     var cx = $('cartoes'); if (!cx || !D) return;
     var topo = lista(obj(D.torre_30).cargos_de_topo);
     if (topo.length) return pintarCartoesDaCadeia(cx, topo);
