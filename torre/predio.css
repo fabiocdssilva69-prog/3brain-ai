@@ -884,4 +884,11 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
 .pd-it em { display: block; font-style: normal; font: 400 10px var(--mono); color: #a7bcd2; margin-top: 3px; }
 .pd-it s { display: block; text-decoration: none; font: 400 9.5px var(--mono); color: #8794a4; margin-top: 3px; }
 .pd-it s::before { content: 'falta: '; color: #5c6b7c; }
-@media (max-width: 900px) { .pd-telemovel[hidden] { display: block !important; } }
+@media (max-width: 900px) {
+  .pd-telemovel[hidden] { display: block !important; }
+  /* no telemovel a pendencia e um LEMBRETE, nao um dossie: o titulo e de quem depende. O porque e o que falta
+     ficam no computador e no PENDENCIAS.md. Medido: com eles a pagina passava de 2.689 para 3.770 px - um
+     ecra inteiro so de texto que ele ja sabe, e que empurrava os numeros para fora da vista. */
+  .pd-telemovel .pd-it em, .pd-telemovel .pd-it s { display: none; }
+  .pd-telemovel .pd-it { padding: 5px 8px; }
+}
