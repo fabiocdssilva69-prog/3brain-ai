@@ -3690,10 +3690,13 @@
     carrossel: function (andar) {
       var cx = $('cartoes'); if (!cx) return null;
       if (andar) { cx.scrollLeft = Math.max(0, cx.scrollLeft + Number(andar)); }
+      if (andar === 0) { passeioAte = 0; passeioSobre = false; }   // o arreio pede para nao esperar a pausa
       return { scrollLeft: Math.round(cx.scrollLeft), scrollWidth: cx.scrollWidth, clientWidth: cx.clientWidth,
                cartoes: cx.querySelectorAll('.cartao.vivo').length,
                escondidos: Array.prototype.filter.call(cx.querySelectorAll('.cartao.vivo'), function (e) { return e.style.display === 'none'; }).length,
-               mais: !!cx.querySelector('.cartao-mais'), velocidade: VEL_CARROSSEL };
+               mais: !!cx.querySelector('.cartao-mais'), velocidade: VEL_CARROSSEL,
+               pausado: passeioSobre || performance.now() < passeioAte,
+               pausa_resta_ms: Math.max(0, Math.round(passeioAte - performance.now())) };
     },
     cartoes: function () {
       var cx = $('cartoes'); if (!cx) return [];
