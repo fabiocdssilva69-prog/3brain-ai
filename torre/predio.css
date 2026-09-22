@@ -825,7 +825,15 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
 
   /* tabelas largas rolam DENTRO do bloco, nao arrastam a pagina */
   .wrap, .wrap2, .pep-corpo, .dinheiro .wrap2 { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .dinheiro table { min-width: 340px; }          /* a tabela rola dentro do bloco em vez de ser cortada */
+  /* 21/09, visto na captura de 2.686 px: a tira de contadores (`nivel · pacotes vivos · fps`) esta POSICIONADA
+     SOBRE A CENA. Sem cena, ela ficou a flutuar por cima do texto do instrumento. Some com a torre. */
+  .pred-cont, .pred-aviso { display: none !important; }
+
+  /* a tabela de "O dinheiro" tinha 4 colunas e a do Total ficava cortada. Em vez de a por a rolar (numero que
+     se nao ve nao existe), encolhe-se: a 1.a coluna passa a poder partir linha e o resto aperta o espacamento. */
+  .dinheiro table { min-width: 0; font-size: 11.5px; }
+  .dinheiro th, .dinheiro td { padding: 5px 4px; }
+  .dinheiro td:first-child, .dinheiro th:first-child { white-space: normal; }
   body.predio { overflow-x: hidden; }
 
   /* a barra de cima encolhe para uma linha util */
