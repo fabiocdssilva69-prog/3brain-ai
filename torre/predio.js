@@ -2574,17 +2574,22 @@
   (function () {
     var lado = $('lado'); if (!lado) return;
     var blocos = lado.querySelectorAll('.lado-bl');
+    // 21/09: A MEMORIA DO DOBRADO PASSA A SER POR NOME, NAO POR POSICAO. Era um array indexado pela ordem das
+    // seccoes - e bastou inserir as Pendencias no meio para cada seccao herdar o estado da vizinha. Estado
+    // guardado por posicao quebra em silencio no dia em que a lista muda, e a lista muda sempre.
     var guardado = null;
-    try { guardado = JSON.parse(localStorage.getItem('torre_lado_dobrado') || 'null'); } catch (e) { }
+    try { guardado = JSON.parse(localStorage.getItem('torre_lado_dobrado_v2') || 'null'); } catch (e) { }
+    var ABERTAS = { bl_leituras: 1, bl_pend: 1 };   // as Pendencias nascem ABERTAS: ele pediu para nao as esquecer
     Array.prototype.forEach.call(blocos, function (s, i) {
-      var fecha = guardado ? !!guardado[i] : (i !== blocos.length - 1);   // por omissao so as Leituras abertas
+      var chave = s.id || ('bl' + i);
+      var fecha = (guardado && guardado[chave] != null) ? !!guardado[chave] : !ABERTAS[chave];
       s.classList.toggle('dobrado', fecha);
       var bh = s.querySelector('.bh'); if (!bh) return;
       bh.addEventListener('click', function (e) {
         if (e.target && e.target.closest && e.target.closest('button')) return;   // o recolher da coluna e outro botao
         s.classList.toggle('dobrado');
-        var est = []; Array.prototype.forEach.call(blocos, function (x) { est.push(x.classList.contains('dobrado') ? 1 : 0); });
-        try { localStorage.setItem('torre_lado_dobrado', JSON.stringify(est)); } catch (e2) { }
+        var est = {}; Array.prototype.forEach.call(blocos, function (x, j) { est[x.id || ('bl' + j)] = x.classList.contains('dobrado') ? 1 : 0; });
+        try { localStorage.setItem('torre_lado_dobrado_v2', JSON.stringify(est)); } catch (e2) { }
         if (!s.classList.contains('dobrado')) { try { pintarAcorde(); } catch (e3) { } }
       });
     });
