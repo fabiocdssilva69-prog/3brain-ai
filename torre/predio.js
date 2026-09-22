@@ -201,7 +201,7 @@
     try { return !!(window.matchMedia && matchMedia('(max-width: 900px)').matches); } catch (e) { return false; }
   }
   function iniciar3D() {
-    if (ecraPequeno()) { telemovel = true; return false; }
+    if (ecraPequeno()) { telemovel = true; return false; }   // ver aplicarModo(): reavalia-se no resize
     renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !telemovel, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setClearColor(COR.fundo, 1);      // fundo escuro profundo; a vinheta e CSS por cima (nao entra no readPixels)
@@ -3041,11 +3041,29 @@
   // 21/09: em ECRA PEQUENO o 3D nao arranca (ordem dele), mas o RESTO arranca na mesma - o ciclo de dados, o
   // instrumento e os cartoes dos numeros. Na primeira tentativa o `return` do iniciar3D() abortou a pagina
   // inteira e o telemovel ficou em BRANCO: nao chega nao desenhar a torre, e preciso deixar viver o que fica.
+  // 🔴 21/09, PARTIDO E CORRIGIDO NO MESMO DIA: esta decisao era tomada UMA VEZ no arranque. Se a janela
+  // nascesse estreita e crescesse depois (o arreio faz exactamente isso, e um telemovel a rodar tambem), a
+  // torre nunca arrancava - o arreio apanhou-a com `telemovel: true` num ecra de 1400 px. Uma decisao que
+  // depende do tamanho da janela tem de ser REAVALIADA quando a janela muda.
+  var modoNumeros = false;
+  function aplicarModo() {
+    var pequeno = ecraPequeno();
+    if (pequeno === modoNumeros) return;                  // nada mudou
+    modoNumeros = pequeno;
+    document.body.classList.toggle('so-numeros', pequeno);
+    var gav = $('pointer_dados'); if (gav) gav.hidden = !pequeno && !gav.dataset.abertoPeloBotao;
+    if (!pequeno && !renderer && temWebGL()) {            // cresceu: a torre nasce agora
+      telemovel = false;
+      if (iniciar3D() !== false) { criarHologramas(); requestAnimationFrame(quadro); }
+    }
+  }
   if (ecraPequeno()) {
+    modoNumeros = true;
     document.body.classList.add('so-numeros');
     var _gav = $('pointer_dados'); if (_gav) _gav.hidden = false;   // a gaveta passa a ser a pagina
   } else if (!temWebGL()) { $('aviso_webgl').hidden = false; }
   else { iniciar3D(); criarHologramas(); requestAnimationFrame(quadro); }
+  addEventListener('resize', aplicarModo);
   // 🔴 19/09, queixa dele: "os numeros nao estao em tempo real a cada segundo". Metade disso era o ecra: os campos
   // BRT e NY sao RELOGIOS e mostravam a hora do FICHEIRO, logo ficavam parados entre leituras e a pagina parecia
   // morta. Passam a andar ao segundo, e ao lado do estado passa a contar-se A IDADE DO DADO - que e honesto: diz
