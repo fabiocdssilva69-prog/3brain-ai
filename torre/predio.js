@@ -3038,7 +3038,13 @@
   }
 
   // ---------------------------------------------------------------- arranque
-  if (!temWebGL()) { $('aviso_webgl').hidden = false; }
+  // 21/09: em ECRA PEQUENO o 3D nao arranca (ordem dele), mas o RESTO arranca na mesma - o ciclo de dados, o
+  // instrumento e os cartoes dos numeros. Na primeira tentativa o `return` do iniciar3D() abortou a pagina
+  // inteira e o telemovel ficou em BRANCO: nao chega nao desenhar a torre, e preciso deixar viver o que fica.
+  if (ecraPequeno()) {
+    document.body.classList.add('so-numeros');
+    var _gav = $('pointer_dados'); if (_gav) _gav.hidden = false;   // a gaveta passa a ser a pagina
+  } else if (!temWebGL()) { $('aviso_webgl').hidden = false; }
   else { iniciar3D(); criarHologramas(); requestAnimationFrame(quadro); }
   // 🔴 19/09, queixa dele: "os numeros nao estao em tempo real a cada segundo". Metade disso era o ecra: os campos
   // BRT e NY sao RELOGIOS e mostravam a hora do FICHEIRO, logo ficavam parados entre leituras e a pagina parecia

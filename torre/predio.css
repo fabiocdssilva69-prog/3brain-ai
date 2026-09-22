@@ -785,8 +785,12 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
    O que fica e o INSTRUMENTO, que ja existia dentro da gaveta e nao precisa de WebGL. ================ */
 @media (max-width: 900px) {
   /* a torre e tudo o que a rodeia: fora */
-  .pred-envol > .pred-palco, .pred-lado, .cartoes-fx, .casa-num, .pred-dir,
-  .barra.baixo .dir, #btn_pointer, #pg_fechar, .pred-painel { display: none !important; }
+  /* 🔴 NAO se esconde o .pred-palco: a gaveta com o instrumento vive DENTRO dele. Esconde-se o CANVAS da
+     torre e as sobreposicoes - foi assim que o telemovel ficou em branco na primeira tentativa. */
+  #cv, #aviso_webgl, .pred-niveis, .pred-hud, .pred-lado, .cartoes-fx, .casa-num, .pred-dir,
+  .barra.baixo .dir, #btn_pointer, #pg_fechar, .pred-painel, .fita-mov { display: none !important; }
+  .pred-palco { position: static !important; height: auto !important; min-height: 0 !important;
+                background: transparent !important; }
 
   /* a gaveta deixa de ser gaveta: e a pagina */
   .pointer-gaveta {
