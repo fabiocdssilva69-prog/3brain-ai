@@ -2706,11 +2706,14 @@
   // seguinte. Pior, a barra de vida media o tempo desde que o CARTAO nasceu no ecra - dois funcionarios com
   // trabalhos de horas diferentes tinham a mesma barra. Agora a barra mede o que diz que mede.
   var JANELA_VIVO_MIN = 20;          // 20 min: larga o bastante para os ciclos de 10 min caberem
-  var TETO_VIVOS = 48;               // guarda contra uma rajada: o DOM nao cresce sem limite
+  // 22/09: o tecto sobe para 80 e passa a ser DITO na legenda quando morde. Cada cartao sao ~25 nos de DOM,
+  // e ele tambem se queixou de a torre travar - um tecto tem de existir. O que nao pode existir e um tecto
+  // MUDO: esconder cartoes sem o dizer foi exactamente a queixa dele sobre o "+N".
+  var TETO_VIVOS = 80;
+  var ultimoCorte = 0;               // quantos ficaram de fora por causa do tecto, para a legenda dizer
   var vivos = [];                    // [{id, el, ms, repetiu}] - o mais recente primeiro
   var vivosVistos = {}, vivosTotal = 0, lidoEm = 0;
-  var TURNO_MS = 5000;               // 5 s de cena para quem nao coube: tempo de ler o nome e o numero
-  var turnoVivo = 0, turnoEm = 0;    // qual a volta da roda, e quando ela mudou
+
   var modoCartoes = 'vivo';
   function lerModoCartoes() {
     try { var m = localStorage.getItem('torre_cartao_modo'); if (m === 'cadeia' || m === 'vivo') return m; } catch (e) { }
@@ -2806,6 +2809,7 @@
       porId[f.id] = f; dentro.push({ f: f, idade: idade });
     });
     dentro.sort(function (a, b) { return a.idade - b.idade; });
+    ultimoCorte = Math.max(0, dentro.length - TETO_VIVOS);
     if (dentro.length > TETO_VIVOS) dentro = dentro.slice(0, TETO_VIVOS);
     var tenho = {}; vivos.forEach(function (v) { tenho[v.id] = v; });
     // sai quem deixou de estar na janela
@@ -2824,7 +2828,9 @@
       if (!v) {
         if (!vivosVistos[d.f.id]) { vivosVistos[d.f.id] = true; vivosTotal++; }
         v = { id: d.f.id, el: cartaoVivoEl(d.f, numeroDe(d.f.id), andarTorreDe(d.f)), repetiu: 0 };
-        turnoVivo = 0; turnoEm = 0;   // chegou alguem: a roda volta ao principio, primeiro ve-se quem chegou
+        // chegou alguem: o passeio volta ao principio e espera, para o que acabou de acontecer ser visto
+        var _cx = $('cartoes'); if (_cx) _cx.scrollLeft = 0;
+        passeioAte = performance.now() + PAUSA_APOS_CHEGADA;
       }
       v.f = d.f; v.idade = d.idade;
       return v;
@@ -2843,8 +2849,7 @@
     });
     if (modoCartoes === 'vivo' && cx) {
       // reordenar sem apagar: appendChild de um no que ja esta no pai MOVE-O, e mover nao reinicia a animacao
-      vivos.forEach(function (v) { if (v.el.parentNode !== cx) cx.appendChild(v.el); else cx.appendChild(v.el); });
-      var mais = cx.querySelector('.cartao-mais'); if (mais) cx.appendChild(mais);
+      vivos.forEach(function (v) { cx.appendChild(v.el); });   // appendChild de um no que ja la esta MOVE-o
     }
     tiquesDaFilaViva();
   }
@@ -2868,46 +2873,45 @@
       var q = v.el.querySelector('.quando'); if (q) txt(q, haQuanto(idade));
     });
     if (modoCartoes !== 'vivo' || !cx) return;
-    var cabem = cartoesVivosQueCabem(cx), agora = performance.now();
-    var sobram = Math.max(0, vivos.length - cabem);
-    if (sobram > 0) {
-      if (!turnoEm) turnoEm = agora;
-      if (agora - turnoEm >= TURNO_MS) { turnoVivo++; turnoEm = agora; }
-    } else { turnoVivo = 0; turnoEm = 0; }
-    // o lugar 1 e sempre do mais recente; os restantes rodam pelos que nao couberam
-    var emCena = {};
-    if (vivos.length) emCena[0] = true;
-    var lugares = Math.max(0, cabem - 1), resto = Math.max(1, vivos.length - 1);
-    for (var j = 0; j < lugares; j++) emCena[1 + ((turnoVivo + j) % resto)] = true;
-    vivos.forEach(function (v, i) {
-      var mostra = !!emCena[i];
-      if (v.emCena === mostra) return;
-      v.emCena = mostra;
-      v.el.style.display = mostra ? '' : 'none';
-      // quem volta a cena volta a ENTRAR: sem isto aparecia de repente, no meio da fila, como um erro de pintura
-      if (mostra) { v.el.classList.remove('reentra'); void v.el.offsetWidth; v.el.classList.add('reentra'); }
-    });
+    // 22/09: NINGUEM SE ESCONDE. Antes, quem nao cabia levava `display:none` e um chip "+N" dizia quantos
+    // eram - uma lista com resumo, nao um carrossel. O "+N" era a confissao de que a fila nao mostrava o
+    // que prometia. Agora todos estao na linha e a LINHA e que anda.
+    vivos.forEach(function (v) { if (v.el.style.display === 'none') v.el.style.display = ''; });
     var mais = cx.querySelector('.cartao-mais');
-    if (sobram > 0) {
-      if (!mais) { mais = document.createElement('span'); mais.className = 'cartao-mais'; cx.appendChild(mais); }
-      mais.textContent = '+' + sobram; mais.title = sobram + ' a trabalhar a espera de vez \u2014 a fila roda de ' + (TURNO_MS / 1000) + ' em ' + (TURNO_MS / 1000) + ' s';
-    } else if (mais && mais.parentNode) mais.parentNode.removeChild(mais);
+    if (mais && mais.parentNode) mais.parentNode.removeChild(mais);
     var tot = D ? lista(D.funcionarios).length : 0;
+    var cortados = Math.max(0, ultimoCorte);
     txt($('ct_kn'), vivos.length
-      ? (vivos.length + ' a trabalhar \u00b7 \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre'
-         + (sobram ? ' \u00b7 a fila roda' : ''))
-      : ('ningu\u00e9m correu nos \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre'));
+      ? (vivos.length + ' a reagir \u00b7 \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre'
+         + (cortados ? ' \u00b7 ' + cortados + ' n\u00e3o cabem na mem\u00f3ria do ecr\u00e3' : ''))
+      : ('ningu\u00e9m reagiu nos \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre'));
   }
-  function cartoesVivosQueCabem(cx) {
-    if (!vivos.length) return 0;
-    var larg = vivos[0].el.getBoundingClientRect().width || 144, gap = 7;
-    var est = window.getComputedStyle ? window.getComputedStyle(cx) : null;
-    if (est && est.gap) { var g = parseFloat(est.gap); if (isFinite(g)) gap = g; }
-    var disp = cx.clientWidth - MARGEM_CARTAO_PX;
-    var n = cartoesQueCabem(disp, larg, gap, vivos.length);
-    if (n < vivos.length) n = cartoesQueCabem(disp - LARG_MAIS_PX - gap, larg, gap, vivos.length);
-    return Math.max(1, n);
+
+  // ---------------------------------------------------------------- O PASSEIO (o carrossel propriamente dito)
+  // A linha anda sozinha para a esquerda. Nao e uma animacao CSS porque o conteudo muda a toda a hora e um
+  // `@keyframes` com largura fixa saltaria a cada chegada; e um passo por fotograma sobre `scrollLeft`, que
+  // sobrevive a lista crescer e encolher por baixo dele.
+  var VEL_CARROSSEL = 18;        // px por segundo: lento o bastante para se ler um nome ao passar
+  var PAUSA_APOS_CHEGADA = 6000; // quem acaba de reagir fica a vista este tempo antes de o passeio seguir
+  var passeioT = 0, passeioAte = 0, passeioSobre = false;
+  function passearCarrossel(agora) {
+    var cx = $('cartoes');
+    if (!cx || modoCartoes !== 'vivo' || passeioSobre || !vivos.length) { passeioT = agora; return; }
+    if (agora < passeioAte) { passeioT = agora; return; }     // a pausa de quem chegou agora
+    var dt = Math.min(250, agora - (passeioT || agora)); passeioT = agora;
+    var sobra = cx.scrollWidth - cx.clientWidth;
+    if (sobra <= 1) { cx.scrollLeft = 0; return; }            // cabem todos: nao ha nada para passear
+    var x = cx.scrollLeft + VEL_CARROSSEL * dt / 1000;
+    cx.scrollLeft = x >= sobra ? 0 : x;                        // ao fim da linha, volta ao principio
   }
+  (function () {
+    var cx = $('cartoes'); if (!cx) return;
+    // o rato manda: com o ponteiro em cima nao se passeia, senao nao se le nem se clica
+    cx.addEventListener('mouseenter', function () { passeioSobre = true; });
+    cx.addEventListener('mouseleave', function () { passeioSobre = false; });
+    cx.addEventListener('touchstart', function () { passeioSobre = true; }, { passive: true });
+  })();
+
   function aplicarModoCartoes(m, guardar) {
     modoCartoes = (m === 'cadeia') ? 'cadeia' : 'vivo';
     if (guardar !== false) { try { localStorage.setItem('torre_cartao_modo', modoCartoes); } catch (e) { } }
@@ -3321,6 +3325,7 @@
   var MS_ACTIVO = 1000 / 30, MS_PARADO = 1000 / 10, ultimoDesenho = 0, ultimoMexeu = 0, cadenciaActual = 'parado';
   function marcarMovimento() { ultimoMexeu = performance.now(); }
   function quadro(agora) {
+    try { passearCarrossel(agora); } catch (e) { }
     requestAnimationFrame(quadro);
     if (escondido || !renderer || modoNumeros) return;   // em modo telemovel a torre existe mas nao se pinta
     var mexe = !!camTween || tweens.length > 0 || pacotesVivos.length > 0 || (agora - ultimoMexeu) < 1500;
@@ -3680,7 +3685,16 @@
       });
     },
     janelaViva: function () { return JANELA_VIVO_MIN; },
-    rodaViva: function (saltar) { if (saltar) { turnoVivo += Number(saltar) || 0; turnoEm = performance.now(); tiquesDaFilaViva(); } return { turno: turnoVivo, turnoMs: TURNO_MS }; },
+    // 22/09: a RODA (que escondia e rodava) deu lugar ao CARROSSEL (que mostra todos e passeia). A API
+    // descreve o que existe agora: onde vai a linha, quanto mede, e quantos cartoes estao la.
+    carrossel: function (andar) {
+      var cx = $('cartoes'); if (!cx) return null;
+      if (andar) { cx.scrollLeft = Math.max(0, cx.scrollLeft + Number(andar)); }
+      return { scrollLeft: Math.round(cx.scrollLeft), scrollWidth: cx.scrollWidth, clientWidth: cx.clientWidth,
+               cartoes: cx.querySelectorAll('.cartao.vivo').length,
+               escondidos: Array.prototype.filter.call(cx.querySelectorAll('.cartao.vivo'), function (e) { return e.style.display === 'none'; }).length,
+               mais: !!cx.querySelector('.cartao-mais'), velocidade: VEL_CARROSSEL };
+    },
     cartoes: function () {
       var cx = $('cartoes'); if (!cx) return [];
       return Array.prototype.slice.call(cx.querySelectorAll('.cartao')).map(function (b) {
