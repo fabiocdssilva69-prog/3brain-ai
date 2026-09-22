@@ -2567,7 +2567,6 @@
     var t = 'm';
     try { t = localStorage.getItem('torre_cartao_tam') || 'm'; } catch (e) { }
     aplicarTamanhoCartoes(t);
-    aplicarModoCartoes(lerModoCartoes(), false);   // 21/09: a fila nasce AO VIVO, salvo se ele escolheu a cadeia
   })();
   // 19/09 (ordem dele): as seccoes da coluna dobram-se ao clique no titulo. Nascem fechadas menos as Leituras.
   (function () {
@@ -2782,6 +2781,10 @@
       var b = e.target && e.target.closest ? e.target.closest('button[data-modo]') : null;
       if (b) aplicarModoCartoes(b.dataset.modo, true);
     });
+    // aqui, e nao mais acima: neste ponto `vivos` e `modoCartoes` ja foram ATRIBUIDOS. O `var` ica a
+    // declaracao mas nao o valor, e chamar isto antes dava `vivos.forEach de undefined` - a pagina morria
+    // antes de `window.__predio` nascer.
+    aplicarModoCartoes(lerModoCartoes(), false);   // a fila nasce AO VIVO, salvo se ele escolheu a cadeia
   })();
   setInterval(tiquesDaFilaViva, 250);
 
