@@ -2124,6 +2124,7 @@
   function aplicarDados(novoPredio, novaTorre) {
     marcarMovimento();
     if (novoPredio) {
+      lidoEm = performance.now();   // a idade do trabalho conta-se a partir DESTA leitura, nao do arranque
       var ass = assinaturaDaEstrutura(novoPredio);
       var corridas = corridasNovas(novoPredio);
       D = novoPredio;
@@ -2131,12 +2132,13 @@
       // 20/09 (queixa dele: "nao estao acendendo/reagindo"): `corridasNovas` ja dizia quem correu, mas o cartao
       // so levava um `pulsa` discreto. Passa a ACENDER com a mesma animacao do resto - e e a unica coisa que o
       // cartao diz, porque o texto do que aconteceu ficou no chat, por ordem dele.
+      try { refazerFilaViva(); } catch (e) { }
       corridas.forEach(function (f) {
         var n = andarTorreDe(f);
         acenderAndar(andarPorN[n]); pulsarCartaoDoAndar(n);
         corridasVistas++;
         try { acenderCartao(cartaoDoAndar(n)); } catch (e) { }
-        try { entrarNoVivo(f); } catch (e) { }   // 21/09: e este funcionario, com nome, que ganha o seu cartao
+        try { acenderNoVivo(f); } catch (e) { }   // 21/09: e este funcionario, com nome, que acende na fila
       });
     }
     if (novaTorre) {
@@ -2660,19 +2662,19 @@
   // que forem activados da Torre Stark. Cada funcionario vai ter um card, vai aparecer e vai sumir para dar
   // espaco a outro. Isso e para eu ver quem esta a trabalhar em tempo real."
   //
-  // A FONTE E A MESMA DOS ANDARES QUE ACENDEM, e isso e deliberado: `corridasNovas()` compara o carimbo
-  // `ultima_corrida_brt` de cada funcionario entre duas leituras do predio.json. Um cartao aqui significa
-  // exactamente uma coisa - ESTE funcionario correu desde a leitura anterior. Nao e uma amostra, nao e uma
-  // ordenacao por importancia, nao e uma animacao decorativa: e um evento com carimbo, ou nao aparece.
+  // A REGRA, e e so uma: esta na fila quem CORREU HA MENOS DE `JANELA_VIVO_MIN` MINUTOS. Nada de amostra,
+  // nada de ordenacao por importancia, nada de animacao decorativa - `minutos_desde_ultima` vem do registo do
+  // predio, medido contra o agendador ou contra o ficheiro que o funcionario escreve, e e o mesmo numero que
+  // faz o andar acender. Um cartao aqui significa exactamente uma coisa: este funcionario trabalhou agora.
   //
-  // PORQUE CADUCA: se os cartoes ficassem, em dez minutos a fila era a lista dos 152 e deixava de responder a
-  // pergunta dele ("quem esta a trabalhar AGORA"). A vida do cartao E a informacao, e por isso a barra de vida
-  // esvazia-se a vista em vez de o cartao desaparecer de repente - quem olha de relance ve quem chegou ha
-  // pouco e quem esta de saida.
-  var VIDA_CARTAO_MS = 90000;        // 90 s: mais do que o ciclo do predio (~60 s), logo a fila nunca fica vazia
-  var TETO_VIVOS = 40;               // guarda contra uma rajada: o DOM nao cresce sem limite
-  var vivos = [];                    // [{id, el, t0, repetiu}] - o mais recente primeiro
-  var vivosVistos = {}, vivosTotal = 0;
+  // PORQUE E UMA JANELA E NAO UM CONTADOR DESDE QUE A PAGINA ABRIU: a primeira versao so punha um cartao
+  // quando via o carimbo MUDAR em directo, e quem abrisse a pagina olhava para uma fila vazia ate ao ciclo
+  // seguinte. Pior, a barra de vida media o tempo desde que o CARTAO nasceu no ecra - dois funcionarios com
+  // trabalhos de horas diferentes tinham a mesma barra. Agora a barra mede o que diz que mede.
+  var JANELA_VIVO_MIN = 20;          // 20 min: larga o bastante para os ciclos de 10 min caberem
+  var TETO_VIVOS = 48;               // guarda contra uma rajada: o DOM nao cresce sem limite
+  var vivos = [];                    // [{id, el, ms, repetiu}] - o mais recente primeiro
+  var vivosVistos = {}, vivosTotal = 0, lidoEm = 0;
   var modoCartoes = 'vivo';
   function lerModoCartoes() {
     try { var m = localStorage.getItem('torre_cartao_modo'); if (m === 'cadeia' || m === 'vivo') return m; } catch (e) { }
@@ -2687,74 +2689,106 @@
     comNumero.forEach(function (d) { if (!achado && d.f.id === id) achado = d.nu; });
     return achado;
   }
-  // Um funcionario CORREU. Se ja esta na fila, nao se duplica: renova-se o relogio e marca-se que repetiu -
-  // duas linhas do mesmo nome diriam que sao dois, e sao um que trabalhou duas vezes.
-  function entrarNoVivo(f) {
-    if (!f || !f.id) return null;
-    var cx = $('cartoes'); if (!cx) return null;
-    if (!vivosVistos[f.id]) { vivosVistos[f.id] = true; vivosTotal++; }
-    var ja = null; vivos.forEach(function (v) { if (v.id === f.id) ja = v; });
-    if (ja) {
-      ja.t0 = performance.now(); ja.repetiu++;
-      ja.el.classList.remove('a-sair'); ja.el.classList.add('repete');
-      ja.el.classList.remove('acende'); void ja.el.offsetWidth; ja.el.classList.add('acende');
-      if (modoCartoes === 'vivo' && cx.firstChild !== ja.el) cx.insertBefore(ja.el, cx.firstChild);
-      return ja;
-    }
-    var nu = numeroDe(f.id) || {};
-    var andar = andarTorreDe(f);
+  // a idade REAL do trabalho: o que o registo mediu, mais o tempo de relogio desde que se leu o registo
+  function idadeDoTrabalho(f) {
+    var m = Number(f && f.minutos_desde_ultima);
+    if (!isFinite(m) || m < 0) return null;
+    return m * 60000 + Math.max(0, performance.now() - lidoEm);
+  }
+  function cartaoVivoEl(f, nu, andar) {
     var el = document.createElement('button');
     el.type = 'button';
-    el.className = 'cartao vivo ' + escH(nu.classe || 'hora');
+    el.className = 'cartao vivo ' + escH((nu && nu.classe) || 'hora');
     el.dataset.id = f.id; el.dataset.andar = (andar == null ? '' : andar);
     el.title = f.id + ' - ' + (f.dono_da_falha || 'sem falha declarada');
     el.innerHTML = '<u>' + escH((andar == null ? 'torre' : 'andar ' + andar) + ' \u00b7 ' + String(f.sector || '')) + '</u>' +
       '<b>' + escH(String(f.nome || f.id).toUpperCase()) + '</b>' +
       '<em>' + escH(String(f.cargo || f.sector || '')) + '</em>' +
       '<span class="falha">' + escH(f.dono_da_falha || 'sem falha declarada') + '</span>' +
-      '<span class="num">' + escH(nu.texto || '\u2014') + '</span>' +
-      '<span class="fonte">' + escH(nu.fonte || f.fonte_do_relogio || '') + ' <span class="quando">agora</span></span>' +
+      '<span class="num">' + escH((nu && nu.texto) || '\u2014') + '</span>' +
+      '<span class="fonte">' + escH((nu && nu.fonte) || f.fonte_do_relogio || '') + ' <span class="quando">agora</span></span>' +
       '<span class="vida"></span>';
-    var v = { id: f.id, el: el, t0: performance.now(), repetiu: 0 };
-    vivos.unshift(v);
-    if (modoCartoes === 'vivo') cx.insertBefore(el, cx.firstChild);
-    return v;
+    return el;
   }
-  // O relogio da fila: esvazia as barras de vida, actualiza o "ha N s", deita fora quem passou da validade e
-  // esconde o que nao cabe na largura. Corre a 4 Hz - o suficiente para a barra parecer continua, barato o
-  // bastante para nao disputar com o desenho da torre.
-  function tiquesDaFilaViva() {
-    var agora = performance.now(), cx = $('cartoes');
+  // REFAZ A FILA a partir dos dados. Quem ja la esta nao se recria (recriar matava a animacao de entrada e
+  // fazia a fila piscar toda a cada leitura); quem saiu da janela sai com animacao; quem e novo entra.
+  function refazerFilaViva() {
+    if (!D) return;
+    var cx = $('cartoes');
+    var dentro = [], porId = {};
+    lista(D.funcionarios).forEach(function (f) {
+      if (!f.ultima_corrida_brt) return;
+      var idade = idadeDoTrabalho(f);
+      if (idade == null || idade > JANELA_VIVO_MIN * 60000) return;
+      porId[f.id] = f; dentro.push({ f: f, idade: idade });
+    });
+    dentro.sort(function (a, b) { return a.idade - b.idade; });
+    if (dentro.length > TETO_VIVOS) dentro = dentro.slice(0, TETO_VIVOS);
+    var tenho = {}; vivos.forEach(function (v) { tenho[v.id] = v; });
+    // sai quem deixou de estar na janela
     for (var i = vivos.length - 1; i >= 0; i--) {
-      var v = vivos[i], idade = agora - v.t0, resta = 1 - idade / VIDA_CARTAO_MS;
-      if (resta <= 0 || i >= TETO_VIVOS) {
-        if (!v.aSair) {
-          v.aSair = true; v.el.classList.add('a-sair');
-          setTimeout((function (el) { return function () { if (el.parentNode) el.parentNode.removeChild(el); }; })(v.el), 400);
-        }
-        vivos.splice(i, 1);
-        continue;
+      if (porId[vivos[i].id]) continue;
+      var vv = vivos[i];
+      if (!vv.aSair) {
+        vv.aSair = true; vv.el.classList.add('a-sair');
+        setTimeout((function (el) { return function () { if (el.parentNode) el.parentNode.removeChild(el); }; })(vv.el), 400);
       }
-      var barra = v.el.querySelector('.vida'); if (barra) barra.style.transform = 'scaleX(' + resta.toFixed(3) + ')';
-      var q = v.el.querySelector('.quando'); if (q) txt(q, haQuanto(idade) + (v.repetiu ? ' \u00b7 ' + (v.repetiu + 1) + 'x' : ''));
+      vivos.splice(i, 1);
     }
+    // entra quem e novo, pela ordem certa
+    var nova = dentro.map(function (d) {
+      var v = tenho[d.f.id];
+      if (!v) {
+        if (!vivosVistos[d.f.id]) { vivosVistos[d.f.id] = true; vivosTotal++; }
+        v = { id: d.f.id, el: cartaoVivoEl(d.f, numeroDe(d.f.id), andarTorreDe(d.f)), repetiu: 0 };
+      }
+      v.f = d.f; v.idade = d.idade;
+      return v;
+    });
+    vivos = nova;
     if (modoCartoes === 'vivo' && cx) {
-      var cabem = cartoesVivosQueCabem(cx);
-      vivos.forEach(function (v, i) { v.el.style.display = i < cabem ? '' : 'none'; });
-      var fora = Math.max(0, vivos.length - cabem);
-      var mais = cx.querySelector('.cartao-mais');
-      if (fora > 0) {
-        if (!mais) { mais = document.createElement('span'); mais.className = 'cartao-mais'; cx.appendChild(mais); }
-        mais.textContent = '+' + fora; mais.title = fora + ' a trabalhar que nao cabem nesta largura';
-      } else if (mais && mais.parentNode) mais.parentNode.removeChild(mais);
-      txt($('ct_kn'), vivos.length ? (vivos.length + ' a trabalhar agora \u00b7 ' + vivosTotal + ' desde que abriu \u00b7 ' +
-        (D ? lista(D.funcionarios).length : 0) + ' na torre')
-        : ('a espera da primeira corrida \u00b7 ' + (D ? lista(D.funcionarios).length : 0) + ' na torre'));
+      // reordenar sem apagar: appendChild de um no que ja esta no pai MOVE-O, e mover nao reinicia a animacao
+      vivos.forEach(function (v) { if (v.el.parentNode !== cx) cx.appendChild(v.el); else cx.appendChild(v.el); });
+      var mais = cx.querySelector('.cartao-mais'); if (mais) cx.appendChild(mais);
     }
+    tiquesDaFilaViva();
+  }
+  // um funcionario correu AGORA: o cartao dele acende e sobe para a frente da fila
+  function acenderNoVivo(f) {
+    if (!f || !f.id) return;
+    var v = null; vivos.forEach(function (x) { if (x.id === f.id) v = x; });
+    if (!v) return;
+    v.repetiu++;
+    v.el.classList.add('repete');
+    v.el.classList.remove('acende'); void v.el.offsetWidth; v.el.classList.add('acende');
+  }
+  // O relogio da fila: esvazia as barras, escreve o "ha N", e esconde o que nao cabe na largura.
+  // 4 Hz - o suficiente para a barra parecer continua, barato o bastante para nao disputar com o desenho.
+  function tiquesDaFilaViva() {
+    var cx = $('cartoes');
+    vivos.forEach(function (v) {
+      var idade = idadeDoTrabalho(v.f); if (idade == null) return;
+      var resta = Math.max(0, Math.min(1, 1 - idade / (JANELA_VIVO_MIN * 60000)));
+      var barra = v.el.querySelector('.vida'); if (barra) barra.style.transform = 'scaleX(' + resta.toFixed(3) + ')';
+      var q = v.el.querySelector('.quando'); if (q) txt(q, haQuanto(idade));
+    });
+    if (modoCartoes !== 'vivo' || !cx) return;
+    var cabem = cartoesVivosQueCabem(cx);
+    vivos.forEach(function (v, i) { v.el.style.display = i < cabem ? '' : 'none'; });
+    var fora = Math.max(0, vivos.length - cabem);
+    var mais = cx.querySelector('.cartao-mais');
+    if (fora > 0) {
+      if (!mais) { mais = document.createElement('span'); mais.className = 'cartao-mais'; cx.appendChild(mais); }
+      mais.textContent = '+' + fora; mais.title = fora + ' a trabalhar que nao cabem nesta largura';
+    } else if (mais && mais.parentNode) mais.parentNode.removeChild(mais);
+    var tot = D ? lista(D.funcionarios).length : 0;
+    txt($('ct_kn'), vivos.length
+      ? (vivos.length + ' a trabalhar \u00b7 \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre')
+      : ('ningu\u00e9m correu nos \u00faltimos ' + JANELA_VIVO_MIN + ' min \u00b7 ' + tot + ' na torre'));
   }
   function cartoesVivosQueCabem(cx) {
-    var prim = vivos.length ? vivos[0].el : null; if (!prim) return 0;
-    var larg = prim.getBoundingClientRect().width || 144, gap = 7;
+    if (!vivos.length) return 0;
+    var larg = vivos[0].el.getBoundingClientRect().width || 144, gap = 7;
     var est = window.getComputedStyle ? window.getComputedStyle(cx) : null;
     if (est && est.gap) { var g = parseFloat(est.gap); if (isFinite(g)) gap = g; }
     var disp = cx.clientWidth - MARGEM_CARTAO_PX;
@@ -2770,21 +2804,19 @@
     var cx = $('cartoes'); if (!cx) return;
     while (cx.firstChild) cx.removeChild(cx.firstChild);
     cx.dataset.ass = '';
-    if (modoCartoes === 'vivo') {
-      vivos.forEach(function (v) { cx.appendChild(v.el); });
-      tiquesDaFilaViva();
-    } else pintarCartoes();
+    if (modoCartoes === 'vivo') { vivos.forEach(function (v) { cx.appendChild(v.el); }); refazerFilaViva(); }
+    else pintarCartoes();
   }
   (function () {
-    var bx = $('ct_modo'); if (!bx) return;
-    bx.addEventListener('click', function (e) {
+    var bx = $('ct_modo');
+    if (bx) bx.addEventListener('click', function (e) {
       var b = e.target && e.target.closest ? e.target.closest('button[data-modo]') : null;
       if (b) aplicarModoCartoes(b.dataset.modo, true);
     });
     // aqui, e nao mais acima: neste ponto `vivos` e `modoCartoes` ja foram ATRIBUIDOS. O `var` ica a
     // declaracao mas nao o valor, e chamar isto antes dava `vivos.forEach de undefined` - a pagina morria
     // antes de `window.__predio` nascer.
-    aplicarModoCartoes(lerModoCartoes(), false);   // a fila nasce AO VIVO, salvo se ele escolheu a cadeia
+    aplicarModoCartoes(lerModoCartoes(), false);
   })();
   setInterval(tiquesDaFilaViva, 250);
 
