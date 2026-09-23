@@ -80,7 +80,10 @@
     // 🔴 A LICAO QUE CUSTOU MAIS: eu CONGELEI a conclusao errada numa prova. Uma prova que defende um
     // defeito e pior do que nao ter prova nenhuma, porque passa a impedir a correccao E a dar-lhe verde.
     var quemE = String(a.apelido || a.titulo_curto || a.titulo || a.heroi || a.id).toUpperCase();
-    var sub = [a.id, a.cargo, a.sector, a.andar != null ? 'andar ' + a.andar : null]
+    // 22/09: o id cru NAO entra aqui. Eu tinha-o posto para se ver quem e, e ele trouxe de volta a
+    // palavra "Pointer" (auditor_pointer) que ele mandou tirar do ecra em 18/09 - o arreio apanhou.
+    // Quem e ve-se pelo cargo e pelo sector; o id vive em data-funcionario, para quem mede.
+    var sub = [a.cargo, a.sector, a.andar != null ? 'andar ' + a.andar : null]
       .filter(function (x) { return x != null && x !== ''; });
     var html = '<span class="avatar" style="--c:' + cor + '">' + busto(a.heroi || titulo, cor, !!a.feminino) + '</span>' +
       '<div class="corpo">' +
