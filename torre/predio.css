@@ -738,7 +738,10 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
 .cartao.topo:not(.aberto) .act > span,
 .cartao.topo:not(.aberto) .quando,
 .cartao.topo:not(.aberto) .fonte {
-  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+  /* 22/09: SEM `display` aqui. A 1.a versao punha display:block e isso passou por cima das regras que
+     ESCONDEM o numero e as barras no cartao fechado (linha ~697) - o arreio apanhou-o na hora. Uma regra
+     em bloco que toca numa propriedade que nao precisa de tocar parte o que nao tinha nada a ver. */
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .cartao.topo:not(.aberto) .ident b {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal;
