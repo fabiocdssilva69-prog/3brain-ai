@@ -2652,6 +2652,18 @@
       if (b) b.hidden = true;
     });
   }, 700);
+  // 22/09, ordem dele: "cada funcionario tem o seu proprio nome, por ordem de importancia - quanto mais
+  // importante, nome de personagem; quanto menos importante, nome de figurante". O cartao mostrava o CARGO
+  // INTEIRO ("SUPERVISOR DE OPERACOES STRANGE"), que e 225px de texto num cartao de 112px, e que alem disso
+  // nao e um nome - e um titulo. O nome e o APELIDO; o cargo desce para a linha de baixo, que ja existe.
+  function apelidoDe(c) {
+    c = obj(c);
+    if (c.apelido) return String(c.apelido);
+    var fonte = String(c.titulo_curto || c.titulo || c.heroi || c.personagem || c.id || '');
+    var ps = fonte.replace(/[·|].*$/, '').trim().split(/\s+/);
+    return ps.length ? ps[ps.length - 1] : fonte;
+  }
+
   function pintarCartoesDaCadeia(cx, topo) {
     topoActual = lista(topo);
     var modo = disporCartoes(cx, topo.length);
@@ -2672,8 +2684,8 @@
           '<span class="balao" hidden></span>' +
           '<span class="cab"><span class="avatar">' + avatarSVG(c.personagem || c.heroi, cor, !!c.feminino) + '</span>' +
           '<span class="ident"><u>' + ('0' + (c.posicao || 0)).slice(-2) + ' / ' + escH(String(c.cargo_banco || c.cargo || '').toUpperCase()) + '</u>' +
-          '<b>' + escH(String(c.titulo || c.heroi || '').toUpperCase()) + '</b>' +
-          '<em>' + escH(String(c.heroi || '') + (c.divisao ? ' · ' + c.divisao : '')) + '</em>' +
+          '<b>' + escH(apelidoDe(c).toUpperCase()) + '</b>' +
+          '<em>' + escH(String(c.titulo_curto || c.cargo_banco || c.cargo || '') + (c.divisao ? ' · ' + c.divisao : '')) + '</em>' +
           '<s class="selo" style="border-color:' + cor + ';color:' + cor + '">' + (activo ? 'ACTIVO' : 'SEM EQUIPA') + '</s></span></span>' +
           '<span class="falha">' + escH(onde || c.divisao || 'toda a torre') + '</span>' +
           '<span class="act"><i></i><span>—</span></span>' +

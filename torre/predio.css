@@ -718,7 +718,33 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
 .casa-num { display: none !important; }
 
 /* o cartao fechado a METADE: so o busto, o nome e o selo */
-.cartao.topo:not(.aberto) { min-width: calc(76px * var(--cartao-esc)); max-width: calc(76px * var(--cartao-esc)); padding: 4px 3px 4px; }
+/* 🔴 22/09, a foto do monitor dele: "SUPERVISOR DE OPERACOES" atravessava tres cartoes. MEDIDO com a
+   sonda: o <b> precisava de 225px num cartao de 76px - saia 150px para cima do vizinho. Esta regra (76px)
+   vinha de ele ter pedido cartoes menores em 20/09, e eu encolhi a CAIXA sem encolher o CONTEUDO, que foi
+   desenhado para 236px. E a minha prova nao apanhou nada porque media tres elementos que eu escolhi a mao.
+   CHAO DE LEGIBILIDADE: 112px. E a contencao passa a valer para TODO o texto do cartao, nao para tres
+   elementos - um cartao onde uma linha qualquer pode fugir e um cartao que volta a partir-se. */
+.cartao.topo:not(.aberto) { min-width: calc(112px * var(--cartao-esc)); max-width: calc(112px * var(--cartao-esc)); padding: 5px 5px 5px; }
+.cartao.topo:not(.aberto) > *,
+.cartao.topo:not(.aberto) .cab,
+.cartao.topo:not(.aberto) .ident { min-width: 0; max-width: 100%; }
+.cartao.topo:not(.aberto) b,
+.cartao.topo:not(.aberto) u,
+.cartao.topo:not(.aberto) em,
+.cartao.topo:not(.aberto) s,
+.cartao.topo:not(.aberto) .num,
+.cartao.topo:not(.aberto) .falha,
+.cartao.topo:not(.aberto) .act,
+.cartao.topo:not(.aberto) .act > span,
+.cartao.topo:not(.aberto) .quando,
+.cartao.topo:not(.aberto) .fonte {
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+}
+.cartao.topo:not(.aberto) .ident b {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal;
+  word-break: break-word; overflow-wrap: anywhere; line-height: 1.12;
+}
+.cartao.topo:not(.aberto) .selo { max-width: 100%; }
 .cartao.topo:not(.aberto) .cab .avatar { flex-basis: calc(34px * var(--cartao-esc)); width: calc(34px * var(--cartao-esc)); height: calc(34px * var(--cartao-esc)); }
 .cartao.topo:not(.aberto) .cab .avatar svg { width: 100%; height: 100%; }
 .cartao.topo:not(.aberto) .ident b { font-size: calc(8px * var(--cartao-esc)); line-height: 1.1; }

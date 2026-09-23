@@ -69,15 +69,18 @@
     el.className = 'chat-msg tipo-' + tipo.replace(/[^a-z_]/g, '') + (m.responde_a ? ' resposta' : '') + ' nova';
     el.setAttribute('data-id', String(m.id || '')); el.setAttribute('data-tipo', tipo); el.setAttribute('data-titulo', titulo);
     el.setAttribute('data-funcionario', String(a.id || '')); el.setAttribute('data-sector', String(a.sector || ''));
-    // 🔴 22/09, queixa dele: "so vejo supervisor e gerente conversando ali, quando o chat e pra ser de TODOS
-    // os funcionarios". MEDIDO: o chat ja tinha 20 autores de 9 sectores diferentes - Atrio, Estatistica,
-    // Macro, Laboratorio, Recrutamento, Imprensa, Antenas, Auditoria, Direccao. Mas TODOS apareciam como
-    // "Gerente X" / "Supervisor Y", porque o nome que se mostrava era o do PERSONAGEM do elenco.
-    // **Ele estava a ler a fantasia, nao o funcionario** - exactamente o mesmo engano que eu ja tinha
-    // cometido nos cartoes, no mesmo dia, e que ele ja me tinha apontado uma vez.
-    // Agora: em grande o FUNCIONARIO e o que ele faz; o personagem vai na linha de baixo, onde pertence.
-    var quemE = String(a.id || titulo).toUpperCase();
-    var sub = [a.cargo, a.sector, a.andar != null ? 'andar ' + a.andar : null, titulo]
+    // 🔴 22/09, DUAS VOLTAS, e a segunda desfaz a primeira com razao.
+    // 1.a: ele queixou-se de "so vejo supervisor e gerente conversando". Eu concluí que o problema era o
+    //      nome do PERSONAGEM e troquei-o pelo id cru do modulo. E, pior, escrevi uma PROVA a exigir isso.
+    // 2.a: ele apontou o resultado - "o nickname dele esta PUBLICAR_TORRE, SAIDA_REGRAS, OLHOS_MERCADO,
+    //      totalmente contrario com o que a gente ja desenhou: cada funcionario tem o seu proprio nome, por
+    //      ordem de importancia; quanto mais importante, nome de personagem; quanto menos, de figurante".
+    // A queixa NUNCA foi o nome: era so haver gerentes a falar. Isso curou-se com a quota por sector (o
+    // chat passou de 4 para 12 sectores) - nada disso precisava de tirar o nome a ninguem.
+    // 🔴 A LICAO QUE CUSTOU MAIS: eu CONGELEI a conclusao errada numa prova. Uma prova que defende um
+    // defeito e pior do que nao ter prova nenhuma, porque passa a impedir a correccao E a dar-lhe verde.
+    var quemE = String(a.apelido || a.titulo_curto || a.titulo || a.heroi || a.id).toUpperCase();
+    var sub = [a.id, a.cargo, a.sector, a.andar != null ? 'andar ' + a.andar : null]
       .filter(function (x) { return x != null && x !== ''; });
     var html = '<span class="avatar" style="--c:' + cor + '">' + busto(a.heroi || titulo, cor, !!a.feminino) + '</span>' +
       '<div class="corpo">' +
