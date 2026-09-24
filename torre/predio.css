@@ -998,14 +998,15 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
 .enx-parecer { font: 500 10.5px/1.35 var(--sans); color: #eef3f8; border-left: 3px solid #e8b04b; padding: 4px 7px; background: rgba(232,176,75,.06); border-radius: 0 6px 6px 0; }
 .enx-nota { font: 400 9.5px var(--mono); color: #7b8695; margin-top: 3px; }
 .enx-painel { margin-top: 8px; }
-/* o ponto da VIGIA em cada cartao (o estado do funcionario, ou o pior dos andares que o cargo chefia) */
+/* o ponto da VIGIA em cada cartao (o estado do funcionario, ou o pior dos andares que o cargo chefia). E o ::before
+   e no canto ESQUERDO de proposito: o ::after e o canto direito ja sao do '+'/'−' que abre e fecha o cartao. */
 .cartao[data-vg] { position: relative; }
-.cartao[data-vg]::after { content: ''; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(9,13,19,.9); pointer-events: none; }
-.cartao[data-vg="verde"]::after { background: #3ecf8e; }
-.cartao[data-vg="amarelo"]::after { background: #e8b04b; }
-.cartao[data-vg="vermelho"]::after { background: #ff5a5f; animation: enxPisca 1s ease-in-out infinite; }
-.cartao[data-vg="cinza"]::after { background: #7b8695; }
+.cartao[data-vg]::before { content: ''; position: absolute; top: 3px; left: 3px; width: 7px; height: 7px; border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(9,13,19,.9); pointer-events: none; z-index: 2; }
+.cartao[data-vg="verde"]::before { background: #3ecf8e; }
+.cartao[data-vg="amarelo"]::before { background: #e8b04b; }
+.cartao[data-vg="vermelho"]::before { background: #ff5a5f; animation: enxPisca 1s ease-in-out infinite; }
+.cartao[data-vg="cinza"]::before { background: #7b8695; }
 @keyframes enxPisca { 50% { opacity: .35; } }
 /* o telemovel: uma linha so (o tecto de 3 ecras dele tem ~40 px de folga, medido a 24/09 com 3.157 px) */
 .enx-telemovel { display: none; }
@@ -1015,4 +1016,4 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
     font: 500 10.5px var(--mono); color: #a7bcd2; height: 28px; box-sizing: border-box; }
   .enx-telemovel > b { font: 700 9.5px var(--sans); letter-spacing: .14em; color: #8fb3c9; }
 }
-@media (prefers-reduced-motion: reduce) { .enx-coracao.bate, .cartao[data-vg="vermelho"]::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .enx-coracao.bate, .cartao[data-vg="vermelho"]::before { animation: none; } }
