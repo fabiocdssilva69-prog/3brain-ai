@@ -1154,6 +1154,7 @@
     instDegraus.count = degraus.length; instDegraus.instanceMatrix.needsUpdate = true;
     if (instDegraus.instanceColor) instDegraus.instanceColor.needsUpdate = true;
     grupoTorre.add(instDegraus);
+    construirLuzesVigia();          // 24/09 (lote 5): o estado de cada andar pela vigia do enxame
     if (obrasTracos.length) { var lo = linhasDe(obrasTracos, COR.ambar, 0.42); grupoObras.add(lo); }
     if (obrasMont.length) { var lm = linhasDe(obrasMont, COR.ambar, 0.16); grupoObras.add(lm); }
     if (reservaPts.length) grupoReserva.add(linhasDe(reservaPts, 0, 0, reservaCor));
