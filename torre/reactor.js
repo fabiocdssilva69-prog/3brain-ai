@@ -303,7 +303,7 @@ function textos(){ if(S.real==null) return; const ab=S.real-(S.fech||0);
     const lados=[['cripto',uC],['ações',uA]].filter(x=>x[1]!=null).sort((a,b)=>b[1]-a[1]);
     put('md_trava_uso',lados.length?lados[0][1].toFixed(0)+'% '+lados[0][0]:'—'); larg('md_trava_bar',lados.length?lados[0][1]:0);
     const ac=n(tr.acoes_dia_usd)!=null?US(n(tr.acoes_dia_usd)):(tr.acoes_estado||'—');
-    put('md_trava_det','cripto '+US(n(tr.cripto_realizado_usd))+' de '+US(n(tr.cripto_tecto_usd))+' · ações '+ac+' de '+US(n(tr.acoes_tecto_usd))+(tr.acoes_t?' (juiz '+tr.acoes_t+' NY)':'')); }
+    put('md_trava_det','cripto '+US(n(tr.cripto_realizado_usd))+' de '+US(n(tr.cripto_tecto_usd))+' · ações '+ac+' de '+US(n(tr.acoes_tecto_usd))+(tr.acoes_t&&n(tr.acoes_dia_usd)!=null?' (juiz '+tr.acoes_t+' NY)':'')); }
   const cap=Number(S.capital||0), usoCr=Number(S.aloc.em_uso_cripto||0), usoAc=Number(S.aloc.em_uso_acoes||0), usado=usoCr+usoAc;
   put('md_cap',cap?(usado/cap*100).toFixed(0)+'%':'—'); put('md_cap_f',cap?'US$ '+usado.toFixed(0)+' / '+cap.toFixed(0):''); larg('md_cap_cr',cap?usoCr/cap*100:0,0); larg('md_cap_ac',cap?usoAc/cap*100:0,cap?usoCr/cap*100:0);
   put('md_cr','US$ '+usoCr.toFixed(2)+(cap?'  '+(usoCr/cap*100).toFixed(0)+'%':'')); put('md_ac','US$ '+usoAc.toFixed(2)+(cap?'  '+(usoAc/cap*100).toFixed(0)+'%':'')); put('md_livre',cap?'US$ '+(cap-usado).toFixed(2):'—');
