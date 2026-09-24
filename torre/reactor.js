@@ -313,6 +313,11 @@ function textos(){ if(S.real==null) return; const ab=S.real-(S.fech||0);
   const cap=Number(S.capital||0), usoCr=Number(S.aloc.em_uso_cripto||0), usoAc=Number(S.aloc.em_uso_acoes||0), usado=usoCr+usoAc;
   put('md_cap',cap?(usado/cap*100).toFixed(0)+'%':'—'); put('md_cap_f',cap?'US$ '+usado.toFixed(0)+' / '+cap.toFixed(0):''); larg('md_cap_cr',cap?usoCr/cap*100:0,0); larg('md_cap_ac',cap?usoAc/cap*100:0,cap?usoCr/cap*100:0);
   put('md_cr','US$ '+usoCr.toFixed(2)+(cap?'  '+(usoCr/cap*100).toFixed(0)+'%':'')); put('md_ac','US$ '+usoAc.toFixed(2)+(cap?'  '+(usoAc/cap*100).toFixed(0)+'%':'')); put('md_livre',cap?'US$ '+(cap-usado).toFixed(2):'—');
+  // 24/09: o livre a preco de MERCADO pode ser negativo sem se ter posto dinheiro nenhum (as posicoes subiram). O painel
+  // da o livre AO CUSTO e a natureza: so 'excesso_real' (ao custo as entradas passam o capital) fica a vermelho.
+  { const lc=S.aloc.livre_ao_custo, nat=String(S.aloc.livre_natureza||''), okc=lc!=null&&isFinite(Number(lc));
+    put('md_livre_f',!okc?'':(nat==='excesso_real'?'EXCESSO REAL · ao custo '+sgn(Number(lc)):(nat==='marcacao'?'marcação · ao custo '+sgn(Number(lc)):'ao custo '+sgn(Number(lc)))));
+    const el=$('md_livre'), k=nat==='excesso_real'?'n':''; if(el&&cacheCls.md_livre!==k){ cacheCls.md_livre=k; el.classList.remove('p','n'); if(k) el.classList.add(k); } }
   const je=S.je||{}; put('md_odo',je.liquido!=null?sgn(Number(je.liquido)):'—'); sinal('md_odo',je.liquido); put('md_acerto',je.acerto_pct!=null?Number(je.acerto_pct).toFixed(1)+'%  '+(je.n_ganhos||0)+'/'+((je.n_ganhos||0)+(je.n_perdas||0)):'—');
   put('md_medias',(je.ganho_medio!=null?sgn(Number(je.ganho_medio)):'—')+' · '+(je.perda_media!=null?sgn(Number(je.perda_media)):'—')); put('md_ops',je.operacoes!=null?String(je.operacoes):'—');
   put('md_ops_hoje','hoje '+(S.gn.n_entrou_hoje||0)+' ↑ '+(S.gn.n_saiu_hoje||0)+' ↓');
