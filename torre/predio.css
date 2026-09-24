@@ -942,3 +942,77 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
   .pd-telemovel .pd-it em, .pd-telemovel .pd-it s { display: none; }
   .pd-telemovel .pd-it { padding: 5px 8px; }
 }
+
+/* ===== O ENXAME NO ECRA (24/09, lote 5) =============================================================
+   Quem vigia quem: o vigia Python (de minuto a minuto), os supervisores de cada andar (relator x refutador, de
+   fornecedores diferentes), os lideres de 5 em 5 andares e o Sr. Stark. As cores sao as MESMAS das luzes dos
+   andares na torre 3D (predio.js COR_VIGIA): verde, amarelo, vermelho, cinzento = sem prova. =========== */
+#bl_enxame .bh .kn { gap: 8px; align-items: center; font-size: 10.5px; }
+#bl_enxame.tem-vermelho { border-color: rgba(255,90,95,.55); }
+.enx-bat { display: inline-flex; align-items: center; gap: 5px; color: #a7bcd2; }
+.enx-bat.parado { color: #ff8a8f; }
+.enx-coracao { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3ecf8e; box-shadow: 0 0 6px rgba(62,207,142,.7); }
+.enx-bat.parado .enx-coracao { background: #ff5a5f; box-shadow: 0 0 6px rgba(255,90,95,.8); }
+.enx-coracao.bate { animation: enxBate .9s ease-out; }
+@keyframes enxBate { 0% { transform: scale(1); } 18% { transform: scale(1.9); } 36% { transform: scale(1.1); } 52% { transform: scale(1.5); } 100% { transform: scale(1); } }
+.enx-tot b { font: 700 10.5px var(--mono); }
+.enx-tot b.verde, .enx-and.verde u { color: #3ecf8e; }
+.enx-tot b.amarelo, .enx-and.amarelo u { color: #e8b04b; }
+.enx-tot b.vermelho, .enx-and.vermelho u { color: #ff5a5f; }
+.enx-tot b.cinza, .enx-and.cinza u { color: #8794a4; }
+.enx-verm { color: #ff8a8f; font: 600 10px var(--mono); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.enx-corpo { max-height: 46vh; overflow-y: auto; padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 5px; }
+.enx-estado { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 500 10px var(--mono); color: #8794a4; }
+.enx-estado b { color: #cfe3f2; font-weight: 600; }
+.enx-estado b.ok { color: #3ecf8e; } .enx-estado b.mau { color: #ff5a5f; }
+.enx-andares { display: flex; flex-wrap: wrap; gap: 4px; }
+.enx-and { font: 500 9.5px var(--sans); color: #cfe3f2; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.1);
+  border-left: 3px solid #5b6573; border-radius: 0 5px 5px 0; padding: 2px 6px 2px 5px; cursor: pointer; max-width: 150px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.enx-and u { text-decoration: none; font: 700 9.5px var(--mono); margin-right: 4px; }
+.enx-and.verde { border-left-color: #3ecf8e; } .enx-and.amarelo { border-left-color: #e8b04b; }
+.enx-and.vermelho { border-left-color: #ff5a5f; background: rgba(255,90,95,.1); } .enx-and.cinza { border-left-color: #7b8695; }
+.enx-and.cripto::after { content: ' ₿'; color: #e8b04b; }
+.enx-sub { font: 600 9.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: #8fb3c9; margin-top: 6px; }
+.enx-sub em, .enx-sub2 em { font-style: normal; letter-spacing: .02em; text-transform: none; color: #5c6b7c; font-weight: 500; }
+.enx-sub2 { font: 600 9px var(--sans); color: #8794a4; margin-top: 4px; }
+.enx-vazio { font: 400 10px var(--mono); color: #5c6b7c; }
+.enx-it { font: 400 10px var(--mono); color: #cfe3f2; border-left: 3px solid #5b6573; padding: 3px 6px; background: rgba(255,255,255,.03); border-radius: 0 5px 5px 0; }
+.enx-it.vermelho { border-left-color: #ff5a5f; background: rgba(255,90,95,.07); } .enx-it.amarelo { border-left-color: #e8b04b; }
+.enx-it.verde { border-left-color: #3ecf8e; } .enx-it.cinza { border-left-color: #7b8695; }
+.enx-it b { color: #eef3f8; } .enx-it u { text-decoration: none; color: #8794a4; font-size: 9px; }
+.enx-it em, .enx-lst em, .enx-probs em { display: block; font-style: normal; color: #a7bcd2; font-size: 9.5px; margin-top: 2px; }
+.enx-ponto { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; background: #5b6573; }
+.enx-ponto.verde { background: #3ecf8e; } .enx-ponto.amarelo { background: #e8b04b; } .enx-ponto.vermelho { background: #ff5a5f; } .enx-ponto.cinza { background: #7b8695; }
+.enx-rel { border: 1px solid rgba(255,255,255,.08); border-radius: 6px; padding: 5px 7px; background: rgba(255,255,255,.025); font: 400 10px var(--mono); color: #cfe3f2; }
+.enx-rel-cab u { text-decoration: none; color: #8794a4; } .enx-rel-cab s, .enx-rel-quem s, .enx-probs s { text-decoration: none; color: #7b8695; }
+.enx-rel-quem { color: #a7bcd2; margin-top: 2px; }
+.enx-rel-n { color: #8794a4; font-size: 9.5px; margin-top: 2px; }
+.enx-ver { font-style: normal; font: 700 8.5px var(--mono); letter-spacing: .08em; padding: 0 5px; border-radius: 999px; border: 1px solid; margin-left: 4px; }
+.enx-ver.confirma { color: #3ecf8e; } .enx-ver.refuta { color: #ff8a8f; } .enx-ver.parcial { color: #e8b04b; } .enx-ver.sem { color: #7b8695; }
+.enx-probs, .enx-lst { margin: 3px 0 0; padding-left: 14px; font: 400 10px var(--mono); color: #cfe3f2; }
+.enx-probs li.conf { color: #cfe3f2; } .enx-probs li.nconf { color: #8794a4; }
+.enx-lst.mau li::marker { color: #ff5a5f; } .enx-lst.prop li::marker { color: #e8b04b; }
+.enx-lideres { display: flex; flex-wrap: wrap; gap: 3px 10px; font: 400 9.5px var(--mono); color: #8794a4; margin-top: 3px; }
+.enx-lideres b { color: #cfe3f2; }
+.enx-parecer { font: 500 10.5px/1.35 var(--sans); color: #eef3f8; border-left: 3px solid #e8b04b; padding: 4px 7px; background: rgba(232,176,75,.06); border-radius: 0 6px 6px 0; }
+.enx-nota { font: 400 9.5px var(--mono); color: #7b8695; margin-top: 3px; }
+.enx-painel { margin-top: 8px; }
+/* o ponto da VIGIA em cada cartao (o estado do funcionario, ou o pior dos andares que o cargo chefia) */
+.cartao[data-vg] { position: relative; }
+.cartao[data-vg]::after { content: ''; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(9,13,19,.9); pointer-events: none; }
+.cartao[data-vg="verde"]::after { background: #3ecf8e; }
+.cartao[data-vg="amarelo"]::after { background: #e8b04b; }
+.cartao[data-vg="vermelho"]::after { background: #ff5a5f; animation: enxPisca 1s ease-in-out infinite; }
+.cartao[data-vg="cinza"]::after { background: #7b8695; }
+@keyframes enxPisca { 50% { opacity: .35; } }
+/* o telemovel: uma linha so (o tecto de 3 ecras dele tem ~40 px de folga, medido a 24/09 com 3.157 px) */
+.enx-telemovel { display: none; }
+@media (max-width: 900px) {
+  .enx-telemovel:not([hidden]) { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap;
+    margin: 0 0 8px; padding: 5px 10px; border: 1px solid var(--l); border-radius: 8px; background: linear-gradient(180deg, var(--b2), #090b0e);
+    font: 500 10.5px var(--mono); color: #a7bcd2; height: 28px; box-sizing: border-box; }
+  .enx-telemovel > b { font: 700 9.5px var(--sans); letter-spacing: .14em; color: #8fb3c9; }
+}
+@media (prefers-reduced-motion: reduce) { .enx-coracao.bate, .cartao[data-vg="vermelho"]::after { animation: none; } }
