@@ -475,7 +475,8 @@
     if (a.tipo === 'em_obras') el.innerHTML = '<u>ordem ' + escH(o) + ' · em obras · fase ' + escH(d.fase) + '</u><b>' + escH(a.nome) + '</b><br><em>' + escH(d.faz) + '</em>';
     else if (a.tipo === 'reservado') el.innerHTML = '<u>ordem ' + escH(o) + '</u><b>reservado</b><br><em>sem nome, sem alvará: silhueta do projecto de 100</em>';
     else el.innerHTML = '<u>andar ' + escH(a.n === -1 ? 'cave' : a.n) + ' · ordem ' + escH(o) + ' · ' + escH(d.cargo) + '</u><b>' + escH(a.nome) + '</b><br><em>' +
-      escH(d.n_funcionarios) + ' funcionário(s) · importância ' + num(d.importancia, 1) + ' · ' + escH(d.estado) + '</em>';
+      escH(d.n_funcionarios) + ' funcionário(s) · importância ' + num(d.importancia, 1) + ' · ' + escH(d.estado) +
+      (vigiaPorN[a.n] ? ' · vigia: ' + escH(vigiaPorN[a.n] === 'cinza' ? 'sem prova' : vigiaPorN[a.n]) : '') + '</em>';
   }
 
   // ================================================================ funcoes puras (da v3, provadas no arreio)
@@ -3148,6 +3149,8 @@
       (torre && d.n_activos != null ? cel('aprovados · em avaliação', d.n_activos + ' · ' + (d.n_historico || 0)) : '') +
       (torre && d.n_revistos != null ? cel('já revistos pela rota', String(d.n_revistos)) : '') +
       cel('última corrida', ult.length ? ult[ult.length - 1] : '—') + cel('estado', String(d.estado || '—'), 'pt-' + d.estado) + '</div>';
+    // 24/09 (lote 5): o que a VIGIA do enxame diz deste andar (quem esta fora do verde e porque) - do predio_enxame.js
+    if (window.__enxame && typeof window.__enxame.htmlDoAndar === 'function') { try { html += window.__enxame.htmlDoAndar(n) || ''; } catch (e) { } }
     if (T && (torre ? (esp === 'sr_stark' || esp === 'conselho' || esp === 'socios_directores') : n === 11)) html += blocoDireccao();
     if (T && (torre ? esp === 'risco' : n === 10)) html += blocoRisco();
     if (T && (torre ? esp === 'mesa' : n === 9)) html += blocoMesa();
@@ -3235,6 +3238,7 @@
       } else if (it.arestasMat) it.arestasMat.opacity = base;
     });
     if (mexeuDegraus && instDegraus && instDegraus.instanceColor) instDegraus.instanceColor.needsUpdate = true;
+    piscarVigia(agora);            // 24/09 (lote 5): so faz alguma coisa se houver andar vermelho na vigia
     if (coroa) {
       coroa.arestasMat.opacity = 0.78 + 0.2 * amp * w;
       var b = 0.86 + 0.14 * amp * w; coroa.brilho = b;
@@ -3244,6 +3248,63 @@
       coroa.reactor.material.opacity = 0.55 + 0.40 * amp * (0.5 + 0.5 * w);
       var sr = coroa.reactorEscala * (1 + 0.10 * amp * w); coroa.reactor.scale.set(sr, sr, 1);
     }
+  }
+  // ================================================================ 24/09 (lote 5): AS LUZES DA VIGIA
+  // O estado de cada andar pela VIGIA do enxame (sala/enxame.json, lido pelo predio_enxame.js, que chama
+  // vigiaDosAndares): uma barra na ponta ESQUERDA do degrau de cada andar - verde, amarelo, vermelho ou cinzento
+  // (sem prova). Porque assim e nao de outra maneira: ele queixou-se de a torre travar, e cada chamada de desenho
+  // conta. E UMA malha instanciada para a torre inteira (uma chamada), a cor e por instancia, e so se mexe nas cores
+  // quando o estado MUDA - a leitura do ficheiro nao redesenha nada. O vermelho pisca (1 Hz, no passo do batimento,
+  // so se houver vermelho; com prefers-reduced-motion nao pisca). Andar sem ninguem vigiado (so genes, em obras): sem
+  // luz, porque nao haver vigia nao e o mesmo que estar cinzento.
+  var COR_VIGIA = { verde: 0x3ecf8e, amarelo: 0xe8b04b, vermelho: 0xff5a5f, cinza: 0x7b8695 };
+  var instVigia = null, vigiaPorN = {}, vigiaAss = '', vigiaIdx = [], vigiaTemVermelho = false, _corVigia = null;
+  function construirLuzesVigia() {
+    instVigia = null;                // o antigo (se havia) foi deitado fora com o grupoTorre no largarGrupo
+    var alvo = projecto.lista.filter(function (it) { return it.tipo !== 'reservado' && it.tipo !== 'em_obras' && it.n != null && it.grupo; });
+    instVigia = new THREE.InstancedMesh(new THREE.BoxGeometry(3.0, 0.8, 0.46), new THREE.MeshBasicMaterial({}), Math.max(1, alvo.length));
+    instVigia.userData.vigia = true; instVigia.renderOrder = 4;
+    vigiaIdx = alvo.map(function (it) { return { n: it.n, it: it, sev: null }; });
+    instVigia.count = alvo.length;
+    grupoTorre.add(instVigia);
+    vigiaAss = '';                   // a malha e nova: pinta-se de novo, seja qual for o estado anterior
+    pintarLuzesVigia();
+  }
+  function pintarLuzesVigia() {
+    if (!instVigia) return;
+    var ass = vigiaIdx.map(function (v) { return v.n + ':' + (vigiaPorN[v.n] || ''); }).join('|');
+    if (ass === vigiaAss) return;
+    vigiaAss = ass;
+    if (!_corVigia) _corVigia = new THREE.Color();
+    var m = new THREE.Matrix4(), zero = new THREE.Matrix4().makeScale(0, 0, 0);
+    vigiaTemVermelho = false;
+    vigiaIdx.forEach(function (v, i) {
+      var sev = vigiaPorN[v.n] || null; v.sev = sev;
+      if (!sev || COR_VIGIA[sev] == null) { instVigia.setMatrixAt(i, zero); _corVigia.setHex(0x000000); instVigia.setColorAt(i, _corVigia); return; }
+      var r = rodar(-LARG / 2 + 1.5, PROF / 2 + 0.02, v.it.ang);
+      m.makeRotationY(v.it.ang); m.setPosition(r.x, v.it.y + 0.2, r.z);
+      instVigia.setMatrixAt(i, m); _corVigia.setHex(COR_VIGIA[sev]); instVigia.setColorAt(i, _corVigia);
+      if (sev === 'vermelho') vigiaTemVermelho = true;
+    });
+    instVigia.instanceMatrix.needsUpdate = true;
+    if (instVigia.instanceColor) instVigia.instanceColor.needsUpdate = true;
+    marcarMovimento();
+  }
+  function piscarVigia(agora) {
+    if (!instVigia || !vigiaTemVermelho || calmo || !instVigia.instanceColor) return;
+    var k = 0.55 + 0.45 * Math.cos(2 * Math.PI * (agora % 1000) / 1000);
+    vigiaIdx.forEach(function (v, i) {
+      if (v.sev !== 'vermelho') return;
+      _corVigia.setHex(COR_VIGIA.vermelho).multiplyScalar(k); instVigia.setColorAt(i, _corVigia);
+    });
+    instVigia.instanceColor.needsUpdate = true;
+  }
+  function vigiaDosAndares(mapa) {
+    var novo = {};
+    Object.keys(obj(mapa)).forEach(function (k) { var n = Number(k), s = String(mapa[k] || ''); if (isFinite(n) && COR_VIGIA[s] != null) novo[n] = s; });
+    vigiaPorN = novo;
+    pintarLuzesVigia();
+    return { luzes: vigiaIdx.filter(function (v) { return !!v.sev; }).length, andares: vigiaIdx.length };
   }
   function lancarOndaDeDados(tIso) {
     if (!projecto) return null;
@@ -3662,6 +3723,7 @@
         batimento: { amp: batimento.amp, fase: batimento.fase, w: batimento.w, vivo: batimento.vivo, bpm: batimento.bpm }, vidroOpacidade: vidroOpacidade,
         ondasDeDados: ondasDeDados, ondaActiva: ondaDados.v != null, letreiro: !!(coroa && coroa.planos.length >= 1 && grupoCoroa && grupoCoroa.visible),   // v6b: era '=== 2' (os dois planos das faces); o facto e HAVER letreiro, nao como esta feito
         andaresAcesos: projecto ? projecto.lista.filter(function (it) { return !!it.acesoT0; }).length : 0,
+        luzesVigia: vigiaIdx.filter(function (v) { return !!v.sev; }).length,   // 24/09 (lote 5): andares com luz da vigia
         cartoesModo: $('cartoes') ? ($('cartoes').classList.contains('duas-filas') ? 'duas-filas' : ($('cartoes').classList.contains('faixa') ? 'faixa' : '')) : ''
       };
     },
@@ -3719,6 +3781,20 @@
     zonaOcupada: function (o) { return zonaOcupadaRect(o); },
     layout: function (k) { return layoutHolos(k == null ? Math.max(0, nivelActual) : Number(k)); },
     dados: function () { return D; },
+    // 24/09 (lote 5): as LUZES DA VIGIA. O predio_enxame.js da o estado por andar; o arreio le de volta o que a GPU
+    // recebeu (a cor que esta mesmo no buffer da instancia, nao a que se pediu) e onde a luz cai no ecra.
+    vigiaDosAndares: vigiaDosAndares,
+    luzesVigia: function () {
+      if (!instVigia) return [];
+      var arr = instVigia.instanceColor ? instVigia.instanceColor.array : null, m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3(), e = {};
+      return vigiaIdx.map(function (v, i) {
+        instVigia.getMatrixAt(i, m); m.decompose(p, q, s);
+        var acesa = s.x > 0 && !!v.sev, onde = acesa ? ecraDoMundo(p.clone(), e) : null;
+        return { n: v.n, sev: v.sev, acesa: acesa, base: v.sev ? hexCss(COR_VIGIA[v.sev]) : null,
+                 gpu: arr ? [arr[3 * i], arr[3 * i + 1], arr[3 * i + 2]].map(function (x) { return Math.round(x * 255); }) : null,
+                 x: onde ? Math.round(onde.x) : null, y: onde ? Math.round(onde.y) : null };
+      });
+    },
     avatarSVG: avatarSVG,
     pausarCiclo: function (ms) { cicloPausadoAte = Date.now() + Math.max(0, Number(ms) || 0); return cicloPausadoAte; },
     alimentar: function (p, t) { aplicarDados(p || null, t || null); return window.__predio.contagem(); },   // costura de teste: os MESMOS caminhos do ciclo()
