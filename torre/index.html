@@ -1,5 +1,5 @@
 <!-- TORRE STARK - copia publica e SANEADA: as chaves dos genes sao hashes, a receita fica em casa.
-     Gerada por tesouraria/mercado/publicar_torre.py em 24/09 12:10:24. Actualiza-se sozinha.
+     Gerada por tesouraria/mercado/publicar_torre.py em 24/09 12:11:28. Actualiza-se sozinha.
      Nao listada: <meta robots noindex> nesta pagina e Disallow em /robots.txt. -->
 <!doctype html>
 <html lang="pt">
@@ -120,7 +120,10 @@
         <div class="ins-r" data-m="stop"><span><i class="ins-k" style="background:var(--dn);margin-left:0"></i>Stop do dia <i id="md_stop_f"></i></span><b id="md_stop">—</b></div>
         <div class="ins-sep"></div>
         <div class="ins-h">Risco</div>
-        <div class="ins-r"><span>Uso do stop</span><b id="md_stop_uso">—</b></div>
+        <div class="ins-r" title="O que as travas dos executores usam de facto: a cripto trava pelo REALIZADO do dia UTC (3% do capital cripto); o juiz das ações pelo dia das ações (1% do capital das ações). A 100% esse lado deixa de abrir posições; as saídas continuam."><span>Trava do dia <i>só realizado</i></span><b id="md_trava_uso">—</b></div>
+        <div class="ins-bar"><i id="md_trava_bar" style="background:var(--am)"></i></div>
+        <div class="ins-r"><span><i id="md_trava_det" style="margin-left:0">—</i></span></div>
+        <div class="ins-r" title="O dia desde a abertura (Brasília): realizado de hoje + quanto as posições abertas mexeram desde a primeira marca do dia, contra o stop do dia. Mede; não trava nada."><span>Dia com o aberto <i id="md_stop_desde">desde a abertura</i></span><b id="md_stop_uso">—</b></div>
         <div class="ins-bar"><i id="md_stop_bar" style="background:var(--dn)"></i></div>
         <div class="ins-r"><span>Capital em uso <i id="md_cap_f"></i></span><b id="md_cap">—</b></div>
         <div class="ins-bar"><i id="md_cap_cr" style="background:var(--cy)"></i><i id="md_cap_ac" style="background:#8b95a7"></i></div>

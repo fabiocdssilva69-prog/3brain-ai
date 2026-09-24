@@ -41,6 +41,7 @@ function escala(x){ if(!(x>0)) return 1; const p=Math.pow(10,Math.floor(Math.log
 const fmtP=p=>{ p=Number(p); if(!isFinite(p)) return '—'; return Math.abs(p)>=100?p.toFixed(2):(Math.abs(p)>=1?p.toFixed(4):p.toPrecision(4)); };
 
 const S={fech:null,pos:[],cr:{},plano:null,alvoPor:{},nAcoes:0,bolsa:false,esp:null,alvos:null,limite:null,limAc:null,limCr:null,capital:null,
+  herd:null,herdDesde:'',herdErro:'',stopP:null,trava:{},
   pico:null,picoT:'',vale:null,valeT:'',serie:[],dataDia:'',je:{},aloc:{},gn:{},meta:null,metaUser:false,
   real:null,val:0,vel:0,disp:0,esc:10,escAlvo:10,ritmo:0,ritmoV:0,ritEsc:5,
   simOn:false,simM:0,simVis:0,simValor:0,simInfo:[],teste:0,flash:0,
@@ -77,7 +78,7 @@ function desenharBase(){
   for(let i=-50;i<=50;i++){ const k=i%10===0?2:(i%5===0?1:0), a=ang(esc*i/50,esc), r0=R*0.972, r1=R*(0.972-[0.03,0.052,0.08][k]); L[k].push([c+r0*Math.cos(a),c+r0*Math.sin(a),c+r1*Math.cos(a),c+r1*Math.sin(a)]); }
   traco(gb,L[0],K.tMin,0.8); traco(gb,L[1],K.tMed,1.15); traco(gb,L[2],K.tMaj,1.7); gb.fillStyle='rgba(190,198,208,.55)'; gb.beginPath(); for(let i=-5;i<=5;i++){ const a=ang(esc*i/5,esc), x=c+R*0.986*Math.cos(a), y=c+R*0.986*Math.sin(a); gb.moveTo(x+R*0.0055,y); gb.arc(x,y,R*0.0055,0,PI2); } gb.fill();
   gb.font='500 '+Math.max(9,Math.round(R*0.055))+'px '+MONO; gb.textAlign='center'; gb.textBaseline='middle';
-  for(let i=-5;i<=5;i++){ const v=esc*i/5, a=ang(v,esc); gb.fillStyle=(S.limite!=null&&v<S.limite-1e-9)?K.dn:(i===0?K.br:K.num); gb.fillText((v>0?'+':v<0?'−':'')+fEsc(Math.abs(v)),c+R*0.8*Math.cos(a),c+R*0.8*Math.sin(a)); }
+  for(let i=-5;i<=5;i++){ const v=esc*i/5, a=ang(v,esc); gb.fillStyle=(S.stopP!=null&&v<S.stopP-1e-9)?K.dn:(i===0?K.br:K.num); gb.fillText((v>0?'+':v<0?'−':'')+fEsc(Math.abs(v)),c+R*0.8*Math.cos(a),c+R*0.8*Math.sin(a)); }
   for(const d of SUBS) baseSub(d);
   const jw=R*0.8, jh=R*0.215, jx=c-jw/2, jy=c-R*0.53;
   caixa(gb,jx,jy,jw,jh,R*0.028); gb.fillStyle='#07090c'; gb.fill(); gb.strokeStyle='#262d36'; gb.lineWidth=1; gb.stroke();
@@ -94,7 +95,7 @@ function baseSub(d){ const R=W.R, x=W.c+d.dx*R, y=W.c+d.dy*R, r=R*SUB_R;
   const ref=d.id==='ritmo'?0:(d.id==='meta'?-1+2*100/125:null);
   if(ref!=null){ const a=angSub(ref); gb.strokeStyle=d.id==='meta'?K.am:K.tMaj; gb.lineWidth=1.5; gb.beginPath(); gb.moveTo(x+r*0.9*Math.cos(a),y+r*0.9*Math.sin(a)); gb.lineTo(x+r*0.66*Math.cos(a),y+r*0.66*Math.sin(a)); gb.stroke(); }
   gb.font='600 '+Math.max(7,Math.round(R*0.026))+'px '+SANS; gb.fillStyle=K.mut; gb.textAlign='center'; gb.textBaseline='middle'; espacado(gb,d.tit,x,y-r*0.4,1); }
-const chave=()=>[S.esc.toFixed(5),S.ritEsc,S.limite,W.s,W.dpr].join('|');
+const chave=()=>[S.esc.toFixed(5),S.ritEsc,S.stopP,W.s,W.dpr].join('|');
 
 // ---------- camada viva ----------
 function banda(esc){ const c=W.c, R=W.R, vv=clamp(S.val,-esc*1.02,esc*1.02); if(Math.abs(vv)<esc*0.002) return;
@@ -104,7 +105,7 @@ function banda(esc){ const c=W.c, R=W.R, vv=clamp(S.val,-esc*1.02,esc*1.02); if(
   g.globalAlpha=1; const p0=P(R*0.878,a1), p1=P(R*0.932,a1); g.strokeStyle=K.br; g.lineWidth=2; g.beginPath(); g.moveTo(p0[0],p0[1]); g.lineTo(p1[0],p1[1]); g.stroke(); }
 function indices(esc){ const R=W.R, foco=S.foco&&S.foco.ate>performance.now()?S.foco.tipo:null; S.hits.length=0;
   const L=[]; if(S.esp!=null) L.push({tipo:'esperado',v:S.esp,cor:K.am,tag:'ESP'}); if(S.alvos!=null) L.push({tipo:'alvos',v:S.alvos,cor:K.cy,tag:'ALV'});
-  if(S.meta!=null) L.push({tipo:'meta',v:S.meta,cor:K.br,tag:'META'}); if(S.limite!=null) L.push({tipo:'stop',v:S.limite,cor:K.dn,tag:'STOP'});
+  if(S.meta!=null) L.push({tipo:'meta',v:S.meta,cor:K.br,tag:'META'}); if(S.stopP!=null) L.push({tipo:'stop',v:S.stopP,cor:K.dn,tag:'STOP'});
   L.forEach(m=>{ m.a=ang(clamp(m.v,-esc*1.02,esc*1.02),esc); }); L.sort((a,b)=>a.a-b.a);
   const postos=[]; g.textAlign='center'; g.textBaseline='middle';
   for(const m of L){ const s=R*(foco===m.tipo?0.04:0.029), nx=-Math.sin(m.a), ny=Math.cos(m.a), t=P(R*1.0,m.a), b=P(R*1.0+s*1.45,m.a);
@@ -127,7 +128,7 @@ function halo(c){ const k=c.map(x=>Math.min(255,Math.round(x/16)*16)).join(); le
   gr.addColorStop(0,'rgba('+k+',0.9)'); gr.addColorStop(0.35,'rgba('+k+',0.32)'); gr.addColorStop(1,'rgba('+k+',0)'); x.fillStyle=gr; x.fillRect(0,0,64,64); if(HALO.size>40) HALO.clear(); HALO.set(k,s); return s; }
 function zonas(esc){ const c=W.c, R=W.R, r=R*1.006; g.lineCap='butt'; g.lineWidth=R*0.012;
   const arco=(v0,v1,cor)=>{ v0=clamp(v0,-esc,esc); v1=clamp(v1,-esc,esc); if(v1-v0<esc*0.002) return; g.strokeStyle=cor; g.beginPath(); g.arc(c,c,r,ang(v0,esc),ang(v1,esc)); g.stroke(); };
-  if(S.limite!=null&&S.limite<0) arco(-esc,S.limite,'rgba(255,90,95,.55)');
+  if(S.stopP!=null&&S.stopP<0) arco(-esc,S.stopP,'rgba(255,90,95,.55)');
   const e=S.esp!=null&&S.esp>0?S.esp:null, m=S.meta!=null&&S.meta>0?S.meta:null;
   if(e!=null) arco(e,m!=null&&m>e?m:esc,'rgba(232,176,75,.4)');
   if(m!=null) arco(m,esc,'rgba(62,207,142,.36)'); }
@@ -176,7 +177,7 @@ function desenharLog(){ const el=$('md_log'); if(!el) return; el.textContent='';
   for(const x of S.log){ const d=document.createElement('div'); d.className='e'; const t=document.createElement('time'); t.textContent=x.t; const s=document.createElement('span'); s.className=x.cls; s.textContent=x.txt; const b=document.createElement('b'); b.textContent=x.v==null?'':(typeof x.v==='number'?sgn(x.v):x.v); d.append(t,s,b); el.appendChild(d); }
   put('md_log_n',S.log.length+' eventos · sessão'); }
 function cruzamentos(v){
-  for(const [k,x] of [['zero',0],['esperado',S.esp],['meta',S.meta],['alvos',S.alvos],['stop',S.limite]]){ if(x==null) continue;
+  for(const [k,x] of [['zero',0],['esperado',S.esp],['meta',S.meta],['alvos',S.alvos],['stop',S.stopP]]){ if(x==null) continue;
     if(S.cruzX[k]!=null&&Math.abs(S.cruzX[k]-x)>0.01) S.cruz[k]=null; S.cruzX[k]=x;
     const lado=v>=x, ant=S.cruz[k]; S.cruz[k]=lado; if(ant==null||ant===lado||!S.pronto) continue; evento((lado?'sobe_':'desce_')+k,x); }
   if(S.pico!=null&&v>S.pico){ const g2=v-S.pico; S.pico=v; S.picoT=hhmm(); if(S.pronto&&g2>=Math.max(0.25,S.esc*0.02)&&Date.now()-S.ultPico>300000){ evento('pico',v); S.ultPico=Date.now(); } }
@@ -201,7 +202,7 @@ function efeitoSubida(d,de,ate){ if(Math.abs(d)<0.004) return; const s=d>0?1:-1;
   if(S.fxDelta&&S.fxDelta.s===s&&S.fxDelta.t<0.7){ S.fxDelta.v+=d; S.fxDelta.t=0.12; } else S.fxDelta={v:d,s,t:0};
   if(!calmo){ if(s>0&&(!S.fxVarre||S.fxVarre.t>0.6)) S.fxVarre={t:0}; S.fxRastro={de,ate,t:0,s}; } forcar=true; }
 function recalcular(){ if(S.fech==null) return; const novo=diaCom(0), antes=S.real; S.real=novo; if(antes!=null&&S.pronto) efeitoSubida(novo-antes,antes,novo);
-  S.escAlvo=escala(Math.max(4,Math.abs(novo),Math.abs(S.esp||0),Math.abs(S.alvos||0),Math.abs(S.meta||0),Math.abs(S.pico||0),Math.abs(S.vale||0),Math.abs(S.limite||0))*1.12);
+  S.escAlvo=escala(Math.max(4,Math.abs(novo),Math.abs(S.esp||0),Math.abs(S.alvos||0),Math.abs(S.meta||0),Math.abs(S.pico||0),Math.abs(S.vale||0),Math.abs(S.stopP||0))*1.12);
   amostra(novo); cruzamentos(novo); forcar=true; }
 let ws=null, wsFalhas=0, pollT=null, rq=false, chaveWs='';
 function tick(s,p,b,a){ const c=S.cr[s]; if(!c||!(p>0)) return; if(c.basis==null) c.basis=c.agora-p; c.bin=p; if(b>0&&a>0) S.spread[s]=(a/b-1)*1e4; S.ultTick=Date.now(); if(!rq){ rq=true; setTimeout(()=>{rq=false; recalcular();},telemovel?500:200); } }
@@ -233,6 +234,11 @@ window.medidorVivo=function(v){ try{
   S.esp=pl.posicoes?fech+Number(pl.esperado_usd||0)+sem.reduce((s,k)=>s+(pnl[k]||0),0):null;
   S.alvos=pl.n_com_alvo?fech+Number(pl.no_alvo_usd||0)+semAlvo.reduce((s,k)=>s+(pnl[k]||0),0):null;
   if(lim.perda_dia_usd!=null){ S.limite=Number(lim.perda_dia_usd); S.limAc=lim.perda_acoes_usd; S.limCr=lim.perda_cripto_usd; S.capital=lim.capital_usd; }
+  // 24/09: o ponteiro conta as posicoes DESDE A ENTRADA; o stop e de UM dia. `herd` e o que as posicoes abertas ja valiam
+  // na primeira corrida do dia (painel: cartoes.marcas_do_dia). O dia desde a abertura = ponteiro - herd, e no mostrador
+  // o stop fica onde esse dia o toca: limite + herd. Sem marca (herd null) o mostrador fica como era e o texto diz porque.
+  { const da=lim.dia_abertura||{}, h=Number(da.herdado_usd); S.herd=(da.herdado_usd!=null&&isFinite(h))?h:null; S.herdDesde=da.desde||''; S.herdErro=da.erro||''; S.trava=lim.trava||{};
+    S.stopP=S.limite==null?null:S.limite+(S.herd==null?0:S.herd); }
   if(md.dia){ if(md.dia!==S.dataDia){ S.dataDia=md.dia; S.pico=Number(md.pico); S.picoT=md.pico_t||''; S.vale=Number(md.vale); S.valeT=md.vale_t||''; }
     else { if(Number(md.pico)>=(S.pico==null?-1e9:S.pico)){ S.pico=Number(md.pico); S.picoT=md.pico_t||S.picoT; } if(Number(md.vale)<=(S.vale==null?1e9:S.vale)){ S.vale=Number(md.vale); S.valeT=md.vale_t||S.valeT; } } }
   if(Array.isArray(md.serie)){ S.serie=md.serie; semearHist(v.t_iso,md.serie); }
@@ -286,8 +292,18 @@ function textos(){ if(S.real==null) return; const ab=S.real-(S.fech||0);
   put('md_pico',US(S.pico)); put('md_pico_t',(S.picoT||'')+desde); put('md_vale',US(S.vale)); put('md_vale_t',S.valeT||'');
   const rec=S.pico!=null?S.real-S.pico:null; put('md_recuo',rec==null?'—':sgn(rec)); sinal('md_recuo',rec); put('md_ritmo',sgn(S.ritmoV,2)+' /h'); sinal('md_ritmo',S.ritmoV);
   put('md_esp',US(S.esp)); put('md_esp_f',dist(S.esp)); put('md_alvo',US(S.alvos)); put('md_alvo_f',dist(S.alvos)); put('md_meta',US(S.meta)); put('md_meta_f',dist(S.meta)+(S.metaUser?'':' · sugerida'));
-  put('md_stop',US(S.limite)); put('md_stop_f',S.limite!=null?'margem '+sgn(S.real-S.limite):'');
-  const uso=S.limite!=null&&S.limite<0?Math.max(0,-S.real)/-S.limite*100:0; put('md_stop_uso',uso.toFixed(0)+'%'); larg('md_stop_bar',uso);
+  // 24/09: DUAS linhas, porque misturadas deram 184%. (1) a TRAVA DO DIA - o que as travas dos executores usam de facto:
+  // a cripto o seu realizado do dia (UTC) contra 3%, o juiz o dia das accoes contra 1%; manda o lado mais perto do tecto.
+  // (2) o DIA COM O ABERTO desde a abertura (BRT) contra o stop do dia - nao trava nada, mede.
+  const dA=(S.real==null||S.herd==null)?null:S.real-S.herd;
+  put('md_stop',US(S.limite)); put('md_stop_f',S.limite!=null&&dA!=null?'margem '+sgn(dA-S.limite):'');
+  const uso=(S.limite!=null&&S.limite<0&&dA!=null)?Math.max(0,-dA)/-S.limite*100:null; put('md_stop_uso',uso==null?'—':uso.toFixed(0)+'%'); larg('md_stop_bar',uso||0);
+  put('md_stop_desde',S.herd==null?(S.herdErro?'sem marca de abertura':'—'):'desde as '+(S.herdDesde||'00:00')+' · '+US(dA));
+  { const tr=S.trava||{}, n=x=>(x==null||!isFinite(Number(x)))?null:Number(x), uC=n(tr.cripto_uso_pct), uA=n(tr.acoes_uso_pct);
+    const lados=[['cripto',uC],['ações',uA]].filter(x=>x[1]!=null).sort((a,b)=>b[1]-a[1]);
+    put('md_trava_uso',lados.length?lados[0][1].toFixed(0)+'% '+lados[0][0]:'—'); larg('md_trava_bar',lados.length?lados[0][1]:0);
+    const ac=n(tr.acoes_dia_usd)!=null?US(n(tr.acoes_dia_usd)):(tr.acoes_estado||'—');
+    put('md_trava_det','cripto '+US(n(tr.cripto_realizado_usd))+' de '+US(n(tr.cripto_tecto_usd))+' · ações '+ac+' de '+US(n(tr.acoes_tecto_usd))+(tr.acoes_t?' (juiz '+tr.acoes_t+' NY)':'')); }
   const cap=Number(S.capital||0), usoCr=Number(S.aloc.em_uso_cripto||0), usoAc=Number(S.aloc.em_uso_acoes||0), usado=usoCr+usoAc;
   put('md_cap',cap?(usado/cap*100).toFixed(0)+'%':'—'); put('md_cap_f',cap?'US$ '+usado.toFixed(0)+' / '+cap.toFixed(0):''); larg('md_cap_cr',cap?usoCr/cap*100:0,0); larg('md_cap_ac',cap?usoAc/cap*100:0,cap?usoCr/cap*100:0);
   put('md_cr','US$ '+usoCr.toFixed(2)+(cap?'  '+(usoCr/cap*100).toFixed(0)+'%':'')); put('md_ac','US$ '+usoAc.toFixed(2)+(cap?'  '+(usoAc/cap*100).toFixed(0)+'%':'')); put('md_livre',cap?'US$ '+(cap-usado).toFixed(2):'—');
@@ -344,7 +360,7 @@ function textoDica(h){ const d=x=>S.real==null||x==null?'':(x>S.real?'faltam '+s
   case 'esperado': return ['ESP '+sgn(S.esp),'Resultado que o backtest espera no fim das posições abertas, já com as taxas. '+d(S.esp)+'.'];
   case 'alvos': return ['ALV '+sgn(S.alvos),'Resultado do dia se as regras de saída atingirem os alvos. '+(alvosTxt()?alvosTxt()+'. ':'')+d(S.alvos)+'.'];
   case 'meta': return ['META '+sgn(S.meta),'Meta do dia neste aparelho (+ − para ajustar). '+d(S.meta)+'.'];
-  case 'stop': return ['STOP '+sgn(S.limite),'Limite de perda do dia dos executores: ações '+(S.limAc!=null?sgn(Number(S.limAc)):'—')+' (1%), cripto '+(S.limCr!=null?sgn(Number(S.limCr)):'—')+' (3%). Abaixo disto não abrem posições.'];
+  case 'stop': return ['STOP '+sgn(S.limite),'Stop do dia: ações '+(S.limAc!=null?sgn(Number(S.limAc)):'—')+' (1%), cripto '+(S.limCr!=null?sgn(Number(S.limCr)):'—')+' (3%).'+(S.herd!=null?' O ponteiro conta as posições desde a entrada e '+sgn(S.herd)+' já vinha de antes das '+(S.herdDesde||'00:00')+'; por isso, no mostrador, o dia toca o stop em '+sgn(S.stopP)+'.':' Sem marca de abertura: o mostrador mistura dias anteriores.')+' Quem trava de facto: a cripto pelo realizado do dia, o juiz das ações pelo dia das ações.'];
   case 'pico': return ['PICO '+sgn(S.pico),'Máximo do dia'+(S.picoT?' às '+S.picoT:'')+'.'];
   case 'vale': return ['VALE '+sgn(S.vale),'Mínimo do dia'+(S.valeT?' às '+S.valeT:'')+'.'];
   } return null; }
