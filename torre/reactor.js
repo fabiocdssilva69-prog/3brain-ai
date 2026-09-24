@@ -185,10 +185,15 @@ function cruzamentos(v){
 
 // ---------- dados ----------
 function precoVivo(p){ const c=S.cr[p.simbolo]; return (c&&c.bin!=null&&c.basis!=null)?c.bin+c.basis:(Number(p.agora)||0); }
+// 24/09: a taxa de ENTRADA e a que o executor gravou (15 pb maker / 25 taker), a mesma do cartao_fechar do painel. Vem
+// na posicao (vivo.json) ou, na torre (que nao passa o registo), no mapa cartao_fechar.taxa_entrada_pb. So sem as duas
+// se usa TAXA (25 pb) - e o painel conta essas como SUPOSTAS. A saida fica em TAXA (pior caso: taker).
+function taxaEntrada(p){ const ok=x=>x!=null&&x!==''&&isFinite(Number(x))&&Number(x)>=0&&Number(x)<1e4;
+  if(ok(p.taxa_entrada_pb)) return Number(p.taxa_entrada_pb)/1e4; const m=S.taxaEnt||{}; return ok(m[p.simbolo])?Number(m[p.simbolo])/1e4:TAXA; }
 function diaCom(m,info){ let v=S.fech||0;
   for(const p of S.pos){ const q=Number(p.qty)||0, e=Number(p.entrada)||0; if(!q||!(e>0)) continue; let pm=precoVivo(p)*(1+m); const al=S.alvoPor[p.simbolo];
     if(m!==0&&al&&q>0&&pm>=al){ pm=al; if(info) info.push(p.simbolo); }
-    let b=(pm-e)*q; if(p.cripto) b-=Math.abs(e*q)*(1/(1-TAXA)-1)+Math.abs(pm*q)*TAXA; v+=b; }
+    let b=(pm-e)*q; if(p.cripto){ const te=taxaEntrada(p); b-=Math.abs(e*q)*(1/(1-te)-1)+Math.abs(pm*q)*TAXA; } v+=b; }
   return v; }
 function amostra(v){ const t=Date.now()/1000, h=S.hist; if(h.length&&t-h[h.length-1][0]<2) h[h.length-1][1]=v; else h.push([t,v]); while(h.length&&t-h[0][0]>1200) h.shift(); }
 function semearHist(tIso,serie){ if(!tIso) return; const dia=String(tIso).slice(0,10), off=String(tIso).slice(19)||'-03:00', agora=Date.now()/1000, pts=[];
@@ -226,6 +231,7 @@ window.medidorVivo=function(v){ try{
   const novo={}; pos.filter(p=>p.cripto&&p.qty).forEach(p=>{ const s=String(p.simbolo), ant=S.cr[s]||{}; novo[s]={bin:ant.bin,basis:ant.bin!=null?Number(p.agora)-ant.bin:null,agora:Number(p.agora)}; });
   S.pat=v.patrimonio||{}; S.gv=((v.gv||{}).garantido)||{};   // 20/09: o bloco O dinheiro e os tres cartoes
   S.cr=novo; S.pos=pos; S.plano=pl; S.gn=gn; S.je=v.ja_entrou||{}; S.aloc=v.alocacao||{}; S.nAcoes=pos.filter(p=>!p.cripto).length; S.bolsa=!!(v.precos||{}).bolsa_aberta;
+  S.taxaEnt=((v.cartao_fechar||{}).taxa_entrada_pb)||{};   // 24/09: a taxa de entrada gravada, por simbolo
   S.alvoPor={}; (pl.posicoes||[]).forEach(x=>{ if(x.alvo) S.alvoPor[x.simbolo]=Number(x.alvo); });
   if(S.fech!=null&&S.pronto){ if(fech>S.fech+0.005) evento('fecho_ganho',fech-S.fech); else if(fech<S.fech-0.005) evento('fecho_perda',fech-S.fech); }
   S.fech=fech;
