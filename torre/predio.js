@@ -3052,7 +3052,13 @@
     txt($('k_dia_s'), (gn.n_entrou_hoje || 0) + ' entrada(s) · ' + (gn.n_saiu_hoje || 0) + ' saída(s)');
     var m = Number(est.realizado);
     txt($('k_mesa'), sinal(m, 2) + ' US$'); $('k_mesa').className = isFinite(m) && m > 0 ? 'up' : (isFinite(m) && m < 0 ? 'dn' : '');
-    txt($('k_mesa_s'), (est.n_linhas || 0) + ' estratégias · ' + (est.n || 0) + ' operações');
+    // 24/09: o acumulado esconde a semana em que uma estrategia perdeu. A mesma regua para todas (semana de
+    // calendario, dia de Brasilia, pela saida - mesa.py totais.janelas): quantas estrategias ja tiveram uma semana
+    // negativa, e a pior semana da casa inteira. Os negativos ficam a VER-SE no cartao, nao so na gaveta.
+    var jn = obj(obj(p.totais).janelas), pc = jn.pior_casa;
+    txt($('k_mesa_s'), (est.n_linhas || 0) + ' estratégias · ' + (est.n || 0) + ' operações' +
+      (est.linhas_com_semana_negativa != null ? ' · ' + est.linhas_com_semana_negativa + ' com semana negativa' : '') +
+      (jn.periodo ? ' · pior semana da casa ' + (pc ? sinal(pc.pnl, 2) + ' (' + String(pc.inicio || pc.janela).slice(5) + ')' : 'nenhuma') : ''));
     txt($('k_org'), (org.total_ready != null ? org.total_ready : '—') + ' / ' + (org.total != null ? org.total : '—'));
     txt($('k_org_s'), lista(org.com_erro).length + ' com erro · ' + lista(org.atrasados).length + ' atrasado(s)');
   }
@@ -3159,11 +3165,22 @@
     Object.keys(sp).forEach(function (par) { linhas += linha('spread ' + par, num(sp[par], 1) + ' pb'); });
     return '<table class="pred-tab"><tbody>' + linha('Apostas independentes (N efectivo)', num(v.n_ef, 2)) + linha('Posições abertas', String(v.n_posicoes || 0)) + linha('Rotações recusadas hoje', String(k.rotacoes_recusadas || 0)) + linhas + '</tbody></table>';
   }
+  // 24/09 (meses maus na mesa): por baixo do acumulado, a PIOR SEMANA de cada estrategia e quantas semanas fechou no
+  // negativo - a mesma regua para todas (mesa.py: semana de calendario, dia de Brasilia, pela data de saida). Vem de
+  // pepper.totais.janelas.por_estrategia, ligado a linha pela chave (a torre so passa campos fixos por linha).
+  function janelasDaMesa(p) {
+    var m = {};
+    lista(obj(obj(p.totais).janelas).por_estrategia).forEach(function (e) { if (e && e.chave != null) m[e.chave] = e; });
+    return m;
+  }
   function blocoMesa() {
-    var p = obj(T.pepper), h = '<table class="pred-tab"><thead><tr><th>estratégia</th><th>família</th><th>n</th><th>acerto</th><th>realizado</th><th>aberto</th></tr></thead><tbody>';
+    var p = obj(T.pepper), jm = janelasDaMesa(p), h = '<table class="pred-tab"><thead><tr><th>estratégia</th><th>família</th><th>n</th><th>acerto</th><th>realizado</th><th>aberto</th><th>pior semana</th><th>semanas −</th></tr></thead><tbody>';
     lista(p.linhas).concat(lista(p.controlo)).forEach(function (l) {
+      var j = jm[l.chave] || null, pj = j && j.pior_janela;
       h += '<tr><td class="n">' + escH(l.nome_curto || l.chave) + '</td><td>' + escH(l.familia || '') + '</td><td>' + (l.n == null ? '—' : escH(l.n)) + '</td><td>' + (l.acerto == null ? '—' : num(l.acerto * 100, 0) + '%') + '</td>' +
-        '<td class="' + (Number(l.realizado) >= 0 ? 'pt-ok' : 'pt-erro') + '">' + sinal(l.realizado, 2) + '</td><td>' + (l.aberto == null ? '—' : sinal(l.aberto, 2)) + '</td></tr>';
+        '<td class="' + (Number(l.realizado) >= 0 ? 'pt-ok' : 'pt-erro') + '">' + sinal(l.realizado, 2) + '</td><td>' + (l.aberto == null ? '—' : sinal(l.aberto, 2)) + '</td>' +
+        '<td' + (pj ? ' class="pt-erro"' : '') + '>' + (pj ? sinal(pj.pnl, 2) + ' <small>' + escH(String(pj.inicio || pj.janela).slice(5)) + '</small>' : (j && j.n_janelas ? 'nenhuma' : '—')) + '</td>' +
+        '<td' + (j && j.janelas_negativas ? ' class="pt-erro"' : '') + '>' + (j && j.n_janelas ? escH(j.janelas_negativas) + ' de ' + escH(j.n_janelas) : '—') + '</td></tr>';
     });
     return h + '</tbody></table>';
   }
