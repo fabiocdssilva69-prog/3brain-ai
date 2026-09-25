@@ -19,7 +19,10 @@
   var PESO = { vermelho: 3, amarelo: 2, verde: 1, cinza: 0 };
 
   function $(id) { return document.getElementById(id); }
-  function escH(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+  // o nome antigo ('Pointer') nao aparece no ecra (regra dele, 18/09): os textos do enxame citam funcionarios e
+  // ficheiros do REGISTO, que ainda o usam - troca-se ao desenhar, como no chat (predio_chat.js semPointer)
+  function semPointer(s) { return String(s == null ? '' : s).replace(/\b([Dd])o Pointer\b/g, '$1a torre').replace(/\bo Pointer\b/g, 'a torre').replace(/Pointer/g, 'torre'); }
+  function escH(s) { return semPointer(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
   function lista(x) { return Object.prototype.toString.call(x) === '[object Array]' ? x : []; }
   function obj(x) { return (x && typeof x === 'object' && !lista(x).length) ? x : {}; }
   function semDado(v) { return v == null || v === '' ? 'sem dado' : String(v); }
