@@ -1017,3 +1017,13 @@ body.cart-g { --cartao-larg: 320px; --cartao-esc: 1.28; }
   .enx-telemovel > b { font: 700 9.5px var(--sans); letter-spacing: .14em; color: #8fb3c9; }
 }
 @media (prefers-reduced-motion: reduce) { .enx-coracao.bate, .cartao[data-vg="vermelho"]::before { animation: none; } }
+/* 24/09 (lote 5): as seccoes DOBRADAS da coluna tem o titulo numa linha so. MEDIDO a 1400x900: o titulo do enxame
+   partia em 2-3 linhas (79 px dobrado), o do acorde em 83 e o do "sem numero" em 61 - e as Leituras (o chat, 220 px de
+   minimo) ficavam sem sitio: a pagina ganhava 21 px de scroll vertical. Dobrada, uma seccao e um titulo, nao um bloco. */
+.pred-lado .lado-bl.dobrado > .bh { flex-wrap: nowrap; align-items: center; }
+.pred-lado .lado-bl.dobrado > .bh h2 { flex: 0 0 auto; white-space: nowrap; }
+.pred-lado .lado-bl.dobrado > .bh h2 em { display: none; }
+.pred-lado .lado-bl.dobrado > .bh .kn { min-width: 0; flex: 1 1 auto; flex-wrap: nowrap; justify-content: flex-end;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pred-lado .lado-bl.dobrado > .bh .kn > * { flex: 0 0 auto; }
+.pred-lado .lado-bl.dobrado > .bh button { flex: 0 0 auto; }

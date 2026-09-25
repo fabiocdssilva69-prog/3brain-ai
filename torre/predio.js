@@ -3724,6 +3724,7 @@
         ondasDeDados: ondasDeDados, ondaActiva: ondaDados.v != null, letreiro: !!(coroa && coroa.planos.length >= 1 && grupoCoroa && grupoCoroa.visible),   // v6b: era '=== 2' (os dois planos das faces); o facto e HAVER letreiro, nao como esta feito
         andaresAcesos: projecto ? projecto.lista.filter(function (it) { return !!it.acesoT0; }).length : 0,
         luzesVigia: vigiaIdx.filter(function (v) { return !!v.sev; }).length,   // 24/09 (lote 5): andares com luz da vigia
+        luzesVigiaMalhas: grupoTorre ? grupoTorre.children.filter(function (o) { return o.userData && o.userData.vigia; }).length : 0,
         cartoesModo: $('cartoes') ? ($('cartoes').classList.contains('duas-filas') ? 'duas-filas' : ($('cartoes').classList.contains('faixa') ? 'faixa' : '')) : ''
       };
     },

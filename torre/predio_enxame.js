@@ -43,8 +43,13 @@
     var kn = $('enx_kn'); if (!kn || !E) return;
     var bt = linhaDoBatimento(), t = obj(E.totais);
     var verm = lista(E.fora_do_verde).filter(function (f) { return f.sev === 'vermelho'; }).map(function (f) { return f.id; });
-    var html = '<span class="enx-bat' + (bt.parado ? ' parado' : '') + '"><i class="enx-coracao"></i>' + escH(bt.texto) + '</span>' +
-      '<span class="enx-tot"><b class="verde">' + (t.verde || 0) + '</b> <b class="amarelo">' + (t.amarelo || 0) + '</b> <b class="vermelho">' + (t.vermelho || 0) + '</b> <b class="cinza">' + (t.cinza || 0) + '</b></span>' +
+    // o titulo le-se com a seccao DOBRADA, numa linha so: por isso o batimento vai curto (volta e idade; a duracao da
+    // volta fica no corpo e no telemovel) e os vermelhos vao por ultimo (se a linha nao chegar, corta-se o nome, nunca
+    // o numero de vermelhos, e a seccao ganha a borda vermelha)
+    var b = obj(E.batimento);
+    var curto = (b.seq != null ? 'volta ' + b.seq : 'sem batimento') + ' · ' + haQuanto(bt.s).replace('há ', '');
+    var html = '<span class="enx-bat' + (bt.parado ? ' parado' : '') + '" title="' + escH(bt.texto) + '"><i class="enx-coracao"></i>' + escH(curto) + '</span>' +
+      '<span class="enx-tot" title="verdes · amarelos · vermelhos · sem prova"><b class="verde">' + (t.verde || 0) + '</b> <b class="amarelo">' + (t.amarelo || 0) + '</b> <b class="vermelho">' + (t.vermelho || 0) + '</b> <b class="cinza">' + (t.cinza || 0) + '</b></span>' +
       (verm.length ? '<span class="enx-verm">' + escH(verm.slice(0, 3).join(', ')) + '</span>' : '');
     if (kn.dataset.h !== html) { kn.dataset.h = html; kn.innerHTML = html; }
     var bl = $('bl_enxame'); if (bl) bl.classList.toggle('tem-vermelho', verm.length > 0 || bt.parado);
@@ -126,7 +131,8 @@
   function pintarCorpo() {
     var cx = $('enx_corpo'); if (!cx || !E) return;
     var vv = E.vigia_do_vigia, ag = E.agendador;
-    var cab = '<div class="enx-estado"><span>vigia do vigia <b class="' + (vv === 'ok' ? 'ok' : 'mau') + '">' + escH(semDado(vv)) + '</b></span>' +
+    var cab = '<div class="enx-estado"><span>batimento <b>' + escH(linhaDoBatimento().texto) + '</b></span>' +
+      '<span>vigia do vigia <b class="' + (vv === 'ok' ? 'ok' : 'mau') + '">' + escH(semDado(vv)) + '</b></span>' +
       '<span>agendador <b class="' + (ag === 'ok' ? 'ok' : 'mau') + '">' + escH(semDado(ag)) + '</b></span>' +
       '<span>vigiados <b>' + escH(semDado(obj(E.totais).vigiados)) + '</b></span></div>';
     cx.innerHTML = cab + secaoAndares() + secaoFora() + secaoRelatorios() + secaoLideres() + secaoStark() + secaoAuditorias();
