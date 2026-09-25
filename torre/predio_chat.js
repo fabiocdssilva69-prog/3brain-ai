@@ -19,6 +19,11 @@
   function $(id) { return document.getElementById(id); }
   function escH(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
   function semDado(v) { return v == null || v === '' ? 'sem dado' : String(v); }
+  // 24/09 (lote 5): o REGISTO ainda descreve alguns funcionarios pelo nome antigo ('Auditoria de fundo do Pointer') e,
+  // com o pulso a deixar falar quem mudou alguma coisa, a palavra voltou ao ecra pelo chat - o arreio apanhou-a. A
+  // regra dele (18/09) e que 'Pointer' nao aparece no ecra; troca-se AO DESENHAR (o REGISTO e de outro dono e o
+  // nome antigo continua a ser o nome dos ficheiros).
+  function semPointer(s) { return String(s == null ? '' : s).replace(/\b([Dd])o Pointer\b/g, '$1a torre').replace(/\bo Pointer\b/g, 'a torre').replace(/Pointer/g, 'torre'); }
   function corDoAndar(n) { var h = ((Number(n) || 0) * 47) % 360; return 'hsl(' + h + ', 62%, 62%)'; }   // a mesma formula do predio.js
   function semente(s) { var h = 2166136261; s = String(s || ''); for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; } return h; }
 
@@ -83,14 +88,14 @@
     // 22/09: o id cru NAO entra aqui. Eu tinha-o posto para se ver quem e, e ele trouxe de volta a
     // palavra "Pointer" (auditor_pointer) que ele mandou tirar do ecra em 18/09 - o arreio apanhou.
     // Quem e ve-se pelo cargo e pelo sector; o id vive em data-funcionario, para quem mede.
-    var sub = [a.cargo, a.sector, a.andar != null ? 'andar ' + a.andar : null]
+    var sub = [semPointer(a.cargo), a.sector, a.andar != null ? 'andar ' + a.andar : null]
       .filter(function (x) { return x != null && x !== ''; });
     var html = '<span class="avatar" style="--c:' + cor + '">' + busto(a.heroi || titulo, cor, !!a.feminino) + '</span>' +
       '<div class="corpo">' +
       '<div class="cab"><b class="nome">' + escH(quemE) + '</b><i class="hora">' + escH(semDado(m.t_brt).slice(0, 5)) + '</i><u class="etq">' + escH(etq) + '</u></div>' +
       '<div class="sub">' + escH(sub.length ? sub.join(' · ') : 'sem dado') + '</div>';
     if (m.responde_a) html += '<div class="resp">↳ responde a ' + escH(titulos[m.responde_a] || 'sem dado') + '</div>';
-    html += '<div class="txt">' + colorir(m.texto, sinalDaMensagem(m)) + '</div></div>';
+    html += '<div class="txt">' + colorir(semPointer(m.texto), sinalDaMensagem(m)) + '</div></div>';
     el.innerHTML = html;
     if (window.matchMedia && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) setTimeout(function () { el.classList.remove('nova'); }, BRILHO_MS);
     else el.classList.remove('nova');
