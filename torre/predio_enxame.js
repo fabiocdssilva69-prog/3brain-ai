@@ -133,9 +133,12 @@
   }
   function pintarCorpo() {
     var cx = $('enx_corpo'); if (!cx || !E) return;
+    // vigia do vigia: {sev, texto} (enxame_ecra.vigia_do_vigia_curto); um ficheiro antigo ainda o traz em texto
     var vv = E.vigia_do_vigia, ag = E.agendador;
+    var vvSev = (vv && typeof vv === 'object') ? String(vv.sev || '') : (vv === 'ok' ? 'ok' : (vv ? 'amarelo' : ''));
+    var vvTxt = (vv && typeof vv === 'object') ? (vv.sev === 'ok' ? 'ok' : String(vv.texto || vv.sev)) : semDado(vv);
     var cab = '<div class="enx-estado"><span>batimento <b>' + escH(linhaDoBatimento().texto) + '</b></span>' +
-      '<span>vigia do vigia <b class="' + (vv === 'ok' ? 'ok' : 'mau') + '">' + escH(semDado(vv)) + '</b></span>' +
+      '<span>vigia do vigia <b class="' + (vvSev === 'ok' ? 'ok' : (vvSev === 'amarelo' ? 'at' : 'mau')) + '">' + escH(vvTxt) + '</b></span>' +
       '<span>agendador <b class="' + (ag === 'ok' ? 'ok' : 'mau') + '">' + escH(semDado(ag)) + '</b></span>' +
       '<span>vigiados <b>' + escH(semDado(obj(E.totais).vigiados)) + '</b></span></div>';
     cx.innerHTML = cab + secaoAndares() + secaoFora() + secaoRelatorios() + secaoLideres() + secaoStark() + secaoAuditorias();
