@@ -13,19 +13,25 @@
   // ---------------------------------------------------------------- constantes da planta
   // Os NIVEIS pela regua de pixeis por andar (O_QUE_ELE_QUER_v4.md, 4): abaixo de 14 px os 35 nomes nao
   // cabem sem se pisarem (11 px de texto + folga), logo a torre le-se so pelas fitas e pelos 5 marcos.
-  var NIVEIS = { andar: 14, sector: 70, funcionario: 220 };
+  // 24/09 (lote 5): a fronteira N0/N1 desce de 14 para 13 px por andar. MEDIDO a 1400x900: a torre passou a 52
+  // andares (um 3.o andar de Auditoria: as regras testadas passaram de 596 para 654, e o andar leva 300) e no N1, a
+  // 14,05 px por andar, torre + coroa mediam 828 px num palco de 800 - o nome do ATRIO saia 1 px por baixo e a base
+  // 28 px. A 13,05 cabem (757 px). Os nomes do N1 ficam a 12 px (o minimo legivel e 11). E um remendo com prazo: cada
+  // andar novo come 13 px; a proxima vez, a decisao e de desenho (o N1 mostrar uma janela de andares, ou as obras
+  // encolherem), nao outro px a menos.
+  var NIVEIS = { andar: 13, sector: 70, funcionario: 220 };
   var NOMES_NIVEL = ['torre', 'andar', 'sector', 'funcionario'];
   var TORCAO_GRAUS = 3.6;            // 100 andares = uma volta inteira (a torre torcida, Cayan/Turning Torso)
   var ESCADA = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];   // a regua do reactor.js: o proximo numero "bonito"
   var FOLGA_ESCALA = 1.15;           // a escala fica 15% acima do maior valor, para a agulha nunca encostar
   var LIMITE_AGULHA = 1.04;          // a agulha pode passar 4% do fim da escala e para ai (o reactor faz o mesmo)
   var VARRE_GRAUS = 90;              // +-esc = +-90 graus a partir da vertical: um mostrador semicircular
-  var TECTO_PX_N0 = 13.2;            // no N0 a torre nunca passa disto por andar: 13,2 < 14 em qualquer ecra.
+  var TECTO_PX_N0 = 12.3;            // 24/09 (lote 5): era 13,2 com a fronteira a 14; fica abaixo dos 13            // no N0 a torre nunca passa disto por andar: 13,2 < 14 em qualquer ecra.
                                      // Sem o tecto, um palco alto punha o enquadramento por omissao DENTRO do
                                      // N1 (a 1400x900 o palco tem ~532 px e 35 andares dao 14,0 px - a
                                      // fronteira exacta) e a vista "torre" nunca aparecia.
   var MARGEM_N0 = 0.08;              // os 35 nomeados cabem em altura com 8% de margem (spec 3)
-  var PX_MIN_N1 = 14.05;            // 18/09 noite: com 47 andares a 1400x900 so cabem a 14,1 px; 14,05 ainda e N1 (>= 14)              // o alvo do botao "Andar": logo acima da fronteira (a 1400x900 o palco tem ~537 px
+  var PX_MIN_N1 = 13.05;            // 24/09 (lote 5): era 14,05 - ver NIVEIS: 52 andares a 1400x900 ja nao cabiam a 14,05            // 18/09 noite: com 47 andares a 1400x900 so cabem a 14,1 px; 14,05 ainda e N1 (>= 14)              // o alvo do botao "Andar": logo acima da fronteira (a 1400x900 o palco tem ~537 px
                                      // e 35 nomes a 14,2 px ocupam 483: a 15 px o topo da torre saia do ecra, medido)
   var PX_N2 = 110, PX_N3 = 230;      // os alvos dos botoes "Sector" e "Funcionario" (dentro das bandas)
   var PULSO_MAX_MIN = 2;             // o ponto actual do trilho pulsa enquanto o dado tem < 2 min
