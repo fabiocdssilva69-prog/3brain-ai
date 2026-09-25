@@ -166,7 +166,9 @@
     var vv = E.vigia_do_vigia, ag = E.agendador;
     var vvSev = (vv && typeof vv === 'object') ? String(vv.sev || '') : (vv === 'ok' ? 'ok' : (vv ? 'amarelo' : ''));
     var vvTxt = (vv && typeof vv === 'object') ? (vv.sev === 'ok' ? 'ok' : String(vv.texto || vv.sev)) : semDado(vv);
-    var cab = '<div class="enx-estado"><span>batimento <b>' + escH(linhaDoBatimento().texto) + '</b></span>' +
+    // 25/09 (lote 6G): o andar dela no cabecalho; um clique abre o painel do andar (os cargos e a prova de trabalho)
+    var cab = '<div class="enx-estado">' + (E.andar != null ? '<span>andar <b class="enx-ir" data-n="' + escH(E.andar) + '" role="button" tabindex="0" title="abrir o andar da ' + NOME_SHIELD + ': quem faz o quê e o último trabalho de cada um">' + escH(E.andar) + '</b></span>' : '') +
+      '<span>batimento <b>' + escH(linhaDoBatimento().texto) + '</b></span>' +
       '<span>vigia do vigia <b class="' + (vvSev === 'ok' ? 'ok' : (vvSev === 'amarelo' ? 'at' : 'mau')) + '">' + escH(vvTxt) + '</b></span>' +
       '<span>agendador <b class="' + (ag === 'ok' ? 'ok' : 'mau') + '">' + escH(semDado(ag)) + '</b></span>' +
       '<span>vigiados <b>' + escH(semDado(obj(E.totais).vigiados)) + '</b></span></div>';
@@ -242,7 +244,7 @@
       .catch(function (e) {
         falhas++;
         // sem ficheiro (o site antes da primeira publicacao, ou o servico parado): a seccao diz que falta, nao some
-        var kn = $('enx_kn'); if (kn && !E) kn.textContent = 'sem enxame.json (' + String(e && e.message || e).slice(0, 40) + ')';
+        var kn = $('enx_kn'); if (kn && !E) kn.textContent = NOME_SHIELD + ' sem dado (enxame.json: ' + String(e && e.message || e).slice(0, 40) + ')';
         return null;
       });
   }
@@ -252,12 +254,34 @@
   setInterval(ler, CADA_MS);
   ler();
 
-  // clique num andar da lista abre o painel desse andar (o mesmo do clique na torre)
+  // clique num andar da lista abre o painel desse andar (o mesmo do clique na torre); 25/09 (lote 6G): e o numero do
+  // andar da S.H.I.E.L.D. no cabecalho da seccao tambem
   document.addEventListener('click', function (ev) {
-    var b = ev.target && ev.target.closest ? ev.target.closest('.enx-and[data-n]') : null;
+    var b = ev.target && ev.target.closest ? ev.target.closest('.enx-and[data-n], .enx-ir[data-n]') : null;
     if (!b) return;
     var P = window.__predio; if (P && typeof P.abrir === 'function') P.abrir(Number(b.dataset.n));
   });
+
+  // 25/09 (lote 6G): O ANDAR DA S.H.I.E.L.D. - quem mora aqui, o que faz, e a PROVA do ultimo trabalho de cada cargo
+  // (enxame_ecra.prova_de_trabalho: o batimento do vigia, o ultimo relatorio, a ultima linha dos lideres e do conserto).
+  // E a resposta, no ecra, a "confirma se eles estao a funcionar, se ja estao a corrigir". So texto e numeros: a forma
+  // (os bots a sair do 49 para os andares com trabalho e a voltar) e do Fable, e os dados dela estao em E.visitas.
+  function htmlDaShield() {
+    var S = obj(E.shield), cs = lista(S.cargos), vs = lista(E.visitas).slice(0, 6), nomeCargo = {};
+    cs.forEach(function (c) { nomeCargo[c.id] = c.cargo; });
+    var li = cs.map(function (c) {
+      var p = obj(c.pessoa), s = idadeS(c.ultima);
+      return '<li><b>' + escH(c.cargo) + '</b> · ' + escH(p.titulo || 'sem pessoa') + ' <s>(' + escH(c.camada) + (c.n_agentes ? ', ' + escH(c.n_agentes) + ' agente(s) aqui' : '') + ')</s>' +
+        '<em>' + escH(c.faz) + '</em><em>último trabalho: ' + (c.ultima ? escH(haQuanto(s)) + ' — ' + escH(semDado(c.o_que)) : 'sem registo') + '</em></li>';
+    }).join('');
+    var vis = vs.map(function (v) {
+      return '<li>' + escH(hora(v.t_iso)) + ' · ' + escH(nomeCargo[v.cargo] || v.cargo) + ' → andar ' + escH(v.para) + ' (' + escH(v.o_que) + (v.resultado ? ': ' + escH(v.resultado) : '') + (v.funcionario ? ', ' + escH(v.funcionario) : '') + ')</li>';
+    }).join('');
+    return '<div class="diag enx-painel"><b>' + NOME_SHIELD + '</b> — ' + escH(S.subtitulo || 'Supervisao e Manutencao') + ': ' + escH(S.agentes || 0) +
+      ' agente(s) com ficha moram aqui; os cargos sem ficha são chamados pelo código que os usa (e não entram no total).' +
+      '<ul class="enx-lst">' + li + '</ul>' +
+      (vis ? '<div class="enx-sub2">idas aos andares <em>do dado: relatórios, escaladas e conserto</em></div><ul class="enx-lst">' + vis + '</ul>' : '') + '</div>';
+  }
 
   window.__enxame = {
     ler: ler,
@@ -265,10 +289,11 @@
     // o que o painel de um andar (predio.js, corpoDoPainel) mostra sobre a vigia desse andar
     htmlDoAndar: function (n) {
       if (!E) return '';
+      if (E.andar != null && Number(n) === Number(E.andar)) return htmlDaShield();
       var a = null; andares().forEach(function (x) { if (x.n === Number(n)) a = x; });
-      if (!a) return '<div class="diag enx-painel">Vigia do enxame: este andar não tem ninguém vigiado (sem dado).</div>';
+      if (!a) return '<div class="diag enx-painel">Vigia da ' + NOME_SHIELD + ': este andar não tem ninguém vigiado (sem dado).</div>';
       var fs = lista(E.fora_do_verde).filter(function (f) { return f.andar === a.n; });
-      return '<div class="diag enx-painel">' + pontoSev(a.sev) + 'Vigia do enxame: <b>' + escH(NOME_SEV[a.sev] || a.sev) + '</b> — ' + a.verde + ' verdes, ' + a.amarelo + ' amarelos, ' + a.vermelho + ' vermelhos, ' + a.cinza + ' sem prova.' +
+      return '<div class="diag enx-painel">' + pontoSev(a.sev) + 'Vigia da ' + NOME_SHIELD + ': <b>' + escH(NOME_SEV[a.sev] || a.sev) + '</b> — ' + a.verde + ' verdes, ' + a.amarelo + ' amarelos, ' + a.vermelho + ' vermelhos, ' + a.cinza + ' sem prova.' +
         (fs.length ? '<ul class="enx-lst">' + fs.map(function (f) { return '<li><b>' + escH(f.id) + '</b> ' + escH(f.sev) + (f.tipo ? ' · ' + escH(f.tipo) : '') + '<em>' + escH(f.prova) + '</em></li>'; }).join('') + '</ul>' : '') + '</div>';
     },
     contagem: function () {
@@ -279,7 +304,12 @@
                noCorpo: corpo ? { andares: corpo.querySelectorAll('.enx-and').length, relatorios: corpo.querySelectorAll('.enx-rel').length,
                                   refutadores: corpo.querySelectorAll('.enx-rel-quem').length, parecer: (corpo.querySelector('.enx-parecer') || {}).textContent || '' } : null,
                titulo: ($('enx_kn') || {}).textContent || '', telemovel: tel ? { hidden: !!tel.hidden, texto: tel.textContent || '' } : null,
-               luzesPedidas: assLuzes ? Object.keys(JSON.parse(assLuzes)).length : 0, cartoesMarcados: cartoesMarcados };
+               luzesPedidas: assLuzes ? Object.keys(JSON.parse(assLuzes)).length : 0, cartoesMarcados: cartoesMarcados,
+               // 25/09 (lote 6G): o nome e o andar dela, e o que o painel do andar mostra (para o arreio medir)
+               shield: E ? { nome: E.nome || null, andar: E.andar == null ? null : E.andar, cargos: lista(obj(E.shield).cargos).length,
+                             comPessoa: lista(obj(E.shield).cargos).filter(function (c) { return c && c.pessoa; }).length,
+                             visitas: lista(E.visitas).length,
+                             painel: E.andar != null ? (window.__enxame.htmlDoAndar(E.andar).match(/<li>/g) || []).length : 0 } : null };
     }
   };
 })();
