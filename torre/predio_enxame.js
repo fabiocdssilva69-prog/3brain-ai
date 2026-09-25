@@ -38,7 +38,11 @@
 
   // ---------------------------------------------------------------- o titulo: o batimento, sempre visivel
   function linhaDoBatimento() {
-    var b = obj(E && E.batimento), s = idadeS(b.t_iso), parado = s == null || s > VIGIA_PARADO_S;
+    // na copia PUBLICA (tem 'publicado_em') o ficheiro chega com o atraso da publicacao - 2 min do publicador mais o do
+    // site (medido a 24/09 21:4x: 151 s): o limite de 'parado' e o do vigia (3 min) MAIS esse atraso, senao o site
+    // acendia vermelho sem nada estar parado
+    var limite = (E && E.publicado_em) ? VIGIA_PARADO_S + 420 : VIGIA_PARADO_S;
+    var b = obj(E && E.batimento), s = idadeS(b.t_iso), parado = s == null || s > limite;
     return { parado: parado, s: s, texto: (b.seq != null ? 'volta ' + b.seq : 'sem batimento') + ' · ' + haQuanto(s) +
              (b.volta_ms != null ? ' · ' + (b.volta_ms / 1000).toFixed(1).replace('.', ',') + ' s' : '') };
   }
