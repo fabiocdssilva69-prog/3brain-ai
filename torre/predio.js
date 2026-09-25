@@ -3531,7 +3531,10 @@
     // 22/09: no telemovel so as QUATRO mais pesadas. A lista cresceu para 16 e a pagina passou dos 3 ecras
     // outra vez - um lembrete que empurra os numeros para fora da vista deixa de ser um lembrete. As que
     // ficam de fora sao contadas na ultima linha, nunca escondidas em silencio.
-    var pesadas = itens.filter(function (p) { return p.peso === 'maxima' || p.peso === 'alta'; }).slice(0, 4);
+    // 25/09 (lote 6G): so as ABERTAS. As fechadas ficam na lista com '[FEITO ...]' / '[RESOLVIDO ...]' a frente (o
+    // historico), e ocupavam lugares do telemovel - um item feito nao e "o que ele nao quer esquecer"; e o titulo mais
+    // comprido de um item fechado empurrava a pagina para la dos tres ecras (medido: 3.255 px).
+    var pesadas = itens.filter(function (p) { return (p.peso === 'maxima' || p.peso === 'alta') && !/^\[(FEITO|RESOLVIDO)\b/.test(String(p.titulo || '')); }).slice(0, 4);
     var htmlTel = pesadas.map(function (p) {
       var dele = String(p.quem || '') === 'ele';
       return '<div class="pd-it ' + escH(p.peso || 'media') + '">' +
