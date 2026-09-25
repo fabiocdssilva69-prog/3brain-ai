@@ -11,6 +11,11 @@
 //   4. uma linha no telemovel (a coluna do lado nao existe la), com o batimento e os vermelhos.
 // Nada e inventado: o que falta no ficheiro escreve-se "sem dado". NAO redesenha a cena: se o ficheiro nao mudou
 // (mesma volta do vigia, mesmos relatorios, mesmo parecer) so a idade do batimento anda, ao segundo, em texto.
+// 25/09 (lote 6G) - ORDEM DELE: "o enxame poderia ter outro nome, nao gostei; eles poderiam ser um andar FIXO". O nome
+// que ele le e S.H.I.E.L.D. (Supervisao e Manutencao), e o andar dela vem no ficheiro (E.andar, 49 hoje). O ficheiro
+// continua a ser sala/enxame.json e este predio_enxame.js: sao identificadores (servico, site, arreio leem-nos pelo
+// nome). O painel do andar dela mostra os CARGOS com a pessoa e a prova do ultimo trabalho; E.visitas sao as idas dela
+// aos outros andares (do dado) - a forma de as animar e do Fable (PACOTE_FABLE.md).
 (function () {
   'use strict';
   var URL = 'enxame.json', CADA_MS = 20000, VIGIA_PARADO_S = 180;
@@ -22,7 +27,27 @@
   // o nome antigo ('Pointer') nao aparece no ecra (regra dele, 18/09): os textos do enxame citam funcionarios e
   // ficheiros do REGISTO, que ainda o usam - troca-se ao desenhar, como no chat (predio_chat.js semPointer)
   function semPointer(s) { return String(s == null ? '' : s).replace(/\b([Dd])o Pointer\b/g, '$1a torre').replace(/\bo Pointer\b/g, 'a torre').replace(/Pointer/g, 'torre'); }
-  function escH(s) { return semPointer(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+  // 25/09 (lote 6G): o nome antigo ('enxame') tambem nao aparece - a mesma regra do mercado/shield.py (visivel): a
+  // palavra SOLTA passa a S.H.I.E.L.D., com o artigo no feminino ('do enxame' -> 'da S.H.I.E.L.D.'); colada a / \ . - _
+  // e um identificador (dados/enxame/, enxame_ecra, Tesouraria-Enxame) e fica. O enxame.json ja traz os textos
+  // trocados (enxame_ecra.textos_visiveis): isto e a rede para o resto (um id 'enxame' mostrado, um ficheiro antigo).
+  var NOME_SHIELD = 'S.H.I.E.L.D.';
+  var ARTIGO_F = { o: 'a', 'do': 'da', 'no': 'na', pelo: 'pela', ao: 'à', um: 'uma', este: 'esta', deste: 'desta', neste: 'nesta' };
+  function caixa(m, p) {
+    if (m.length > 1 && m === m.toUpperCase()) return p.toUpperCase();
+    return m.charAt(0) !== m.charAt(0).toLowerCase() ? p.charAt(0).toUpperCase() + p.slice(1) : p;
+  }
+  function semEnxame(s) {
+    return String(s == null ? '' : s)
+      .replace(/(^|[^\w\/\\.\-])(ao|do|no|pelo|um|este|deste|neste|o)(\s+)(?:(pr[oó]prio)(\s+))?enxames?(?![\w\/\\.\-])/gi,
+        function (m0, pre, art, e1, prop, e2) {
+          var a = caixa(art, ARTIGO_F[art.toLowerCase()] || art);
+          var p = prop ? caixa(prop, prop.toLowerCase() === 'próprio' ? 'própria' : 'propria') + e2 : '';
+          return pre + a + e1 + p + NOME_SHIELD;
+        })
+      .replace(/(^|[^\w\/\\.\-])enxames?(?![\w\/\\.\-])/gi, function (m0, pre) { return pre + NOME_SHIELD; });
+  }
+  function escH(s) { return semEnxame(semPointer(s)).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
   function lista(x) { return Object.prototype.toString.call(x) === '[object Array]' ? x : []; }
   function obj(x) { return (x && typeof x === 'object' && !lista(x).length) ? x : {}; }
   function semDado(v) { return v == null || v === '' ? 'sem dado' : String(v); }
@@ -156,7 +181,7 @@
     var verm = lista(E.fora_do_verde).filter(function (f) { return f.sev === 'vermelho'; }).map(function (f) { return f.id; });
     // curto (volta + idade): a 390 px a duracao da volta empurrava o nome do vermelho para fora da linha (medido na captura)
     var b = obj(E.batimento), curto = (b.seq != null ? 'volta ' + b.seq : 'sem batimento') + ' · ' + haQuanto(bt.s).replace('há ', '');
-    var html = '<b>ENXAME</b><span class="enx-bat' + (bt.parado ? ' parado' : '') + '"><i class="enx-coracao"></i>' + escH(curto) + '</span>' +
+    var html = '<b>' + NOME_SHIELD + '</b><span class="enx-bat' + (bt.parado ? ' parado' : '') + '"><i class="enx-coracao"></i>' + escH(curto) + '</span>' +
       '<span class="enx-tot"><b class="verde">' + (t.verde || 0) + '</b> <b class="amarelo">' + (t.amarelo || 0) + '</b> <b class="vermelho">' + (t.vermelho || 0) + '</b></span>' +
       (verm.length ? '<span class="enx-verm">' + escH(verm.slice(0, 2).join(', ')) + '</span>' : '');
     if (el.dataset.h !== html) { el.dataset.h = html; el.innerHTML = html; }
