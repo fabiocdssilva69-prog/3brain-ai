@@ -30,6 +30,22 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 
+<script>
+/* MODO LEVE (25/09/2026). O que pesa neste site nao sao os bytes: e o fundo WebGL
+   (12 calculos de ruido por pixel, 30x por segundo) com o grao em mix-blend e o
+   desfoque da barra por cima -- tres coisas que obrigam a recompor a tela inteira
+   a cada quadro. Aparelho fraco (<=4 nucleos, <=4 GB, ou modo economia de dados)
+   recebe o MESMO desenho, parado. Corre aqui no <head>, antes de pintar, para a
+   classe ja existir no primeiro quadro. O laco do WebGL ainda mede o proprio ritmo
+   e cai para este modo sozinho se o aparelho nao aguentar. */
+(function(){
+  var n = navigator, c = n.connection || {};
+  if ((n.hardwareConcurrency && n.hardwareConcurrency <= 4) ||
+      (n.deviceMemory && n.deviceMemory <= 4) || c.saveData)
+    document.documentElement.classList.add('leve');
+})();
+</script>
+
 <style>
 /* ============================================================
    TOKENS
@@ -189,6 +205,13 @@ html{background:var(--bg);}
   position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;mix-blend-mode:soft-light;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
 }
+/* modo leve: tira o que recompoe a tela inteira a cada quadro de rolagem.
+   O grao esta a 4% de opacidade -- ninguem nota a falta; o desfoque da barra vira
+   o mesmo tom, solido; o 3D dos cartoes vira so o deslize. */
+html.leve .grain{display:none;}
+html.leve header.nav{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(8,8,10,.96);}
+html.leve .tilt{will-change:auto;transform:none!important;}
+html.leve .team{perspective:none;}
 .eyebrow{
   font-family:var(--m);font-size:.7rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
   color:var(--gold);display:inline-flex;align-items:center;gap:11px;margin-bottom:32px;
@@ -845,13 +868,19 @@ table.cnl td.v.perde{color:var(--dim);}
   }
   .mem.be::after{left:50%;margin-left:-4.5px;top:-14.5px;margin-top:0;}
 }
+/* 74 -> 92 px quando as iniciais viraram foto (25/09): 74 dava rosto do tamanho de
+   uma unha. 92 e o minimo em que o rosto se le sem o quadrado passar a mandar no
+   cartao -- o titulo continua a ser a primeira coisa que o olho encontra. */
 .mono{
-  flex:none;width:74px;height:74px;border-radius:17px;display:grid;place-items:center;
+  flex:none;width:92px;height:92px;border-radius:19px;display:grid;place-items:center;
   font-family:var(--d);font-size:1.7rem;color:var(--gold);letter-spacing:-.02em;
   background:linear-gradient(150deg,#1c1608,#0b0b0e);border:1px solid var(--gold-dk);
   position:relative;overflow:hidden;
 }
 .mono::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.09),transparent 55%);}
+/* fundo cinza-claro do estudio puxado para o escuro do site: sem isto o quadrado
+   vira um buraco branco no meio do cartao preto */
+.mono img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(.9) contrast(1.04);}
 .mem h4{font-family:var(--d);font-size:1.5rem;color:#fff;}
 .mem .role{font-family:var(--m);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-top:7px;}
 .mem p{color:var(--mute);font-size:.95rem;margin-top:14px;line-height:1.58;}
@@ -1805,7 +1834,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
 
     <div class="team">
       <div class="mem sa rv d1">
-        <div class="mono">FS</div>
+        <div class="mono"><img src="img/fundador-binho.webp" width="92" height="92" loading="lazy" decoding="async" alt="Fábio “Binho” da Silva" /></div>
         <div>
           <h4>Fábio “Binho” da Silva</h4>
           <div class="role"><span data-l="pt">Fundador · Engenharia</span><span data-l="en">Founder · Engineering</span></div>
@@ -1815,7 +1844,7 @@ table.fontes i{font-style:italic;color:var(--txt);}
         </div>
       </div>
       <div class="mem be rv d3">
-        <div class="mono">BN</div>
+        <div class="mono"><img src="img/fundador-nobru.webp" width="92" height="92" loading="lazy" decoding="async" alt="Bruno “Nobru” da Silva" /></div>
         <div>
           <h4>Bruno “Nobru” da Silva</h4>
           <div class="role"><span data-l="pt">Fundador · Operação</span><span data-l="en">Founder · Operations</span></div>
@@ -2322,28 +2351,51 @@ table.fontes i{font-style:italic;color:var(--txt);}
         gl.viewport(0, 0, w, h);
       }
       gl.uniform2f(uR, cv.width, cv.height);
+      /* mudar cv.width APAGA o canvas. Com o laco a correr, o proximo quadro repoe;
+         parado (modo leve), ficava preto -- e no celular isto dispara cada vez que a
+         barra de endereco aparece ou some. */
+      if (!running) gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
     window.addEventListener('resize', resize, {passive:true});
     resize();
 
+    var H = document.documentElement;
+    function leve(){ return H.classList.contains('leve'); }
+
     // o campo cobre a página inteira: pausa só quando a aba sai de vista
     document.addEventListener('visibilitychange', function(){
-      running = !document.hidden;
+      running = !document.hidden && !leve();
+      prev = 0;                      // a volta da aba nao entra na medicao do ritmo
       if (running) requestAnimationFrame(loop);
     });
 
-    /* Quem pediu menos movimento recebe o campo PARADO: desenha um quadro e sai.
-       O fundo continua existindo, so nao se mexe -- e o laco nao roda nunca. */
-    if (RM.matches){
-      gl.uniform1f(uT, 0);
+    /* Quem pediu menos movimento, ou esta num aparelho fraco (modo leve, no <head>),
+       recebe o campo PARADO: desenha um quadro e sai. O fundo continua existindo,
+       so nao se mexe -- e o laco nao roda nunca. t=14 e um quadro com os filamentos
+       ja formados; t=0 e o mais pobre de todos. */
+    if (RM.matches || leve()){
+      running = false;
+      gl.uniform1f(uT, 14);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       cv.classList.add('on');
       return;
     }
 
-    var last = 0;
+    /* O aparelho que passou pelo filtro do <head> mas nao aguenta: mede o intervalo
+       entre quadros durante ~1,5 s (depois de 1,5 s de carga, que e sempre aos
+       solavancos). Num aparelho bom o navegador chama a cada 16,7 ms; media acima de
+       28 ms quer dizer que nem 36 quadros/s saem -- a pagina inteira esta a pagar o
+       fundo. Ai o laco para e o ultimo quadro fica na tela. */
+    var last = 0, prev = 0, amostras = 0, soma = 0;
     function loop(now){
       if (!running) return;
+      if (prev && now - start > 1500 && amostras < 90){
+        soma += now - prev; amostras++;
+        if (amostras === 90 && soma / amostras > 28){
+          H.classList.add('leve'); running = false; return;
+        }
+      }
+      prev = now;
       if (now - last > 33){          // teto de ~30 fps
         last = now;
         /* resize() NAO entra aqui. Ele le clientWidth/clientHeight, e ler isso
@@ -2400,6 +2452,32 @@ table.fontes i{font-style:italic;color:var(--txt);}
   </p>
 </aside>
 
-<script src="assistente.js" defer></script>
+<script>
+/* O assistente sao 286 KB (quase tudo a base de respostas) que o celular baixava e
+   interpretava em TODA visita, para um botao que a maioria nunca toca. Agora so vem
+   quando ha intencao: o dedo ou o rato chegam ao botao, ou o foco do teclado. Se o
+   clique chegar antes do ficheiro, o painel abre assim que ele carregar. Quem vem
+   pelo e-mail (?de=email, #duvidas) carrega na hora -- o proprio assistente abre. */
+(function(){
+  var b = document.getElementById('asAbre');
+  if (!b) return;
+  var pedido = false, pronto = false, abrirDepois = false;
+  function carrega(){
+    if (pedido) return; pedido = true;
+    var s = document.createElement('script');
+    s.src = 'assistente.js';
+    s.onload = function(){ pronto = true; if (abrirDepois) b.click(); };
+    document.body.appendChild(s);
+  }
+  ['pointerenter', 'touchstart', 'focus'].forEach(function(ev){
+    b.addEventListener(ev, carrega, {once:true, passive:true});
+  });
+  b.addEventListener('click', function(){
+    if (!pronto){ abrirDepois = true; carrega(); }
+  }, {once:true});
+  var p = new URLSearchParams(location.search);
+  if (p.get('de') === 'email' || p.get('from') === 'email' || location.hash === '#duvidas') carrega();
+})();
+</script>
 </body>
 </html>
