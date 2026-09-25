@@ -154,7 +154,9 @@
     var el = $('enx_tel'); if (!el || !E) return;
     var bt = linhaDoBatimento(), t = obj(E.totais);
     var verm = lista(E.fora_do_verde).filter(function (f) { return f.sev === 'vermelho'; }).map(function (f) { return f.id; });
-    var html = '<b>ENXAME</b><span class="enx-bat' + (bt.parado ? ' parado' : '') + '"><i class="enx-coracao"></i>' + escH(bt.texto) + '</span>' +
+    // curto (volta + idade): a 390 px a duracao da volta empurrava o nome do vermelho para fora da linha (medido na captura)
+    var b = obj(E.batimento), curto = (b.seq != null ? 'volta ' + b.seq : 'sem batimento') + ' · ' + haQuanto(bt.s).replace('há ', '');
+    var html = '<b>ENXAME</b><span class="enx-bat' + (bt.parado ? ' parado' : '') + '"><i class="enx-coracao"></i>' + escH(curto) + '</span>' +
       '<span class="enx-tot"><b class="verde">' + (t.verde || 0) + '</b> <b class="amarelo">' + (t.amarelo || 0) + '</b> <b class="vermelho">' + (t.vermelho || 0) + '</b></span>' +
       (verm.length ? '<span class="enx-verm">' + escH(verm.slice(0, 2).join(', ')) + '</span>' : '');
     if (el.dataset.h !== html) { el.dataset.h = html; el.innerHTML = html; }
