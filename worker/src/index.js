@@ -72,7 +72,7 @@ REGRAS:
 - ATRIBUICAO: numero que o contexto atribui a TERCEIRO (concorrente, outro estudo, outra empresa) nunca pode aparecer como se fosse nosso. Diga de quem e, sempre, ou nao use o numero.
 - TRACAO: perguntaram se ja vende, se ja tem cliente, receita, faturamento ou usuario? So responda SIM se o contexto afirmar isso com todas as letras. Estar publicado numa loja NAO e vender, piloto NAO e cliente, e cadastro NAO e receita. Na duvida, diga o que o contexto diz e pare.
 - Nunca troque o que o numero MEDE. Se a pergunta usa uma palavra diferente da do contexto, responda com a medida que existe e diga qual e -- exemplo: perguntaram "quantas entrevistas" e o contexto tem "86 empregadores distintos com conversa de entrevista"; entao responda isso, nomeando a medida. Nao recuse: so nao renomeie.
-- PERGUNTA DE FORA: se a pergunta NAO for sobre a 3BRAIN (data de hoje, conta simples, raciocinio, curiosidade, conhecimento geral), RESPONDA em uma ou duas frases com o seu conhecimento geral e a DATA DE HOJE abaixo, sem usar o CONTEXTO e sem afirmar nada sobre a 3BRAIN que nao esteja nele; depois ofereca, em meia frase, voltar a 3BRAIN. Nunca responda so "nao posso responder" a uma pergunta simples. Recuse apenas TAREFA longa que nao e desta pagina (escrever codigo, redacao, traducao de texto, trabalho escolar) e noticia, cotacao ou placar recente, porque voce nao tem dado em tempo real -- e diga isso. As regras abaixo valem para perguntas SOBRE a 3BRAIN.
+- PERGUNTA DE FORA: se a pergunta NAO for sobre a 3BRAIN (data de hoje, conta simples, raciocinio, curiosidade, conhecimento geral), RESPONDA em uma ou duas frases com o seu conhecimento geral, sem usar o CONTEXTO e sem afirmar nada sobre a 3BRAIN que nao esteja nele; depois ofereca, em meia frase, voltar a 3BRAIN. Nunca responda so "nao posso responder" a uma pergunta simples. Recuse apenas TAREFA longa que nao e desta pagina (escrever codigo, redacao, traducao de texto, trabalho escolar) e noticia, cotacao ou placar recente, porque voce nao tem dado em tempo real -- e diga isso. As regras abaixo valem para perguntas SOBRE a 3BRAIN.
 - ANTES de dizer que nao esta publicado, releia o CONTEXTO inteiro. Se QUALQUER trecho responder, mesmo em parte, responda com ele e diga o que responde. Recusar e o ULTIMO recurso, nao o primeiro: medido em 27/08/2026, a pergunta "o que voces nao sabem ainda" foi recusada 4 vezes em 5 com a entrada que a responde dentro do contexto.
 - So depois disso, se o contexto realmente nao responder, diga em uma frase que esse dado nao esta publicado e sugira falar com o fundador.
 - Pergunta com DUAS partes recebe DUAS respostas. Se o contexto responder so uma, responda essa e diga qual ficou de fora.
@@ -91,7 +91,7 @@ RULES:
 - ATTRIBUTION: a figure the context attributes to a THIRD PARTY (a competitor, another study, another company) must never appear as if it were ours. Name whose it is, always, or do not use the figure.
 - TRACTION: asked whether you already sell, already have customers, revenue or users? Only answer YES if the context says so in as many words. Being published in an app store is NOT selling, a pilot is NOT a customer, and a signup is NOT revenue.
 - Never change what a figure MEASURES. If the question uses a different word than the context, answer with the measure that exists and name it -- do not refuse, just do not rename it.
-- OUTSIDE QUESTIONS: if the question is NOT about 3BRAIN (today's date, simple arithmetic, reasoning, trivia, general knowledge), ANSWER in one or two sentences from your general knowledge and TODAY'S DATE below, without using the CONTEXT and without stating anything about 3BRAIN that is not in it; then offer, in half a sentence, to get back to 3BRAIN. Never answer a simple question with just "I can't answer that". Decline only a long TASK that does not belong on this page (writing code, essays, translating text, homework) and recent news, prices or scores, because you have no real-time data -- and say so. The rules below apply to questions ABOUT 3BRAIN.
+- OUTSIDE QUESTIONS: if the question is NOT about 3BRAIN (today's date, simple arithmetic, reasoning, trivia, general knowledge), ANSWER in one or two sentences from your general knowledge, without using the CONTEXT and without stating anything about 3BRAIN that is not in it; then offer, in half a sentence, to get back to 3BRAIN. Never answer a simple question with just "I can't answer that". Decline only a long TASK that does not belong on this page (writing code, essays, translating text, homework) and recent news, prices or scores, because you have no real-time data -- and say so. The rules below apply to questions ABOUT 3BRAIN.
 - BEFORE saying something is not published, re-read the WHOLE context. If ANY passage answers, even partly, answer with it and say what it answers. Refusing is the LAST resort, not the first.
 - Only then, if the context truly does not answer, say in one sentence that the figure is not published and suggest talking to the founder.
 - A question with TWO parts gets TWO answers. If the context answers only one, answer that one and say which part is missing.
@@ -157,7 +157,7 @@ function normalizaNumeros(t, idioma) {
     .replace(GRUPO_MILHAR, (_, cabeca, resto) =>
       cabeca + resto.replace(SEPARADOR_SOLTO, sep))
     // "0,008 %" -> "0,008%": em portugues o sinal cola no numero
-    .replace(/(\d)[     ]+%/g, '$1%');
+    .replace(/(\d)[     ]+%/g, '$1%');   // os espacos especiais tinham-se perdido numa edicao: so casava o espaco comum
 }
 
 function limpaResposta(t, idioma) {
@@ -248,8 +248,8 @@ function dataDeHoje(idioma) {
                 year: 'numeric', hour: '2-digit', minute: '2-digit' };
   try {
     return idioma === 'en'
-      ? `TODAY'S DATE: ${agora.toLocaleString('en-US', opc)} (Brasilia time).`
-      : `DATA DE HOJE: ${agora.toLocaleString('pt-BR', opc)} (horario de Brasilia).`;
+      ? `TODAY'S DATE: ${agora.toLocaleString('en-US', opc)} (Brasilia time). Mention it ONLY if the question is about the date, day, time or a deadline.`
+      : `DATA DE HOJE: ${agora.toLocaleString('pt-BR', opc)} (horario de Brasilia). Mencione-a SO se a pergunta for sobre data, dia, hora ou prazo.`;
   } catch {
     return (idioma === 'en' ? "TODAY'S DATE (UTC): " : 'DATA DE HOJE (UTC): ') + agora.toISOString().slice(0, 16);
   }
