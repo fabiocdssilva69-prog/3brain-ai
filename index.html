@@ -1248,6 +1248,32 @@ table.fontes i{font-style:italic;color:var(--txt);}
   .as-abre svg{width:21px;height:21px;}
 }
 @media print{ .as-abre,.as-painel,.as-veu{display:none!important;} }
+
+/* ============================================================
+   TOPICOS RECOLHIVEIS (26/09/2026)
+   Cada secao abre fechada: so o numero e o titulo. O resto
+   aparece ao tocar no titulo ou no botao. Nada muda de lugar:
+   o JS so marca o que e corpo (.tp-corpo) e esconde. Sem JS a
+   classe .tp nunca entra, e a pagina aparece inteira.
+   ============================================================ */
+@media screen{ .tp-fechado .tp-corpo{display:none!important;} }
+section.tp.tp-fechado{padding-block:clamp(44px,6vw,76px);}
+.tp-fechado .tp-cab{cursor:pointer;}
+.tp-fechado h2.tp-cab{transition:opacity .2s;}
+.tp-fechado h2.tp-cab:hover{opacity:.82;}
+.tp-bt{
+  display:inline-flex;align-items:center;gap:10px;margin-top:22px;padding:10px 18px;
+  border:1px solid var(--line2);border-radius:999px;background:transparent;color:var(--gold);
+  font-family:var(--m);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;
+  cursor:pointer;transition:border-color .2s,background-color .2s;
+}
+.tp-bt:hover{border-color:var(--gold-dk);background:rgba(242,194,48,.06);}
+.tp-bt:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+.tp-bt .sx{flex:none;transition:transform .3s var(--ease);}
+.tp-aberto .tp-bt .sx{transform:rotate(180deg);}
+.tp-bt .fe,.tp-aberto .tp-bt .ab{display:none;}
+.tp-aberto .tp-bt .fe{display:inline;}
+@media print{ .tp-bt{display:none!important;} }
 </style>
 </head>
 <body class="lang-pt">
@@ -2181,6 +2207,72 @@ table.fontes i{font-style:italic;color:var(--txt);}
         if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('in');
       });
     }, 2500);
+  }
+
+  /* ---------- topicos recolhiveis (26/09/2026) ----------
+     Pedido: dar uma olhada por cima so nos assuntos e abrir o que interessar,
+     sem mudar conteudo nem ordem. Por isso nada se move: sobe-se do <h2> ate ao
+     .wrap e cada irmao fora desse caminho vira corpo (escondido enquanto
+     fechado), menos o numero da secao e as etiquetas, que ficam no cabecalho.
+     O #contato fica sempre aberto: e onde a pessoa age. */
+  var TOPICOS = ['dano','savi','receita','barbergo','motor','porque','time','fontes'];
+  function abrir(sec, sim){
+    sec.classList.toggle('tp-fechado', !sim);
+    sec.classList.toggle('tp-aberto', sim);
+    var bt = sec.querySelector('.tp-bt');
+    if (bt) bt.setAttribute('aria-expanded', sim ? 'true' : 'false');
+    onScroll(); /* a altura da pagina mudou: a barra de progresso tem de acompanhar */
+  }
+  TOPICOS.forEach(function(id){
+    var sec = document.getElementById(id);
+    var wrap = sec && sec.querySelector('.wrap');
+    var h2 = wrap && wrap.querySelector('h2');
+    if (!h2) return;
+    for (var no = h2; no !== wrap; no = no.parentElement){
+      Array.prototype.forEach.call(no.parentElement.children, function(irmao){
+        if (irmao === no) return;
+        var cab = irmao.classList.contains('sec-num') || irmao.classList.contains('tagline');
+        irmao.classList.add(cab ? 'tp-cab' : 'tp-corpo');
+      });
+    }
+    h2.classList.add('tp-cab');
+    var bt = document.createElement('button');
+    bt.type = 'button';
+    bt.className = 'tp-bt';
+    bt.setAttribute('aria-expanded', 'false');
+    bt.innerHTML = '<span class="ab"><span data-l="pt">Ver o tópico</span><span data-l="en">Open topic</span></span>'
+                 + '<span class="fe"><span data-l="pt">Recolher</span><span data-l="en">Collapse</span></span>'
+                 + '<svg class="sx" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+    h2.insertAdjacentElement('afterend', bt);
+    sec.classList.add('tp');
+    abrir(sec, false);
+    bt.addEventListener('click', function(){
+      var fechar = sec.classList.contains('tp-aberto');
+      abrir(sec, !fechar);
+      /* ao recolher uma secao longa o titulo ficava muito acima: volta a ele */
+      if (fechar && sec.getBoundingClientRect().top < 0) sec.scrollIntoView({block:'start'});
+    });
+    /* o titulo so ABRE: quem esta a ler e toca no titulo sem querer nao perde o texto */
+    sec.querySelectorAll('.tp-cab').forEach(function(el){
+      el.addEventListener('click', function(){ if (sec.classList.contains('tp-fechado')) abrir(sec, true); });
+    });
+  });
+  /* link para dentro de uma secao fechada (menu, botoes do topo, #savi no endereco)
+     abre-a ANTES do navegador rolar, senao o destino tem altura zero */
+  function abrirAlvo(hash){
+    var alvo = hash && hash.length > 1 && document.getElementById(decodeURIComponent(hash.slice(1)));
+    var sec = alvo && alvo.closest('section.tp-fechado');
+    if (sec) abrir(sec, true);
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (a) abrirAlvo(a.getAttribute('href'));
+  }, true);
+  window.addEventListener('hashchange', function(){ abrirAlvo(location.hash); });
+  if (location.hash){
+    abrirAlvo(location.hash);
+    var ini = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (ini) requestAnimationFrame(function(){ ini.scrollIntoView(); });
   }
 
   /* a onda so vive enquanto o bloco esta na tela: animacao parada fora de vista
