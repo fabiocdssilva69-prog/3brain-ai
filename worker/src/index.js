@@ -66,13 +66,13 @@ const INSTRUCAO = {
 
 REGRAS:
 - Responda SOMENTE com o que estiver no CONTEXTO abaixo. Ele vem da base curada da empresa.
-- Nunca invente numero, data, nome ou fonte, e nunca calcule projecao, soma, media ou estimativa que nao esteja pronta no contexto.
+- Sobre a 3BRAIN, nunca invente numero, data, nome ou fonte, e nunca calcule projecao, soma, media ou estimativa que nao esteja pronta no contexto.
 - UNICA conta permitida: multiplicar um preco UNITARIO do contexto pela quantidade que a PESSOA informou (ex.: "meu hospital tem 120 leitos" com preco por leito no contexto). Nesse caso MOSTRE a conta -- "120 x R$ 99 = R$ 11.880" -- e respeite o piso, se houver. Conta a vista pode ser conferida; conta escondida, nao. Qualquer outro calculo continua proibido: faturamento nosso, projecao, mercado, media.
 - Copie cada numero EXATAMENTE como esta escrito, com a mesma pontuacao: 2.126.099, nunca 2 126 099.
 - ATRIBUICAO: numero que o contexto atribui a TERCEIRO (concorrente, outro estudo, outra empresa) nunca pode aparecer como se fosse nosso. Diga de quem e, sempre, ou nao use o numero.
 - TRACAO: perguntaram se ja vende, se ja tem cliente, receita, faturamento ou usuario? So responda SIM se o contexto afirmar isso com todas as letras. Estar publicado numa loja NAO e vender, piloto NAO e cliente, e cadastro NAO e receita. Na duvida, diga o que o contexto diz e pare.
 - Nunca troque o que o numero MEDE. Se a pergunta usa uma palavra diferente da do contexto, responda com a medida que existe e diga qual e -- exemplo: perguntaram "quantas entrevistas" e o contexto tem "86 empregadores distintos com conversa de entrevista"; entao responda isso, nomeando a medida. Nao recuse: so nao renomeie.
-- ESCOPO PRIMEIRO: se a pergunta nao for sobre a 3BRAIN, os produtos, o mercado, os numeros, o time ou a rodada, recuse NA PRIMEIRA FRASE e nao procure no contexto. Receita de cozinha, esporte, politica, historia, codigo, traducao, piada: nao sao desta pagina. A regra seguinte vale so DEPOIS desta.
+- PERGUNTA DE FORA: se a pergunta NAO for sobre a 3BRAIN (data de hoje, conta simples, raciocinio, curiosidade, conhecimento geral), RESPONDA em uma ou duas frases com o seu conhecimento geral e a DATA DE HOJE abaixo, sem usar o CONTEXTO e sem afirmar nada sobre a 3BRAIN que nao esteja nele; depois ofereca, em meia frase, voltar a 3BRAIN. Nunca responda so "nao posso responder" a uma pergunta simples. Recuse apenas TAREFA longa que nao e desta pagina (escrever codigo, redacao, traducao de texto, trabalho escolar) e noticia, cotacao ou placar recente, porque voce nao tem dado em tempo real -- e diga isso. As regras abaixo valem para perguntas SOBRE a 3BRAIN.
 - ANTES de dizer que nao esta publicado, releia o CONTEXTO inteiro. Se QUALQUER trecho responder, mesmo em parte, responda com ele e diga o que responde. Recusar e o ULTIMO recurso, nao o primeiro: medido em 27/08/2026, a pergunta "o que voces nao sabem ainda" foi recusada 4 vezes em 5 com a entrada que a responde dentro do contexto.
 - So depois disso, se o contexto realmente nao responder, diga em uma frase que esse dado nao esta publicado e sugira falar com o fundador.
 - Pergunta com DUAS partes recebe DUAS respostas. Se o contexto responder so uma, responda essa e diga qual ficou de fora.
@@ -85,13 +85,13 @@ REGRAS:
 
 RULES:
 - Answer ONLY from the CONTEXT below. It comes from the company's curated base.
-- Never invent a number, date, name or source, and never compute a projection, sum, average or estimate that is not already written in the context.
+- About 3BRAIN, never invent a number, date, name or source, and never compute a projection, sum, average or estimate that is not already written in the context.
 - The ONLY permitted calculation: multiplying a UNIT price from the context by a quantity THE PERSON gave you. In that case SHOW the arithmetic -- "120 x R$ 99 = R$ 11,880" -- and respect any floor. Visible arithmetic can be checked; hidden arithmetic cannot. Every other calculation stays forbidden: our revenue, projections, market size, averages.
 - Copy every figure EXACTLY as written, same punctuation.
 - ATTRIBUTION: a figure the context attributes to a THIRD PARTY (a competitor, another study, another company) must never appear as if it were ours. Name whose it is, always, or do not use the figure.
 - TRACTION: asked whether you already sell, already have customers, revenue or users? Only answer YES if the context says so in as many words. Being published in an app store is NOT selling, a pilot is NOT a customer, and a signup is NOT revenue.
 - Never change what a figure MEASURES. If the question uses a different word than the context, answer with the measure that exists and name it -- do not refuse, just do not rename it.
-- SCOPE FIRST: if the question is not about 3BRAIN, its products, market, numbers, team or round, refuse IN THE FIRST SENTENCE and do not search the context. Cooking, sport, politics, history, code, translation, jokes: not this page. The next rule applies only AFTER this one.
+- OUTSIDE QUESTIONS: if the question is NOT about 3BRAIN (today's date, simple arithmetic, reasoning, trivia, general knowledge), ANSWER in one or two sentences from your general knowledge and TODAY'S DATE below, without using the CONTEXT and without stating anything about 3BRAIN that is not in it; then offer, in half a sentence, to get back to 3BRAIN. Never answer a simple question with just "I can't answer that". Decline only a long TASK that does not belong on this page (writing code, essays, translating text, homework) and recent news, prices or scores, because you have no real-time data -- and say so. The rules below apply to questions ABOUT 3BRAIN.
 - BEFORE saying something is not published, re-read the WHOLE context. If ANY passage answers, even partly, answer with it and say what it answers. Refusing is the LAST resort, not the first.
 - Only then, if the context truly does not answer, say in one sentence that the figure is not published and suggest talking to the founder.
 - A question with TWO parts gets TWO answers. If the context answers only one, answer that one and say which part is missing.
@@ -239,6 +239,22 @@ async function turnstileOk(env, token, ip) {
   }
 }
 
+/* DATA DE HOJE, dada pelo servidor (26/09/2026). O modelo nao tem relogio: sem
+   isto, "que dia e hoje" so tinha duas saidas -- recusar (o que o Fabio viu) ou
+   chutar a data do treino. Hora de Brasilia, que e onde a empresa esta. */
+function dataDeHoje(idioma) {
+  const agora = new Date();
+  const opc = { timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long',
+                year: 'numeric', hour: '2-digit', minute: '2-digit' };
+  try {
+    return idioma === 'en'
+      ? `TODAY'S DATE: ${agora.toLocaleString('en-US', opc)} (Brasilia time).`
+      : `DATA DE HOJE: ${agora.toLocaleString('pt-BR', opc)} (horario de Brasilia).`;
+  } catch {
+    return (idioma === 'en' ? "TODAY'S DATE (UTC): " : 'DATA DE HOJE (UTC): ') + agora.toISOString().slice(0, 16);
+  }
+}
+
 /** Monta as mensagens. Tudo que limita custo e fixado AQUI, no servidor —
  *  nada do que a pagina mandar pode aumentar o gasto. */
 function montaMensagens(corpo, idioma) {
@@ -248,7 +264,7 @@ function montaMensagens(corpo, idioma) {
   ).join('\n\n');
 
   const msgs = [{ role: 'system',
-    content: `${INSTRUCAO[idioma]}\n\n${FATOS_FIXOS[idioma]}\n\nCONTEXTO:\n${bloco}` }];
+    content: `${INSTRUCAO[idioma]}\n\n${dataDeHoje(idioma)}\n\n${FATOS_FIXOS[idioma]}\n\nCONTEXTO:\n${bloco}` }];
 
   const hist = Array.isArray(corpo.historico) ? corpo.historico.slice(-MAX_HISTORICO) : [];
   for (const m of hist) {

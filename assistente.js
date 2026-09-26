@@ -331,15 +331,37 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
     if (/^(.)\1+$/.test(letras)) return true;           // "aaaaaaa"
     return false;
   }
+  /* DATA E HORA respondidas PELO RELOGIO DO APARELHO (26/09/2026). O Fabio
+     perguntou "que dia e hoje" e o modelo, com a regra de escopo antiga,
+     respondeu "nao posso responder" -- parecia quebrado. Aqui nao ha o que
+     inventar nem o que gastar: o aparelho sabe a data. O resto das perguntas
+     gerais segue para o Worker, que agora responde curto e volta a 3BRAIN. */
+  var TEMPO = {
+    data: /^(e )?(hoje )?((que|qual) (e )?(o |a )?(dia|data)( de hoje| hoje| e hoje| eh hoje| estamos| a gente ta| e)?|hoje e que dia|hoje e dia que|em que dia estamos|what day is (it|today)( today)?|what s the date( today)?|whats the date( today)?|what is (the date|today s date|today)( today)?|what date is (it|today)( today)?)$/,
+    hora: /^((que|qual) (horas|hora) (sao|e|tem)( agora| ai)?|tem horas|what time is it( now)?)$/
+  };
   function ehSocial(texto){
     var t = limpa(texto);
     if (!t) return 'confuso';           // so pontuacao, so emoji: limpa para nada
+    if (TEMPO.data.test(t)) return 'data';
+    if (TEMPO.hora.test(t)) return 'hora';
     if (t.split(' ').length > 5) return null;
     if (degenerada(t)) return 'confuso';
     if (SOCIAL.agradece.test(t)) return 'agradece';
     if (SOCIAL.saudacao.test(t)) return 'saudacao';
     if (SOCIAL.teste.test(t))    return 'teste';
     return null;
+  }
+  function falaTempo(tipo, l){
+    var agora = new Date(), loc = l === 'en' ? 'en-US' : 'pt-BR';
+    var dia  = agora.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    var hora = agora.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
+    if (tipo === 'hora') return l === 'en'
+      ? 'It is **' + hora + '** on your device. Anything about 3BRAIN I can help with?'
+      : 'São **' + hora + '** no seu aparelho. Quer saber algo da 3BRAIN?';
+    return l === 'en'
+      ? 'Today is **' + dia + '**. Anything about 3BRAIN I can help with?'
+      : 'Hoje é **' + dia + '**. Quer saber algo da 3BRAIN?';
   }
   var FALA = {
     saudacao: {
@@ -674,8 +696,9 @@ window.BASE_3BRAIN = {"versao":"1","sugestoes":[{"pt":"O que vocês fazem?","en"
 
     var soc = ehSocial(pergunta);
     if (soc){
-      lembra(FALA[soc][l] || FALA[soc].pt);
-      diz('ela', forte(FALA[soc][l] || FALA[soc].pt));
+      var fala = (soc === 'data' || soc === 'hora') ? falaTempo(soc, l) : (FALA[soc][l] || FALA[soc].pt);
+      lembra(fala);
+      diz('ela', forte(fala));
       montaChips();
       ocupado = false;
       if (envia) envia.disabled = false;
