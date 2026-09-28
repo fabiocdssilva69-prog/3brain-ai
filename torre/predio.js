@@ -2968,8 +2968,8 @@
     if (mais && mais.parentNode) mais.parentNode.removeChild(mais);   // nunca ha "+N": os lugares sao fixos
     var tot = D ? lista(D.funcionarios).length : 0;
     txt($('ct_kn'), vivos.length
-      ? (vivos.length + ' lugares \u00b7 ' + vivosTotal + ' funcion\u00e1rios j\u00e1 passaram por aqui \u00b7 ' + tot + ' na torre')
-      : ('\u00e0 espera da primeira rea\u00e7\u00e3o \u00b7 ' + tot + ' na torre'));
+      ? (vivos.length + ' lugares \u00b7 ' + vivosTotal + ' funcion\u00e1rios j\u00e1 passaram por aqui \u00b7 ' + tot + ' programas na torre')
+      : ('\u00e0 espera da primeira rea\u00e7\u00e3o \u00b7 ' + tot + ' programas na torre'));
   }
 
   function aplicarModoCartoes(m, guardar) {
@@ -3068,7 +3068,12 @@
     if (!D) return;
     var t = obj(D.totais), pj = obj(D.projecto);
     txt($('b_andares'), (projecto ? projecto.total : (t.andares || 0)) + ' · ' + (pj.habitados || 0) + ' hab · ' + (pj.em_obras || 0) + ' obras');
-    txt($('b_func'), String(t.funcionarios || 0));
+    // 28/09, queixa dele ("diz 200 num sitio e 5000 noutro"): o numero grande e o CENSO (todos os que trabalham);
+    // os programas do registo vao ao lado, com o nome. O detalhe por especie fica no title.
+    var ce = obj(t.censo_especies), ceTxt = Object.keys(ce).map(function (k) { return ce[k] + ' ' + k + (ce[k] === 1 ? '' : 's'); }).join(' + ');
+    txt($('b_func'), t.censo ? (Number(t.censo).toLocaleString('pt-BR') + ' · ' + (t.funcionarios || 0) + ' prog.') : String(t.funcionarios || 0));
+    $('b_func').title = t.censo ? (Number(t.censo).toLocaleString('pt-BR') + ' funcionários no censo = ' + ceTxt + '. Destes, ' + (t.funcionarios || 0) +
+      ' são programas do registo (os que o vigia vigia e que moram nos andares).') : ((t.funcionarios || 0) + ' programas do registo');
     txt($('c_sem'), String(semCaminho)); $('c_sem').className = semCaminho > 0 ? 'mau' : '';
     txt($('c_pac'), String(pacotesVivos.length)); txt($('c_idade'), String(D.t_brt || '—').slice(11));
     var maus = lista(D.funcionarios).filter(function (f) { return f.estado === 'erro'; }), atras = lista(D.funcionarios).filter(function (f) { return f.estado === 'atrasado'; });
