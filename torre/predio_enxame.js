@@ -68,8 +68,23 @@
     // acendia vermelho sem nada estar parado
     var limite = (E && E.publicado_em) ? VIGIA_PARADO_S + 420 : VIGIA_PARADO_S;
     var b = obj(E && E.batimento), s = idadeS(b.t_iso), parado = s == null || s > limite;
-    return { parado: parado, s: s, texto: (b.seq != null ? 'volta ' + b.seq : 'sem batimento') + ' · ' + haQuanto(s) +
+    return { parado: parado, s: s, texto: (b.seq != null ? 'ronda nº ' + milhar(b.seq) + ' do vigia' : 'sem batimento') + ' · ' + haQuanto(s) +
              (b.volta_ms != null ? ' · ' + (b.volta_ms / 1000).toFixed(1).replace('.', ',') + ' s' : '') };
+  }
+  // 02/10 (pedido dele): a barra mostrava 'volta 9305' - o numero da RONDA do vigia - e ele leu-o como 9.305
+  // funcionarios. Agora a barra diz quantos estao A TRABALHAR de quantos existem (E.pessoal, da carreira: a trabalhar =
+  // com lugar na carreira; no banco = reserva). A ronda fica na dica. Sem quadro, volta a ronda com o nome inteiro.
+  function milhar(n) { return String(n == null ? '' : n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  function linhaPessoal(curta) {
+    var p = obj(E && E.pessoal);
+    if (p.total == null || p.a_trabalhar == null) return null;
+    return milhar(p.a_trabalhar) + (curta ? '/' : ' de ') + milhar(p.total) + ' a trabalhar';
+  }
+  function dicaPessoal() {
+    var p = obj(E && E.pessoal);
+    if (p.total == null) return '';
+    return milhar(p.a_trabalhar) + ' de ' + milhar(p.total) + ' funcionarios a trabalhar (com lugar na carreira) · ' +
+      milhar(p.banco || 0) + ' no banco (reserva) · ' + milhar(p.advertidos || 0) + ' advertidos · ';
   }
   function pintarTitulo() {
     var kn = $('enx_kn'); if (!kn || !E) return;
@@ -79,9 +94,9 @@
     // volta fica no corpo e no telemovel) e os vermelhos vao por ultimo (se a linha nao chegar, corta-se o nome, nunca
     // o numero de vermelhos, e a seccao ganha a borda vermelha)
     var b = obj(E.batimento);
-    var curto = (b.seq != null ? 'volta ' + b.seq : 'sem batimento') + ' · ' + haQuanto(bt.s).replace('há ', '');
-    var html = '<span class="enx-bat' + (bt.parado ? ' parado' : '') + '" title="' + escH(bt.texto) + '"><i class="enx-coracao"></i>' + escH(curto) + '</span>' +
-      '<span class="enx-tot" title="verdes · amarelos · vermelhos · sem prova"><b class="verde">' + (t.verde || 0) + '</b> <b class="amarelo">' + (t.amarelo || 0) + '</b> <b class="vermelho">' + (t.vermelho || 0) + '</b> <b class="cinza">' + (t.cinza || 0) + '</b></span>' +
+    var curto = (linhaPessoal(false) || (b.seq != null ? 'ronda nº ' + milhar(b.seq) + ' do vigia' : 'sem batimento')) + ' · ' + haQuanto(bt.s).replace('há ', '');
+    var html = '<span class="enx-bat' + (bt.parado ? ' parado' : '') + '" title="' + escH(dicaPessoal() + bt.texto) + '"><i class="enx-coracao"></i>' + escH(curto) + '</span>' +
+      '<span class="enx-tot" title="programas vigiados: verdes · amarelos · vermelhos · sem prova"><b class="verde">' + (t.verde || 0) + '</b> <b class="amarelo">' + (t.amarelo || 0) + '</b> <b class="vermelho">' + (t.vermelho || 0) + '</b> <b class="cinza">' + (t.cinza || 0) + '</b></span>' +
       (verm.length ? '<span class="enx-verm">' + escH(verm.slice(0, 3).join(', ')) + '</span>' : '');
     if (kn.dataset.h !== html) { kn.dataset.h = html; kn.innerHTML = html; }
     var bl = $('bl_enxame'); if (bl) bl.classList.toggle('tem-vermelho', verm.length > 0 || bt.parado);
@@ -182,8 +197,8 @@
     var bt = linhaDoBatimento(), t = obj(E.totais);
     var verm = lista(E.fora_do_verde).filter(function (f) { return f.sev === 'vermelho'; }).map(function (f) { return f.id; });
     // curto (volta + idade): a 390 px a duracao da volta empurrava o nome do vermelho para fora da linha (medido na captura)
-    var b = obj(E.batimento), curto = (b.seq != null ? 'volta ' + b.seq : 'sem batimento') + ' · ' + haQuanto(bt.s).replace('há ', '');
-    var html = '<b>' + NOME_SHIELD + '</b><span class="enx-bat' + (bt.parado ? ' parado' : '') + '"><i class="enx-coracao"></i>' + escH(curto) + '</span>' +
+    var b = obj(E.batimento), curto = (linhaPessoal(true) || (b.seq != null ? 'ronda nº ' + milhar(b.seq) : 'sem batimento')) + ' · ' + haQuanto(bt.s).replace('há ', '');
+    var html = '<b>' + NOME_SHIELD + '</b><span class="enx-bat' + (bt.parado ? ' parado' : '') + '" title="' + escH(dicaPessoal() + bt.texto) + '"><i class="enx-coracao"></i>' + escH(curto) + '</span>' +
       '<span class="enx-tot"><b class="verde">' + (t.verde || 0) + '</b> <b class="amarelo">' + (t.amarelo || 0) + '</b> <b class="vermelho">' + (t.vermelho || 0) + '</b></span>' +
       (verm.length ? '<span class="enx-verm">' + escH(verm.slice(0, 2).join(', ')) + '</span>' : '');
     if (el.dataset.h !== html) { el.dataset.h = html; el.innerHTML = html; }
@@ -298,7 +313,7 @@
     },
     contagem: function () {
       var bt = E ? linhaDoBatimento() : null, corpo = $('enx_corpo'), tel = $('enx_tel');
-      return { lido: !!E, leituras: leituras, falhas: falhas, seq: E ? obj(E.batimento).seq : null, idade_s: bt ? bt.s : null, parado: bt ? bt.parado : null,
+      return { lido: !!E, leituras: leituras, falhas: falhas, seq: E ? obj(E.batimento).seq : null, pessoal: E ? (E.pessoal || null) : null, idade_s: bt ? bt.s : null, parado: bt ? bt.parado : null,
                andares: andares().length, fora: E ? lista(E.fora_do_verde).length : 0, relatorios: E ? lista(E.relatorios).length : 0,
                escalados: E ? lista(obj(E.lideres).escalados).length : 0, stark: !!(E && obj(E.stark).t_iso), pintados: pintados,
                noCorpo: corpo ? { andares: corpo.querySelectorAll('.enx-and').length, relatorios: corpo.querySelectorAll('.enx-rel').length,
