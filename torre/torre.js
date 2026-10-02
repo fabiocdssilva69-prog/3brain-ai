@@ -335,7 +335,11 @@
     var s = tUltimo ? Math.round((Date.now() - tUltimo) / 1000) : null;
     txt($('r_idade'), s === null ? '—' : (s + ' s'));
   }, 1000);
-  buscar(); setInterval(buscar, PERIODO_MS);
+  // 01/10 (Torre 3BRAIN): a pagina nova tem UM relogio e UMA leitura do torre.json (o predio.js lia de 2 em 2 s e este
+  // de 5 em 5 s - o mesmo ficheiro de 83 KB duas vezes). Com window.TORRE_JS_SEM_CICLO, este ficheiro nao busca:
+  // expoe o pintar e quem le o torre.json chama-o. Sem a bandeira (predio.html), tudo como antes.
+  window.__torrePintar = function (d) { try { pintar(d); } catch (e) { if (window.console) console.warn('torre.js', e); } };
+  if (!window.TORRE_JS_SEM_CICLO) { buscar(); setInterval(buscar, PERIODO_MS); }
 
   // ---------- interaccao ----------
   document.addEventListener('click', function (ev) {
