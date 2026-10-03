@@ -75,16 +75,24 @@
   // funcionarios. Agora a barra diz quantos estao A TRABALHAR de quantos existem (E.pessoal, da carreira: a trabalhar =
   // com lugar na carreira; no banco = reserva). A ronda fica na dica. Sem quadro, volta a ronda com o nome inteiro.
   function milhar(n) { return String(n == null ? '' : n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  // 02/10 (2.a versao, pedido dele): tres numeros do CENSO - registados, trabalharam em 24 h, a trabalhar agora.
   function linhaPessoal(curta) {
     var p = obj(E && E.pessoal);
-    if (p.total == null || p.a_trabalhar == null) return null;
-    return milhar(p.a_trabalhar) + (curta ? '/' : ' de ') + milhar(p.total) + ' a trabalhar';
+    if (p.registados == null || p.h24 == null || p.agora == null) return null;
+    return curta ? milhar(p.registados) + ' · 24 h ' + milhar(p.h24) + ' · agora ' + milhar(p.agora)
+                 : milhar(p.registados) + ' registados · ' + milhar(p.h24) + ' trabalharam em 24 h · ' + milhar(p.agora) + ' agora';
   }
+  var NOME_ESP = { algoritmo: 'algoritmos', regra: 'regras', posto: 'postos', script: 'scripts', agente: 'agentes' };
   function dicaPessoal() {
     var p = obj(E && E.pessoal);
-    if (p.total == null) return '';
-    return milhar(p.a_trabalhar) + ' de ' + milhar(p.total) + ' funcionarios a trabalhar (com lugar na carreira) · ' +
-      milhar(p.banco || 0) + ' no banco (reserva) · ' + milhar(p.advertidos || 0) + ' advertidos · ';
+    if (p.registados == null) return '';
+    var es = Object.keys(obj(p.por_especie)).map(function (k) {
+      var e = obj(p.por_especie)[k];
+      return (NOME_ESP[k] || k) + ' ' + milhar(e.h24) + '/' + milhar(e.registados) + ' em 24 h, ' + milhar(e.agora) + ' agora';
+    }).join('; ');
+    return milhar(p.registados) + ' funcionarios registados; ' + milhar(p.h24) + ' trabalharam nas ultimas 24 h; ' +
+      milhar(p.agora) + ' a trabalhar agora (ultimos ' + (p.agora_min || 15) + ' min ou em servico). ' + es + '. ' +
+      (p.demitidos ? milhar(p.demitidos) + ' genes de ' + p.familias_demitidas + ' familias demitidas ficam fora do total. ' : '');
   }
   function pintarTitulo() {
     var kn = $('enx_kn'); if (!kn || !E) return;
