@@ -1,0 +1,906 @@
+/* t3b.css — TORRE 3BRAIN (01/10/2026). A identidade da marca (3brain.com.br): ouro #F2C230 sobre preto #08080A,
+   ciano/violeta/verde como cores de ESTADO, Instrument Serif nos titulos, Inter no texto, JetBrains Mono nos numeros.
+   Regras de ouro do Lab de Animacao (o artefacto dele): so transform e opacity animam; leitura vence movimento
+   (o texto chega a animar e depois para quieto); cor carrega significado (verde/ambar/vermelho so para estado,
+   OURO e a marca); 200-600 ms nas entradas; um relogio so; prefers-reduced-motion desliga o movimento. */
+@import url(vendor/fontes/fontes.css);
+
+:root {
+  --bg: #08080a; --bg2: #0b0b0f; --card: #111117; --card2: #15151c; --line: #22222b; --line2: #31313d;
+  --txt: #efede8; --mute: #9797a3; --dim: #6a6a76;
+  --ouro: #f2c230; --ouro-hi: #ffdc6a; --ouro-dk: #7e6210; --ouro-v: rgba(242, 194, 48, .14);
+  --cy: #2dd4e8; --vi: #b265f5; --ok: #3fd69a; --am: #fbbf24; --mau: #ff5a5f; --az: #60a5fa;
+  --f-d: 'Instrument Serif', Georgia, serif; --f-s: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --f-m: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --hud-h: 46px; --num-h: 58px; --cart-h: 86px; --dir-h: 30px; --lado-w: 360px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }   /* uma regra de display do autor venceria o hidden do navegador */
+html, body { margin: 0; height: 100%; }
+body.t3b { background: var(--bg); color: var(--txt); font: 13px/1.45 var(--f-s); overflow: hidden; }
+:where(body.t3b) button { font: inherit; color: inherit; }   /* :where = especificidade zero: as regras de cada botao mandam */
+.num, .mono { font-family: var(--f-m); font-variant-numeric: tabular-nums; }
+.up { color: var(--ok) !important; } .dn { color: var(--mau) !important; }
+
+/* ===================== HUD de cima ===================== */
+.hud { height: var(--hud-h); display: flex; align-items: center; gap: 18px; padding: 0 16px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #0e0e13, var(--bg)); position: relative; z-index: 5; white-space: nowrap; }
+.hud::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ouro) 18%, var(--ouro-hi) 50%, var(--ouro) 82%, transparent); opacity: .55; }
+.marca { display: flex; align-items: center; gap: 10px; font-family: var(--f-d); font-size: 23px; letter-spacing: -.01em; }
+.marca .mk { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font: 700 13px var(--f-m);
+  color: #0b0b0f; background: linear-gradient(140deg, var(--ouro-hi), var(--ouro) 55%, var(--ouro-dk));
+  box-shadow: 0 0 18px rgba(242, 194, 48, .45), inset 0 0 0 1px rgba(255, 255, 255, .25); }
+.marca b { font-weight: 400; } .marca b i { font-style: italic; color: var(--ouro); }
+.marca small { font: 500 10px var(--f-m); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); margin-left: 4px; }
+.cel { display: inline-flex; align-items: baseline; gap: 6px; font-family: var(--f-m); font-size: 12px; }
+.cel u { text-decoration: none; color: var(--dim); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+.cel b { font-weight: 500; }
+.hud .esp { flex: 1; }
+.led { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--ok); box-shadow: 0 0 10px var(--ok); align-self: center; }
+.led.at { background: var(--am); box-shadow: 0 0 10px var(--am); } .led.mau { background: var(--mau); box-shadow: 0 0 10px var(--mau); }
+.led.pulsa { animation: pulsa 1.4s ease-in-out infinite; }
+.jar { display: inline-flex; align-items: center; gap: 6px; font: 10px var(--f-m); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; }
+.jbar { width: 70px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.jbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--ouro-dk), var(--ouro)); transform-origin: left; transition: width .8s cubic-bezier(.2, .8, .2, 1); }
+.jar b { color: var(--txt); font-weight: 500; }
+
+/* ===================== os numeros da casa (odometros) ===================== */
+.casa { height: var(--num-h); display: grid; grid-template-columns: repeat(6, 1fr); border-bottom: 1px solid var(--line); background: var(--bg2); }
+.casa > div { padding: 7px 16px 6px; border-right: 1px solid var(--line); position: relative; overflow: hidden; min-width: 0; }
+.casa > div:last-child { border-right: 0; }
+.casa u { display: block; text-decoration: none; font: 500 9.5px var(--f-m); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.casa .v { font: 500 21px/1.15 var(--f-m); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; }
+.casa .s { font-size: 10.5px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 03/10 23:xx: o "por <quem>" ficava POR CIMA da linha de baixo (".s") no ecra dele - agora ocupa a linha inteira com o
+   fundo do cartao enquanto acende (4,5 s) e depois a linha volta */
+.casa .autor { position: absolute; left: 16px; right: 10px; bottom: 5px; font: 500 10px var(--f-m); color: var(--ouro); opacity: 0;
+  transform: translateY(-4px); transition: opacity .3s, transform .3s; letter-spacing: .04em; background: var(--bg2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.casa .autor.on { opacity: 1; transform: none; }
+.casa > div.flash::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, var(--ouro-v), transparent); animation: some 1.6s ease-out forwards; }
+
+/* odometro: cada digito e uma fita 0-9 numa janela de 1em (licao 15 do artefacto) */
+.odo { display: inline-flex; align-items: flex-end; line-height: 1; }
+.odo .dg { height: 1.1em; overflow: hidden; width: .62em; display: inline-block; text-align: center; }
+.odo .fita { display: flex; flex-direction: column; transition: transform .9s cubic-bezier(.2, .9, .25, 1); }
+.odo .fita span { height: 1.1em; line-height: 1.1em; display: block; }
+.odo .sep { width: .3em; text-align: center; opacity: .7; } .odo .ch { padding: 0 .04em; }
+
+/* ===================== o palco ===================== */
+.corpo { position: absolute; top: calc(var(--hud-h) + var(--num-h)); bottom: calc(var(--cart-h) + var(--dir-h)); left: 0; right: 0;
+  display: grid; grid-template-columns: 1fr var(--lado-w); }
+.corpo.lado-fechado { grid-template-columns: 1fr 36px; }
+.palco { position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 110%, #15120a 0%, #0a0a0d 45%, var(--bg) 100%); contain: strict; }
+.palco canvas#cena { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+.vinheta { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .55) 100%); }
+
+/* os hologramas vivos: paineis de vidro com aresta de ouro, por cima do palco, em duas colunas */
+.holos { position: absolute; top: 10px; bottom: 44px; width: 250px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; z-index: 3; }
+.holos.esq { left: 10px; } .holos.dir { right: 10px; }
+.holo { pointer-events: auto; position: relative; flex: 1 1 0; min-height: 0; border-radius: 10px; overflow: hidden;
+  background: linear-gradient(160deg, rgba(20, 18, 10, .78), rgba(10, 10, 14, .72)); border: 1px solid rgba(242, 194, 48, .22);
+  box-shadow: inset 0 1px 0 rgba(255, 220, 106, .08), 0 8px 24px rgba(0, 0, 0, .35); backdrop-filter: blur(3px); }
+.holo::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: repeating-linear-gradient(0deg, rgba(242, 194, 48, .035) 0 1px, transparent 1px 4px); }
+.holo canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.holo .ht { position: absolute; left: 10px; top: 7px; z-index: 2; font: 500 9.5px var(--f-m); letter-spacing: .16em; text-transform: uppercase; color: var(--ouro); pointer-events: none; }
+.holo .ht em { font-style: normal; color: var(--dim); letter-spacing: .06em; text-transform: none; margin-left: 6px; }
+.holo .quem { position: absolute; right: 9px; top: 6px; z-index: 2; font: 500 9px var(--f-m); color: var(--ouro-hi); opacity: 0; transition: opacity .3s; pointer-events: none; }
+.holo .quem.on { opacity: .95; }
+.holo.flash { border-color: var(--ouro); box-shadow: 0 0 0 1px var(--ouro), 0 0 26px rgba(242, 194, 48, .35); transition: none; }
+.holo.min { flex: 0 0 26px; } .holo.min canvas { opacity: 0; }
+.holo button.mm { position: absolute; right: 4px; bottom: 3px; z-index: 2; background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 10px; }
+
+/* os niveis e os contadores do palco */
+.niveis { position: absolute; left: 50%; transform: translateX(-50%); bottom: 10px; z-index: 4; display: flex; gap: 4px; align-items: center;
+  background: rgba(10, 10, 14, .82); border: 1px solid var(--line2); border-radius: 22px; padding: 4px 6px; }
+.niveis u { text-decoration: none; font: 500 9.5px var(--f-m); color: var(--dim); letter-spacing: .14em; text-transform: uppercase; padding: 0 6px; }
+.niveis button { background: none; border: 1px solid transparent; border-radius: 16px; padding: 4px 11px; cursor: pointer; font: 500 11px var(--f-m); color: var(--mute); }
+.niveis button:hover { color: var(--txt); }
+.niveis button.on { color: #0b0b0f; background: var(--ouro); box-shadow: 0 0 14px rgba(242, 194, 48, .45); }
+.niveis button.gav { border-color: var(--line2); }
+.pc { position: absolute; left: 270px; right: 270px; top: 10px; z-index: 4; display: flex; justify-content: center; gap: 14px; pointer-events: none;
+  font: 10px var(--f-m); color: var(--dim); }
+.pc b { color: var(--txt); font-weight: 500; margin-left: 4px; }
+.etiq { position: absolute; z-index: 6; pointer-events: none; background: rgba(10, 10, 14, .92); border: 1px solid var(--ouro-dk); border-radius: 8px;
+  padding: 6px 9px; font: 11px var(--f-s); max-width: 280px; box-shadow: 0 6px 18px rgba(0, 0, 0, .5); }
+.etiq b { font-family: var(--f-d); font-size: 15px; font-weight: 400; color: var(--ouro-hi); display: block; }
+.etiq i { font-style: normal; color: var(--mute); font-family: var(--f-m); font-size: 10px; }
+.aviso3d { position: absolute; inset: 0; display: grid; place-items: center; color: var(--mute); z-index: 7; }
+.fita-cot { position: absolute; left: 270px; right: 270px; top: 30px; height: 22px; overflow: hidden; z-index: 4; pointer-events: none;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.fita-cot .mov { display: flex; gap: 26px; width: max-content; animation: fita 40s linear infinite; font: 11px var(--f-m); white-space: nowrap; }
+.fita-cot span u { text-decoration: none; color: var(--ouro); margin-right: 5px; } .fita-cot span i { font-style: normal; margin-left: 5px; }
+
+/* ===================== a coluna do lado ===================== */
+.lado { border-left: 1px solid var(--line); background: var(--bg2); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.bl { border-bottom: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; position: relative; }
+.bl .bh { display: flex; align-items: baseline; gap: 8px; padding: 8px 12px 4px; }
+.bl .bh h2 { margin: 0; font: 400 17px var(--f-d); color: var(--txt); white-space: nowrap; }
+.bl .bh h2 em { font: 500 9.5px var(--f-m); color: var(--dim); letter-spacing: .08em; margin-left: 6px; font-style: normal; text-transform: uppercase; }
+.bl .bh .kn { margin-left: auto; font: 10px var(--f-m); color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+.bl.nucleo { flex: 0 0 236px; } #bl_nucleo .bh { padding-left: 38px; } .bl.anel { flex: 0 0 214px; } .bl.chat { flex: 1 1 auto; } .bl.pend { flex: 0 0 auto; max-height: 30%; }
+.bl canvas.cv { width: 100%; flex: 1; min-height: 0; display: block; }
+.bl .leg { padding: 0 12px 7px; font: 10px var(--f-m); color: var(--mute); display: flex; gap: 10px; flex-wrap: wrap; min-height: 22px; }
+.bl .leg b { color: var(--ouro-hi); font-weight: 500; }
+.bl .leg i { font-style: normal; }
+.corpo.lado-fechado .lado > :not(.lado-tg) { display: none; }
+.lado-tg { position: absolute; z-index: 5; top: 8px; right: calc(var(--lado-w) - 30px); background: rgba(10, 10, 14, .9); border: 1px solid var(--line2);
+  border-radius: 6px; color: var(--mute); cursor: pointer; padding: 1px 7px; font-size: 11px; }
+.corpo.lado-fechado .lado-tg { right: 6px; }
+
+/* pendencias (dobradas por omissao: abrem ao clicar no titulo) */
+.pd-lista { overflow: auto; padding: 0 12px 10px; display: flex; flex-direction: column; gap: 6px; }
+.bl.pend.dobrado .pd-lista { display: none; }
+.bl.pend .bh { cursor: pointer; }
+.pd-it { border-left: 2px solid var(--line2); padding: 3px 8px; font-size: 11.5px; }
+.pd-it.maxima { border-color: var(--mau); } .pd-it.alta { border-color: var(--ouro); }
+.pd-it i { display: block; font: 9.5px var(--f-m); color: var(--dim); font-style: normal; text-transform: uppercase; letter-spacing: .08em; }
+.pd-it i.dele { color: var(--ouro); }
+.pd-it em { display: block; color: var(--mute); font-style: normal; font-size: 10.5px; }
+
+/* ===================== o CHAT (com talento) ===================== */
+.chat-top { display: flex; align-items: center; gap: 6px 8px; padding: 0 12px 6px; flex-wrap: wrap; }
+.chat-falaram { display: flex; align-items: center; }
+.chat-falaram .av { width: 22px; height: 22px; border-radius: 50%; margin-left: -6px; border: 2px solid var(--bg2); overflow: hidden; background: var(--card2); }
+.chat-falaram .av:first-child { margin-left: 0; }
+.chat-falaram .av svg { width: 100%; height: 100%; display: block; }
+.chat-falaram + b { font: 500 10.5px var(--f-m); color: var(--mute); margin-left: 6px; }
+.chat-fil { margin-left: auto; display: flex; gap: 3px; flex-wrap: wrap; }
+.chat-fil button { background: none; border: 1px solid var(--line2); border-radius: 10px; padding: 1px 7px; cursor: pointer; font: 9.5px var(--f-m); color: var(--mute); text-transform: uppercase; letter-spacing: .06em; }
+.chat-fil button.on { border-color: var(--ouro); color: var(--ouro); }
+.chat-lista { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 10px 10px; display: flex; flex-direction: column; gap: 7px; scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
+.msg { display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: start; }
+.msg .av { width: 30px; height: 30px; border-radius: 9px; overflow: hidden; background: var(--card2); }
+.msg .av svg { width: 100%; height: 100%; display: block; }
+.msg .bal { background: var(--card); border: 1px solid var(--line); border-radius: 4px 12px 12px 12px; padding: 6px 9px 7px; min-width: 0; position: relative; }
+.msg .cab { display: flex; align-items: baseline; gap: 6px; font-size: 11px; margin-bottom: 2px; flex-wrap: wrap; }
+.msg .cab b { font-weight: 600; color: var(--txt); }
+.msg .cab .and { font: 500 9px var(--f-m); padding: 0 5px; border-radius: 6px; border: 1px solid; opacity: .9; }
+.msg .cab .t { margin-left: auto; font: 9.5px var(--f-m); color: var(--dim); }
+.msg .tag { font: 600 8.5px var(--f-m); letter-spacing: .1em; padding: 1px 5px; border-radius: 4px; background: var(--line); color: var(--mute); }
+.msg .tag.lucro { background: rgba(63, 214, 154, .14); color: var(--ok); } .msg .tag.perda, .msg .tag.risco { background: rgba(255, 90, 95, .13); color: var(--mau); }
+.msg .tag.noticia { background: rgba(45, 212, 232, .13); color: var(--cy); } .msg .tag.director { background: var(--ouro-v); color: var(--ouro); }
+.msg .tag.recado { background: rgba(178, 101, 245, .14); color: var(--vi); } .msg .tag.lab { background: rgba(96, 165, 250, .14); color: var(--az); }
+.msg .txt { font-size: 12px; color: #d9d6cf; word-wrap: break-word; }
+.msg .txt .n { font-family: var(--f-m); font-size: 11.5px; }
+.msg .cita { border-left: 2px solid var(--ouro-dk); padding: 1px 7px; margin: 3px 0 4px; font-size: 10.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msg .cita b { color: var(--ouro); font-weight: 500; }
+.msg a.lk { color: var(--cy); text-decoration: none; font-size: 10.5px; display: inline-block; margin-top: 3px; }
+.msg a.lk:hover { text-decoration: underline; }
+.msg.noticia .bal { border-color: rgba(45, 212, 232, .35); background: linear-gradient(160deg, rgba(45, 212, 232, .07), var(--card)); }
+.msg.recado .bal { border-style: dashed; border-color: rgba(178, 101, 245, .45); }
+.msg.recado .rota { font: 9.5px var(--f-m); color: var(--vi); }
+.msg.director .bal { border-color: rgba(242, 194, 48, .45); background: linear-gradient(160deg, rgba(242, 194, 48, .08), var(--card)); }
+.msg.novo { animation: entra .45s cubic-bezier(.2, .8, .2, 1); }
+.msg.novo .bal::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; border: 1px solid var(--ouro); animation: some 1.6s ease-out forwards; pointer-events: none; }
+.chat-act { padding: 0 12px 6px; font: 10px var(--f-m); color: var(--dim); min-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-act b { color: var(--ouro); font-weight: 500; }
+.chat-act .pts i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--ouro); margin-right: 2px; animation: pts 1.2s infinite; }
+.chat-act .pts i:nth-child(2) { animation-delay: .15s; } .chat-act .pts i:nth-child(3) { animation-delay: .3s; }
+
+/* ===================== os CARTOES AO VIVO (carrossel de lugares fixos) ===================== */
+.cartoes { position: absolute; left: 0; right: 0; bottom: var(--dir-h); height: var(--cart-h); border-top: 1px solid var(--line); background: var(--bg2);
+  display: grid; grid-template-columns: 150px 1fr; z-index: 5; }
+.cartoes .ct-tit { padding: 8px 12px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.cartoes .ct-tit h3 { margin: 0; font: 400 16px var(--f-d); }
+.cartoes .ct-tit .r { font: 10px var(--f-m); color: var(--mute); }
+.cartoes .ct-tit .r b { color: var(--ouro); font-weight: 500; }
+.cartoes .ct-tit .tam { display: flex; gap: 3px; margin-top: auto; }
+.cartoes .ct-tit .tam button { background: none; border: 1px solid var(--line2); border-radius: 5px; cursor: pointer; font: 9.5px var(--f-m); color: var(--mute); padding: 0 6px; }
+.cartoes .ct-tit .tam button.on { border-color: var(--ouro); color: var(--ouro); }
+.lugares { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; padding: 7px 8px; min-width: 0; overflow: hidden; }
+.cartao { position: relative; border-radius: 9px; background: var(--card); border: 1px solid var(--line); overflow: hidden; display: grid;
+  grid-template-columns: 34px 1fr; gap: 0 7px; padding: 6px 7px; align-content: start; cursor: pointer; min-width: 0; transition: border-color .4s;
+  contain: layout style paint; }   /* 04/10: cada evento acende um cartao (ate 4/s); assim o recalculo fica DENTRO do cartao (ja tinha overflow:hidden) */
+.cartao.vazio { background: transparent; border-style: dashed; cursor: default; }
+.cartao .av { width: 34px; height: 34px; border-radius: 9px; overflow: hidden; grid-row: span 3; background: var(--card2); }
+.cartao .av svg { width: 100%; height: 100%; display: block; }
+.cartao .nm { font: 600 11px var(--f-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cartao .cg { font: 9.5px var(--f-m); color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cartao .hh { font: 500 11px var(--f-m); color: var(--ouro-hi); display: flex; gap: 6px; align-items: baseline; }
+.cartao .hh i { font-style: normal; font-size: 9px; color: var(--dim); }
+.cartao .k { position: absolute; right: 6px; top: 5px; width: 6px; height: 6px; border-radius: 50%; }
+.cartao .and { position: absolute; right: 6px; bottom: 4px; font: 500 8.5px var(--f-m); color: var(--dim); }
+.cartao .brilho { position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse at 20% 0%, rgba(255, 220, 106, .55), rgba(242, 194, 48, .14) 45%, transparent 75%); }
+.cartao.aceso { border-color: var(--ouro); }
+.cartao.aceso .brilho { animation: acende 1.5s ease-out forwards; }
+.cartao.aceso .av { box-shadow: 0 0 0 2px var(--ouro), 0 0 16px rgba(242, 194, 48, .7); }
+.cartao.entra { animation: entraCartao .45s cubic-bezier(.2, .8, .2, 1); }
+.cartoes.s .cartao { grid-template-columns: 26px 1fr; } .cartoes.s .cartao .av { width: 26px; height: 26px; }
+.cartoes.s .cartao .cg { display: none; }
+.cartoes.g { --cart-h: 120px; } .cartoes.g .cartao .av { width: 46px; height: 46px; } .cartoes.g .cartao { grid-template-columns: 46px 1fr; }
+.cartao-det { position: fixed; z-index: 30; width: 320px; background: var(--card); border: 1px solid var(--ouro-dk); border-radius: 12px; padding: 12px 14px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .6); font-size: 12px; }
+.cartao-det h4 { margin: 0 0 2px; font: 400 19px var(--f-d); color: var(--ouro-hi); }
+.cartao-det .l { display: grid; grid-template-columns: 96px 1fr; gap: 2px 8px; margin-top: 8px; font-size: 11px; }
+.cartao-det .l u { text-decoration: none; color: var(--dim); font: 10px var(--f-m); }
+.cartao-det .ult { margin-top: 8px; font: 10.5px var(--f-m); color: var(--mute); max-height: 120px; overflow: auto; }
+.cartao-det .ult div { padding: 2px 0; border-bottom: 1px solid var(--line); }
+
+/* ===================== directorio ===================== */
+nav.dir { position: absolute; left: 0; right: 0; bottom: 0; height: var(--dir-h); border-top: 1px solid var(--line); background: var(--bg);
+  display: flex; align-items: center; gap: 4px; padding: 0 10px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; white-space: nowrap; z-index: 5; }
+nav.dir::-webkit-scrollbar { display: none; }
+nav.dir button { background: none; border: 1px solid var(--line); border-radius: 12px; padding: 1px 8px; cursor: pointer; font: 10px var(--f-m); color: var(--mute); flex: 0 0 auto; }
+nav.dir button u { text-decoration: none; color: var(--ouro); margin-right: 4px; }
+nav.dir button.obra { border-style: dashed; } nav.dir button.on { border-color: var(--ouro); color: var(--txt); }
+nav.dir button.vivo { color: var(--txt); border-color: var(--ouro-dk); }
+
+/* ===================== painel do andar ===================== */
+.painel { position: fixed; z-index: 25; left: 272px; bottom: calc(var(--cart-h) + var(--dir-h) + 54px); width: 380px; max-height: 42vh; overflow: auto;
+  background: rgba(14, 14, 19, .97); border: 1px solid var(--ouro-dk); border-radius: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, .6); display: none; }
+.painel.aberto { display: block; animation: entra .3s ease-out; }
+.painel .bh { display: flex; align-items: baseline; gap: 8px; padding: 10px 14px 6px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(14, 14, 19, .98); }
+.painel h2 { margin: 0; font: 400 20px var(--f-d); color: var(--ouro-hi); }
+.painel .kn { font: 10px var(--f-m); color: var(--mute); }
+.painel .fx { margin-left: auto; background: none; border: 0; color: var(--mute); cursor: pointer; font-size: 14px; }
+.painel .pcorpo { padding: 10px 14px 14px; font-size: 12px; }
+.painel table { width: 100%; border-collapse: collapse; margin: 6px 0; font: 11px var(--f-m); }
+.painel td, .painel th { padding: 3px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+.painel th { color: var(--dim); font-weight: 500; }
+.painel .sect { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.painel .sect span { font: 10px var(--f-m); padding: 2px 6px; border: 1px solid var(--line2); border-radius: 6px; color: var(--mute); }
+.painel .sect span b { color: var(--ouro); font-weight: 500; margin-left: 3px; }
+
+/* ===================== a gaveta (o instrumento do dia: reactor.js + torre.js, intactos) ===================== */
+.gaveta { position: fixed; z-index: 40; inset: calc(var(--hud-h) + 6px) 12px 12px; overflow: auto; background: rgba(8, 8, 10, .985); border: 1px solid var(--ouro-dk); border-radius: 14px; }
+.gaveta .gbh { position: sticky; top: 0; z-index: 2; display: flex; align-items: baseline; gap: 10px; padding: 10px 16px; background: rgba(8, 8, 10, .98); border-bottom: 1px solid var(--line); }
+.gaveta .gbh b { font: 400 20px var(--f-d); color: var(--ouro-hi); } .gaveta .gbh span { color: var(--mute); font-size: 11px; }
+.gaveta .gbh button { margin-left: auto; background: none; border: 1px solid var(--line2); border-radius: 6px; color: var(--mute); cursor: pointer; padding: 2px 9px; }
+
+/* ===================== animacoes ===================== */
+@keyframes pulsa { 50% { opacity: .35; } }
+@keyframes some { from { opacity: 1; } to { opacity: 0; } }
+@keyframes entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes entraCartao { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes acende { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fita { to { transform: translateX(-50%); } }
+@keyframes pts { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-3px); opacity: 1; } }
+
+/* ===================== ecra pequeno: sem 3D (ordem dele, 21/09) — so o instrumento e os numeros ===================== */
+@media (max-width: 900px) {
+  body.t3b { overflow: auto; }
+  .hud { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 8px 14px; }
+  .casa { grid-template-columns: repeat(2, 1fr); height: auto; }
+  .corpo, .cartoes, nav.dir { position: static; }
+  .corpo { display: block; } .palco { display: none; } .lado { border-left: 0; } .bl.chat { height: 420px; }
+  .cartoes { height: auto; grid-template-columns: 1fr; } .lugares { grid-auto-flow: row; grid-template-columns: repeat(2, 1fr); }
+  .lado-tg { display: none; }
+  .gaveta { position: static; inset: auto; border-radius: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* o painel do andar: compacto, no canto de baixo a esquerda; a tabela dos programas dobra-se */
+.painel details summary { cursor: pointer; font: 10px var(--f-m); color: var(--ouro); letter-spacing: .08em; text-transform: uppercase; margin-top: 6px; }
+.painel p { margin: 6px 0; }
+.aviso3d.carrega { color: var(--ouro); font: 500 12px var(--f-m); letter-spacing: .12em; text-transform: uppercase; }
+
+/* ===================== 03/10/2026 — as 31 respostas dele: cartoes ATS, chat de grupo, vortex, fios dos hologramas, alertas ===================== */
+/* q25: os fios que ligam cada holograma ao seu andar (desenhados pelo t3b_holo.js em cada quadro em que a camara mexe) */
+.fios { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: visible; }
+.fios line { stroke: rgba(242, 194, 48, .55); stroke-width: 1; stroke-dasharray: 4 5; }
+.fios circle { fill: var(--ouro); }
+.fios .ponta { fill: none; stroke: var(--ouro-hi); stroke-width: 1; }
+.holo.ancorado { transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+.holos { justify-content: flex-start; }
+
+/* q26/q27: os CARTOES AO VIVO no estilo ATS em grande - faixa larga: busto, nome, cargo, contador, LED, andar e mini grafico */
+:root { --cart-h: 112px; }
+.cartoes.s { --cart-h: 88px; } .cartoes.g { --cart-h: 140px; }
+.lugares { gap: 8px; padding: 8px 10px; }
+.cartao { grid-template-columns: 44px 1fr 64px; grid-template-rows: auto auto auto; gap: 1px 8px; padding: 8px 10px; border-radius: 12px;
+  background: linear-gradient(160deg, #14141b, #0e0e13); border: 1px solid var(--line2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04); align-content: start; }
+.cartao .av { width: 44px; height: 44px; border-radius: 10px; grid-row: 1 / span 3; grid-column: 1; }
+.cartao .nm { grid-column: 2; grid-row: 1; font: 600 12px var(--f-s); letter-spacing: .01em; }
+.cartao .cg { grid-column: 2; grid-row: 2; font: 500 9px var(--f-m); color: var(--mute); letter-spacing: .06em; text-transform: uppercase; }
+.cartao .hh { grid-column: 2; grid-row: 3; font: 500 12px var(--f-m); color: var(--ouro-hi); }
+.cartao .hh i { font-size: 9px; }
+.cartao .k { position: static; grid-column: 3; grid-row: 1; justify-self: end; width: 7px; height: 7px; margin-top: 3px; box-shadow: 0 0 8px currentColor; }
+.cartao .and { position: static; grid-column: 3; grid-row: 2; justify-self: end; font: 500 9px var(--f-m); color: var(--dim); }
+.cartao canvas.spark { grid-column: 3; grid-row: 3; width: 64px; height: 22px; display: block; justify-self: end; }
+.cartao .cont { position: absolute; right: 10px; top: 18px; font: 600 15px var(--f-m); color: var(--txt); line-height: 1; }
+.cartao .cont small { font: 500 8px var(--f-m); color: var(--dim); display: block; letter-spacing: .1em; text-transform: uppercase; }
+.cartoes.s .cartao { grid-template-columns: 30px 1fr 52px; } .cartoes.s .cartao .av { width: 30px; height: 30px; } .cartoes.s .cartao .cg, .cartoes.s .cartao canvas.spark { display: none; }
+.cartoes.g .cartao .av { width: 56px; height: 56px; } .cartoes.g .cartao { grid-template-columns: 56px 1fr 80px; } .cartoes.g .cartao canvas.spark { width: 80px; height: 28px; }
+.cartao.aceso { border-color: var(--ouro); box-shadow: 0 0 0 1px rgba(242, 194, 48, .35), 0 0 22px rgba(242, 194, 48, .25); }
+.cartoes .ct-tit h3 { font-size: 15px; } .cartoes .ct-tit .r { line-height: 1.3; }
+
+/* q28 + q03: o CHAT como grupo de WhatsApp - um fio so, nada em cima de nada; cada mensagem e um bloco que empilha */
+.bl.chat { flex: 1 1 0; min-height: 160px; }
+.chat-top { flex: 0 0 auto; }
+.chat-lista { flex: 1 1 0; min-height: 0; display: block; padding: 6px 10px 10px; }
+.msg { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px; align-items: start; margin: 0 0 8px; }
+.msg.seg { margin-top: -5px; }
+.msg.seg .av { visibility: hidden; height: 0; min-height: 0; }
+.msg .av { width: 30px; height: 30px; }
+.msg .bal { border-radius: 4px 12px 12px 12px; padding: 6px 10px 7px; max-width: 100%; }
+.msg.seg .bal { border-radius: 12px; }
+.msg .cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; font-size: 11px; margin-bottom: 3px; line-height: 1.25; }
+.msg .cab b { color: var(--ouro-hi); }
+.msg .cab .t { margin-left: auto; }
+.msg .txt { line-height: 1.4; }
+.msg .txt .n { white-space: nowrap; }
+.msg .cita { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.msg.recado .rota { margin-bottom: 2px; }
+.chat-dia { text-align: center; font: 500 9.5px var(--f-m); color: var(--dim); letter-spacing: .14em; text-transform: uppercase; margin: 6px 0 10px; }
+.chat-dia span { background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 2px 10px; }
+.chat-act { flex: 0 0 auto; }
+.chat-act .mais { color: var(--dim); }
+
+/* q24: o VORTEX (G16) na coluna do lado */
+.bl.nucleo { flex: 0 0 250px; } #bl_nucleo .bh { padding-left: 12px; }
+
+/* ALERTA 3D (03/10): a contagem no HUD acende; o detalhe abre num painel ao lado do palco */
+#b_alertas.mau { color: var(--mau); text-shadow: 0 0 10px rgba(255, 90, 95, .6); }
+#b_alertas_c { cursor: pointer; }
+.alerta-det { position: fixed; z-index: 26; right: calc(var(--lado-w) + 18px); top: calc(var(--hud-h) + var(--num-h) + 48px); width: 400px; max-height: 60vh; overflow: auto;
+  background: rgba(14, 12, 12, .97); border: 1px solid rgba(255, 90, 95, .55); border-radius: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, .6), 0 0 30px rgba(255, 90, 95, .15); }
+.alerta-det .bh { display: flex; align-items: baseline; gap: 8px; padding: 10px 14px 6px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(14, 12, 12, .98); }
+.alerta-det h2 { margin: 0; font: 400 19px var(--f-d); color: var(--mau); }
+.alerta-det .fx { margin-left: auto; background: none; border: 0; color: var(--mute); cursor: pointer; font-size: 14px; }
+.alerta-det .pcorpo { padding: 10px 14px 14px; font-size: 12px; }
+.alerta-det .l { display: grid; grid-template-columns: 110px 1fr; gap: 3px 8px; margin-top: 6px; font-size: 11.5px; }
+.alerta-det .l u { text-decoration: none; color: var(--dim); font: 10px var(--f-m); }
+.alerta-det .escada { margin-top: 10px; display: flex; gap: 4px; flex-wrap: wrap; }
+.alerta-det .escada span { font: 500 9.5px var(--f-m); padding: 2px 7px; border: 1px solid var(--line2); border-radius: 8px; color: var(--mute); }
+.alerta-det .escada span.feito { border-color: var(--mau); color: var(--mau); }
+.alerta-det .lista { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
+.alerta-det .lista div { padding: 3px 0; font-size: 11px; cursor: pointer; } .alerta-det .lista div:hover { color: var(--ouro); }
+.corpo.lado-fechado ~ .alerta-det, body .corpo.lado-fechado + .alerta-det { right: 54px; }
+.pc span b.mau { color: var(--mau); }
+/* q25: os hologramas ancorados aos andares - a coluna passa a ser um palco absoluto; cada painel tem altura fixa e desloca-se por transform */
+.holos { display: block; }
+.holos .holo { position: absolute; left: 0; right: 0; height: calc((100% - 24px) / 4); will-change: transform; }
+.holos.dir .holo { height: calc((100% - 16px) / 3); }
+.holo.min { height: 26px !important; }
+/* q31: o conta-quilometros com os numeros VIVOS a mudar abaixo do segundo - a fita rola em 140 ms e o numero interpola */
+.casa .v.vivo .fita { transition-duration: .14s; transition-timing-function: linear; }
+/* 03/10, depois da 1.a sonda: o HUD transbordava a 1600 px (o "alertas" ficava fora do ecra) - mais compacto */
+.hud { gap: 11px; padding: 0 12px; }
+.marca { font-size: 20px; gap: 8px; } .marca small { display: none; } .marca .mk { width: 26px; height: 26px; }
+.cel { gap: 5px; font-size: 11.5px; } .cel u { letter-spacing: .06em; font-size: 9px; }
+.jbar { width: 54px; }
+/* o painel do andar tapava a gaveta: passa para uma faixa por baixo, centrada, mais baixa, com os sectores dobrados */
+.painel { left: 50%; transform: translateX(-50%); bottom: calc(var(--cart-h) + var(--dir-h) + 52px); width: min(640px, 52%); max-height: 24vh; }
+.painel.aberto { animation: entra .3s ease-out; }
+.painel .sect { max-height: 44px; overflow: hidden; }
+.painel:hover .sect { max-height: none; }
+/* os hologramas antes da primeira ancora: cada um no seu lugar da coluna (nao todos em cima uns dos outros) */
+.holos .holo:nth-child(1) { transform: translateY(0); } .holos .holo:nth-child(2) { transform: translateY(calc((100% - 24px) / 4 + 8px)); }
+.holos .holo:nth-child(3) { transform: translateY(calc(((100% - 24px) / 4 + 8px) * 2)); } .holos .holo:nth-child(4) { transform: translateY(calc(((100% - 24px) / 4 + 8px) * 3)); }
+.holos.dir .holo:nth-child(2) { transform: translateY(calc((100% - 16px) / 3 + 8px)); } .holos.dir .holo:nth-child(3) { transform: translateY(calc(((100% - 16px) / 3 + 8px) * 2)); }
+
+/* ===================== 03/10 tarde: NADA EM CIMA DE NADA (q03 "tudo em cima um do outro", q29) =====================
+   (1) o botao de recolher a coluna vive no canto de cima: o titulo do Vortex comeca DEPOIS dele (cortava "Vor");
+   (2) o chat ganha a altura que a coluna tem: o Vortex e a S.H.I.E.L.D. encolhem primeiro (flex-shrink), nunca o chat;
+   (3) os filtros do chat sao UMA linha que rola de lado (quando quebravam para uma 2.a linha, a lista desenhava-se
+       por cima dela); a lista comeca abaixo de uma linha de separacao. */
+#bl_nucleo .bh { padding-left: 42px; }
+.bl.nucleo { flex: 0 1 200px; min-height: 130px; } .bl.anel { flex: 0 1 178px; min-height: 120px; }
+.bl.chat { flex: 1 1 0; min-height: 250px; }
+.chat-top { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 5px 8px; padding: 0 12px 7px; border-bottom: 1px solid var(--line); flex-wrap: nowrap; }
+.chat-top .chat-fil { grid-column: 1 / -1; margin-left: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; gap: 4px; }
+.chat-top .chat-fil::-webkit-scrollbar { display: none; }
+.chat-top .chat-fil button { flex: 0 0 auto; }
+.chat-lista { position: relative; z-index: 0; contain: paint; }
+/* os hologramas: uma pilha quieta em cada coluna (o fio e que vai ao andar). O translateY em % do CSS antigo media-se
+   pela altura do PROPRIO painel, nao da coluna: os quatro da esquerda nasciam 41 px uns abaixo dos outros. */
+.holos, .holos.esq, .holos.dir { display: flex; flex-direction: column; gap: 8px; }
+.holos .holo, .holos.dir .holo { position: relative; left: auto; right: auto; height: auto; flex: 1 1 0; min-height: 0; transform: none !important; will-change: auto; }
+.holos .holo.min { flex: 0 0 26px; height: 26px !important; }
+/* dentro do andar (nivel 2 e 3) os hologramas recolhem-se a uma etiqueta: o escritorio fica com o palco inteiro.
+   Um clique no titulo abre esse painel; ao voltar a torre (nivel 0-1) voltam todos. */
+.palco.perto .holos .holo:not(.perto-aberto) { flex: 0 0 26px; cursor: pointer; }
+.palco.perto .holos .holo:not(.perto-aberto) canvas, .palco.perto .holos .holo:not(.perto-aberto) .mm { opacity: 0; pointer-events: none; }
+.palco.perto .holos { justify-content: flex-start; }
+.palco.perto .holos .holo.perto-aberto { flex: 0 0 210px; }
+.palco.perto .holos .holo:not(.perto-aberto) > :not(.ht) { visibility: hidden; }
+/* no escritorio (nivel 3) a ficha do andar fica so com o titulo (passar o rato abre-a): os bonecos ficam a vista */
+body.n3 .painel.aberto .pcorpo { display: none; }
+body.n3 .painel.aberto:hover .pcorpo, body.n3 .painel.aberto:focus-within .pcorpo { display: block; }
+body.n3 .painel.aberto { max-width: 520px; }
+/* telemovel: nada mais largo do que o ecra (03/10: o estado "5 em erro: ..." e os cartoes empurravam a pagina para 439 px
+   e o telemovel encolhia tudo para caber) */
+@media (max-width: 900px) {
+  .hud .cel { min-width: 0; max-width: 100%; }
+  #b_estado { display: inline-block; max-width: calc(100vw - 64px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+  .cartoes, .cartoes .lugares { min-width: 0; max-width: 100vw; overflow: hidden; }
+  .cartoes .cartao { min-width: 0; max-width: 100%; overflow: hidden; }
+  .lugares { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body .cartoes .cartao, body .cartoes.g .cartao, body .cartoes.s .cartao { grid-template-columns: 34px minmax(0, 1fr) 48px; }
+  body .cartoes .cartao .av { width: 34px; height: 34px; } body .cartoes .cartao canvas.spark { width: 46px; }
+}
+/* q28 o chat como um GRUPO DE WHATSAPP dos funcionarios: papel de parede discreto, baloes com bico no primeiro de cada
+   pessoa, o nome na cor fixa de cada participante, a hora no canto do balao (como no telemovel) */
+.chat-lista { background-color: #0c0f12; background-image: radial-gradient(rgba(242, 194, 48, .05) 1px, transparent 1.2px), radial-gradient(rgba(45, 212, 232, .035) 1px, transparent 1.2px); background-size: 22px 22px, 22px 22px; background-position: 0 0, 11px 11px; }
+.msg .bal { background: #1b2026; border: 0; border-radius: 0 10px 10px 10px; box-shadow: 0 1px 1px rgba(0, 0, 0, .45); }
+.msg:not(.seg) .bal::before { content: ""; position: absolute; left: -7px; top: 0; border-top: 9px solid #1b2026; border-left: 8px solid transparent; }
+.msg.seg .bal { border-radius: 10px; }
+.msg .cab b { font-weight: 600; }
+.msg .txt .hora { float: right; margin: 6px 0 -4px 10px; font: 9.5px var(--f-m); color: rgba(239, 237, 232, .45); }
+.msg.noticia .bal { background: linear-gradient(160deg, rgba(45, 212, 232, .10), #1b2026 60%); border: 1px solid rgba(45, 212, 232, .3); }
+.msg.recado .bal { background: #1d1a26; border: 1px dashed rgba(178, 101, 245, .45); }
+.msg.director .bal { background: linear-gradient(160deg, rgba(242, 194, 48, .11), #1b2026 60%); border: 1px solid rgba(242, 194, 48, .38); }
+.msg.noticia:not(.seg) .bal::before, .msg.recado:not(.seg) .bal::before, .msg.director:not(.seg) .bal::before { display: none; }
+/* q29 "hologramas errados": o titulo de cada painel e UMA linha (quebrava em duas e a 2.a caia em cima do grafico) */
+.holo .ht { right: 28px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.holo .quem { background: rgba(10, 10, 14, .92); padding: 0 5px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* o cartao que entra nunca fica invisivel: a entrada mexe so na posicao e no brilho (a opacidade comeca em .55) */
+@keyframes entraCartao { from { opacity: .55; transform: translateY(6px) scale(.98); filter: brightness(1.6); } to { opacity: 1; transform: none; filter: none; } }
+/* q27 o cartao: a coluna da direita empilha sem se pisar - LED no canto, "N vezes" na 1.a linha, o andar na 2.a, o
+   mini grafico na 3.a (o contador era absoluto e caia em cima do "and. 35") */
+.cartao .k { position: absolute; right: 8px; top: 8px; margin: 0; }
+.cartao .cont { position: static; grid-column: 3; grid-row: 1; justify-self: end; align-self: start; margin-right: 14px; display: flex; align-items: baseline; gap: 3px; font: 600 14px var(--f-m); }
+.cartao .cont small { display: inline; font: 500 8px var(--f-m); }
+.cartao .and { position: static; grid-column: 3; grid-row: 2; justify-self: end; align-self: center; }
+.cartao canvas.spark { grid-column: 3; grid-row: 3; align-self: end; }
+
+/* =====================================================================================================================
+   03/10 NOITE — A ORDEM DE OBRA (visual_fable/ORDEM_DE_OBRA_VISUAL_03out.md). O ECRA DELE: 1536 x 690 uteis a 125%.
+   Manda sobre tudo o que esta acima. Cada painel fixo tem data-painel e a sonda prova que nenhum fica por cima de outro.
+   ===================================================================================================================== */
+:root { --cart-h: 108px; --dir-h: 26px; --lado-w: 360px; }
+/* (10) a COLUNA da direita vai do HUD ao fundo da pagina; os numeros, o palco, os cartoes e o directorio ficam a esquerda
+   dela. Era a coluna espremida entre os numeros e os cartoes que deixava o chat com 2 mensagens a vista. */
+.casa { margin-right: var(--lado-w); }
+.corpo { right: var(--lado-w); grid-template-columns: 1fr; }
+.lado { position: fixed; top: var(--hud-h); right: 0; bottom: 0; width: var(--lado-w); z-index: 6; border-left: 1px solid var(--line); }
+.cartoes { right: var(--lado-w); grid-template-columns: 128px minmax(0, 1fr); }
+nav.dir { right: var(--lado-w); }
+body:has(.corpo.lado-fechado) .casa { margin-right: 36px; }
+body:has(.corpo.lado-fechado) .cartoes, body:has(.corpo.lado-fechado) nav.dir, .corpo.lado-fechado { right: 36px; }
+.corpo.lado-fechado .lado { width: 36px; }
+.corpo.lado-fechado { grid-template-columns: 1fr; }
+.lado-tg { right: auto; left: 6px; top: 8px; }
+.corpo.lado-fechado .lado-tg { left: 6px; right: auto; }
+/* o HUD numa linha so, sem transbordar: o estado corta com reticencias; o que e menos importante sai primeiro */
+.hud { overflow: hidden; }
+#b_estado { display: inline-block; max-width: 330px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+@media (max-width: 1700px) { .hud .cel:has(#b_fase), .hud .cel:has(#b_prox) { display: none; } }
+@media (max-width: 1450px) { .hud .cel:has(#b_ny), .hud .cel:has(#b_portao) { display: none; } #b_estado { max-width: 250px; } }
+
+/* (7) a coluna: o Vortex e a S.H.I.E.L.D. em cima (lado a lado num ecra baixo), o CHAT com a altura que sobra */
+.lado .duo { display: flex; flex-direction: column; flex: 0 0 auto; min-height: 0; }
+.lado .duo .bl.nucleo { flex: 0 0 200px; } .lado .duo .bl.anel { flex: 0 0 190px; }
+#bl_nucleo .bh { padding-left: 34px; }
+.bl .bh .mm { margin-left: 4px; background: none; border: 1px solid var(--line2); border-radius: 5px; color: var(--mute); cursor: pointer; font: 600 11px var(--f-m); line-height: 1; padding: 1px 5px; }
+@media (max-height: 860px) {
+  .lado .duo { flex-direction: row; height: 172px; }
+  .lado .duo .bl { flex: 1 1 50% !important; min-width: 0; height: 100%; }
+  .lado .duo .bl + .bl { border-left: 1px solid var(--line); }
+  .lado .duo .bl .bh h2 em { display: none; }
+  .lado .duo .bl .bh h2 { font-size: 15px; }
+  .lado .duo .bl .bh .kn { display: none; }
+  .lado .duo .bl .leg { max-height: 28px; overflow: hidden; font-size: 9.5px; gap: 2px 8px; padding: 0 8px 4px; min-height: 0; }
+  .lado .duo .bl .leg i:nth-child(n+3) { display: none; }
+}
+.bl.chat { flex: 1 1 auto; min-height: 0; }
+.bl.chat .bh { padding-top: 6px; }
+.chat-top { padding: 0 10px 5px; gap: 4px 8px; }
+.chat-lista { padding: 6px 8px 6px; }
+.msg { grid-template-columns: 26px minmax(0, 1fr); gap: 7px; margin: 0 0 6px; }
+.msg .av { width: 26px; height: 26px; border-radius: 8px; }
+.msg .bal { padding: 5px 8px 6px; }
+.msg .txt { font-size: 11.5px; line-height: 1.36; }
+.msg .cab { margin-bottom: 1px; font-size: 10.5px; }
+.msg.pergunta { grid-template-columns: minmax(0, 1fr) 26px; }
+.msg.pergunta .av { grid-column: 2; grid-row: 1; }
+.msg.pergunta .bal { grid-column: 1; grid-row: 1; background: #1f3a2e; border-radius: 10px 0 10px 10px; justify-self: end; max-width: 92%; }
+.msg.pergunta:not(.seg) .bal::before { left: auto; right: -7px; border-left: 0; border-right: 8px solid transparent; border-top-color: #1f3a2e; }
+.msg.resposta .bal { border: 1px solid rgba(63, 214, 154, .35); }
+.msg .via { display: block; margin-top: 3px; font: 9px var(--f-m); color: var(--dim); letter-spacing: .04em; }
+.msg.espera .bal { opacity: .75; font-style: italic; }
+.chat-caixa { flex: 0 0 auto; display: flex; gap: 6px; padding: 6px 8px 8px; border-top: 1px solid var(--line); background: var(--bg2); }
+.chat-caixa input { flex: 1; min-width: 0; background: #12161b; border: 1px solid var(--line2); border-radius: 18px; color: var(--txt); font: 12px var(--f-s); padding: 7px 12px; outline: none; }
+.chat-caixa input:focus { border-color: var(--ouro-dk); box-shadow: 0 0 0 2px rgba(242, 194, 48, .12); }
+.chat-caixa button { flex: 0 0 auto; background: var(--ouro); color: #0b0b0f; border: 0; border-radius: 18px; font: 600 11px var(--f-m); padding: 0 14px; cursor: pointer; }
+.chat-caixa button:disabled { opacity: .5; cursor: default; }
+.chat-act { padding: 0 10px 3px; min-height: 16px; }
+.bl.pend .bh { padding: 6px 12px 6px; }
+.bl.pend:not(.dobrado) { flex: 0 1 38%; }
+
+/* (3) os HOLOGRAMAS a altura do SEU andar: cada painel e posto pelo t3b_holo.js (top e altura) - a coluna nao os empilha */
+.palco .holos { display: block; top: 10px; bottom: 12px; width: 252px; transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .45s; }
+.palco .holos .holo { position: absolute !important; left: 0; right: 0; flex: none !important; transform: none !important; transition: top .45s cubic-bezier(.2, .8, .2, 1), height .35s, border-color .4s; will-change: top; }
+.holo .mini { display: none; position: absolute; left: 10px; right: 26px; top: 20px; z-index: 2; font: 500 12px var(--f-m); color: var(--ouro-hi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.holo .mini b { font-weight: 600; color: var(--txt); } .holo .mini i { font-style: normal; color: var(--dim); font-size: 10px; margin: 0 4px; }
+.holo .mini .up { color: var(--ok); } .holo .mini .dn { color: var(--mau); }
+.palco .holos .holo.min { height: 42px !important; }
+.holo.min .mini { display: block; }
+.holo.min canvas, .holo.min .robo, .holo.min .odoh, .holo.min .barrash { opacity: 0; pointer-events: none; }
+.holo button.mm { right: 5px; top: 4px; bottom: auto; border: 1px solid var(--line2); border-radius: 5px; color: var(--mute); font: 600 11px var(--f-m); line-height: 1; padding: 1px 5px; background: rgba(10, 10, 14, .7); }
+.holo .ht { right: 70px; }
+.holo .quem { right: 30px; top: 5px; }
+.bl .mini { display: none; padding: 2px 12px 8px; font: 500 12px var(--f-m); color: var(--ouro-hi); }
+.bl.min .mini { display: block; }
+.bl.min canvas.cv, .bl.min .leg { display: none; }
+.lado .duo .bl.min { flex: 0 0 auto !important; }
+@media (max-height: 860px) { .lado .duo:has(.bl.min) { height: auto; } .lado .duo .bl.min { height: auto; } }
+/* os rotulos dos andares ao lado da torre (como a antiga) */
+.rot-andar { font: 500 10px var(--f-m); color: #efede8; padding: 1px 6px; border-radius: 5px; background: rgba(8, 8, 10, .74); }
+.rot-andar b { color: var(--ouro); font-weight: 600; } .rot-andar span { color: #6a6a76; }
+.rot-andar.preso { background: rgba(20, 16, 6, .86); box-shadow: 0 0 0 1px rgba(242, 194, 48, .35); }
+
+/* (3) os desenhos da galeria em DOM: G19 robo (Sr. Stark), G7 conta-quilometros (numeros), G9 barras (mesa) */
+.holo .robo { position: absolute; inset: 24px 6px 6px; border-radius: 8px; overflow: hidden; }
+.robo .chao { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 120%, rgba(45, 212, 232, .14), transparent 60%), #0d1828; overflow: hidden; }
+.robo .chao::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 40px; background: repeating-linear-gradient(90deg, rgba(45, 212, 232, .10) 0 1px, transparent 1px 34px); transform: perspective(200px) rotateX(55deg); transform-origin: bottom; }
+.robo .est { position: absolute; bottom: 6px; transform: translateX(-50%); font: 9px var(--f-m); letter-spacing: .1em; color: #7f95ad; border: 1px solid #18293f; background: #050a12; padding: 2px 5px; border-radius: 4px; z-index: 1; white-space: nowrap; }
+.robo .bot { position: absolute; bottom: 26px; left: 20%; width: 34px; margin-left: -17px; transition: left 2s linear; z-index: 3; }
+.robo .fig { animation: bob 1.4s ease-in-out infinite; }
+.robo .bot.walk .fig { animation: bob .36s ease-in-out infinite; }
+.robo .flip { display: flex; flex-direction: column; align-items: center; }
+.robo .bot.left .flip { transform: scaleX(-1); }
+.robo .head { width: 30px; height: 24px; border-radius: 7px; background: #050a12; border: 2px solid var(--c); box-shadow: 0 0 10px color-mix(in srgb, var(--c) 50%, transparent); position: relative; }
+.robo .head i { position: absolute; top: 7px; width: 5px; height: 7px; background: var(--c); border-radius: 2px; animation: blink 4.2s infinite; animation-delay: var(--d, 0s); }
+.robo .head i:first-child { left: 6px; } .robo .head i:last-child { right: 8px; }
+.robo .torso { width: 22px; height: 14px; margin-top: 2px; border-radius: 4px; background: var(--c); opacity: .85; }
+.robo .legs { display: flex; gap: 6px; height: 7px; }
+.robo .legs b { width: 5px; height: 7px; background: var(--c); border-radius: 0 0 2px 2px; opacity: .8; }
+.robo .bot.walk .legs b:first-child { animation: step .36s ease-in-out infinite alternate; }
+.robo .bot.walk .legs b:last-child { animation: step .36s ease-in-out infinite alternate-reverse; }
+.robo .bubble { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translate(-50%, 6px); opacity: 0; white-space: nowrap; font: 10px var(--f-m); padding: 3px 7px; border-radius: 6px; background: #050a12; border: 1px solid var(--c); color: var(--txt); transition: opacity .25s, transform .25s; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.robo .bubble.on { opacity: 1; transform: translate(-50%, 0); }
+.robo .nome { position: absolute; top: calc(100% + 1px); left: 50%; transform: translateX(-50%); font: 8px var(--f-m); color: var(--c); white-space: nowrap; }
+.robo .parecer { position: absolute; left: 0; right: 0; top: 0; height: 15px; z-index: 4; overflow: hidden; background: rgba(5, 10, 18, .7); border-bottom: 1px solid #18293f;
+  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); }
+.robo .parecer span { display: inline-block; white-space: nowrap; padding-left: 100%; font: 10px/15px var(--f-s); color: #cfd6df; animation: marq2 38s linear infinite; }
+@keyframes marq2 { to { transform: translateX(-100%); } }
+.robo .bot { bottom: 18px; transform: scale(.8); transform-origin: bottom center; }
+.robo .est { bottom: 3px; font-size: 8px; padding: 0 4px; }
+.robo .nome { display: none; }
+.holo.min .barras-rot { display: none; }
+.lado .duo .bl .mini { font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 2px 8px 6px; }
+@keyframes bob { 50% { transform: translateY(-3px); } }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes step { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+.holo .odoh { position: absolute; inset: 22px 10px 6px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.odoh .rotulo { font: 500 8.5px var(--f-m); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin-bottom: -3px; }
+.odoh .od { display: flex; align-items: flex-end; gap: 1px; font: 600 30px var(--f-m); color: var(--am); line-height: 1; text-shadow: 0 0 16px rgba(251, 191, 36, .3); }
+.odoh .od .dg { height: 1em; overflow: hidden; width: .64em; text-align: center; display: inline-block; }
+.odoh .od .strip { display: flex; flex-direction: column; transition: transform .9s cubic-bezier(.2, .9, .25, 1); }
+.odoh .od .strip span { height: 1em; display: block; }
+.odoh .od .sep { width: .3em; text-align: center; opacity: .6; }
+.odoh .fitah { overflow: hidden; border-block: 1px solid var(--line); padding-block: 5px; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.odoh .fitah .tr { display: flex; gap: 22px; width: max-content; animation: marq 26s linear infinite; font: 11px var(--f-m); white-space: nowrap; color: var(--mute); }
+.odoh .fitah b { color: var(--ok); font-weight: 600; } .odoh .fitah b.dn { color: var(--mau); }
+@keyframes marq { to { transform: translateX(-50%); } }
+.holo .barrash { position: absolute; left: 12px; right: 12px; bottom: 22px; top: 30px; display: flex; align-items: flex-end; gap: 4px; }
+.barrash div { flex: 1; height: 100%; background: var(--ok); opacity: .55; transform-origin: bottom; transform: scaleY(.2); transition: transform .6s cubic-bezier(.2, .8, .2, 1); border-radius: 2px 2px 0 0; }
+.barrash div.dn { background: var(--mau); }
+.barrash div:last-child { opacity: 1; background: var(--ouro); }
+.holo .barras-rot { position: absolute; left: 12px; right: 12px; bottom: 5px; z-index: 2; display: flex; justify-content: space-between; font: 9.5px var(--f-m); color: var(--dim); }
+.holo .barras-rot b { color: var(--txt); font-weight: 600; }
+
+/* (4) A GAVETA: os hologramas SAEM do caminho a deslizar (nunca encolhem em barras); a aba tra-los de volta */
+.palco.perto .holos.esq { transform: translateX(calc(-100% - 30px)); opacity: 0; pointer-events: none; }
+.palco.perto .holos.dir { transform: translateX(calc(100% + 30px)); opacity: 0; pointer-events: none; }
+.palco.perto.holos-de-volta .holos { transform: none; opacity: 1; pointer-events: none; }
+.palco.perto .holos .holo, .palco.perto .holos .holo > * { visibility: visible !important; }
+.palco.perto .holos .holo canvas, .palco.perto .holos .holo .mm { opacity: 1; pointer-events: auto; }
+.palco.perto .holos .holo:not(.min) { cursor: default; }
+.holos-aba { display: none; position: absolute; z-index: 4; right: 0; top: 50%; transform: translateY(-50%); writing-mode: vertical-rl; background: rgba(10, 10, 14, .88); border: 1px solid var(--line2); border-right: 0; border-radius: 8px 0 0 8px; color: var(--ouro); font: 500 10px var(--f-m); letter-spacing: .14em; text-transform: uppercase; padding: 10px 4px; cursor: pointer; }
+.palco.perto .holos-aba { display: block; }
+.palco.perto.holos-de-volta .holos-aba { color: var(--mute); }
+/* o cartao do andar: pequeno, no canto de cima a esquerda do palco, fecha sozinho */
+.painel { left: 10px !important; right: auto !important; top: calc(var(--hud-h) + var(--num-h) + 62px) !important; bottom: auto !important; transform: none !important;
+  width: 290px !important; max-width: 290px !important; max-height: calc(100vh - var(--hud-h) - var(--num-h) - var(--cart-h) - var(--dir-h) - 132px) !important; font-size: 11px; }
+.painel h2 { font-size: 16px; } .painel .bh { padding: 7px 10px 5px; flex-wrap: wrap; } .painel .pcorpo { padding: 6px 10px 10px; font-size: 11px; }
+.painel .sect { max-height: 40px; }
+.painel.fechando { animation: some .5s ease-in forwards; }
+body.n3 .painel.aberto { max-width: 290px !important; }
+/* os niveis: barra ao centro na torre; dentro do andar encolhem para o canto de baixo a esquerda (nunca por cima do andar) */
+.niveis { padding: 3px 5px; gap: 2px; }
+.niveis button { padding: 4px 10px; }
+body.n2 #niveis, body.n3 #niveis { left: 10px; transform: none; bottom: 10px; }
+/* 1366: a barra dos niveis tocava nos hologramas de baixo (11 px) - mais estreita nos ecras ate 1450 */
+@media (max-width: 1450px) { #niveis u { display: none; } #niveis button { padding: 3px 7px; font-size: 10.5px; } }
+body.n2 #niveis u, body.n3 #niveis u { display: none; }
+body.n2 #niveis button, body.n3 #niveis button { padding: 3px 7px; font-size: 10px; }
+/* a legenda das especies (ponto 5): so no escritorio, no canto de baixo a direita */
+.legenda-esp { display: none; position: absolute; z-index: 4; right: 10px; bottom: 10px; max-width: 300px; flex-wrap: wrap; gap: 3px 10px; align-items: center; background: rgba(10, 10, 14, .86); border: 1px solid var(--line2); border-radius: 10px; padding: 5px 9px; font: 10px var(--f-m); color: var(--mute); }
+.legenda-esp span { display: inline-flex; align-items: center; gap: 4px; } .legenda-esp i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.legenda-esp .lg-n { flex-basis: 100%; color: var(--dim); font-size: 9.5px; }
+body.n3 .legenda-esp { display: flex; }
+/* o alerta: entre as colunas dos hologramas, abaixo da fita */
+.alerta-det { left: calc((100vw - var(--lado-w)) / 2); right: auto; transform: translateX(-50%); top: calc(var(--hud-h) + var(--num-h) + 62px); width: min(400px, calc(100vw - var(--lado-w) - 560px)); max-height: calc(100vh - var(--hud-h) - var(--num-h) - var(--cart-h) - var(--dir-h) - 132px); }
+body.n2 .alerta-det, body.n3 .alerta-det { left: auto; right: calc(var(--lado-w) + 40px); transform: none; width: 360px; }
+
+/* (8) os CARTOES: estilo ATS em grande, faixa larga - nome, cargo INTEIRO (sem cortar), vezes, luz, andar, mini grafico */
+.lugares { gap: 8px; padding: 7px 8px; }
+.cartao { grid-template-columns: 44px minmax(0, 1fr) 66px; grid-template-rows: auto minmax(0, 1fr) auto; gap: 1px 8px; padding: 7px 9px; }
+.cartao .av { grid-row: 1 / span 3; align-self: start; }
+.cartao .cg { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; text-transform: none !important; letter-spacing: 0 !important;
+  font: 500 9.5px/1.22 var(--f-s) !important; color: #b9b9c4 !important; align-self: start; word-break: break-word; }
+.cartao .cg.l { font-size: 8.6px !important; line-height: 1.18 !important; } .cartao .cg.xl { font-size: 7.4px !important; line-height: 1.14 !important; }
+.cartao .hh { align-self: end; }
+.cartao .k { right: 8px; top: 8px; }
+.cartao .cont { margin-right: 13px; }
+.cartao canvas.spark { width: 66px; height: 22px; }
+/* o cargo tem a largura inteira do cartao (colunas 2 e 3) e o andar vai para a linha da hora: nada se pisa */
+.cartao .nm { grid-column: 2; grid-row: 1; padding-right: 4px; }
+.cartao .cont { grid-column: 3; grid-row: 1; }
+.cartao .cg { grid-column: 2 / 4 !important; grid-row: 2 !important; overflow: hidden !important; min-height: 0; display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.cartao .cg.l { -webkit-line-clamp: 4; } .cartao .cg.xl { -webkit-line-clamp: 5; }
+.cartao .hh { grid-column: 2; grid-row: 3; }
+.cartao .and { display: none !important; }
+.cartao .hh { white-space: nowrap; overflow: hidden; }
+.cartao .hh i.ha { color: var(--ouro); font-size: 9px; flex: 0 0 auto; }
+.cartao .hh i:not(.ha) { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cartao canvas.spark { grid-column: 3 !important; grid-row: 3 !important; }
+.cartoes.s .cartao .cg { display: block !important; }
+.cartoes .ct-tit { padding: 7px 10px; } .cartoes .ct-tit .r { font-size: 9.5px; }
+
+/* (10) os contadores do palco numa linha so (o nome comprido do andar partia-a em duas e caia em cima da fita) */
+.pc { white-space: nowrap; overflow: hidden; height: 16px; top: 8px; }
+.pc span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#pc_andar { display: inline-block; max-width: 230px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+.fita-cot { top: 30px; }
+.casa u { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.legenda-esp { max-width: 340px; }
+/* (7) o chat: >= 5 mensagens a vista - cada mensagem mostra 2 linhas (as perguntas dele e as respostas, 5) e abre ao clicar;
+   a fila das caras e os filtros numa linha so */
+.chat-top { display: flex !important; flex-wrap: nowrap !important; grid-template-columns: none; }
+.chat-top .chat-falaram .av { width: 18px; height: 18px; margin-left: -5px; }
+.chat-top .chat-falaram + b { font-size: 9.5px; margin-left: 2px; white-space: nowrap; }
+.chat-top .chat-fil { margin-left: 4px; min-width: 0; flex: 1 1 auto; justify-content: flex-start; }
+.msg .cab { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
+.msg .cab b { overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+.msg .cab .rt { font: 9px var(--f-m); color: var(--vi); overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+.msg .cab .t { flex: 0 0 auto; }
+.msg { margin-bottom: 5px; }
+.msg .txt { line-height: 1.3; }
+.chat-top .chat-fil button { padding: 1px 5px; font-size: 8.5px; letter-spacing: .03em; }
+.msg .txt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+.msg[data-chat="1"] .txt { -webkit-line-clamp: 3; }
+.msg.aberta .txt { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.msg .txt .hora { float: none; margin: 0 0 0 8px; }
+.msg .cita { -webkit-line-clamp: 1 !important; }
+.msg.recado .rota { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msg .bal { padding: 4px 8px 5px; }
+
+/* (9) o conta-quilometros vivo: 11 casas por fita (0-9 e o 0 seguinte) e o ultimo digito rola CONTINUO entre leituras */
+.odo .fita.cont { transition: none !important; }
+.casa .v.vivo .fita { transition-duration: .12s; transition-timing-function: linear; }
+
+/* telemovel: a coluna volta ao fluxo (sem palco, sem 3D - ordem dele de 21/09) */
+@media (max-width: 900px) {
+  .lado { position: static; width: auto; border-left: 0; }
+  .casa { margin-right: 0; }
+  .cartoes, nav.dir { right: auto; }
+  .lado .duo { flex-direction: column; height: auto; }
+  .lado .duo .bl { height: 230px; flex: none !important; }
+  .bl.chat { height: 520px; }
+  .lado-tg { display: none; }
+}
+
+/* =====================================================================================================================
+   04/10/2026 — OBRA 4 (OBRA_4_VISUAL_REAL.md): mais leve, o chat sem caracteres partidos, os defeitos, os hologramas novos.
+   Manda sobre tudo o que esta acima. O ecra dele continua a ser 1536 x 690 uteis a 1,25.
+   ===================================================================================================================== */
+/* LEVE: o desfoque por tras dos paineis (backdrop-filter) obrigava o navegador a re-desfocar a torre 3D por baixo de cada
+   holograma a CADA quadro - medido: com ele a torre aguentava 16 quadros/s, sem ele 31. Fundo um pouco mais opaco no lugar. */
+.holo { backdrop-filter: none !important; background: linear-gradient(160deg, rgba(20, 18, 10, .9), rgba(10, 10, 14, .86)); }
+/* sem animacao em ciclo sem dados (f01): os robos so balancam a andar; os olhos piscam com os eventos (t3b_holo.js);
+   a fita dos numeros anda um passo por evento da Estatistica; o parecer do Sr. Stark corre 2 vezes quando chega e para */
+.robo .fig { animation: none; }
+.robo .bot.walk .fig { animation: bob .36s ease-in-out infinite; }
+.robo .head i { animation: none; }
+.robo .parecer span { animation: none; padding-left: 6px; }
+.robo .parecer span.corre { padding-left: 100%; animation: marq2 38s linear 2; }
+.odoh .fitah .tr { animation: none; transition: transform .7s cubic-bezier(.2, .8, .2, 1); }
+
+/* A REACCAO de cada holograma (a regra dele): o aro acende a cada evento do seu sector (animado pelo compositor) e o brilho de
+   base (--act, 0 a 1) e a actividade desse sector nos ultimos 3 minutos */
+.holo, .bl { --act: 0; }
+.holo > .aro, .bl > .aro { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 3; opacity: 0;
+  box-shadow: inset 0 0 0 1px #f2c230, inset 0 0 22px rgba(242, 194, 48, .28); }
+/* a base (--act) e a opacidade de uma camada propria (::after) - mudar a opacidade nao repinta o painel */
+.holo::after, .lado .bl.nucleo::after, .lado .bl.radar::after, .lado .bl.coracao::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
+  box-shadow: inset 0 0 0 1px rgba(242, 194, 48, .55), inset 0 0 18px rgba(242, 194, 48, .16); opacity: var(--act); will-change: opacity; }
+
+/* AS TRES COLUNAS DO PALCO (v03 "os da direita mais perto da torre para abrir espaco ao chat, ao vortex e a shield"): a coluna
+   do lado fica mais larga; a coluna de PERTO DA TORRE leva os novos da Mesa, do Risco e a ampulheta */
+:root { --lado-w: 420px; --col-w: 236px; --perto-w: 214px; }
+@media (max-width: 1450px) { :root { --lado-w: 384px; --col-w: 218px; --perto-w: 194px; } }
+@media (min-width: 1800px) { :root { --lado-w: 470px; --col-w: 262px; --perto-w: 246px; } }
+.palco .holos.esq, .palco .holos.dir { width: var(--col-w); }
+.palco .holos.perto { position: absolute; top: 10px; bottom: 12px; right: calc(20px + var(--col-w)); width: var(--perto-w); display: block; pointer-events: none; z-index: 3;
+  transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .45s; }
+.palco.perto .holos.perto { transform: translateX(calc(100% + 40px + var(--col-w))); opacity: 0; pointer-events: none; }
+.palco.perto.holos-de-volta .holos.perto { transform: none; opacity: 1; }
+.pc, .fita-cot { left: calc(var(--col-w) + 22px); right: calc(var(--col-w) + var(--perto-w) + 32px); }
+.pc { gap: 9px; font-size: 9.5px; }
+.rot-andar { max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
+.fios line.comp { stroke-dasharray: 2 4; stroke: rgba(242, 194, 48, .45); }
+/* o Sr. Stark: o anel de agentes em cima, os robos em baixo */
+.holo#h_stark canvas.anel { position: absolute; left: 0; right: 0; top: 18px; height: 54%; width: 100%; }
+.holo#h_stark .robo { inset: auto 6px 5px 6px; top: calc(18px + 54%); }
+.holo.min#h_stark canvas.anel { opacity: 0; }
+
+/* A COLUNA DO LADO: o Vortex e o radar da S.H.I.E.L.D. lado a lado, MAIORES, o vortex maior do que o radar (v03); o coracao
+   numa tira entre eles e o chat */
+.lado .duo { flex-direction: row !important; height: 214px; }
+.lado .duo .bl { height: 100%; min-width: 0; }
+.lado .duo .bl.nucleo { flex: 1.45 1 0 !important; }
+.lado .duo .bl.radar { flex: 1 1 0 !important; border-left: 1px solid var(--line); }
+.lado .duo .bl .bh h2 { font-size: 15px; } .lado .duo .bl .bh h2 em { display: none; }
+.lado .duo .bl.radar .bh .kn { display: none; }
+.lado .duo .bl .leg { max-height: 30px; overflow: hidden; font-size: 9.5px; gap: 2px 8px; padding: 0 8px 4px; min-height: 0; }
+@media (min-height: 900px) { .lado .duo { height: 262px; } }
+.lado .duo:has(.bl.min) { height: auto; }
+.lado .duo .bl.min { height: auto; flex: 1 1 0 !important; }
+.bl.coracao { flex: 0 0 66px; border-bottom: 1px solid var(--line); }
+.bl.coracao .bh { padding: 4px 10px 0; } .bl.coracao .bh h2 { font-size: 13px; }
+.bl.coracao canvas.cv { flex: 1 1 auto; min-height: 0; height: 40px; }
+.bl.coracao.min { flex: 0 0 auto; }
+
+/* O CHAT: as mensagens SEMPRE inteiras (v07 "se a mensagem X ocupar 2 mensagens no chat mostra menos mensagens pra poder caber
+   essa inteira") - nada de cortar a 2 linhas; a que ficaria cortada no topo esconde-se (t3b_chat.js: .meia) */
+.msg .txt { display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; cursor: default; white-space: pre-line; overflow-wrap: anywhere; }
+.msg.meia { visibility: hidden; }
+.msg .txt b.md-t { display: block; color: var(--ouro-hi); font-weight: 600; }
+.msg .txt .md-li { display: block; padding-left: 2px; }
+.msg .txt code { font: 10.5px var(--f-m); background: rgba(255, 255, 255, .06); padding: 0 3px; border-radius: 3px; }
+.msg .txt b { font-weight: 600; color: #f1eee6; }
+.msg .cab .rt b { color: var(--txt); font-weight: 500; }
+
+/* OS CARTOES (v08): mais estreitos - cabem pelo menos 5 lado a lado no ecra dele; o "desde que abriu" saiu (o numero de vezes
+   ja esta em cada cartao) */
+.cartao { grid-template-columns: 34px minmax(0, 1fr) 54px !important; padding: 6px 7px !important; gap: 1px 6px !important; }
+.cartao .av { width: 34px !important; height: 34px !important; border-radius: 9px; }
+.cartao canvas.spark { width: 54px !important; height: 20px !important; }
+.cartao .nm { font-size: 11px !important; }
+.cartao .cg { font-size: 8.8px !important; } .cartao .cg.l { font-size: 8px !important; } .cartao .cg.xl { font-size: 7.2px !important; }
+.cartao .cont { font-size: 12.5px !important; margin-right: 11px !important; }
+.cartoes .ct-tit { padding: 7px 9px; } .cartoes { grid-template-columns: 112px minmax(0, 1fr) !important; }
+.cartoes.s .cartao { grid-template-columns: 26px minmax(0, 1fr) 46px !important; } .cartoes.s .cartao .av { width: 26px !important; height: 26px !important; }
+.cartoes.g .cartao { grid-template-columns: 46px minmax(0, 1fr) 66px !important; } .cartoes.g .cartao .av { width: 46px !important; height: 46px !important; }
+
+/* A BARRA DO TOPO (t07): os 7 numeros dos turnos; o que e menos importante sai primeiro nos ecras mais estreitos */
+.hud .tur { display: inline-flex; gap: 9px; align-items: baseline; }
+.hud .tur .cel { gap: 4px; } .hud .tur .cel u { letter-spacing: .03em; }
+#bt_faltaram_v.mau, #bt_avarias_abertas_v.mau { color: var(--mau); } #bt_faltaram_v.ok, #bt_avarias_abertas_v.ok { color: var(--ok); }
+@media (max-width: 1900px) { .hud #b_andares_c, .hud #b_func_c { display: none; } }
+@media (max-width: 1700px) { .hud .cel:has(#b_ritmo) { display: none; } #b_estado { max-width: 210px; } }
+@media (max-width: 1450px) { .hud .cel:has(#b_brt) u { display: none; } #b_estado { max-width: 150px; } .hud .tur { gap: 7px; } .hud .tur .cel u { font-size: 8.5px; } .marca b { display: none; } }
+@media (max-width: 900px) { .hud .tur { flex-wrap: wrap; gap: 4px 10px; } .hud #b_andares_c, .hud #b_func_c { display: inline-flex; } }
+/* o detalhe do cartao fecha com o X (c02 "cartao que nao fecha"), alem do Esc, de clicar fora e de clicar outra vez no cartao */
+.cartao-det { padding-right: 34px; } .cartao-det .fx { position: absolute; right: 8px; top: 7px; background: none; border: 1px solid var(--line2); border-radius: 6px; color: var(--mute); cursor: pointer; font-size: 12px; line-height: 1; padding: 3px 6px; }
+.cartao-det .fx:hover { color: var(--txt); border-color: var(--ouro-dk); }
+/* 04/10 (obra 4, 1.a sonda): a coluna de perto acaba acima da barra dos niveis (sobrepunham-se); os contadores do palco
+   so mostram o andar e os bonecos dentro do andar; a barra do topo cabe nos 1536 px dele */
+.palco .holos.perto { bottom: 46px; }
+.pc .so-andar { display: none; } body.n2 .pc .so-andar, body.n3 .pc .so-andar { display: inline; }
+@media (max-width: 1700px) { .hud .cel:has(#b_ny), .hud .cel:has(#b_portao) { display: none; } #b_estado { max-width: 190px; } .hud { gap: 9px; } .hud .tur { gap: 7px; } }
+@media (max-width: 1450px) { .hud .jar u { display: none; } .hud .jbar { width: 40px; } }
+/* o cartao (v08 "otimizar as informacoes"): o nome com a largura toda; o numero de vezes desce para a linha da hora */
+.cartao { grid-template-rows: auto minmax(0, 1fr) auto !important; }
+.cartao .nm { grid-column: 2 / 4 !important; padding-right: 12px; }
+.cartao .cont { grid-column: 3 !important; grid-row: 3 !important; align-self: end; justify-self: end; margin-right: 0 !important; font-size: 11px !important; display: none !important; }
+.cartao .hh .vz { color: var(--txt); font-weight: 600; margin-left: auto; padding-left: 4px; }
+/* a coluna do lado num ecra baixo (690 px uteis): o vortex e o radar um pouco mais baixos, o coracao fino - o chat ganha a altura */
+@media (max-height: 860px) { .lado .duo { height: 186px; } .bl.coracao { flex-basis: 54px; } .bl.coracao canvas.cv { height: 32px; } }
+/* os recados entre sectores sao relatorios compridos: inteiros, mas em letra mais pequena */
+.msg.recado .txt { font-size: 10.5px !important; line-height: 1.3 !important; }
+/* dentro do andar (nivel 2 e 3) as colunas de hologramas saem: os contadores e a fita das cotacoes ficam com a largura toda */
+body.n2 .pc, body.n3 .pc, body.n2 .fita-cot, body.n3 .fita-cot { left: 16px; right: 48px; }
+/* 04/10 (obra 4): a luz de "numero mudou" na casa e um elemento proprio animado pelo compositor (sem refazer o layout) */
+.casa > div > .fl { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: linear-gradient(180deg, var(--ouro-v), transparent); }
+/* 04/10 (obra 4, a medir: as transicoes de top/height dos hologramas e as sombras animadas dos cartoes refaziam o layout ou a
+   pintura a cada quadro): os paineis movem-se por transform; o aro dos cartoes e dos paineis e uma camada que so muda de opacidade */
+.palco .holos .holo { top: 0 !important; transform: translateY(var(--y, 0px)) !important; transition: transform .45s cubic-bezier(.2, .8, .2, 1) !important; will-change: transform; }
+.holo > .aro, .bl > .aro { will-change: opacity; }
+.cartao { transition: none !important; }
+.cartao .aro-c { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; box-shadow: inset 0 0 0 1px #f2c230, 0 0 18px rgba(242, 194, 48, .3); will-change: opacity; }
+.cartao .brilho { will-change: opacity; }
+
+/* 04/10 (c02): o "por Fulano" de quem mudou o dado ja nao tapa o titulo - o titulo encolhe (reticencias) enquanto ele esta aceso */
+.holo .quem { max-width: 55%; }
+.holo.q-on .ht { right: calc(min(var(--quem-w, 50%), 55%) + 36px) !important; }
+
+/* 04/10 (obra 4): a fita das cotacoes e os pontinhos "a escrever" passam a andar por JS no relogio da pagina (t3b_vivo.js
+   passoFita, t3b_chat.js) - uma animacao CSS infinita obrigava o compositor a refazer o ecra inteiro a cada vsync */
+.fita-cot .mov { animation: none !important; will-change: transform; }
+.chat-act .pts i { animation: none !important; opacity: .35; transition: none; }
+.chat-act .pts i.on { opacity: 1; transform: translateY(-2px); }
+/* 04/10 20:1x (ele): o cartao mostra so o nome e a funcao resumida - uma linha, sem sobrepor */
+.cartao .cg.curta { display: block !important; -webkit-line-clamp: unset !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; font-size: 10px !important; line-height: 1.3 !important; max-height: 1.3em; }
+/* 05/10 (ele: "aquilo ali pode sair pra ter mais espaco pra outro card"): sai o titulo "Cartoes ao vivo", a linha "ultimo" e o S/M/G; a grelha dos cartoes fica com a largura toda (quantosLugares conta pela largura) */
+.cartoes .ct-tit { display: none !important; } .cartoes { grid-template-columns: minmax(0, 1fr) !important; }
+
+/* 05/10 (questionario 4): C1 "nome + sector" + C2 "andar + luz" - sairam a hora, as vezes e o mini grafico */
+.cartoes .lugares .cartao { grid-template-columns: 30px minmax(0, 1fr) auto !important; grid-template-rows: 1fr 1fr !important; align-items: center !important; gap: 0 7px !important; padding: 6px 9px 6px 7px !important; }
+.cartoes .lugares .cartao .av { grid-column: 1 !important; grid-row: 1 / span 2 !important; width: 30px !important; height: 30px !important; align-self: center !important; }
+.cartoes.g .lugares .cartao { grid-template-columns: 42px minmax(0, 1fr) auto !important; } .cartoes.g .lugares .cartao .av { width: 42px !important; height: 42px !important; }
+.cartoes.s .lugares .cartao { grid-template-columns: 24px minmax(0, 1fr) auto !important; } .cartoes.s .lugares .cartao .av { width: 24px !important; height: 24px !important; }
+.cartoes .lugares .cartao .nm { grid-column: 2 !important; grid-row: 1 !important; align-self: end !important; padding-right: 0 !important; }
+.cartoes .lugares .cartao .cg { grid-column: 2 !important; grid-row: 2 !important; align-self: start !important; display: block !important; -webkit-line-clamp: unset !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; font-size: 9.5px !important; line-height: 1.35 !important; text-transform: none !important; letter-spacing: 0 !important; max-height: none !important; }
+.cartoes .lugares .cartao .k { position: static !important; grid-column: 3 !important; grid-row: 1 !important; justify-self: end !important; align-self: end !important; margin: 0 0 3px !important; width: 7px !important; height: 7px !important; }
+.cartoes .lugares .cartao .and { display: block !important; position: static !important; grid-column: 3 !important; grid-row: 2 !important; justify-self: end !important; align-self: start !important; font: 500 9px var(--f-m) !important; color: var(--mute) !important; white-space: nowrap; }
+.cartoes .lugares .cartao .hh, .cartoes .lugares .cartao .cont, .cartoes .lugares .cartao canvas.spark { display: none !important; }
+
+/* 05/10 (Q4 B1): o Sr. Stark e so o robo - o canvas ocupa o painel inteiro; os robos em HTML sairam */
+.holo#h_stark canvas.anel { top: 0 !important; height: 100% !important; }
+.holo#h_stark .robo { display: none !important; }
+
+/* 05/10 (Q4 B10): o espaco que ficou livre vai para o Vortex e a S.H.I.E.L.D., maiores (o chat cede altura) */
+.lado .duo { height: clamp(250px, 38vh, 380px); }
+.lado .duo:has(.bl.min) { height: auto; }
+
+/* 05/10 20:3x (ele, com 2 prints): o CHAT - sai a barra "vozes / todos / US$ / noticias" (mostra tudo junto) e sai a barra das
+   pendencias; letras e botoes mais pequenos para caber mais (o card fica do mesmo tamanho); o topo da lista esbate em vez do
+   buraco vazio; o nome de quem fala nunca encolhe (o destino do recado desce para a linha de baixo) */
+.bl.chat .chat-top { display: none !important; }
+.lado #bl_pend { display: none !important; }
+.bl.chat .bh h2 { font-size: 15px; } .bl.chat .bh h2 em { font-size: 8.5px; }
+.chat-lista { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px); mask-image: linear-gradient(to bottom, transparent 0, #000 22px); padding-top: 10px !important; }
+.msg.meia { visibility: visible !important; }
+.chat-lista .msg { grid-template-columns: 24px minmax(0, 1fr) !important; gap: 6px !important; margin: 0 0 6px !important; }
+.chat-lista .msg .av, .chat-lista .msg .av svg { width: 24px !important; height: 24px !important; }
+.chat-lista .msg .cab { font-size: 10px !important; gap: 2px 5px !important; margin-bottom: 1px !important; }
+.chat-lista .msg .cab > b { flex: 0 0 auto !important; max-width: 100%; }
+.chat-lista .msg .cab .and, .chat-lista .msg .cab .tag { font-size: 8px !important; }
+.chat-lista .msg .cab .t { font-size: 8.5px !important; }
+.chat-lista .msg .txt { font-size: 11px !important; line-height: 1.32 !important; }
+.chat-lista .msg .txt .n { font-size: 10.5px !important; }
+.chat-lista .msg .lk, .chat-lista .msg .via, .chat-lista .msg .cita { font-size: 9.5px !important; }
+.bl.chat .chat-act { font-size: 9.5px !important; padding-top: 2px !important; padding-bottom: 2px !important; }
+.bl.chat .chat-caixa { padding: 5px 8px 7px !important; gap: 5px !important; }
+.bl.chat .chat-caixa input { font-size: 11px !important; padding: 5px 10px !important; height: auto !important; min-height: 0 !important; }
+.bl.chat .chat-caixa button { font-size: 11px !important; padding: 5px 12px !important; height: auto !important; min-height: 0 !important; }
+
+/* 05/10 20:3x: os CARTOES - o andar foi para a linha do sector; nome e sector mais pequenos para caberem inteiros */
+.cartoes .lugares .cartao { grid-template-columns: 26px minmax(0, 1fr) 8px !important; gap: 0 6px !important; padding: 5px 7px 5px 6px !important; }
+.cartoes .lugares .cartao .av { width: 26px !important; height: 26px !important; }
+.cartoes .lugares .cartao .nm { font-size: 10.5px !important; letter-spacing: 0 !important; }
+.cartoes .lugares .cartao .cg { grid-column: 2 / 4 !important; font-size: 8.8px !important; }
+.cartoes .lugares .cartao .and { display: none !important; }
+.cartoes .lugares .cartao .k { width: 6px !important; height: 6px !important; }
+
+/* 05/10 21:xx (ele): o CABECALHO - os relogios BRT/NY e a sessao/semana sairam; o resto e um carrossel vivo; a fita dos precos
+   passou do palco para uma 2.a linha do cabecalho (a altura total do cabecalho passa a 46 + 22 px) */
+:root { --hud-h: 68px; }
+.hud { height: 46px !important; }
+.hud-car { flex: 1 1 auto; min-width: 0; overflow: hidden; height: 100%; display: flex; align-items: center;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); }
+.car-tr { display: flex; align-items: center; width: max-content; animation: carrossel var(--dur, 60s) linear infinite; will-change: transform; }
+.car-orig, .car-copia { display: flex; align-items: center; gap: 18px; padding-right: 18px; flex: 0 0 auto; }
+.hud-car:hover .car-tr, nav.dir:hover .car-tr { animation-play-state: paused; }
+@keyframes carrossel { to { transform: translateX(-50%); } }
+.hud .hud-car .cel { display: inline-flex !important; flex: 0 0 auto; }
+.hud .hud-car .tur { display: inline-flex; gap: 18px; }
+.fita-cot.topo { position: absolute !important; top: 46px !important; left: 0 !important; right: 0 !important; height: 22px !important; z-index: 6;
+  background: #0a0a0e; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 12px; }
+/* o RODAPE dos andares corre (o rato por cima para-o para se clicar) */
+nav.dir { overflow: hidden !important; display: flex; align-items: center; }
+nav.dir .car-orig, nav.dir .car-copia { gap: 6px; padding-right: 6px; }
+@media (prefers-reduced-motion: reduce) { .car-tr { animation: none; } }
+/* (05/10) a faixa dos numeros desce os 22 px da fita dos precos (o cabecalho e 46 + 22) */
+.casa { margin-top: 22px; }
+
+/* 05/10 22:xx (ele): so a LUZ no cabecalho (o "3 em erro: ..." saiu; o motivo fica na dica da luz) */
+#b_estado { display: none !important; }
+.hud #b_led { width: 11px; height: 11px; }
+/* as linhas por baixo dos numeros correm quando nao cabem (vai e vem; t3b_vivo.js mede) */
+.casa .s { display: inline-block; max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; }
+.casa .s.corre { animation: vaivem var(--dur, 9s) ease-in-out infinite alternate; }
+@keyframes vaivem { 0%, 12% { transform: translateX(0); } 88%, 100% { transform: translateX(calc(-1 * var(--falta, 0px))); } }
+/* a fita dos precos com o nome inteiro */
+.fita-cot span u small { font-size: 9px; color: var(--mute); margin-left: 3px; }
+/* os CARTOES: nome e sector podem ir a 2 linhas cada (ha altura de sobra) em vez de se cortarem */
+.cartoes .lugares .cartao { grid-template-rows: auto auto !important; align-content: center !important; }
+.cartoes .lugares .cartao .nm { white-space: normal !important; overflow: hidden !important; text-overflow: clip !important; display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.2 !important; align-self: end !important; }
+.cartoes .lugares .cartao .cg { white-space: normal !important; overflow: hidden !important; text-overflow: clip !important; display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 2 !important; line-height: 1.25 !important; }
+@media (prefers-reduced-motion: reduce) { .casa .s.corre { animation: none; } }
+
+/* 05/10 23:xx: a fita dos NUMEROS corre sempre (andava um passo por evento) */
+#h_numeros .fitah .tr.corre { animation: marq var(--dur, 30s) linear infinite !important; transform: none; }
+@media (prefers-reduced-motion: reduce) { #h_numeros .fitah .tr.corre { animation: none !important; } }
