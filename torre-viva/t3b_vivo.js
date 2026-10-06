@@ -101,7 +101,7 @@
 
   // ---------------------------------------------------------------- o agendador (um relogio so)
   var FONTES = [
-    { nome: 'vivo', url: function () { return 'vivo.json?desde=' + E.vivoSeq + (document.hidden ? '' : '&vista=1'); }, cada: 1000, aplicar: aplicarVivo },   // 05/10: vista=1 liga o modo espectador (mercado/espectador.py)
+    { nome: 'vivo', url: function () { return 'vivo.json?desde=' + E.vivoSeq + (document.hidden ? '' : '&vista=1'); }, cada: window.T3B_PUBLICADO ? 15000 : 1000, aplicar: aplicarVivo },   // 05/10: vista=1 liga o modo espectador (mercado/espectador.py)
     { nome: 'torre', url: function () { return 'torre.json'; }, cada: 2000, aplicar: aplicarTorre },
     { nome: 'enxame', url: function () { return 'enxame.json'; }, cada: 10000, aplicar: aplicarEnxame },
     { nome: 'estrutura', url: function () { return 'estrutura.json'; }, cada: 60000, aplicar: aplicarEstrutura, primeiro: true },
