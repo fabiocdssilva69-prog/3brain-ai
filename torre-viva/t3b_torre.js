@@ -112,7 +112,7 @@ function iniciar() {
   controles = new OrbitControls(camara, cv);
   controles.enableDamping = true; controles.dampingFactor = 0.08;
   controles.minDistance = 4; controles.maxDistance = 1100; controles.maxPolarAngle = Math.PI * 0.495;
-  controles.autoRotate = false; controles.autoRotateSpeed = 0.35;                       // q18: gira devagar sozinha
+  controles.autoRotate = false; controles.autoRotateSpeed = 1.0;   // 07/10 (Q5 D3 'a torre nao ta girando'): 0,35 era ~2 graus/s, parecia parada; 1,0 = uma volta por minuto                       // q18: gira devagar sozinha
   controles.target.set(0, 58 * H * 0.45, 0);
   controles.addEventListener('change', () => { precisaDesenhar = true; camaraMudou = true; });
   // 04/10: o arrasto dele e o modo "interaccao" (todos os quadros, leve); 'camLivre' = ele mexeu na camara desde o ultimo
@@ -499,7 +499,9 @@ function pintarJanelas() {
   if (!torre) return;
   const g = torre.inst.geoPele, cor = g.attributes.color, vpa = g.userData.vpa;
   torre.andares.forEach(a => {
-    const base = noite ? 0.55 : 0.12, k = base + 0.6 * Math.min(1, a.actMin + a.actividade * 0.5), obra = a.obra === 'em_obras';
+    // 07/10 (Q5 D3, ele: "a fachada de longe mais sofisticada, com luzes nos andares que estao a trabalhar e os mais brandos"):
+    // mais contraste - quem trabalha acende forte, quem esta calmo quase apaga (de dia quase escuro, de noite um brilho baixo)
+    const act = Math.min(1, a.actMin + a.actividade * 0.5), base = noite ? 0.22 : 0.03, k = base + 0.9 * act, obra = a.obra === 'em_obras';
     _c.set(0xffffff).lerp(_c2.set(COR_DIV[a.divisao] || 0xffffff), 0.22).multiplyScalar(obra ? 0 : k);
     for (let v = a.i * vpa, f = v + vpa; v < f; v++) cor.setXYZ(v, _c.r, _c.g, _c.b);
   });
@@ -1117,7 +1119,8 @@ function nivelPelaDistancia() {
   camara.updateMatrixWorld(); _pm.multiplyMatrices(camara.projectionMatrix, camara.matrixWorldInverse); _fr.setFromProjectionMatrix(_pm);
   if (torre.letreiro) { torre.letreiro.grupo.getWorldPosition(_esf.center); _esf.radius = 48; letreiroNaVista = _fr.intersectsSphere(_esf); }
   torre.inst.halos.material.opacity = 0.14 + 0.42 * LED.perto;
-  const oj = THREE.MathUtils.clamp((340 - dc) / 180, 0, 1);
+  const oj = Math.max(0.45, THREE.MathUtils.clamp((340 - dc) / 180, 0, 1));   // 07/10 (Q5 D3): as luzes dos andares tambem de LONGE
+  const agJ = performance.now(); if (torre.inst.luz.visible && agJ - (torre.inst.ultJanelas || 0) > 1000) { torre.inst.ultJanelas = agJ; pintarJanelas(); }   // seguem a actividade
   if (Math.abs(torre.inst.matLuz.opacity - oj) > 0.01) { torre.inst.matLuz.opacity = oj; torre.inst.luz.visible = oj > 0.01; if (torre.inst.luz.visible) pintarJanelas(); precisaDesenhar = true; }
 }
 
@@ -1264,7 +1267,7 @@ function quadro(agora) {
   aplicarPR(agora);
   // a viagem da camara pelo RELOGIO (nao pelo dt limitado): 1,2 s sempre, mesmo num quadro lento
   if (alvoCam.anim) { const A = alvoCam.anim; A.t = (agora - A.t0) / 1000 / A.dur; const k = ease(Math.min(1, A.t)); camara.position.lerpVectors(A.de, A.para, k); controles.target.lerpVectors(A.deA, A.paraA, k); if (A.t >= 1) alvoCam.anim = null; camaraMudou = true; }
-  if (!calmo && !alvoCam.anim && agora - ultimoMexeu > 6000 && !controles.autoRotate && nivel <= 1) controles.autoRotate = true;   // q18: gira devagar sozinha
+  if (!calmo && !alvoCam.anim && agora - ultimoMexeu > 3500 && !controles.autoRotate && nivel <= 1) controles.autoRotate = true;   // q18: gira devagar sozinha
   if (nivel >= 2 && controles.autoRotate) controles.autoRotate = false;                                                              // dentro do andar a camara fica onde ele a pos
   controles.update(dt);                       // (com o dt: a rotacao sozinha e pelo relogio, igual a 30 ou a 60 quadros)
   for (let i = animados.length - 1; i >= 0; i--) if (!animados[i].passo(dt)) animados.splice(i, 1);
