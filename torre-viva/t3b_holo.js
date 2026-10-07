@@ -1121,6 +1121,15 @@
         for (var i = 0; i < 3; i++) { g.strokeStyle = CORES[i]; g.globalAlpha = 0.2; g.lineWidth = 7; g.beginPath(); g.arc(cx, cy, R, -Math.PI / 2 + i * TAU / 3 + 0.04, -Math.PI / 2 + (i + 1) * TAU / 3 - 0.04); g.stroke(); }
         g.globalAlpha = 1; g.lineWidth = 1;
         for (var k = 0; k < 24; k++) { var q = -Math.PI / 2 + k / 24 * TAU, l = k % 6 === 0 ? 7 : 4; g.strokeStyle = k % 6 === 0 ? 'rgba(239,237,232,.5)' : 'rgba(106,106,118,.7)'; g.beginPath(); g.moveTo(cx + Math.cos(q) * (R - 6), cy + Math.sin(q) * (R - 6)); g.lineTo(cx + Math.cos(q) * (R - 6 - l), cy + Math.sin(q) * (R - 6 - l)); g.stroke(); }
+        // 07/10 (Q5 B4, ele: "adicionar marcadores dos outros horarios 19, 20, 21, 22 onde tem os tracinhos"): as horas no aro
+        g.font = '600 ' + (R >= 40 ? 6.5 : 6) + 'px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        for (var k3 = 0; k3 < 24; k3++) {
+          if (R < 34 && k3 % 3) continue;                   // aro pequeno: so de 3 em 3 horas
+          var q3 = -Math.PI / 2 + k3 / 24 * TAU, rr = R - 17;
+          g.fillStyle = k3 % 6 === 0 ? 'rgba(239,237,232,.9)' : 'rgba(150,150,162,.78)';
+          g.fillText(String(k3), cx + Math.cos(q3) * rr, cy + Math.sin(q3) * rr);
+        }
+        g.textAlign = 'left'; g.textBaseline = 'alphabetic';
         grelhaDeNumeros(g, cx + R + 12, w - 4, h, itens);
       });
       // o turno actual: o arco respira; por dentro, o que ja passou do turno (fino, branco)
@@ -1135,15 +1144,20 @@
       var n = TUR.ands.length, r2 = R * 0.62, gi = calmo ? 0 : t * 0.05;
       for (var k2 = 0; k2 < n; k2++) {
         var a = TUR.ands[k2], an = -Math.PI / 2 + k2 / Math.max(1, n) * TAU + gi, fr = 0.78 + 0.22 * ((k2 * 7) % 5) / 4, x = cx + Math.cos(an) * r2 * fr, y = cy + Math.sin(an) * r2 * fr;
-        var fl = clamp(1 - (agora - (TUR.flash[a.n] || 0)) / 1200, 0, 1), trab = a.em ? a.trab / a.em : 0, cor = trab > 0.4 ? CORES[tur] : a.evol > 0 ? C.vi : C.dim;
-        var al = trab > 0.4 ? 0.95 : a.evol > 0 ? 0.5 + 0.3 * Math.sin(t * 2 + k2) : 0.3 + 0.12 * Math.sin(t * 1.4 + k2 * 0.7);
-        ctx.globalAlpha = Math.min(1, al + fl * 0.5 + pt * 0.3); ctx.fillStyle = fl > 0.05 ? '#fff' : cor;
-        ctx.beginPath(); ctx.arc(x, y, (trab > 0.4 ? 2.2 : 1.7) + fl * 1.6, 0, TAU); ctx.fill();
-        if (fl > 0.05) luz(ctx, cor, x, y, 7, fl);
+        // 07/10 (Q5 B4, "os pontos mais reagentes a torre e ao horario"): o tamanho segue quem trabalha, o piscar dura mais e
+        // e mais forte, e quem esta no turno da hora respira com o ponteiro dos segundos
+        var fl = clamp(1 - (agora - (TUR.flash[a.n] || 0)) / 1800, 0, 1), trab = a.em ? a.trab / a.em : 0, cor = trab > 0.25 ? CORES[tur] : a.evol > 0 ? C.vi : C.dim;
+        var resp2 = 0.5 + 0.5 * Math.sin(t * 2.4 + k2 * 0.9 + seg / 60 * TAU);
+        var al = trab > 0.25 ? 0.7 + 0.3 * resp2 : a.evol > 0 ? 0.5 + 0.3 * Math.sin(t * 2 + k2) : 0.3 + 0.12 * Math.sin(t * 1.4 + k2 * 0.7);
+        ctx.globalAlpha = Math.min(1, al + fl * 0.6 + pt * 0.35); ctx.fillStyle = fl > 0.05 ? '#fff' : cor;
+        ctx.beginPath(); ctx.arc(x, y, 1.5 + 1.6 * clamp(trab, 0, 1) + fl * 2.6 + (trab > 0.25 ? 0.5 * resp2 : 0), 0, TAU); ctx.fill();
+        if (fl > 0.05 || trab > 0.6) luz(ctx, cor, x, y, 7 + fl * 5, Math.max(fl, trab > 0.6 ? 0.35 * resp2 : 0));
       }
       ctx.globalAlpha = 1;
       // o ponteiro das horas (continuo) e a hora ao centro
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(qh) * (R - 4), cy + Math.sin(qh) * (R - 4)); ctx.stroke(); ctx.lineWidth = 1;
+      var hAt = Math.floor(hr) % 24, qa = -Math.PI / 2 + hAt / 24 * TAU, xa = cx + Math.cos(qa) * (R - 17), ya = cy + Math.sin(qa) * (R - 17);
+      luz(ctx, CORES[tur], xa, ya, 8, 0.55 + 0.25 * resp); rot(ctx, String(hAt), xa - 3.5, ya + 2.5, '#ffffff', 7.5, 'left', 800);   // a hora de agora acesa
       luz(ctx, '#ffffff', cx + Math.cos(qh) * (R - 4), cy + Math.sin(qh) * (R - 4), 5, 0.7);
       ctx.fillStyle = 'rgba(7,7,10,.82)'; ctx.beginPath(); ctx.arc(cx, cy + 3, Math.min(R * 0.42, 19), 0, TAU); ctx.fill();
       rot(ctx, String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0'), cx, cy + 3, '#fff', 11, 'center', 700);
