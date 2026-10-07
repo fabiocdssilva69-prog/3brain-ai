@@ -1408,12 +1408,12 @@
     cenaGlobo = cena(cv, { id: 'globo', holo: $('h_globo'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       porCamada(ctx, s, 'base', '', base);
-      var G = geoGlobo(w, h), cx = G.cx, cy = G.cy, R = G.R, rot = calmo ? -30 : -t * 6;
+      var G = geoGlobo(w, h), cx = G.cx, cy = G.cy, R = G.R, giro = calmo ? -30 : -t * 6;   // (giro: 'rot' e a funcao do texto)
       ctx.strokeStyle = 'rgba(45,212,232,.13)'; ctx.lineWidth = 1;
-      for (var m0 = 0; m0 < 180; m0 += 30) { var a = (m0 + rot) * Math.PI / 180; ctx.beginPath(); ctx.ellipse(cx, cy, Math.abs(Math.sin(a)) * R, R, 0, 0, TAU); ctx.stroke(); }
+      for (var m0 = 0; m0 < 180; m0 += 30) { var a = (m0 + giro) * Math.PI / 180; ctx.beginPath(); ctx.ellipse(cx, cy, Math.abs(Math.sin(a)) * R, R, 0, 0, TAU); ctx.stroke(); }
       var etq = [];
       MERCADOS.forEach(function (m, i) {
-        var l = (m[3] + rot) * Math.PI / 180, ph = m[4] * Math.PI / 180, x = Math.cos(ph) * Math.sin(l), z = Math.cos(ph) * Math.cos(l), y = Math.sin(ph);
+        var l = (m[3] + giro) * Math.PI / 180, ph = m[4] * Math.PI / 180, x = Math.cos(ph) * Math.sin(l), z = Math.cos(ph) * Math.cos(l), y = Math.sin(ph);
         var px = cx + x * R, py = cy - y * R, hl = horaLocal(m[2]), ab = aberta(m, hl), frente = z > -0.05;
         if (!frente) return;
         var cor = ab ? C.ok : C.ouro;
