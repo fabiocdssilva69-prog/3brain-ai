@@ -1007,13 +1007,10 @@
     cenaEq = cena(cv, { id: 'equalizador', holo: $('h_equalizador'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       var N = EQ.ns.length; if (!N) { rot(ctx, 'a ler os andares…', w / 2, h / 2 + 8, C.dim, 9, 'center', 500); return; }
-      var x0 = 6, bw = (w - 12) / N, base = h - 13, alt = base - TOPO - 4, act = (ACT.equalizador || {}).base || 0, larg = Math.max(1, bw - 1.2);
-      porCamada(ctx, s, 'rotulos', EQ.ns[0] + '|' + EQ.ns[N - 1] + '|' + fmt(EQ.agora, 0), function (g) {
-        rot(g, 'and. ' + EQ.ns[0], 4, h - 2, C.dim, 8, 'left', 500); rot(g, 'and. ' + EQ.ns[N - 1], w - 4, h - 2, C.dim, 8, 'right', 500);
-        rot(g, fmt(EQ.agora, 0) + ' a trabalhar agora', w / 2, h - 2, C.mute, 8, 'center', 500);
-      });
+      // 07/10 (Q5 B5, ele: "as legendas embaixo pode tirar que buga"): sem a linha de baixo, as barras ganham a altura
+      var x0 = 6, bw = (w - 12) / N, base = h - 4, alt = base - TOPO - 14, act = (ACT.equalizador || {}).base || 0, larg = Math.max(1, bw - 1.2);
       if (!s.gEq || s.gEqH !== h) { var gq = ctx.createLinearGradient(0, base, 0, base - alt); gq.addColorStop(0, 'rgba(45,212,232,.2)'); gq.addColorStop(0.55, 'rgba(45,212,232,.78)'); gq.addColorStop(1, '#8af3ff'); s.gEq = gq; s.gEqH = h; }
-      var quentes = [], picos = [];
+      var quentes = [], picos = [], acimaSec = [];
       ctx.fillStyle = s.gEq;
       for (var i = 0; i < N; i++) {
         var n = EQ.ns[i], sl = (EQ.salto[n] || 0) * Math.exp(-dt * 0.9); EQ.salto[n] = sl < 0.004 ? 0 : sl;
@@ -1024,7 +1021,7 @@
         ctx.fillRect(x, base - hh, larg, hh);
         var pk = PK[n] || (PK[n] = { v: 0, t: 0 }); if (v >= pk.v) { pk.v = v; pk.t = t; } else if (t - pk.t > 0.6) pk.v = Math.max(v, pk.v - dt * 0.16);
         picos.push(x, base - pk.v * alt - 1.5);
-        if (sl > 0.1) quentes.push(x, base - hh, sl);
+        if (sl > 0.1) { quentes.push(x, base - hh, sl); acimaSec.push({ n: n, x: x + larg / 2, y: base - hh, sl: sl }); }
       }
       ctx.fillStyle = 'rgba(255,255,255,.82)';
       for (var p = 0; p < picos.length; p += 2) ctx.fillRect(picos[p], picos[p + 1], larg, 1.3);
@@ -1032,6 +1029,13 @@
       var top3 = EQ.ns.slice().sort(function (a, b) { return ((EQ.salto[b] || 0) * 2 + (EQ.base[b] || 0)) - ((EQ.salto[a] || 0) * 2 + (EQ.base[a] || 0)); }).slice(0, 3);
       var col3 = (w - 12) / 3, max3 = Math.max(6, Math.floor((col3 - 6) / 4.6));
       top3.forEach(function (n, i) { var an = T3B.andar ? T3B.andar(n) : null; rot(ctx, TX.cortar((i ? '' : '▲ ') + n + (an && an.nome ? ' ' + TX.limpar(an.nome) : ''), max3), 6 + i * col3, TOPO + 9, i ? C.mute : C.ouroHi, 7.5, 'left', i ? 500 : 700); });   // (cada um na sua coluna)
+      // 07/10 (Q5 B5, eq_sector: "a legenda pode aparecer conforme a reacao de cada setor acima do limite das barras"): o nome do
+      // SECTOR por cima da barra que acabou de reagir - as 3 mais fortes, arrumadas para nao se taparem
+      acimaSec.sort(function (a, b) { return b.sl - a.sl; });
+      arrumarEtiquetas(ctx, 'equal_sec', acimaSec.slice(0, 3).map(function (e) {
+        var an = T3B.andar ? T3B.andar(e.n) : null, nm = an ? TX.limpar(an.sector || an.nome || ('and. ' + e.n)) : 'and. ' + e.n;
+        return { t: TX.cortar(nm, 18), x: e.x, y: Math.max(TOPO + 20, e.y - 4), dy: -9, cor: C.ouroHi, tam: 7.5 };
+      }), w, h);
       for (var q = 0; q < quentes.length; q += 3) {                    // o andar que acabou de agir: a ponta a ouro e o brilho
         var qa = Math.min(1, quentes[q + 2] * 1.5);
         ctx.fillStyle = 'rgba(242,194,48,' + qa.toFixed(2) + ')'; ctx.fillRect(quentes[q], quentes[q + 1], larg, Math.min(10, base - quentes[q + 1]));
