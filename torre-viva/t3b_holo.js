@@ -1356,6 +1356,12 @@
   var MERCADOS = [['BR', 'B3', 'America/Sao_Paulo', -46.6, -23.5, 10, 17], ['US', 'NYSE', 'America/New_York', -74, 40.7, 9.5, 16], ['UK', 'LSE', 'Europe/London', -0.1, 51.5, 8, 16.5],
     ['DE', 'Xetra', 'Europe/Berlin', 8.7, 50.1, 9, 17.5], ['JP', 'TSE', 'Asia/Tokyo', 139.7, 35.7, 9, 15], ['HK', 'HKEX', 'Asia/Hong_Kong', 114.2, 22.3, 9.5, 16],
     ['CN', 'SSE', 'Asia/Shanghai', 121.5, 31.2, 9.5, 15], ['AU', 'ASX', 'Australia/Sydney', 151.2, -33.9, 10, 16]];
+  // 07/10 (Q5 B10, ele: "tem que mostrar uma legenda ao lado com o nome pra quem nao souber o que significa cada sigla")
+  var NOME_PAIS = { BR: 'Brasil', US: 'EUA', UK: 'Reino Unido', DE: 'Alemanha', JP: 'Japao', HK: 'Hong Kong', CN: 'China', AU: 'Australia' };
+  function geoGlobo(w, h) {          // com espaco, o globo vai para a direita e a legenda fica a esquerda
+    var leg = w >= 170, cx = leg ? w * 0.63 : w / 2, cy = TOPO + (h - TOPO) / 2;
+    return { leg: leg, cx: cx, cy: cy, R: Math.min(leg ? w * 0.30 : w * 0.36, (h - TOPO) * 0.42) };
+  }
   var RELOGIOS = {};
   function horaLocal(tz) {
     try {
@@ -1370,7 +1376,7 @@
     var cv = canvasDe('h_globo'); if (!cv) return;
     registar('globo', $('h_globo'));
     function base(g, w, h) {
-      var cx = w / 2, cy = TOPO + (h - TOPO) / 2, R = Math.min(w * 0.36, (h - TOPO) * 0.42);
+      var G = geoGlobo(w, h), cx = G.cx, cy = G.cy, R = G.R;
       var gr = g.createRadialGradient(cx - R * 0.35, cy - R * 0.35, R * 0.1, cx, cy, R); gr.addColorStop(0, '#173a55'); gr.addColorStop(1, '#050a12');
       g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.fill();
       g.strokeStyle = 'rgba(45,212,232,.16)'; g.lineWidth = 1;
@@ -1382,7 +1388,7 @@
     cenaGlobo = cena(cv, { id: 'globo', holo: $('h_globo'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       porCamada(ctx, s, 'base', '', base);
-      var cx = w / 2, cy = TOPO + (h - TOPO) / 2, R = Math.min(w * 0.36, (h - TOPO) * 0.42), rot = calmo ? -30 : -t * 6;
+      var G = geoGlobo(w, h), cx = G.cx, cy = G.cy, R = G.R, rot = calmo ? -30 : -t * 6;
       ctx.strokeStyle = 'rgba(45,212,232,.13)'; ctx.lineWidth = 1;
       for (var m0 = 0; m0 < 180; m0 += 30) { var a = (m0 + rot) * Math.PI / 180; ctx.beginPath(); ctx.ellipse(cx, cy, Math.abs(Math.sin(a)) * R, R, 0, 0, TAU); ctx.stroke(); }
       var etq = [];
@@ -1396,6 +1402,14 @@
         etq.push({ t: m[0] + ' ' + hl.txt, x: px, y: py - 8, dy: -10, cor: ab ? '#b6f5da' : C.ouroHi, tam: 8 });
       });
       arrumarEtiquetas(ctx, 'globo', etq, w, h);
+      if (G.leg) {                     // a legenda: sigla, nome do pais, bolsa; verde = pregao aberto agora
+        var passo = Math.max(9, Math.min(13, (h - TOPO - 22) / MERCADOS.length));
+        MERCADOS.forEach(function (m, i) {
+          var ab = aberta(m, horaLocal(m[2])), y = TOPO + 12 + i * passo;
+          ctx.fillStyle = ab ? C.ok : 'rgba(212,175,55,.55)'; ctx.beginPath(); ctx.arc(8, y - 3, 2.2, 0, TAU); ctx.fill();
+          rot(ctx, m[0] + ' ' + NOME_PAIS[m[0]] + ' · ' + m[1], 14, y, ab ? '#b6f5da' : C.mute, 7.5, 'left', ab ? 700 : 500);
+        });
+      }
       var cr = horaLocal('UTC');
       rot(ctx, '₿ cripto 24 h · ' + cr.txt + ' UTC', 6, h - 4, C.mute, 7.5, 'left', 600);
       if (s.desenhos % 60 === 0) {
