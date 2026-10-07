@@ -904,3 +904,8 @@ nav.dir .car-orig, nav.dir .car-copia { gap: 6px; padding-right: 6px; }
 /* 05/10 23:xx: a fita dos NUMEROS corre sempre (andava um passo por evento) */
 #h_numeros .fitah .tr.corre { animation: marq var(--dur, 30s) linear infinite !important; transform: none; }
 @media (prefers-reduced-motion: reduce) { #h_numeros .fitah .tr.corre { animation: none !important; } }
+
+/* 07/10 (Q5 B2): o rotulo do numero AO LADO dele */
+#h_numeros .odlinha { display: flex; align-items: center; justify-content: center; gap: 10px; }
+#h_numeros .od-rot { font: 700 10px/1.2 system-ui, sans-serif; letter-spacing: .07em; text-transform: uppercase; color: #ffdc6a;
+  max-width: 86px; text-align: left; opacity: .92; }

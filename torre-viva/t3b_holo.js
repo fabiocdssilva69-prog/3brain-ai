@@ -748,9 +748,10 @@
   (function () {
     var cx = $('h_numeros_odo'); if (!cx) return;
     registar('numeros', $('h_numeros'));
-    cx.innerHTML = '<div class="od" title="eventos reais da torre desde que o servidor arrancou"></div><div class="fitah"><div class="tr"></div></div>';
+    // 07/10 (Q5 B2, ele: "quero so que diga do lado o numero o que ta sendo mostrado"): o rotulo AO LADO do numero
+    cx.innerHTML = '<div class="odlinha"><div class="od" title="eventos reais da torre desde que o servidor arrancou"></div><div class="od-rot">eventos reais</div></div><div class="fitah"><div class="tr"></div></div>';
     var em = document.querySelector('#h_numeros .ht em'); if (em) em.textContent = 'eventos reais da torre';
-    ODO.el = cx.querySelector('.od'); ODO.fita = cx.querySelector('.tr');
+    ODO.el = cx.querySelector('.od'); ODO.fita = cx.querySelector('.tr'); ODO.rot = cx.querySelector('.od-rot');
   })();
   function odoPor(n) {
     if (!ODO.el) return;
@@ -789,11 +790,12 @@
     if (Date.now() - ODO_T > 6000) { ODO_K = (ODO_K + 1) % lst.length; ODO_T = Date.now(); }
     var x = lst[ODO_K % lst.length]; odoPor(x[2] === '%' ? Math.round(x[1] * 10) / 10 : x[1]);
     var em = document.querySelector('#h_numeros .ht em'); if (em && em.textContent !== x[0]) em.textContent = x[0];
+    if (ODO.rot && ODO.rot.textContent !== x[0]) ODO.rot.textContent = x[0];
     return true;
   }
   T3B.on('ritmo', function () {
     var s = T3B.estado.vivoSeq; if (!s) return;
-    if (!odoRelevante()) odoPor(s);
+    if (!odoRelevante()) { odoPor(s); if (ODO.rot && ODO.rot.textContent !== 'eventos reais') ODO.rot.textContent = 'eventos reais'; }
     if (seqVisto != null && s > seqVisto + 25) creditarHolo('numeros', 'numeros', 'eventos ' + fmt(s, 0));
     if (seqVisto == null || s > seqVisto + 25) seqVisto = s;
     mini('hm_numeros', [['eventos', fmt(s, 0)], ['ops', CONT.ops || '0'], ['genes', CONT.genes || '0']]);
