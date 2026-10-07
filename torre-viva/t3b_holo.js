@@ -659,6 +659,34 @@
     if (je.liquido != null) o.push(['DESDE O INÍCIO', sinal(je.liquido, 2) + ' US$', je.liquido >= 0 ? C.ok : C.mau]);
     return o;
   }
+  // 07/10 (Q5 B1, ele: "quero outra coisa dessa parecida no canto superior direito tambem com outras informacoes relevantes
+  // tambem mudando assim"): o bloco da direita, desfasado meio passo do da esquerda
+  function statsDireita() {
+    var T = obj(T3B.estado.T), ex = obj(T.extremis), o = [];
+    if (ROBO.mod) o.push(['MODELO DO STARK', String(ROBO.mod).replace(/^claude-/, ''), C.cy]);
+    if (ROBO.t) o.push(['ÚLTIMO PARECER', 'há ' + U.haQuanto(Date.now() - U.epoch(ROBO.t)), C.txt]);
+    o.push(['VISITAS', fmt((ACT.stark || { janela: [] }).janela.length, 0) + ' da S.H.I.E.L.D.', C.vi]);
+    if (ex.robustos_alguma_vez != null) o.push(['GENES ROBUSTOS', fmt(ex.robustos_alguma_vez, 0), C.ok]);
+    if (ex.n_familias != null) o.push(['FAMÍLIAS', fmt(ex.n_familias, 0), C.ouroHi]);
+    if (ex.n_avaliacoes != null) o.push(['AVALIAÇÕES', fmt(ex.n_avaliacoes, 0), C.ouroHi]);
+    return o;
+  }
+  // 07/10 (Q5 B1, ele: "ali onde ta 'noite de rede, nao de bugs' isso pode ficar mudando e aparecendo outras mensagens relevantes,
+  // importante ser no maximo de duas linhas pra nao ficar cortado"): a decisao + as frases do parecer, cada uma em ate 2 linhas
+  // (uma frase maior vira blocos de 2 linhas pelas palavras - nunca cortada a meio)
+  function frasesDoStark(ctx, larg, quebrar) {      // (o quebrar vive dentro da cena do Stark: vem como argumento)
+    var chave = (ROBO.decisao || '') + '|' + (ROBO.parecer || '') + '|' + larg;
+    if (ROBO.chaveF === chave) return ROBO.frases;
+    var fontes = [ROBO.decisao || 'a ler o parecer do Sr. Stark…'].concat(String(TX.semMarkdown(TX.limpar(String(ROBO.parecer || '')))).split(/(?<=[.!?])\s+/));
+    var out = [], vistas = {};
+    fontes.forEach(function (f) {
+      f = String(f || '').trim(); if (f.length < 12 || vistas[f]) return; vistas[f] = 1;
+      var ls = quebrar(ctx, f, larg);
+      for (var i = 0; i < ls.length && out.length < 8; i += 2) out.push(ls.slice(i, i + 2));
+    });
+    ROBO.frases = out.length ? out : [[ROBO.decisao || 'a ler o parecer do Sr. Stark…']]; ROBO.chaveF = chave;
+    return ROBO.frases;
+  }
   EXTRA.stark = function () { return { olho: Math.round(ROBO.olho * 100) / 100, parecer: ROBO.parecer ? TX.cortar(ROBO.parecer, 60) : null, decisao: ROBO.decisao ? TX.cortar(ROBO.decisao, 60) : null, falou_ha_ms: ROBO.fala > 0 ? Math.round(agoraMs() - ROBO.fala * 1000) : null }; };
   var cenaAnel = null;
   (function () {
@@ -728,14 +756,19 @@
       ctx.stroke(); ctx.lineWidth = 1; ctx.lineCap = 'butt';
       if (fala) luz(ctx, C.ouro, cx, cy + r * 0.42, r * 0.5, 0.25);
       // a decisao, a escrever-se (28 letras/s) em ate 2 linhas
-      var dec = ROBO.decisao || 'a ler o parecer do Sr. Stark…', larg = w - 16, ch = dec + '|' + larg;
-      if (ROBO.chaveL !== ch) { ROBO.linhas = quebrar(ctx, dec, larg); ROBO.chaveL = ch; }
-      var k = ROBO.tf > 0 ? Math.floor((t - ROBO.tf) * 28) : 1e9, ja = 0;
+      var FR = frasesDoStark(ctx, w - 16, quebrar), kf = Math.floor(t / 7) % FR.length;
+      if (ROBO.kf !== kf) { ROBO.kf = kf; ROBO.tfr = t; }
+      ROBO.linhas = FR[kf];
+      var k = ROBO.tf > 0 && t - ROBO.tf < 7 ? Math.floor((t - ROBO.tf) * 28) : Math.floor((t - (ROBO.tfr || 0)) * 28), ja = 0;
       ROBO.linhas.forEach(function (l, i) {
         var mostra = l.slice(0, Math.max(0, k - ja)); ja += l.length + 1;
         if (mostra) rot(ctx, mostra, w / 2, h - (ROBO.linhas.length > 1 ? 20 : 14) + i * 12, ROBO.decisao ? C.ouroHi : C.dim, 10, 'center', 600);
       });
-      if (ROBO.mod) rot(ctx, String(ROBO.mod).replace(/^claude-/, ''), w - 8, TOPO + 10, 'rgba(139,138,147,.8)', 7.5, 'right', 600);
+      var SD = statsDireita();
+      if (SD.length) {
+        var kd = Math.floor((t + 1.75) / 3.5) % SD.length, fd = ((t + 1.75) % 3.5) / 3.5, aD = Math.min(1, fd * 8, (1 - fd) * 8);
+        ctx.globalAlpha = aD; rot(ctx, SD[kd][0], w - 8, TOPO + 10, C.dim, 7.5, 'right', 600); rot(ctx, SD[kd][1], w - 8, TOPO + 22, SD[kd][2], 10, 'right', 700); ctx.globalAlpha = 1;
+      }
     } });
   })();
   setInterval(function () { if (!ROBO.t) return; mini('hm_stark', [['parecer há', U.haQuanto(Date.now() - U.epoch(ROBO.t))], ['', ROBO.mod || 'modelo ?'], ['visitas', fmt((ACT.stark || { janela: [] }).janela.length, 0)]]); }, 2000);
