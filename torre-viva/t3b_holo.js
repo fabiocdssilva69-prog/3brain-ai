@@ -373,8 +373,10 @@
     var cv = $('cv_radar'); if (!cv) return;
     registar('radar', $('bl_radar'));
     // a parte parada (guardada): o aro com um traco por andar, os aneis, os raios, os numeros dos andares
+    // 07/10 (Q5 B8, sh_lista: "o radar e, ao lado, os piores casos"): com largura, o radar vai para a esquerda e a lista a direita
+    function geoRadar(w, h) { var lado = w >= 240; return { lado: lado, cx: lado ? w * 0.3 : w / 2, cy: h / 2 + 2, R: lado ? Math.min(w * 0.25, h * 0.4) : Math.min(w, h) * 0.43 }; }
     function fundo(g, w, h) {
-      var cx = w / 2, cy = h / 2 + 2, R = Math.min(w, h) * 0.43;
+      var GR = geoRadar(w, h), cx = GR.cx, cy = GR.cy, R = GR.R;
       var gr = g.createRadialGradient(cx, cy, 0, cx, cy, R); gr.addColorStop(0, 'rgba(45,212,232,.10)'); gr.addColorStop(0.7, 'rgba(45,212,232,.03)'); gr.addColorStop(1, 'rgba(45,212,232,0)');
       g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.fill();
       g.lineWidth = 1;
@@ -390,7 +392,7 @@
       g.setLineDash([2, 4]); g.strokeStyle = 'rgba(45,212,232,.16)'; g.beginPath(); g.arc(cx, cy, R * 0.5, 0, TAU); g.stroke(); g.setLineDash([]);
     }
     cenaRadar = cena(cv, { id: 'radar', bloco: $('bl_radar'), desenhar: function (ctx, w, h, t, dt, s) {
-      var agora = agoraMs(), cx = w / 2, cy = h / 2 + 2, R = Math.min(w, h) * 0.43;
+      var agora = agoraMs(), GR = geoRadar(w, h), cx = GR.cx, cy = GR.cy, R = GR.R;
       ctx.clearRect(0, 0, w, h);
       porCamada(ctx, s, 'fundo', '', fundo);
       // o feixe: roda sempre, ao periodo da volta do vigia; o batimento acerta a fase aos poucos
@@ -446,9 +448,13 @@
       luz(ctx, C.cy, cx, cy, 6 + 2 * pul, 0.55 + 0.25 * pul);
       rot(ctx, 'AVARIAS ' + RAD.abertas, 8, h - 6, RAD.abertas ? C.mau : C.ok, 9, 'left', 600);
       // 05/10 (ele: "mais detalhes e informacoes relevantes"): os 3 casos abertos mais antigos - quem e ha quanto tempo
-      Object.keys(RAD.pontos).map(function (id) { return RAD.pontos[id]; }).filter(function (p) { return !p.ok; }).sort(function (a, b) { return a.t0 - b.t0; }).slice(0, 3).forEach(function (p, i) {
-        var q = T3B.quem ? T3B.quem(p.id) : null, nm = TX.cortar(TX.limpar((q && q.nome) || TX.nomeDeId(p.id)), 18), min = Math.max(1, Math.round((agora - p.t0) / 60000));
-        rot(ctx, '● ' + nm + ' · ' + (min < 60 ? min + ' min' : Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0')), 6, 12 + i * 11, p.sev === 'vermelho' ? C.mau : C.am, 7.5, 'left', 600);
+      var foraV = Object.keys(RAD.pontos).map(function (id) { return RAD.pontos[id]; }).filter(function (p) { return !p.ok; }).sort(function (a, b) { return a.t0 - b.t0; });
+      var xL = GR.lado ? w * 0.58 : 6, nL = GR.lado ? Math.max(1, Math.min(6, Math.floor((h - TOPO - 24) / 13))) : 3, cL = GR.lado ? Math.floor((w * 0.42 - 8) / 4.6) : 26;
+      if (GR.lado) rot(ctx, foraV.length ? 'FORA DO VERDE · ' + foraV.length : 'TUDO VERDE', xL, TOPO + 10, foraV.length ? C.am : C.ok, 7.5, 'left', 700);
+      foraV.slice(0, nL).forEach(function (p, i) {
+        var q = T3B.quem ? T3B.quem(p.id) : null, nm = TX.limpar((q && q.nome) || TX.nomeDeId(p.id)), min = Math.max(1, Math.round((agora - p.t0) / 60000));
+        var ha = min < 60 ? min + ' min' : Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0');
+        rot(ctx, TX.cortar('● ' + nm + ' · há ' + ha, cL), xL, (GR.lado ? TOPO + 24 : 12) + i * (GR.lado ? 13 : 11), p.sev === 'vermelho' ? C.mau : C.am, 7.5, 'left', 600);
       });
     } });
   })();
@@ -1044,6 +1050,7 @@
       var x0 = 6, bw = (w - 12) / N, base = h - 4, alt = base - TOPO - 14, act = (ACT.equalizador || {}).base || 0, larg = Math.max(1, bw - 1.2);
       if (!s.gEq || s.gEqH !== h) { var gq = ctx.createLinearGradient(0, base, 0, base - alt); gq.addColorStop(0, 'rgba(45,212,232,.2)'); gq.addColorStop(0.55, 'rgba(45,212,232,.78)'); gq.addColorStop(1, '#8af3ff'); s.gEq = gq; s.gEqH = h; }
       var quentes = [], picos = [], acimaSec = [];
+      if (s.corEqChave !== EQ.ns.join(',')) { COR_EQ = {}; s.corEqChave = EQ.ns.join(','); }
       ctx.fillStyle = s.gEq;
       for (var i = 0; i < N; i++) {
         var n = EQ.ns[i], sl = (EQ.salto[n] || 0) * Math.exp(-dt * 0.9); EQ.salto[n] = sl < 0.004 ? 0 : sl;
@@ -1051,7 +1058,8 @@
         var f = FASE[n], resp = calmo ? 0 : (0.022 + 0.05 * act) * (0.6 * Math.sin(t * f[1] + f[0]) + 0.4 * Math.sin(t * f[2] + f[0] * 1.7));
         var alvo = clamp((EQ.base[n] || 0) * 0.7 + sl * 0.8 + 0.035 + resp, 0.015, 1);
         var v = V[n] = seguir(V[n] == null ? alvo : V[n], alvo, 7, dt), hh = Math.max(1, v * alt), x = x0 + i * bw;
-        ctx.fillRect(x, base - hh, larg, hh);
+        ctx.fillStyle = COR_EQ[n] || (COR_EQ[n] = (U.corDoAndar ? U.corDoAndar(n) : '#2dd4e8')); ctx.globalAlpha = 0.86;   // 07/10 (Q5 B5, eq_sector)
+        ctx.fillRect(x, base - hh, larg, hh); ctx.globalAlpha = 1;
         var pk = PK[n] || (PK[n] = { v: 0, t: 0 }); if (v >= pk.v) { pk.v = v; pk.t = t; } else if (t - pk.t > 0.6) pk.v = Math.max(v, pk.v - dt * 0.16);
         picos.push(x, base - pk.v * alt - 1.5);
         if (sl > 0.1) { quentes.push(x, base - hh, sl); acimaSec.push({ n: n, x: x + larg / 2, y: base - hh, sl: sl }); }
@@ -1123,6 +1131,7 @@
     } });
   })();
 
+  var COR_EQ = {};   // 07/10 (Q5 B5): a cor da divisao de cada andar no equalizador (U.corDoAndar)
   // ================================================================ 12. RELOGIO DOS TURNOS (G27, D.turnos) — no Risco
   // O anel de 24 h com os 3 turnos (A 00-08, B 08-16, C 16-24; o da hora acende), o ponteiro na hora REAL de Brasilia (anda
   // uma vez por minuto - e um relogio) e um PONTO POR ANDAR: brilhante = gente a trabalhar no turno desse andar, violeta = a
