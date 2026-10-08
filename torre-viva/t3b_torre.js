@@ -222,7 +222,19 @@ function chao() {
 }
 
 // ---------------------------------------------------------------- o clima pelo mercado (q21): chuva em queda, sol em alta
-const CLIMA = { modo: 'neutro', chuva: null, sol: null };
+// 07/10 (Q5 C2, cl_mercado + ele: "vamos seguir a intensidade do ganho (sol mais forte, com raios e ate algumas coisas referindo
+// ao calor e praia, quanto mais quente mais clima de verao) e assim sucessivamente com os outros climas"): I = forca do dia
+// (|resultado| / ESCALA_CLIMA, ~2% do capital = 1); sol cresce, raios a girar e calor no horizonte; chuva mais densa e rapida, e
+// com perda grande vira TEMPESTADE com relampagos.
+const CLIMA = { modo: 'neutro', chuva: null, sol: null, I: 0, flash: 0, proxFlash: 3 };
+const ESCALA_CLIMA = 10;      // US$ do dia que dao a forca maxima (capital ~US$500: 2%)
+function texturaRaios() {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), m = 128;
+  for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, gr = g.createLinearGradient(m, m, m + Math.cos(a) * 128, m + Math.sin(a) * 128);
+    gr.addColorStop(0, 'rgba(255,230,160,.55)'); gr.addColorStop(1, 'rgba(255,200,90,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(m, m);
+    g.lineTo(m + Math.cos(a - 0.06) * 128, m + Math.sin(a - 0.06) * 128); g.lineTo(m + Math.cos(a + 0.06) * 128, m + Math.sin(a + 0.06) * 128); g.closePath(); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
 function clima() {
   const N = 900, pos = new Float32Array(N * 3), vel = new Float32Array(N);
   for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - 0.5) * 420; pos[i * 3 + 1] = Math.random() * 320; pos[i * 3 + 2] = (Math.random() - 0.5) * 420; vel[i] = 60 + Math.random() * 50; }
@@ -231,13 +243,21 @@ function clima() {
   CLIMA.chuva.visible = false; CLIMA.vel = vel; cena.add(CLIMA.chuva);
   CLIMA.sol = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaHalo(), color: 0xffd98a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
   CLIMA.sol.scale.set(260, 260, 1); CLIMA.sol.position.set(-300, 420, -420); CLIMA.sol.visible = false; cena.add(CLIMA.sol);
+  CLIMA.raios = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaRaios(), color: 0xffe2a0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+  CLIMA.raios.scale.set(620, 620, 1); CLIMA.raios.position.copy(CLIMA.sol.position); CLIMA.raios.visible = false; cena.add(CLIMA.raios);
+  CLIMA.calor = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaHalo(), color: 0xff9a3c, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+  CLIMA.calor.scale.set(1400, 360, 1); CLIMA.calor.position.set(0, 40, -700); CLIMA.calor.visible = false; cena.add(CLIMA.calor);
+  CLIMA.relampago = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaHalo(), color: 0xdfe8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+  CLIMA.relampago.scale.set(1600, 1000, 1); CLIMA.relampago.position.set(120, 380, -520); CLIMA.relampago.visible = false; cena.add(CLIMA.relampago);
 }
 function climaPeloMercado(T) {
   // q21 "chuva em queda, sol em alta": o MESMO resultado do dia que o velocimetro mostra (o instrumento ao segundo:
   // realizado + o aberto); o medidor.agora do ficheiro ficava a 0,00 com o dia a -10 US$ e nunca chovia
   const r = (T && T.reactor) || {}; let v = Number(T3B.estado.resultadoDia); if (!isFinite(v)) v = Number((r.medidor || {}).agora); if (!isFinite(v)) v = Number((r.ganho || {}).realizado_usd); if (!isFinite(v)) return;
-  const modo = v < -0.5 ? 'chuva' : v > 0.5 ? 'sol' : 'neutro';
-  U.txt($('pc_clima'), modo === 'chuva' ? 'chuva · dia negativo' : modo === 'sol' ? 'sol · dia positivo' : 'limpo · dia neutro');
+  const modo = v < -0.5 ? 'chuva' : v > 0.5 ? 'sol' : 'neutro', I = Math.min(1, Math.abs(v) / ESCALA_CLIMA);
+  const us = (v >= 0 ? '+' : '') + v.toFixed(2) + ' US$';
+  U.txt($('pc_clima'), modo === 'chuva' ? (I > 0.55 ? 'tempestade · ' : 'chuva · ') + us : modo === 'sol' ? (I > 0.6 ? 'sol de verão · ' : I > 0.25 ? 'sol forte · ' : 'sol · ') + us : 'limpo · ' + us);
+  if (Math.abs(I - CLIMA.I) > 0.04) { CLIMA.I = I; precisaDesenhar = true; }
   if (modo === CLIMA.modo) return; CLIMA.modo = modo; precisaDesenhar = true;
   if (CLIMA.chuva) CLIMA.chuva.visible = modo === 'chuva' || CLIMA.chuva.material.opacity > 0.01;
   if (CLIMA.sol) CLIMA.sol.visible = modo === 'sol' || CLIMA.sol.material.opacity > 0.01;
@@ -245,11 +265,21 @@ function climaPeloMercado(T) {
 function passoClima(dt) {
   if (!CLIMA.chuva) return false; let mexe = false;
   const mc = CLIMA.chuva.material, ms = CLIMA.sol.material;
-  const aC = CLIMA.modo === 'chuva' ? 0.75 : 0, aS = CLIMA.modo === 'sol' ? (noite ? 0.08 : 0.55) : 0;
+  const I = CLIMA.I || 0, aC = CLIMA.modo === 'chuva' ? 0.35 + 0.55 * I : 0, aS = CLIMA.modo === 'sol' ? (noite ? 0.06 + 0.12 * I : 0.3 + 0.55 * I) : 0;
+  if (CLIMA.raios) {                                                      // (Q5 C2) raios, calor e relampagos pela forca
+    const mr = CLIMA.raios.material, mq = CLIMA.calor.material, ml = CLIMA.relampago.material;
+    const aR = CLIMA.modo === 'sol' && I > 0.25 ? (noite ? 0.04 : 0.5 * I) : 0, aQ = CLIMA.modo === 'sol' && !noite ? 0.32 * I : 0;
+    mr.opacity += (aR - mr.opacity) * Math.min(1, dt * 1.2); mq.opacity += (aQ - mq.opacity) * Math.min(1, dt * 1.0); mr.rotation += dt * (0.04 + 0.08 * I);
+    CLIMA.raios.visible = mr.opacity > 0.01; CLIMA.calor.visible = mq.opacity > 0.01;
+    CLIMA.sol.scale.setScalar(220 + 180 * (CLIMA.modo === 'sol' ? I : 0));
+    if (CLIMA.modo === 'chuva' && I > 0.55) { CLIMA.proxFlash -= dt; if (CLIMA.proxFlash <= 0) { ml.opacity = 0.75 + 0.25 * Math.random(); CLIMA.proxFlash = 3 + Math.random() * 6; } }
+    ml.opacity = Math.max(0, ml.opacity - dt * 5); CLIMA.relampago.visible = ml.opacity > 0.01;
+    if (CLIMA.raios.visible || CLIMA.relampago.visible) mexe = true;
+  }
   if (Math.abs(mc.opacity - aC) > 0.005) { mc.opacity += (aC - mc.opacity) * Math.min(1, dt * 1.5); mexe = true; }
   if (Math.abs(ms.opacity - aS) > 0.005) { ms.opacity += (aS - ms.opacity) * Math.min(1, dt * 1.2); mexe = true; }
   CLIMA.chuva.visible = mc.opacity > 0.01; CLIMA.sol.visible = ms.opacity > 0.01;
-  if (CLIMA.chuva.visible) { const p = CLIMA.chuva.geometry.attributes.position.array, v = CLIMA.vel; for (let i = 0; i < v.length; i++) { p[i * 3 + 1] -= v[i] * dt; if (p[i * 3 + 1] < 0) p[i * 3 + 1] = 320; } CLIMA.chuva.geometry.attributes.position.needsUpdate = true; mexe = true; }
+  if (CLIMA.chuva.visible) { const p = CLIMA.chuva.geometry.attributes.position.array, v = CLIMA.vel; for (let i = 0; i < v.length; i++) { p[i * 3 + 1] -= v[i] * dt * (1 + (CLIMA.I || 0)); if (p[i * 3 + 1] < 0) p[i * 3 + 1] = 320; } CLIMA.chuva.geometry.attributes.position.needsUpdate = true; mexe = true; }
   return mexe;
 }
 
