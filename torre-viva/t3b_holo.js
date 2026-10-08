@@ -980,7 +980,7 @@
     var px = function (v) { return v >= 1000 ? fmt(v, 1) : v >= 1 ? fmt(v, 3) : fmt(v, 5); };
     cenaLivro = cena(cv, { id: 'livro', holo: $('h_livro'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
-      var L0 = Math.max(110, w * 0.58), top = TOPO + 12, bot = h - 3, mid = (top + bot) / 2, n = clamp(Math.floor((bot - top) / 2 / 11), 2, 6), rh = (bot - top) / (n * 2), cx = L0 / 2, agora = agoraMs();
+      var L0 = Math.max(110, w * 0.46), top = TOPO + 12,   // 07/10 (Q5 B3, li_lado): o livro a esquerda, as nossas posicoes a direita bot = h - 3, mid = (top + bot) / 2, n = clamp(Math.floor((bot - top) / 2 / 11), 2, 6), rh = (bot - top) / (n * 2), cx = L0 / 2, agora = agoraMs();
       if (!LIV.b.length) {
         // sem o livro (a ligar, ou a Binance fora): o melhor preco do reactor, se houver; nunca um painel vazio
         var cr = obj(obj(window.__md && window.__md.S).cr), sy = String(LIV.sym || simboloDaMesa()).replace(/USDT$/, 'USD'), c = obj(cr[sy]);
@@ -1020,6 +1020,26 @@
         // a linha do preco: corre sempre (a marcha da linha tracejada) e brilha ao meio
         ctx.strokeStyle = C.ouro; ctx.setLineDash([4, 4]); ctx.lineDashOffset = calmo ? 0 : -t * 14; ctx.beginPath(); ctx.moveTo(2, mid); ctx.lineTo(L0 - 2, mid); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
         luz(ctx, C.ouro, cx, mid, 10 + 2 * Math.sin(t * 2), 0.4);
+      }
+      // 07/10 (Q5 B3, li_lado: "a direita cada posicao com nome, sigla e ganho/perda a mexer"): as POSICOES abertas, o P&L a
+      // deslizar para o valor novo; sem posicoes fica a fita da Mesa como antes
+      var POS = lista(obj(obj(T3B.estado.T).reactor).posicoes);
+      if (POS.length) {
+        LIV.pv = LIV.pv || {};
+        POS = POS.slice().sort(function (a, b) { return Math.abs(Number(b.pnl_aberto_usd) || 0) - Math.abs(Number(a.pnl_aberto_usd) || 0); });
+        rot(ctx, 'AS NOSSAS POSIÇÕES · ' + POS.length, L0 + 8, TOPO + 6, C.dim, 8, 'left', 600);
+        ctx.save(); ctx.beginPath(); ctx.rect(L0 + 4, TOPO + 9, w - L0 - 4, h - TOPO - 9); ctx.clip();
+        var cP = Math.max(8, Math.floor((w - L0 - 12) / 4.8)), rhP = h - TOPO - 20 > POS.length * 22 ? 22 : 12;
+        POS.forEach(function (ps, k) {
+          var y = TOPO + 19 + k * rhP; if (y > h - 2) return;
+          var sym = String(ps.simbolo || '?'), alvo = Number(ps.pnl_aberto_usd) || 0, v = LIV.pv[sym] = seguir(LIV.pv[sym] == null ? alvo : LIV.pv[sym], alvo, 3, dt);
+          var cor = v >= 0 ? C.ok : C.mau, pct = Number(ps.pnl_aberto_pct);
+          var linha = sym.replace(/USDT$/, '') + ' ' + sinal(v, 2) + ' US$' + (isFinite(pct) ? ' (' + sinal(pct, 1) + '%)' : '');
+          rot(ctx, TX.cortar(linha, cP), L0 + 8, y, cor, 8.5, 'left', 700);
+          if (rhP > 12) rot(ctx, TX.cortar(TX.limpar(ps.nome || '') + (ps.cripto ? ' · cripto' : ''), cP + 4), L0 + 8, y + 10, C.mute, 7, 'left', 500);
+        });
+        ctx.restore();
+        return;
       }
       // a fita: cada entrada nova entra por cima a deslizar (0,35 s) e as outras descem
       if (LIV.fita[0] !== LIV._topo) { LIV._topo = LIV.fita[0]; LIV.tFita = agora; }
