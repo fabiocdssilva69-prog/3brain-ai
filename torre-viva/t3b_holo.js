@@ -980,7 +980,8 @@
     var px = function (v) { return v >= 1000 ? fmt(v, 1) : v >= 1 ? fmt(v, 3) : fmt(v, 5); };
     cenaLivro = cena(cv, { id: 'livro', holo: $('h_livro'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
-      var L0 = Math.max(110, w * 0.46), top = TOPO + 12,   // 07/10 (Q5 B3, li_lado): o livro a esquerda, as nossas posicoes a direita bot = h - 3, mid = (top + bot) / 2, n = clamp(Math.floor((bot - top) / 2 / 11), 2, 6), rh = (bot - top) / (n * 2), cx = L0 / 2, agora = agoraMs();
+      // 07/10 (Q5 B3, li_lado): o livro a esquerda (46%), as nossas posicoes a direita
+      var L0 = Math.max(110, w * 0.46), top = TOPO + 12, bot = h - 3, mid = (top + bot) / 2, n = clamp(Math.floor((bot - top) / 2 / 11), 2, 6), rh = (bot - top) / (n * 2), cx = L0 / 2, agora = agoraMs();
       if (!LIV.b.length) {
         // sem o livro (a ligar, ou a Binance fora): o melhor preco do reactor, se houver; nunca um painel vazio
         var cr = obj(obj(window.__md && window.__md.S).cr), sy = String(LIV.sym || simboloDaMesa()).replace(/USDT$/, 'USD'), c = obj(cr[sy]);
