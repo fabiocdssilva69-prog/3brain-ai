@@ -69,7 +69,9 @@ const DPR = Math.max(1, window.devicePixelRatio || 1);
 // 05/10 (Q4 D1 "sempre 60"; MEDIDO na placa dele com a torre a trabalhar, perfil_t3b.js --pr): a girar ao DPR (1,25) a pagina
 // tinha 24-30 quadros/s; a 1,0 tem 49-50 - a 1,25 a placa pinta 1,56x mais pixeis (com o alisamento) a cada quadro. A mexer
 // (girar sozinha ou ele a arrastar) a torre desenha-se a 1,0; parada de todo continua nitida (repouso, 2x).
-const PR = { interaccao: [1, 1], vivo: [1, 1], repouso: [Math.max(DPR, Math.min(2, DPR * 1.6)), Math.max(DPR, 1.5)] };
+// 07/10 (Q5 D1, ele: "quero mais fluido, mas tambem nitidez"): a girar sozinha comeca NITIDA (ao DPR) e a escada so desce a 1,0
+// se os quadros abrandarem; a arrastar continua a 1,0 (ai manda a fluidez)
+const PR = { interaccao: [1, 1], vivo: [DPR, 1], repouso: [Math.max(DPR, Math.min(2, DPR * 1.6)), Math.max(DPR, 1.5)] };
 const CADENCIA = { interaccao: 0, vivo: 0, repouso: 160 };   // 05/10 (Q4 D1): vivo = todos os quadros do ecra (era 30/s; 20 a girar sozinha)
 const degrau = { interaccao: 0, vivo: 0, repouso: 0 };
 let modoQ = 'vivo', modoDesde = 0, prPedido = 0, msQuadro = 33, custos = [], intervalos = [], ultQ = 0, desenhadosN = 0, msDesenho = [], cadPedida = 33.3;
