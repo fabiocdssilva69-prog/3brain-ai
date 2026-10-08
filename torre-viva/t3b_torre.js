@@ -267,14 +267,17 @@ function climaPeloMercado(T) {
 function passoClima(dt) {
   if (!CLIMA.chuva) return false; let mexe = false;
   const mc = CLIMA.chuva.material, ms = CLIMA.sol.material;
-  const I = CLIMA.I || 0, aC = CLIMA.modo === 'chuva' ? 0.35 + 0.55 * I : 0, aS = CLIMA.modo === 'sol' ? (noite ? 0.06 + 0.12 * I : 0.3 + 0.55 * I) : 0;
+  // 07/10 (ele: "o escritorio de perto ficou bugado"): a chuva (agora mais densa e rapida) caia DENTRO do escritorio e os relampagos
+  // clareavam a cena - o clima e da vista de fora: dentro de um andar/escritorio (nivel >= 2) tudo se apaga devagar e volta ao sair
+  const fora = nivel < 2, I = fora ? (CLIMA.I || 0) : 0;
+  const aC = fora && CLIMA.modo === 'chuva' ? 0.35 + 0.55 * I : 0, aS = fora && CLIMA.modo === 'sol' ? (noite ? 0.06 + 0.12 * I : 0.3 + 0.55 * I) : 0;
   if (CLIMA.raios) {                                                      // (Q5 C2) raios, calor e relampagos pela forca
     const mr = CLIMA.raios.material, mq = CLIMA.calor.material, ml = CLIMA.relampago.material;
-    const aR = CLIMA.modo === 'sol' && I > 0.25 ? (noite ? 0.04 : 0.5 * I) : 0, aQ = CLIMA.modo === 'sol' && !noite ? 0.32 * I : 0;
+    const aR = fora && CLIMA.modo === 'sol' && I > 0.25 ? (noite ? 0.04 : 0.5 * I) : 0, aQ = fora && CLIMA.modo === 'sol' && !noite ? 0.32 * I : 0;
     mr.opacity += (aR - mr.opacity) * Math.min(1, dt * 1.2); mq.opacity += (aQ - mq.opacity) * Math.min(1, dt * 1.0); mr.rotation += dt * (0.04 + 0.08 * I);
     CLIMA.raios.visible = mr.opacity > 0.01; CLIMA.calor.visible = mq.opacity > 0.01;
     CLIMA.sol.scale.setScalar(220 + 180 * (CLIMA.modo === 'sol' ? I : 0));
-    if (CLIMA.modo === 'chuva' && I > 0.55) { CLIMA.proxFlash -= dt; if (CLIMA.proxFlash <= 0) { ml.opacity = 0.75 + 0.25 * Math.random(); CLIMA.proxFlash = 3 + Math.random() * 6; } }
+    if (fora && CLIMA.modo === 'chuva' && I > 0.55) { CLIMA.proxFlash -= dt; if (CLIMA.proxFlash <= 0) { ml.opacity = 0.75 + 0.25 * Math.random(); CLIMA.proxFlash = 3 + Math.random() * 6; } }
     ml.opacity = Math.max(0, ml.opacity - dt * 5); CLIMA.relampago.visible = ml.opacity > 0.01;
     if (CLIMA.raios.visible || CLIMA.relampago.visible) mexe = true;
   }
@@ -1152,7 +1155,6 @@ function nivelPelaDistancia() {
   if (torre.letreiro) { torre.letreiro.grupo.getWorldPosition(_esf.center); _esf.radius = 48; letreiroNaVista = _fr.intersectsSphere(_esf); }
   torre.inst.halos.material.opacity = 0.14 + 0.42 * LED.perto;
   const oj = Math.max(0.45, THREE.MathUtils.clamp((340 - dc) / 180, 0, 1));   // 07/10 (Q5 D3): as luzes dos andares tambem de LONGE
-  const agJ = performance.now(); if (torre.inst.luz.visible && agJ - (torre.inst.ultJanelas || 0) > 1000) { torre.inst.ultJanelas = agJ; pintarJanelas(); }   // seguem a actividade
   if (Math.abs(torre.inst.matLuz.opacity - oj) > 0.01) { torre.inst.matLuz.opacity = oj; torre.inst.luz.visible = oj > 0.01; if (torre.inst.luz.visible) pintarJanelas(); precisaDesenhar = true; }
 }
 
