@@ -179,6 +179,7 @@
   function aplicarVivo(d) {
     if (!d || d.seq == null) return;
     if (d.seq < E.vivoSeq) E.vivoSeq = 0;                     // o servidor reiniciou: o anel e outro
+    var historia = !E.vivoSeq;                                // a 1.a leitura traz os ultimos 60 (passado): nao e um enxame de agora
     var evs = lista(d.eventos).filter(function (e) { return e.s > E.vivoSeq; });
     E.vivoSeq = d.seq;
     E.ritmo = { n: d.ritmo_60s || 0, quem: d.quem_60s || 0, porAndar: obj(d.por_andar_60s), agora: d.agora };
@@ -190,8 +191,23 @@
       E.eventos.push(e); desdeAbriu.n++; desdeAbriu.ids[e.id] = 1;
     });
     if (E.eventos.length > 400) E.eventos.splice(0, E.eventos.length - 400);
-    if (evs.length) { filaDeCartoes(evs); T3B.emit('eventos', evs); }
+    if (evs.length) {
+      if (historia) { evs.forEach(function (e) { e.historia = true; }); filaDeCartoes(evs); T3B.emit('eventos', evs); }
+      else repetirNoRitmo(evs);
+    }
     T3B.emit('ritmo', E.ritmo);
+  }
+  // 08/10 (OBRA 11, ele: "tem que ta tudo sincronizado"): o lote do /vivo.json chega de 1 em 1 s (de 15 em 15 s na copia publica);
+  // cada SEGUNDO do lote sai a sua hora relativa - o coracao, o vortex, os cartoes, os hologramas e o chat recebem o MESMO grupo no
+  // MESMO instante, ao ritmo real da torre (o que aconteceu no mesmo segundo sai junto: e o enxame)
+  function repetirNoRitmo(evs) {
+    var grupos = [], porT = {}, m0 = Infinity, teto = (window.T3B_PUBLICADO ? 15000 : 1000) - 100;
+    evs.forEach(function (e) { var k = String(e.t || ''); if (!porT[k]) { porT[k] = []; grupos.push(porT[k]); } porT[k].push(e); if (e.ms && e.ms < m0) m0 = e.ms; });
+    grupos.forEach(function (g) {
+      var atraso = isFinite(m0) && g[0].ms ? Math.min(teto, Math.max(0, g[0].ms - m0)) : 0;
+      var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); };
+      if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
+    });
   }
 
   // A QUEM SE DA UM NUMERO QUE MUDOU: a quem produz o ficheiro de onde ele vem. Vence o candidato que escreveu mais
