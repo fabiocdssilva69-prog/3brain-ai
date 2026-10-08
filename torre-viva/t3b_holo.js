@@ -1359,9 +1359,13 @@
       // inteira e devagar a volta do seu centro (mais depressa quando os genes dela calculam) e respira um pouco
       LAB.giro = LAB.giro || {};
       GRUPOS.forEach(function (g, gi) { LAB.giro[gi] = (LAB.giro[gi] || 0) + (calmo ? 0 : dt * (0.035 + 0.3 * Math.min(1, LAB.nuvem[gi] || 0))); });
+      // 07/10 (Q5 B6, ele: "a animacao e fluidez como o card de exemplo 'os labs em orbita'"): as nuvens ficam, mas cada gene tem
+      // a SUA orbita (os de dentro mais depressa, como planetas), e o que calcula ACELERA e acende; os robustos a ouro
       LAB.est.forEach(function (st) {
         var c = CS[st.g], gr = LAB.giro[st.g] || 0, resp = 1 + 0.03 * Math.sin(t * 0.7 + st.g);
-        st.x = c.x + Math.cos(st.ang + gr) * st.raio * c.R * resp; st.y = c.y + Math.sin(st.ang + gr) * st.raio * c.R * 0.7 * resp;
+        if (st.ow == null) st.ow = (0.1 + 0.38 * (1 - Math.min(1, st.raio))) * (U.semente(String(st.k)) % 2 ? 1 : 0.82);
+        st.fase = (st.fase || 0) + (calmo ? 0 : dt * (st.ow * (0.45 + 0.55 * base) + 1.8 * st.luz));
+        st.x = c.x + Math.cos(st.ang + gr + st.fase) * st.raio * c.R * resp; st.y = c.y + Math.sin(st.ang + gr + st.fase) * st.raio * c.R * 0.7 * resp;
         st.luz *= Math.pow(0.45, dt);
       });
       // as nuvens: o brilho de cada uma (acende com os calculos dos seus genes) e as ligacoes
@@ -1372,8 +1376,10 @@
       porG.forEach(function (arr, gi) {
         if (!arr.length) return;
         ctx.strokeStyle = 'rgba(242,194,48,' + (0.1 + 0.32 * Math.min(1, LAB.nuvem[gi] || 0) + 0.05 * Math.sin(t * 0.8 + gi)).toFixed(3) + ')';
-        ctx.beginPath(); for (var i = 0; i < arr.length; i += 2) { ctx.moveTo(arr[i].x, arr[i].y); ctx.lineTo(arr[i + 1].x, arr[i + 1].y); } ctx.stroke();
+        var lim2 = CS[gi].R * CS[gi].R * 0.3;                              // (Q5 B6) a ligacao que estica demais com as orbitas apaga-se
+        ctx.beginPath(); for (var i = 0; i < arr.length; i += 2) { var ddx = arr[i].x - arr[i + 1].x, ddy = arr[i].y - arr[i + 1].y; if (ddx * ddx + ddy * ddy > lim2) continue; ctx.moveTo(arr[i].x, arr[i].y); ctx.lineTo(arr[i + 1].x, arr[i + 1].y); } ctx.stroke();
         if ((LAB.nuvem[gi] || 0) > 0.05) luz(ctx, C.ouro, CS[gi].x, CS[gi].y, CS[gi].R * 0.9, 0.22 * LAB.nuvem[gi]);
+        luz(ctx, '#ffdc6a', CS[gi].x, CS[gi].y, 4 + 3 * Math.min(1, LAB.nuvem[gi] || 0) + Math.sin(t * 1.3 + gi), 0.35 + 0.45 * Math.min(1, LAB.nuvem[gi] || 0));   // o nucleo do lab
       });
       ctx.lineWidth = 1;
       // os genes: primeiro os brilhos todos de uma vez (um so modo de mistura), depois os pontos
