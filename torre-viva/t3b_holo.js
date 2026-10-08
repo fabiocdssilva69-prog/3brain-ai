@@ -1528,15 +1528,16 @@
       });
       arrumarEtiquetas(ctx, 'globo', etq, w, h);
       if (G.leg) {                     // a legenda: sigla, nome do pais, bolsa; verde = pregao aberto agora
-        var passo = Math.max(9, Math.min(13, (h - TOPO - 22) / MERCADOS.length));
+        // 07/10: num cartao baixo as 8 linhas tapavam a linha da cripto - o passo e a letra cabem na altura (a cripto foi para a direita)
+        var passo = Math.max(7, Math.min(13, (h - TOPO - 14) / MERCADOS.length)), tamL = Math.min(7.5, passo - 0.8);
         MERCADOS.forEach(function (m, i) {
           var ab = aberta(m, horaLocal(m[2])), y = TOPO + 12 + i * passo;
           ctx.fillStyle = ab ? C.ok : 'rgba(212,175,55,.55)'; ctx.beginPath(); ctx.arc(8, y - 3, 2.2, 0, TAU); ctx.fill();
-          rot(ctx, m[0] + ' ' + NOME_PAIS[m[0]] + ' · ' + m[1], 14, y, ab ? '#b6f5da' : C.mute, 7.5, 'left', ab ? 700 : 500);
+          rot(ctx, m[0] + ' ' + NOME_PAIS[m[0]] + ' · ' + m[1], 14, y, ab ? '#b6f5da' : C.mute, tamL, 'left', ab ? 700 : 500);
         });
       }
       var cr = horaLocal('UTC');
-      rot(ctx, '₿ cripto 24 h · ' + cr.txt + ' UTC', 6, h - 4, C.mute, 7.5, 'left', 600);
+      rot(ctx, '₿ cripto 24 h · ' + cr.txt + ' UTC', G.leg ? w - 6 : 6, h - 4, C.mute, 7.5, G.leg ? 'right' : 'left', 600);
       if (s.desenhos % 60 === 0) {
         var abertas = MERCADOS.filter(function (m) { return aberta(m, horaLocal(m[2])); }).map(function (m) { return m[1]; });
         mini('hm_globo', [['abertas', abertas.length ? abertas.join(' · ') : 'nenhuma'], ['NY', horaLocal('America/New_York').txt.slice(0, 5)], ['B3', horaLocal('America/Sao_Paulo').txt.slice(0, 5)]]);
