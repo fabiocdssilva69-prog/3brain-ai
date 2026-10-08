@@ -917,3 +917,6 @@ nav.dir .car-orig, nav.dir .car-copia { gap: 6px; padding-right: 6px; }
 
 /* 07/10: a sonda mediu o carrossel do cabecalho a tapar 12 px dos numeros da casa (hud_car x casa, 366x12) */
 .casa { margin-top: 34px; }
+
+/* 07/10: a sonda (tamanho telemovel) mediu o carrossel do cabecalho a tapar 22 px da fita dos precos - so nos ecras estreitos */
+@media (max-width: 700px) { .fita-cot, .fita-cot.topo { top: 52px; } }
