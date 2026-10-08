@@ -909,3 +909,8 @@ nav.dir .car-orig, nav.dir .car-copia { gap: 6px; padding-right: 6px; }
 #h_numeros .odlinha { display: flex; align-items: center; justify-content: center; gap: 10px; }
 #h_numeros .od-rot { font: 700 10px/1.2 system-ui, sans-serif; letter-spacing: .07em; text-transform: uppercase; color: #ffdc6a;
   max-width: 86px; text-align: left; opacity: .92; }
+
+/* 07/10 (Q5 C1): os cartoes mudam de lugar pelo titulo */
+.holo .ht[draggable="true"] { cursor: grab; }
+.holo.a-mover { opacity: .55; }
+.holo.alvo-mover { outline: 1px dashed rgba(242, 194, 48, .85); outline-offset: -2px; }
