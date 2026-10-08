@@ -305,7 +305,7 @@
     LT.forEach(function (x) { if (x[1] > enx) enx = x[1]; });
     U.txt($('nu_kn'), evm + ' eventos/min');
     // 08/10 (OBRA 11): o vortex passou a ser CADA evento (um ponto cada); as passagens continuam (os fios)
-    if (leg) leg.innerHTML = '<i><b>' + evm + '</b> eventos no último minuto · cada um é um ponto</i><i>maior enxame: <b>' + enx + '</b> ao mesmo tempo · ' + pm + ' passagens</i><i>' + (r.quem || 0) + ' funcionários mexeram</i>' +
+    if (leg) leg.innerHTML = '<i><b>' + evm + '</b> eventos/min · 1 ponto cada</i><i>maior enxame <b>' + enx + '</b> · ' + pm + ' passagens</i><i>' + (r.quem || 0) + ' funcionários mexeram</i>' +
       (u ? '<i>última: <b>' + U.escH(TX.cortar(TX.limpar(u.k === 'recado' ? (u.de_nome || u.quem || '') + ' → ' + (u.para_nome || u.para_sector || '') : (u.quem || u.id) + (u.para_nome ? ' → ' + u.para_nome : '')), 44)) + '</b></i>' : '');
     mini('hm_nucleo', [['', fmt(evm, 0), 'eventos/min'], ['', fmt(pm, 0), 'passagens/min'], ['', fmt(r.quem || 0, 0), 'funcionários']]);
   }
@@ -550,7 +550,7 @@
       g.strokeStyle = 'rgba(63,214,154,.13)';
       for (var x2 = X0; x2 < w; x2 += 40) { g.beginPath(); g.moveTo(x2 + 0.5, 4); g.lineTo(x2 + 0.5, h - 2); g.stroke(); }
       for (var y = 6; y < h; y += 10) { g.strokeStyle = 'rgba(63,214,154,.06)'; g.beginPath(); g.moveTo(X0, y + 0.5); g.lineTo(w, y + 0.5); g.stroke(); }
-      rot(g, 'BATIDAS/MIN', 8, h - 5, C.dim, 8, 'left', 600);
+      rot(g, 'EVENTOS/MIN', 8, h - 5, C.dim, 8, 'left', 600);
     }
     cenaEcg = cena(cv, { id: 'coracao', bloco: $('bl_coracao'), desenhar: function (ctx, w, h, t, dt, s) {
       var N = Math.max(40, Math.ceil((w - X0) / PASSO) + 2);
