@@ -920,3 +920,10 @@ nav.dir .car-orig, nav.dir .car-copia { gap: 6px; padding-right: 6px; }
 
 /* 07/10: a sonda (tamanho telemovel) mediu o carrossel do cabecalho a tapar 22 px da fita dos precos - so nos ecras estreitos */
 @media (max-width: 700px) { .fita-cot, .fita-cot.topo { top: 52px; } }
+
+/* 07/10 (ele: "o espaco pra enviar mensagem no chat nao aparece mais"): a caixa nunca sai do ecra - o chat e uma coluna flexivel com a
+   caixa sempre no fim, e nos ecras baixos (o dele: 690 px uteis) o vortex e a S.H.I.E.L.D. encolhem para lhe dar lugar */
+.bl.chat { display: flex; flex-direction: column; min-height: 150px; }
+.bl.chat .chat-lista { flex: 1 1 0; min-height: 0; }
+.chat-caixa { flex: 0 0 auto; position: relative; z-index: 2; }
+@media (max-height: 760px) { .bl.nucleo { flex-basis: 196px; } .bl.anel { flex-basis: 172px; } }
