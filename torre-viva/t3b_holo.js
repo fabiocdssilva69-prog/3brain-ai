@@ -257,6 +257,15 @@
   var GIRO_BASE = 0.4;            // a espiral nunca para (rad/s por unidade de velocidade de cada particula)
   for (var iv = 0; iv < 600; iv++) { var sv = U.semente('v' + iv); NUC.p.push({ a: (sv % 6283) / 1000, y: ((sv >> 3) % 2000) / 1000 - 1, r: 0.2 + ((sv >> 7) % 800) / 1000, v: 0.4 + ((sv >> 11) % 800) / 1000, b: (sv >> 5) % 8, f: ((sv >> 13) % 628) / 100 }); }
   function yDoAndar(n) { n = Number(n); return isFinite(n) ? clamp(1 - (n - 1) / 58 * 2, -1, 1) : 0.8; }
+  // 07/10 (Q5 B7, ele: "ela tem que reagir a cada pulso da torre... igual o coracao, cada pontinho brilha no momento em que reage e
+  // com a cor do setor; a cada pulso tem que pulsar o nome do setor no coracao; esses 2 cards interligados e sincronizados"):
+  // UMA lista de pulsos partilhada - o coracao escreve-a a cada batida, o vortex e o coracao desenham-na pela mesma hora
+  var PULSOS = [];
+  function pulsoDe(ev) {
+    var n = ev && ev.andar != null && isFinite(Number(ev.andar)) ? Number(ev.andar) : null, an = n != null && T3B.andar ? T3B.andar(n) : null;
+    var div = n != null && U.divisaoDoAndar ? U.divisaoDoAndar(n) : '', nome = TX.limpar((an && (an.sector || an.nome)) || div || '');
+    return { n: n, t: agoraMs(), cor: n != null && U.corDoAndar ? U.corDoAndar(n) : '#9cc8ff', nome: nome ? (div && nome !== div ? div + ' · ' + nome : nome) + (n != null ? ' · and. ' + n : '') : '' };
+  }
   aoReagir('vortex', function (ev, r) {
     var tipo = ev.k === 'visita' ? 'visita' : ev.k === 'recado' ? 'recado' : (ev.k === 'escreveu' || ev.k === 'mudou') ? 'dados' : 'resposta';
     if (NUC.fios.length < 24) NUC.fios.push({ de: yDoAndar(r.de != null ? r.de : ev.andar), para: yDoAndar(r.para != null ? r.para : (ev.para != null ? ev.para : 59)), a0: (U.semente(String(ev.s) + ev.id) % 6283) / 1000, t: 0, cor: COR_NUC[tipo] });
@@ -298,11 +307,21 @@
         var yy0 = p.y + 0.025 * Math.sin(t * 0.9 + p.f);                       // cada particula ondula um pouco (natural)
         var r2 = p.r * (1 - Math.abs(yy0) * 0.55) * S * resp, x = Math.cos(p.a) * r2, z = Math.sin(p.a) * r2, y = yy0 * S * 0.9 + z * 0.25;
         var k = Math.min(7, Math.max(0, Math.floor(((z / S + 1) / 2) * 8))); buckets[k].push(cx + x, cy + y);
+        p.sx = cx + x; p.sy = cy + y;                                           // (Q5 B7) para o pulso acender este ponto
       }
       for (var bq = 0; bq < 8; bq++) {
         var kk = 0.6 + 0.4 * (bq + 0.5) / 8, arr = buckets[bq], sz = 1.5 * kk;
         ctx.fillStyle = 'rgba(96,165,250,' + (0.2 + kk * 0.6 * br).toFixed(3) + ')';
         for (var j = 0; j < arr.length; j += 2) ctx.fillRect(arr[j], arr[j + 1], sz, sz);
+      }
+      // (Q5 B7) cada pulso da torre: os pontos a altura do andar acendem na COR DO SECTOR, no mesmo instante da batida do coracao
+      var agP = agoraMs();
+      for (var ip = PULSOS.length - 1; ip >= 0; ip--) {
+        var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > 1.4) break; if (pu.n == null) continue;
+        var yA = yDoAndar(pu.n), fP = 1 - idP / 1.4;
+        ctx.fillStyle = pu.cor; ctx.globalAlpha = Math.min(1, 0.35 + fP);
+        for (var ia = 0; ia < NUC.p.length; ia++) { var pa = NUC.p[ia]; if (pa.sx != null && Math.abs(pa.y - yA) < 0.08) ctx.fillRect(pa.sx - 0.6, pa.sy - 0.6, 2.6, 2.6); }
+        ctx.globalAlpha = 1; luz(ctx, pu.cor, cx, cy + yA * S * 0.9, 8 + 10 * fP, 0.45 * fP);
       }
       // os FIOS das passagens: um cordao de particulas que desce/sobe a espiral do andar de quem envia ao de quem recebe
       for (var f = NUC.fios.length - 1; f >= 0; f--) {
@@ -473,6 +492,7 @@
     var f = clamp(r.forca || 0.5, 0.2, 1) * (ev.k === 'batimento' ? 1.4 : 1);
     if (ECG.fila.length < 300) { if (ECG.fila.length) ECG.fila.push(0, 0); PQRST.forEach(function (v) { ECG.fila.push(v * f); }); }
     ECG.bat.push(Date.now()); ECG.ultimo = agoraMs(); ECG.n++;
+    PULSOS.push(pulsoDe(ev)); if (PULSOS.length > 40) PULSOS.shift();          // (Q5 B7) o pulso que o vortex tambem desenha
   });
   EXTRA.coracao = function () { return { batidas: ECG.n, na_fila: ECG.fila.length, bpm: ECG.bat.length }; };
   var cenaEcg = null;
@@ -517,6 +537,8 @@
       var bt = clamp(1 - (agoraMs() - ECG.ultimo) / 380, 0, 1), esc = 1 + 0.22 * bt;
       rot(ctx, String(ECG.bat.length), 8, h * 0.5 + 6, 'rgb(' + RGB3[estado] + ')', 20, 'left', 700);
       rot(ctx, ['calmo', 'activo', 'acelerado'][estado], 46, h * 0.5 + 5, 'rgba(' + RGB3[estado] + ',.85)', 7.5, 'left', 600);
+      var ulP = PULSOS[PULSOS.length - 1];                                     // (Q5 B7) o nome do sector pulsa a cada batida
+      if (ulP && ulP.nome) { var idU = (agoraMs() - ulP.t) / 1000; if (idU < 2.2) { ctx.globalAlpha = 1 - idU / 2.2; rot(ctx, TX.cortar(ulP.nome, 26), 8, h * 0.5 + 20, ulP.cor, 8 + 2.5 * Math.max(0, 1 - idU * 3), 'left', 700); ctx.globalAlpha = 1; } }
       var hx = 70, hy = h * 0.5 - 2, hs = 5.2 * esc;
       ctx.fillStyle = bt > 0.05 ? '#ff7b7f' : 'rgba(255,90,95,.75)';
       ctx.beginPath(); ctx.moveTo(hx, hy + hs * 0.9); ctx.bezierCurveTo(hx - hs * 1.6, hy - hs * 0.2, hx - hs * 0.6, hy - hs * 1.3, hx, hy - hs * 0.45); ctx.bezierCurveTo(hx + hs * 0.6, hy - hs * 1.3, hx + hs * 1.6, hy - hs * 0.2, hx, hy + hs * 0.9); ctx.fill();
