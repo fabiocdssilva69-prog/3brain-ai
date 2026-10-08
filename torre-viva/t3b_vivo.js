@@ -730,16 +730,32 @@
     }
     velhos.reverse().forEach(function (v) { ocupar(v.id, v.ultimoEv, true); });
   }
+  // 08/10 (OBRA 11, ele: "cada acao... o seu responsavel tem que PISCAR ali nos cartoes; tem que ta tudo sincronizado"): a fila ja
+  // nao deita fora ninguem (era 60) e anda ao ritmo do que chega - em cada passo acende varios (um enxame acende varios cartoes ao
+  // mesmo tempo), nunca mais de ~1,5 s atras do vortex e do coracao. Quem FALA vai a frente: o cartao acende com a mensagem no chat.
   function filaDeCartoes(evs) {
-    evs.forEach(function (e) { if (e && e.id && e.id !== 'ele' && !(e.k === 'recado' && e.chat)) fila.push(e); });   // 'ele' = o dono a perguntar no chat: nao e um funcionario
-    if (fila.length > 60) fila.splice(0, fila.length - 60);
+    var frente = [];
+    evs.forEach(function (e) { if (e && e.id && e.id !== 'ele' && !(e.k === 'recado' && e.chat)) ((e.k === 'falou' || e.k === 'recado') ? frente : fila).push(e); });   // 'ele' = o dono a perguntar no chat: nao e um funcionario
+    if (frente.length) fila = frente.concat(fila);
+    if (fila.length > 400) fila.splice(frente.length, fila.length - 400);
+    T3B.estado.sync = T3B.estado.sync || { eventos: 0, cartoes: 0, leitores: 0 }; T3B.estado.sync.eventos += evs.length;
     if (!filaT) correrFila();
   }
   function correrFila() {
     if (!fila.length) { filaT = null; return; }
-    var e = fila.shift();
-    ocupar(e.id, e, false);
-    filaT = setTimeout(correrFila, fila.length > 20 ? 90 : 250);
+    var k = Math.max(1, Math.ceil(fila.length / 6));
+    for (var i = 0; i < k && fila.length; i++) { var e = fila.shift(); ocupar(e.id, e, false); leitores(e); T3B.estado.sync.cartoes++; }
+    filaT = setTimeout(correrFila, 160);
+  }
+  // quem LE o que este escreveu (o 'le' do registo: para_ids) e ja tem cartao no ecra acende-o a AZUL no mesmo instante - nao toma o
+  // lugar a ninguem (nao foi ele que agiu: recebeu)
+  function leitores(e) {
+    if (calmo || !e || !e.para_ids || !e.para_ids.length) return;
+    e.para_ids.forEach(function (pid) {
+      var l = porId[pid]; if (!l || pid === e.id || !l.el.animate) return;
+      l.el.animate([{ boxShadow: '0 0 0 1px rgba(45,212,232,.95), 0 0 16px rgba(45,212,232,.6)' }, { boxShadow: '0 0 0 1px rgba(45,212,232,0), 0 0 0 rgba(45,212,232,0)' }], { duration: 1300, easing: 'ease-out' });
+      T3B.estado.sync.leitores++;
+    });
   }
   function ocupar(id, e, semAnimar) {
     if (!lugares.length) montarLugares();
