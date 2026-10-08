@@ -27,6 +27,13 @@
   function fonte(peso, tam) { var k = (peso || 600) + '|' + (tam || 9); return FONTES[k] || (FONTES[k] = TX.fonteCanvas(peso || 600, tam || 9)); }
   // (o ctx guarda a ultima fonte: interpretar a fonte - com a lista de recurso - a cada texto era 2,5% do fio principal)
   function rot(ctx, t, x, y, cor, tam, al, peso) { var f = fonte(peso, tam); if (ctx._f !== f) { ctx.font = f; ctx._f = f; } ctx.fillStyle = cor; ctx.textAlign = al || 'left'; ctx.fillText(t, x, y); }
+  // 07/10 (ele: "as informacoes no card do sr stark estao se sobrepondo... quero mostrar tudo"): o texto cabe na largura dada -
+  // se nao couber, a letra encolhe (ate 6 px) em vez de cortar ou tapar o vizinho
+  function rotCabe(ctx, t, x, y, cor, tam, al, peso, maxW) {
+    var f = fonte(peso, tam); if (ctx._f !== f) { ctx.font = f; ctx._f = f; }
+    var lw = ctx.measureText(String(t)).width;
+    rot(ctx, t, x, y, cor, lw > maxW && maxW > 0 ? Math.max(6, tam * maxW / lw) : tam, al, peso);
+  }
   function rr(ctx, x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
   function lerp(a, b, k) { return a + (b - a) * k; }
   function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
@@ -264,7 +271,7 @@
   function pulsoDe(ev) {
     var n = ev && ev.andar != null && isFinite(Number(ev.andar)) ? Number(ev.andar) : null, an = n != null && T3B.andar ? T3B.andar(n) : null;
     var div = n != null && U.divisaoDoAndar ? U.divisaoDoAndar(n) : '', nome = TX.limpar((an && (an.sector || an.nome)) || div || '');
-    return { n: n, t: agoraMs(), cor: n != null && U.corDoAndar ? U.corDoAndar(n) : '#9cc8ff', nome: nome ? (div && nome !== div ? div + ' · ' + nome : nome) + (n != null ? ' · and. ' + n : '') : '' };
+    return { n: n, t: agoraMs(), cor: n != null && U.corDoAndar ? U.corDoAndar(n) : '#ffdc6a', nome: nome ? (div && nome !== div ? div + ' · ' + nome : nome) + (n != null ? ' · and. ' + n : '') : '' };
   }
   aoReagir('vortex', function (ev, r) {
     var tipo = ev.k === 'visita' ? 'visita' : ev.k === 'recado' ? 'recado' : (ev.k === 'escreveu' || ev.k === 'mudou') ? 'dados' : 'resposta';
@@ -298,7 +305,12 @@
       // o giro segue o alvo (o empurrao das passagens desfaz-se em ~4 s ate ao ritmo do ultimo minuto)
       NUC.giroAlvo = seguir(NUC.giroAlvo, NUC.giroMinuto || GIRO_BASE, 0.25, dt);
       NUC.giro = calmo ? 0 : seguir(NUC.giro, NUC.giroAlvo, 1.6, dt);
-      var cx = w / 2, cy = h / 2, S = Math.min(w, h) * 0.44, giro = NUC.giro, br = NUC.brilho, resp = 1 + 0.035 * Math.sin(t * 0.7);
+      // 07/10 (ele: "o vortex nao ta pulsando igual o coracao... e pra cada acao e reacao da torre em tempo real"): o vortex BATE
+      // a cada pulso, como o coracao - expande, acende e acalma em ~0,3 s, mais forte quanto mais forte o evento
+      for (var ib = PULSOS.length - 1; ib >= 0 && PULSOS[ib].t > (NUC.ultPulso || 0); ib--) NUC.bate = Math.min(1.3, (NUC.bate || 0) + 0.55 * (PULSOS[ib].f || 0.6));
+      if (PULSOS.length) NUC.ultPulso = PULSOS[PULSOS.length - 1].t;
+      NUC.bate = (NUC.bate || 0) * Math.pow(0.015, dt);
+      var cx = w / 2, cy = h / 2, S = Math.min(w, h) * 0.44, giro = NUC.giro, br = Math.min(1.25, NUC.brilho + 0.45 * NUC.bate), resp = 1 + 0.035 * Math.sin(t * 0.7) + 0.1 * NUC.bate;
       NUC.ouro *= Math.pow(0.3, dt);
       for (var q = 0; q < 8; q++) buckets[q].length = 0;
       // D.vortex, linha a linha: x = cos(a)*r, z = sin(a)*r, y = p.y*S*.9 + z*.25 - agrupado em 8 brilhos (8 cores por quadro, nao 600)
@@ -317,8 +329,8 @@
       // (Q5 B7) cada pulso da torre: os pontos a altura do andar acendem na COR DO SECTOR, no mesmo instante da batida do coracao
       var agP = agoraMs();
       for (var ip = PULSOS.length - 1; ip >= 0; ip--) {
-        var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > 1.4) break; if (pu.n == null) continue;
-        var yA = yDoAndar(pu.n), fP = 1 - idP / 1.4;
+        var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > 1.4) break;
+        var yA = pu.n != null ? yDoAndar(pu.n) : ((pu.t * 0.0137) % 2) - 1, fP = 1 - idP / 1.4;   // sem andar: uma faixa a ouro
         ctx.fillStyle = pu.cor; ctx.globalAlpha = Math.min(1, 0.35 + fP);
         for (var ia = 0; ia < NUC.p.length; ia++) { var pa = NUC.p[ia]; if (pa.sx != null && Math.abs(pa.y - yA) < 0.08) ctx.fillRect(pa.sx - 0.6, pa.sy - 0.6, 2.6, 2.6); }
         ctx.globalAlpha = 1; luz(ctx, pu.cor, cx, cy + yA * S * 0.9, 8 + 10 * fP, 0.45 * fP);
@@ -339,6 +351,7 @@
       ctx.globalAlpha = 1;
       // o nucleo: respira sempre; as visitas da S.H.I.E.L.D. fazem-no brilhar a ouro
       luz(ctx, '#9cc8ff', cx, cy, 10 + 3 * Math.sin(t * 1.3), 0.35 + 0.15 * br);
+      if (NUC.bate > 0.03) luz(ctx, '#ffffff', cx, cy, 10 + 16 * NUC.bate, Math.min(0.85, 0.6 * NUC.bate));   // o nucleo bate
       if (NUC.ouro > 0.02) luz(ctx, '#ffdc6a', cx, cy, 8 + NUC.ouro * 10, Math.min(1, NUC.ouro));
     } });
   })();
@@ -492,7 +505,7 @@
     var f = clamp(r.forca || 0.5, 0.2, 1) * (ev.k === 'batimento' ? 1.4 : 1);
     if (ECG.fila.length < 300) { if (ECG.fila.length) ECG.fila.push(0, 0); PQRST.forEach(function (v) { ECG.fila.push(v * f); }); }
     ECG.bat.push(Date.now()); ECG.ultimo = agoraMs(); ECG.n++;
-    PULSOS.push(pulsoDe(ev)); if (PULSOS.length > 40) PULSOS.shift();          // (Q5 B7) o pulso que o vortex tambem desenha
+    var pz = pulsoDe(ev); pz.f = f; PULSOS.push(pz); if (PULSOS.length > 40) PULSOS.shift();   // (Q5 B7) o pulso que o vortex tambem desenha (com a forca)
   });
   EXTRA.coracao = function () { return { batidas: ECG.n, na_fila: ECG.fila.length, bpm: ECG.bat.length }; };
   var cenaEcg = null;
@@ -723,7 +736,8 @@
     var em = document.querySelector('#h_stark .ht em'); if (em) em.textContent = 'as decisões dele';
     cv.setAttribute('aria-label', 'o Sr. Stark: os olhos acendem quando ele decide; por baixo, a decisão dele');
     var rb = $('h_stark_robo'); if (rb) rb.parentNode.removeChild(rb);           // os 3 robos em HTML sairam (ordem dele)
-    function geo(w, h) { var alto = h - TOPO - 50, r = Math.max(14, Math.min(w * 0.2, alto * 0.42)); return { cx: w / 2, cy: TOPO + 8 + alto * 0.5, r: r }; }
+    // 07/10: o robo abaixo dos dois blocos de cima (que acabam a TOPO+26) e acima das 2 linhas de baixo - deixou de tapar o texto
+    function geo(w, h) { var top0 = TOPO + 30, bot0 = h - 32, r = Math.max(12, Math.min(w * 0.18, (bot0 - top0) * 0.42)); return { cx: w / 2, cy: (top0 + bot0) / 2, r: r }; }
     function corpo(g, w, h) {
       var G = geo(w, h), cx = G.cx, cy = G.cy, r = G.r;
       var ch = g.createRadialGradient(cx, cy + r * 1.25, 0, cx, cy + r * 1.25, r * 1.6); ch.addColorStop(0, 'rgba(242,194,48,.16)'); ch.addColorStop(1, 'rgba(242,194,48,0)');
@@ -761,7 +775,7 @@
       var ST = statsDoStark();
       if (ST.length) {
         var kst = Math.floor(t / 3.5) % ST.length, fs = (t % 3.5) / 3.5, aS = Math.min(1, fs * 8, (1 - fs) * 8);
-        ctx.globalAlpha = aS; rot(ctx, ST[kst][0], 8, TOPO + 10, C.dim, 7.5, 'left', 600); rot(ctx, ST[kst][1], 8, TOPO + 22, ST[kst][2], 10, 'left', 700); ctx.globalAlpha = 1;
+        ctx.globalAlpha = aS; rotCabe(ctx, ST[kst][0], 8, TOPO + 10, C.dim, 7.5, 'left', 600, w / 2 - 14); rotCabe(ctx, ST[kst][1], 8, TOPO + 22, ST[kst][2], 10, 'left', 700, w / 2 - 14); ctx.globalAlpha = 1;
       }
       var fala = t - ROBO.fala < 1.4 || t - ROBO.tf < 1.6, base = (ACT.stark || {}).base || 0;
       ctx.drawImage(camada(s, 'corpo', '', corpo), 0, dy, w, h);
@@ -795,7 +809,7 @@
       var SD = statsDireita();
       if (SD.length) {
         var kd = Math.floor((t + 1.75) / 3.5) % SD.length, fd = ((t + 1.75) % 3.5) / 3.5, aD = Math.min(1, fd * 8, (1 - fd) * 8);
-        ctx.globalAlpha = aD; rot(ctx, SD[kd][0], w - 8, TOPO + 10, C.dim, 7.5, 'right', 600); rot(ctx, SD[kd][1], w - 8, TOPO + 22, SD[kd][2], 10, 'right', 700); ctx.globalAlpha = 1;
+        ctx.globalAlpha = aD; rotCabe(ctx, SD[kd][0], w - 8, TOPO + 10, C.dim, 7.5, 'right', 600, w / 2 - 14); rotCabe(ctx, SD[kd][1], w - 8, TOPO + 22, SD[kd][2], 10, 'right', 700, w / 2 - 14); ctx.globalAlpha = 1;
       }
     } });
   })();
