@@ -71,13 +71,32 @@
       : (est === 0 ? '<path d="M16 29 C16 12 48 12 48 29 L45 23 C38 18 26 18 19 23 Z" fill="' + cab + '"/>'
         : est === 1 ? '<path d="M17 27 C20 11 44 11 47 27 L43 20 L35 16 L28 16 L21 20 Z" fill="' + cab + '"/>'
           : '<path d="M16 30 C16 15 48 15 48 30 L47 31 L17 31 Z" fill="' + cab + '"/>');
+    var oculos = (h >> 9) % 3 === 0, barba = !feminino && (h >> 11) % 4 === 0, brinco = feminino && (h >> 12) % 2 === 0;
+    var gravata = !feminino && (h >> 13) % 2 === 0 ? ['#7a1f2b', '#1f3a6e', '#c9922b', '#2d2d33'][(h >> 14) % 4] : null;
     var d = 'g' + (h % 100000);
     var s = '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><radialGradient id="' + d + '" cx="50%" cy="30%" r="75%"><stop offset="0" stop-color="#1d1a12"/><stop offset="1" stop-color="#0b0b0f"/></radialGradient></defs>' +
       '<rect x="0" y="0" width="64" height="64" fill="url(#' + d + ')"/>' +
-      '<path d="M9 64 C9 51 21 47 32 47 C43 47 55 51 55 64 Z" fill="' + cor + '" fill-opacity=".9"/>' +
-      '<path d="M26 47 L32 53 L38 47" stroke="#0b0b0f" stroke-opacity=".5" stroke-width="2" fill="none"/>' +
-      '<rect x="18" y="15" width="28" height="30" rx="12" fill="' + pele + '"/>' + cabelo +
-      '<rect x="24" y="29" width="4" height="5" rx="1.5" fill="#111"/><rect x="36" y="29" width="4" height="5" rx="1.5" fill="#111"/>' +
+      // 07/10 (Q5 C3, av_busto: "gola, oculos, mais detalhe no rosto"): busto - casaco na cor da divisao, camisa com gola,
+      // gravata para alguns, pescoco, orelhas, sobrancelhas, olhos com branco e pupila, nariz, bochechas; oculos, barba e brincos
+      // pelo nome (o mesmo funcionario tem sempre a mesma cara)
+      '<path d="M6 64 C6 50 19 45 32 45 C45 45 58 50 58 64 Z" fill="' + cor + '" fill-opacity=".92"/>' +
+      '<path d="M25 46 L32 57 L39 46 Z" fill="#f3f1ea"/>' +
+      '<path d="M25 46 L29.5 52 L23.5 57 Z M39 46 L34.5 52 L40.5 57 Z" fill="' + cor + '" stroke="#000" stroke-opacity=".35" stroke-width=".8"/>' +
+      (gravata ? '<path d="M31 51 L33 51 L34.2 58 L32 61 L29.8 58 Z" fill="' + gravata + '"/>' : '') +
+      '<rect x="28" y="39" width="8" height="9" rx="2" fill="' + pele + '"/><rect x="28" y="39" width="8" height="3" fill="#000" fill-opacity=".12"/>' +
+      '<ellipse cx="18" cy="31" rx="2.3" ry="3.6" fill="' + pele + '"/><ellipse cx="46" cy="31" rx="2.3" ry="3.6" fill="' + pele + '"/>' +
+      '<rect x="18" y="14" width="28" height="31" rx="13" fill="' + pele + '"/>' + cabelo +
+      (brinco ? '<circle cx="17.6" cy="35.4" r="1.2" fill="#f2c230"/><circle cx="46.4" cy="35.4" r="1.2" fill="#f2c230"/>' : '') +
+      '<path d="M23 27.2 Q26 25.6 29 27 M35 27 Q38 25.6 41 27.2" stroke="' + cab + '" stroke-width="1.4" fill="none" stroke-linecap="round"/>' +
+      '<ellipse cx="26" cy="31" rx="2.6" ry="1.9" fill="#fbfaf6"/><ellipse cx="38" cy="31" rx="2.6" ry="1.9" fill="#fbfaf6"/>' +
+      '<circle cx="26.4" cy="31.2" r="1.3" fill="#1d1a17"/><circle cx="38.4" cy="31.2" r="1.3" fill="#1d1a17"/>' +
+      '<circle cx="26.9" cy="30.7" r=".4" fill="#fff"/><circle cx="38.9" cy="30.7" r=".4" fill="#fff"/>' +
+      (oculos ? '<rect x="22.4" y="28.4" width="7.2" height="5.4" rx="2" fill="#fff" fill-opacity=".08" stroke="#1b1b22" stroke-width="1.2"/>' +
+        '<rect x="34.4" y="28.4" width="7.2" height="5.4" rx="2" fill="#fff" fill-opacity=".08" stroke="#1b1b22" stroke-width="1.2"/>' +
+        '<path d="M29.6 30.6 L34.4 30.6" stroke="#1b1b22" stroke-width="1.1"/>' : '') +
+      '<path d="M32 31.5 Q30.8 35.2 32.6 36" stroke="#000" stroke-opacity=".22" stroke-width="1" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="23.6" cy="36.6" r="2" fill="#e98f7a" fill-opacity=".22"/><circle cx="40.4" cy="36.6" r="2" fill="#e98f7a" fill-opacity=".22"/>' +
+      (barba ? '<path d="M20 35 C21.5 46.5 42.5 46.5 44 35 C41 42 23 42 20 35 Z" fill="' + cab + '" fill-opacity=".88"/>' : '') +
       '<path d="M28 39 Q32 41.5 36 39" stroke="#5a3a2a" stroke-width="1.3" fill="none" stroke-linecap="round"/>' +
       (heroi ? '<rect x="1.5" y="1.5" width="61" height="61" rx="9" fill="none" stroke="#f2c230" stroke-width="2.5"/>' : '') +
       '</svg>';
