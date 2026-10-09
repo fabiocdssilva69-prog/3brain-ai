@@ -120,7 +120,7 @@
 
   // ---------------------------------------------------------------- o agendador (um relogio so)
   var FONTES = [
-    { nome: 'vivo', url: function () { return 'vivo.json?desde=' + E.vivoSeq + (document.hidden ? '' : '&vista=1'); }, cada: window.T3B_PUBLICADO ? 15000 : 1000, aplicar: aplicarVivo },   // 05/10: vista=1 liga o modo espectador (mercado/espectador.py)
+    { nome: 'vivo', url: function () { return 'vivo.json?desde=' + E.vivoSeq + (document.hidden ? '' : '&vista=1') + (window.T3B_PUBLICADO ? '&_=' + Math.floor(Date.now() / 15000) : ''); }, cada: window.T3B_PUBLICADO ? 15000 : 1000, aplicar: aplicarVivo },   // 09/10: na copia publica o '&_=' fura a cache de 10 min do site (a mesma fotografia vinha repetida)   // 05/10: vista=1 liga o modo espectador (mercado/espectador.py)
     { nome: 'torre', url: function () { return 'torre.json'; }, cada: 2000, aplicar: aplicarTorre },
     { nome: 'enxame', url: function () { return 'enxame.json'; }, cada: 10000, aplicar: aplicarEnxame },
     { nome: 'estrutura', url: function () { return 'estrutura.json'; }, cada: 60000, aplicar: aplicarEstrutura, primeiro: true },
@@ -192,10 +192,37 @@
     });
     if (E.eventos.length > 400) E.eventos.splice(0, E.eventos.length - 400);
     if (evs.length) {
-      if (historia) { evs.forEach(function (e) { e.historia = true; }); filaDeCartoes(evs); T3B.emit('eventos', evs); }
+      if (window.T3B_PUBLICADO) tocarPublicado(evs, historia);   // 09/10: a copia publica toca em diferido continuo
+      else if (historia) { evs.forEach(function (e) { e.historia = true; }); filaDeCartoes(evs); T3B.emit('eventos', evs); }
       else repetirNoRitmo(evs);
     }
     T3B.emit('ritmo', E.ritmo);
+  }
+  // 09/10 00:3x (ele, a ver a torre-viva no PC-HuntAI: "os hologramas travam e nao sincronizam"). MEDIDO: a fotografia publica
+  // trazia ~2 min de eventos e chegava de ~9 em 9 min; a 1.a leitura era "historia" (nada reagia) e cada lote novo era
+  // comprimido em 15 s - 15 s de movimento a cada 9 min. Agora (com o publicar_torre a juntar os ultimos 12 min): cada evento
+  // sai a hora em que aconteceu MAIS um atraso fixo PUB.D (o relogio diferido). A 1.a leitura toca ja os ultimos 6 min; se uma
+  // fotografia chegar tarde, o atraso estica (nunca encolhe: a ordem mantem-se). A torre no PC (ao vivo) nao muda.
+  var PUB = { D: null }, PUB_ARRANQUE_MS = 6 * 60 * 1000;
+  function tocarPublicado(evs, primeira) {
+    var agora = Date.now(), ok = evs.filter(function (e) { return isFinite(e.ms) && e.ms > 0; });
+    if (!ok.length) return;
+    ok.sort(function (a, b) { return a.ms - b.ms; });
+    var maxMs = ok[ok.length - 1].ms;
+    if (primeira) {                                           // o que e mais velho que a janela de arranque fica como historia
+      var velhos = ok.filter(function (e) { return e.ms < maxMs - PUB_ARRANQUE_MS; });
+      if (velhos.length) { velhos.forEach(function (e) { e.historia = true; }); filaDeCartoes(velhos); T3B.emit('eventos', velhos); }
+      ok = ok.filter(function (e) { return e.ms >= maxMs - PUB_ARRANQUE_MS; });
+      if (!ok.length) return;
+    }
+    if (PUB.D == null || ok[0].ms + PUB.D < agora - 2000) PUB.D = agora - ok[0].ms;
+    var grupos = [], porT = {};
+    ok.forEach(function (e) { var k = String(e.t || ''); if (!porT[k]) { porT[k] = []; grupos.push(porT[k]); } porT[k].push(e); });
+    grupos.forEach(function (g) {
+      var atraso = g[0].ms + PUB.D - agora;
+      var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); };
+      if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
+    });
   }
   // 08/10 (OBRA 11, ele: "tem que ta tudo sincronizado"): o lote do /vivo.json chega de 1 em 1 s (de 15 em 15 s na copia publica);
   // cada SEGUNDO do lote sai a sua hora relativa - o coracao, o vortex, os cartoes, os hologramas e o chat recebem o MESMO grupo no
