@@ -128,10 +128,19 @@
   $('bl_chat').appendChild(aviso);
   function pintarAviso() { aviso.hidden = !novasAbaixo; aviso.textContent = novasAbaixo + ' nova' + (novasAbaixo === 1 ? '' : 's') + ' ↓'; }
 
+  var vistosTexto = {};
   function juntar(m, animar) {
     var chave = m.mid || ('s' + m.s);
     if (vistos[chave]) return;
     vistos[chave] = 1;
+    // 09/10 (ele: "o chat ta bugado varias mensagens repetidas"): um RECADO nao tem id de mensagem (a chave e o numero do evento),
+    // e o mesmo recado (de, para, texto) chegava varias vezes com numeros diferentes. Em 6 h so entra uma vez.
+    if (m.tipo === 'recado') {
+      var ck = 'r|' + (m.de_sector || '') + '|' + (m.para_sector || '') + '|' + String(m.texto || '').slice(0, 160);
+      var msR = m.ms || Date.now(), ja = vistosTexto[ck];
+      if (ja && Math.abs(msR - ja) < 6 * 3600000) return;
+      vistosTexto[ck] = msR;
+    }
     if (m.mid) porMid[m.mid] = m;
     var a = m.autor || {};
     if (a.id || a.titulo) autores[a.id || a.titulo] = { a: a, ms: m.ms };
