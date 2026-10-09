@@ -487,11 +487,10 @@
     if (b) b.title = fmt(censo, 0) + ' funcionários no censo = ' + Object.keys(ce).map(function (k) { return fmt(ce[k], 0) + ' ' + k + (ce[k] === 1 ? '' : 's'); }).join(' + ') +
       '. Destes, ' + (pt.funcionarios || 0) + ' são PROGRAMAS do registo: os que escrevem ficheiros e por isso acendem os cartões ao segundo. Algoritmos e regras trabalham dentro deles.';
     var maus = lista(d.programas).filter(function (p) { return p.estado === 'erro'; });
-    var led = $('b_led'); if (led) led.className = 'led pulsa ' + (maus.length ? 'mau' : 'ok');
     estadoBase = maus.length ? (maus.length + ' em erro: ' + maus.slice(0, 2).map(function (p) { return limpo(p.curto || p.id); }).join(', ')) : 'torre de pé';
     // 05/10 22:xx (ele: "a parte '3 em erro' sai, fica so a luz vermelha quando tiver algum erro e verde quando ok"): o texto saiu do
-    // cabecalho (t3b.css #b_estado); o motivo fica na dica da luz (passar o rato)
-    if (led) led.title = estadoBase + (maus.length > 2 ? ' e mais ' + (maus.length - 2) : '');
+    // cabecalho (t3b.css #b_estado). 09/10: a COR e a dica da luz sao do radar da S.H.I.E.L.D. (t3b_holo.pintarLegendaRadar) - uma
+    // fonte so, para a luz e o radar nunca discordarem.
   }
   var estadoBase = '';
   function pintarHUDTorre(T) {

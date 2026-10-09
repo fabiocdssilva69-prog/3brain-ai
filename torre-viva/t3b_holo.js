@@ -431,6 +431,21 @@
     var leg = $('ra_leg');
     if (leg) leg.innerHTML = '<i><b style="color:' + (ab ? C.mau : C.ok) + '">' + ab + '</b> fora do verde</i><i>volta <b>' + U.escH(RAD.volta || '—') + '</b> do vigia</i>';
     mini('hm_radar', [['', fmt(ab, 0), 'avarias', ab ? 'dn' : 'up'], ['', fmt(RAD.verdes, 0), 'verdes'], ['volta', String(RAD.volta || '…')]]);
+    // 09/10 (ele: "nao ta sincronizado a luz amarela/vermelha/verde com o radar da shield"): a luz do cabecalho sai DAQUI, dos
+    // mesmos pontos do radar (vigia: fora_do_verde + avaria/consertou). Antes vinha dos 'programas em erro' da estrutura
+    // (t3b_vivo.pintarHUDEstrutura: outra fonte, outro ritmo, so verde/vermelho) e discordava do radar.
+    var nv = 0, na = 0, nomes = [];
+    Object.keys(RAD.pontos).forEach(function (id) {
+      var p = RAD.pontos[id]; if (p.ok) return;
+      if (p.sev === 'vermelho') nv++; else na++;
+      if (nomes.length < 4) nomes.push(TX.limpar(TX.nomeDeId(id)));
+    });
+    var led = $('b_led');
+    if (led && (RAD.tBat || Object.keys(RAD.pontos).length || RAD.verdes)) {
+      led.className = 'led pulsa ' + (nv ? 'mau' : na ? 'at' : 'ok');
+      led.title = (nv + na) ? (nv + ' vermelho(s) e ' + na + ' amarelo(s) no radar da S.H.I.E.L.D.: ' + nomes.join(', ') + (nv + na > nomes.length ? '…' : ''))
+        : 'tudo verde no radar da S.H.I.E.L.D. (' + RAD.verdes + ' verdes)';
+    }
   }
   var cenaRadar = null;
   (function () {
