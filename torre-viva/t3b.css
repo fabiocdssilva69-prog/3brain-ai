@@ -932,3 +932,10 @@ nav.dir .car-orig, nav.dir .car-copia { gap: 6px; padding-right: 6px; }
 .bl.coracao { flex: 0 0 104px; } .bl.coracao canvas.cv { height: 78px; }
 @media (max-height: 860px) { .bl.coracao { flex-basis: 92px; } .bl.coracao canvas.cv { height: 66px; } }
 @media (max-height: 740px) { .bl.coracao { flex-basis: 84px; } .bl.coracao canvas.cv { height: 58px; } }
+/* 09/10 (ele: "quero outros modelos do laboratorio, parecidos e com animacoes diferentes"): os botoes 1-6 do cartao do laboratorio */
+.holo .lab-mod { position: absolute; left: 8px; bottom: 4px; z-index: 3; display: flex; gap: 3px; }
+.holo .lab-mod button { font: 600 8.5px/1 var(--f-m); min-width: 15px; padding: 2px 4px; border-radius: 6px; cursor: pointer;
+  border: 1px solid rgba(242, 194, 48, .35); background: rgba(8, 10, 14, .55); color: rgba(242, 194, 48, .85); }
+.holo .lab-mod button:hover { border-color: rgba(242, 194, 48, .7); }
+.holo .lab-mod button.on { background: rgba(242, 194, 48, .25); color: #fff3c4; border-color: rgba(242, 194, 48, .85); }
+.holo.min .lab-mod { display: none; }

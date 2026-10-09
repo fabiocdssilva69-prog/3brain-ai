@@ -1430,6 +1430,152 @@
       });
       LIG = { ver: LAB.ver, w: w, h: h, pares: pares, vivos: GRUPOS.map(function (g, gi) { return LAB.est.filter(function (st) { return st.g === gi && !st.d; }); }) };
     }
+    // 09/10 (ele: "o card de visualizacao do laboratorio ta bugado, quero outros: mais 5 modelos ou ate mais, parecidos mas com
+    // a movimentacao e animacao diferentes"): os MESMOS dados e o mesmo desenho de base (cada ponto = um gene real da amostra do
+    // /labs.json: dourado forte = robusto, cinza = demitido, acende quando calcula; cada lab um nucleo dourado; as bolhas sobem
+    // de quem calcula) com SEIS movimentos. Escolhe-se nos botoes 1-6 do cartao e fica guardado neste navegador (t3b_lab_modelo).
+    var ONDAS = {}, ULT_NV = {}, PROX_ONDA = {}, VIDA_ONDA = 2600;
+    function noAnel(cx, cy, rx, ry, rot, q) { var x = Math.cos(q) * rx, y = Math.sin(q) * ry, cr = Math.cos(rot), sr = Math.sin(rot); return [cx + x * cr - y * sr, cy + x * sr + y * cr]; }
+    function nucleoLab(ctx, gi, c, nv, t) {
+      if (nv > 0.05) luz(ctx, C.ouro, c.x, c.y, c.R * 0.9, 0.22 * nv);
+      luz(ctx, '#ffdc6a', c.x, c.y, 7 + 5 * nv + Math.sin(t * 1.3 + gi), 0.55 + 0.4 * nv);
+      ctx.fillStyle = '#ffe9a8'; ctx.beginPath(); ctx.arc(c.x, c.y, 2.4 + 1.2 * nv, 0, TAU); ctx.fill();
+    }
+    var ORDEM_LAB = ['orbita', 'espiral', 'atomo', 'pulsar', 'enxame', 'relogio'];
+    var MODELOS_LAB = {
+      // 1. ORBITAS (o de 07-08/10): cada gene na sua orbita, os de dentro mais depressa; quem calcula acelera
+      orbita: { nome: 'Órbitas',
+        mover: function (st, c, gr, t, dm, base) {
+          var resp = 1 + 0.03 * Math.sin(t * 0.7 + st.g);
+          if (st.ow == null) st.ow = (0.1 + 0.38 * (1 - Math.min(1, st.raio))) * (U.semente(String(st.k)) % 2 ? 1 : 0.82);
+          st.fase = (st.fase || 0) + dm * (st.ow * (0.45 + 0.55 * base) + 1.8 * st.luz);
+          st.x = c.x + Math.cos(st.ang + gr + st.fase) * st.raio * c.R * resp; st.y = c.y + Math.sin(st.ang + gr + st.fase) * st.raio * c.R * 0.7 * resp; st.z = 1;
+        },
+        quadro: function (ctx, gi, c, nv) {
+          ctx.strokeStyle = 'rgba(242,194,48,' + (0.1 + 0.28 * nv).toFixed(3) + ')';
+          ctx.beginPath(); ctx.ellipse(c.x, c.y, c.R * 1.02, c.R * 0.72, 0, 0, TAU); ctx.stroke();
+        } },
+      // 2. GALAXIA: dois bracos em espiral a rodar (rotacao diferencial: o centro anda mais depressa); quem calcula escorrega para dentro
+      espiral: { nome: 'Galáxia',
+        mover: function (st, c, gr, t, dm, base) {
+          var sem = U.semente(String(st.k)), braco = sem % 2, r = Math.max(0.08, Math.min(1, st.raio)) * (1 - 0.22 * st.luz);
+          st.fx = (st.fx || 0) + dm * 0.9 * st.luz;
+          var a = braco * Math.PI + 2.4 * Math.log(1 + 5 * r) + gr * 3 * (1.5 - r) + st.fx + ((sem >> 3) % 100) / 400;
+          st.x = c.x + Math.cos(a) * r * c.R; st.y = c.y + Math.sin(a) * r * c.R * 0.62; st.z = 0.75 + 0.25 * Math.sin(a);
+        },
+        quadro: function (ctx, gi, c, nv) {
+          var gr = LAB.giro[gi] || 0;
+          ctx.strokeStyle = 'rgba(242,194,48,' + (0.07 + 0.2 * nv).toFixed(3) + ')';
+          for (var b = 0; b < 2; b++) {
+            ctx.beginPath();
+            for (var i = 0; i <= 18; i++) { var r = 0.08 + i / 18 * 0.95, a = b * Math.PI + 2.4 * Math.log(1 + 5 * r) + gr * 3 * (1.5 - r); var x = c.x + Math.cos(a) * r * c.R, y = c.y + Math.sin(a) * r * c.R * 0.62; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
+            ctx.stroke();
+          }
+        } },
+      // 3. ATOMO: tres orbitas inclinadas (0, 60 e 120 graus), cada gene numa, a passar por tras (mais pequeno e apagado) e pela frente
+      atomo: { nome: 'Átomo',
+        mover: function (st, c, gr, t, dm, base) {
+          var sem = U.semente(String(st.k)), k = sem % 3, dir = (sem >> 3) % 2 ? 1 : -1;
+          if (st.fa == null) st.fa = st.ang;
+          st.fa += dm * dir * (0.5 + 0.7 * base + 2.2 * st.luz) * (0.8 + 0.04 * ((sem >> 5) % 10));
+          var rx = c.R * [0.66, 0.84, 1.0][k], q = noAnel(c.x, c.y, rx, rx * 0.3, k * Math.PI / 3, st.fa);
+          st.x = q[0]; st.y = q[1]; st.z = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(st.fa));
+        },
+        quadro: function (ctx, gi, c, nv) {
+          ctx.strokeStyle = 'rgba(242,194,48,' + (0.1 + 0.25 * nv).toFixed(3) + ')';
+          for (var k = 0; k < 3; k++) { var rx = c.R * [0.66, 0.84, 1.0][k]; ctx.beginPath(); ctx.ellipse(c.x, c.y, rx, rx * 0.3, k * Math.PI / 3, 0, TAU); ctx.stroke(); }
+        } },
+      // 4. PULSAR: o nucleo solta ondas (sozinho devagar; mais depressa com actividade; uma logo que um gene do lab calcula) e os
+      // genes sobem na crista da onda e acendem quando ela passa
+      pulsar: { nome: 'Pulsar',
+        antes: function (CS, t, dm, base, agora) {
+          GRUPOS.forEach(function (g, gi) {
+            var nv = Math.min(1, LAB.nuvem[gi] || 0), os = ONDAS[gi] || (ONDAS[gi] = []);
+            if (dm && (nv > (ULT_NV[gi] || 0) + 0.25 || agora >= (PROX_ONDA[gi] || 0))) {
+              if (os.length < 6) os.push(agora);
+              PROX_ONDA[gi] = agora + 1000 * (4.5 - 3.2 * Math.min(1, base + nv));
+            }
+            ULT_NV[gi] = nv;
+            while (os.length && agora - os[0] > VIDA_ONDA) os.shift();
+          });
+        },
+        mover: function (st, c, gr, t, dm, base, agora) {
+          var r0 = (0.18 + 0.78 * Math.min(1, st.raio)) * c.R, a = st.ang + gr * 0.6, d = 0, os = ONDAS[st.g] || [];
+          for (var i = 0; i < os.length; i++) { var id = (agora - os[i]) / VIDA_ONDA, q = (id * c.R * 1.15 - r0) / (0.14 * c.R); d += 0.11 * c.R * Math.exp(-q * q) * (1 - id); }
+          st.brilho = Math.min(1, d / (0.09 * c.R));
+          st.x = c.x + Math.cos(a) * (r0 + d); st.y = c.y + Math.sin(a) * (r0 + d) * 0.7; st.z = 1;
+        },
+        quadro: function (ctx, gi, c, nv, t, agora) {
+          var os = ONDAS[gi] || [];
+          for (var i = 0; i < os.length; i++) {
+            var id = (agora - os[i]) / VIDA_ONDA, rw = Math.max(0.5, id * c.R * 1.15);
+            ctx.strokeStyle = 'rgba(242,194,48,' + (0.42 * (1 - id)).toFixed(3) + ')'; ctx.beginPath(); ctx.ellipse(c.x, c.y, rw, rw * 0.7, 0, 0, TAU); ctx.stroke();
+          }
+          ctx.strokeStyle = 'rgba(242,194,48,.08)'; ctx.beginPath(); ctx.ellipse(c.x, c.y, c.R, c.R * 0.7, 0, 0, TAU); ctx.stroke();
+        } },
+      // 5. ENXAME: os genes voam juntos a volta do nucleo (atracao + redemoinho + vaguear, sem se encostarem uns aos outros); quem
+      // calcula dispara para fora e volta ao bando
+      enxame: { nome: 'Enxame',
+        antes: function (CS, t, dm, base) {
+          if (!dm) return;
+          var por = {};
+          LAB.est.forEach(function (st) {
+            if (st.px == null) { st.px = Math.cos(st.ang) * st.raio; st.py = Math.sin(st.ang) * st.raio * 0.7; st.vx = 0; st.vy = 0; }
+            (por[st.g] || (por[st.g] = [])).push(st);
+          });
+          Object.keys(por).forEach(function (gk) {
+            var es = por[gk];
+            es.forEach(function (st) {
+              var sem = U.semente(String(st.k)), fx = -1.1 * st.px, fy = -1.1 * st.py / 0.49;
+              fx += -st.py * 0.9; fy += st.px * 0.9;
+              fx += 0.35 * Math.sin(t * (0.7 + (sem % 7) / 10) + sem); fy += 0.35 * Math.cos(t * (0.6 + (sem % 5) / 10) + sem * 0.5);
+              var dd = Math.sqrt(st.px * st.px + st.py * st.py) || 1e-3; fx += st.luz * 3.2 * st.px / dd; fy += st.luz * 3.2 * st.py / dd;
+              for (var j = 0; j < es.length; j++) { var o = es[j]; if (o === st) continue; var ex = st.px - o.px, ey = st.py - o.py, d2 = ex * ex + ey * ey; if (d2 < 0.012 && d2 > 1e-6) { fx += ex / d2 * 0.004; fy += ey / d2 * 0.004; } }
+              var k = 0.6 + 0.6 * base, am = Math.pow(0.35, dm);
+              st.vx = (st.vx + fx * dm * k) * am; st.vy = (st.vy + fy * dm * k) * am;
+              st.px += st.vx * dm; st.py += st.vy * dm;
+              var rr = Math.sqrt(st.px * st.px + (st.py / 0.7) * (st.py / 0.7)); if (rr > 1.05) { st.px *= 1.05 / rr; st.py *= 1.05 / rr; }
+            });
+          });
+        },
+        mover: function (st, c) {
+          if (st.px == null) { st.px = Math.cos(st.ang) * st.raio; st.py = Math.sin(st.ang) * st.raio * 0.7; st.vx = 0; st.vy = 0; }
+          st.x = c.x + st.px * c.R; st.y = c.y + st.py * c.R; st.z = 1;
+        },
+        quadro: function (ctx, gi, c, nv) { if (nv > 0.05) luz(ctx, C.ouro, c.x, c.y, c.R * 1.1, 0.12 * nv); } },
+      // 6. PLANETARIO: quatro aneis concentricos a rodar em sentidos alternados, os de dentro mais depressa (como um relogio de
+      // planetas); quem calcula salta para o anel de dentro e volta ao seu
+      relogio: { nome: 'Planetário',
+        mover: function (st, c, gr, t, dm, base) {
+          var anel = Math.min(3, Math.floor(Math.min(0.999, st.raio) * 4)), dir = anel % 2 ? -1 : 1;
+          st.fa = (st.fa == null ? st.ang : st.fa) + dm * dir * (0.55 / (anel + 1)) * (0.5 + 0.8 * base);
+          var r = (0.32 + 0.22 * Math.max(0, anel - 1.6 * st.luz)) * c.R;
+          st.x = c.x + Math.cos(st.fa) * r; st.y = c.y + Math.sin(st.fa) * r * 0.7; st.z = 1;
+        },
+        quadro: function (ctx, gi, c, nv) {
+          for (var a = 0; a < 4; a++) { var r = (0.32 + 0.22 * a) * c.R; ctx.strokeStyle = 'rgba(242,194,48,' + ((a ? 0.1 : 0.22) + 0.2 * nv).toFixed(3) + ')'; ctx.beginPath(); ctx.ellipse(c.x, c.y, r, r * 0.7, 0, 0, TAU); ctx.stroke(); }
+        } }
+    };
+    try { LAB.modelo = window.localStorage.getItem('t3b_lab_modelo') || 'orbita'; } catch (e) { LAB.modelo = 'orbita'; }
+    if (!MODELOS_LAB[LAB.modelo]) LAB.modelo = 'orbita';
+    EXTRA.lab_modelo = function () { return { modelo: LAB.modelo, modelos: ORDEM_LAB.length }; };
+    (function () {          // os botoes 1-6 no canto do cartao (a pega de arrastar e so o titulo: nao chocam)
+      var hl = $('h_lab'); if (!hl || hl.querySelector('.lab-mod')) return;
+      var bar = document.createElement('div'); bar.className = 'lab-mod'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'modelo do laboratorio');
+      ORDEM_LAB.forEach(function (id, i) {
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = String(i + 1); b.title = (i + 1) + ' · ' + MODELOS_LAB[id].nome; b.dataset.m = id;
+        if (id === LAB.modelo) b.className = 'on';
+        b.addEventListener('click', function (ev) {
+          ev.stopPropagation(); LAB.modelo = id;
+          try { window.localStorage.setItem('t3b_lab_modelo', id); } catch (e2) { }
+          Array.prototype.forEach.call(bar.children, function (x) { x.className = x.dataset.m === id ? 'on' : ''; });
+          LAB.est.forEach(function (st) { st.px = null; });
+          sujar(cenaLab, 4000);
+        });
+        bar.appendChild(b);
+      });
+      hl.appendChild(bar);
+    })();
     cenaLab = cena(cv, { id: 'lab', holo: $('h_lab'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       if (!LAB.carregado) { rot(ctx, 'a ler os genes dos labs…', w / 2, h / 2 + 8, C.dim, 9, 'center', 500); return; }
@@ -1442,38 +1588,31 @@
       GRUPOS.forEach(function (g, gi) { LAB.giro[gi] = (LAB.giro[gi] || 0) + (calmo ? 0 : dt * (0.035 + 0.3 * Math.min(1, LAB.nuvem[gi] || 0))); });
       // 07/10 (Q5 B6, ele: "a animacao e fluidez como o card de exemplo 'os labs em orbita'"): as nuvens ficam, mas cada gene tem
       // a SUA orbita (os de dentro mais depressa, como planetas), e o que calcula ACELERA e acende; os robustos a ouro
+      var MOV = MODELOS_LAB[LAB.modelo] || MODELOS_LAB.orbita, dm = calmo ? 0 : dt;
+      if (MOV.antes) MOV.antes(CS, t, dm, base, agora);
       LAB.est.forEach(function (st) {
-        var c = CS[st.g], gr = LAB.giro[st.g] || 0, resp = 1 + 0.03 * Math.sin(t * 0.7 + st.g);
-        if (st.ow == null) st.ow = (0.1 + 0.38 * (1 - Math.min(1, st.raio))) * (U.semente(String(st.k)) % 2 ? 1 : 0.82);
-        st.fase = (st.fase || 0) + (calmo ? 0 : dt * (st.ow * (0.45 + 0.55 * base) + 1.8 * st.luz));
-        st.x = c.x + Math.cos(st.ang + gr + st.fase) * st.raio * c.R * resp; st.y = c.y + Math.sin(st.ang + gr + st.fase) * st.raio * c.R * 0.7 * resp;
+        st.brilho = 0;
+        MOV.mover(st, CS[st.g], LAB.giro[st.g] || 0, t, dm, base, agora);
         st.luz *= Math.pow(0.45, dt);
       });
-      // as nuvens: o brilho de cada uma (acende com os calculos dos seus genes) e as ligacoes
+      // as nuvens: o brilho de cada uma (acende com os calculos dos seus genes)
       GRUPOS.forEach(function (g, gi) { LAB.nuvem[gi] = (LAB.nuvem[gi] || 0) * Math.pow(0.5, dt); });
-      // 08/10 (OBRA 11, ele: o laboratorio "nao foi atendido" - o exemplo era "os labs em orbita"): sem as linhas da rede (com as
-      // orbitas esticavam e apagavam - parecia bugado); cada lab e um NUCLEO dourado a brilhar com o ANEL da orbita e os seus genes a
-      // girar a volta; o lab que calcula acende o anel e o nucleo
+      // 08/10 (OBRA 11): sem as linhas da rede; cada lab um NUCLEO dourado com o desenho do modelo (anel, bracos, orbitas, ondas)
       ctx.lineWidth = 1;
-      GRUPOS.forEach(function (g, gi) {
-        var c = CS[gi], nv = Math.min(1, LAB.nuvem[gi] || 0);
-        ctx.strokeStyle = 'rgba(242,194,48,' + (0.1 + 0.28 * nv).toFixed(3) + ')';
-        ctx.beginPath(); ctx.ellipse(c.x, c.y, c.R * 1.02, c.R * 0.72, 0, 0, TAU); ctx.stroke();
-        if (nv > 0.05) luz(ctx, C.ouro, c.x, c.y, c.R * 0.9, 0.22 * nv);
-        luz(ctx, '#ffdc6a', c.x, c.y, 7 + 5 * nv + Math.sin(t * 1.3 + gi), 0.55 + 0.4 * nv);
-        ctx.fillStyle = '#ffe9a8'; ctx.beginPath(); ctx.arc(c.x, c.y, 2.4 + 1.2 * nv, 0, TAU); ctx.fill();
-      });
+      GRUPOS.forEach(function (g, gi) { var c = CS[gi], nv = Math.min(1, LAB.nuvem[gi] || 0); MOV.quadro(ctx, gi, c, nv, t, agora); nucleoLab(ctx, gi, c, nv, t); });
       // os genes: primeiro os brilhos todos de uma vez (um so modo de mistura), depois os pontos
       var spR = sprite(C.ouro, 5), spL = sprite('#fff3c4', 9);
       ctx.globalCompositeOperation = 'lighter';
       LAB.est.forEach(function (st) {
         if (st.r && !st.d) { ctx.globalAlpha = 0.3 + 0.12 * Math.sin(t * 1.7 + st.ang); ctx.drawImage(spR, st.x - 5, st.y - 5, 10, 10); }
-        if (st.luz > 0.08) { var rl = 6 + st.luz * 5; ctx.globalAlpha = st.luz * 0.9; ctx.drawImage(spL, st.x - rl, st.y - rl, rl * 2, rl * 2); }
+        var lz = Math.max(st.luz, st.brilho || 0);
+        if (lz > 0.08) { var rl = 6 + lz * 5; ctx.globalAlpha = lz * 0.9 * (st.z == null ? 1 : st.z); ctx.drawImage(spL, st.x - rl, st.y - rl, rl * 2, rl * 2); }
       });
       ctx.globalCompositeOperation = 'source-over';
       LAB.est.forEach(function (st) {
-        var cor = st.d ? '#55555e' : st.r ? '#ffd65a' : 'rgba(242,194,48,.62)', tam = st.d ? 1.2 : st.r ? 1.9 : 1.35;
-        ctx.fillStyle = st.luz > 0.08 ? '#fff7d6' : cor; ctx.globalAlpha = st.d ? 0.7 : 1;
+        var cor = st.d ? '#55555e' : st.r ? '#ffd65a' : 'rgba(242,194,48,.62)', z = st.z == null ? 1 : st.z, lz2 = Math.max(st.luz, st.brilho || 0);
+        var tam = (st.d ? 1.2 : st.r ? 1.9 : 1.35) * (0.65 + 0.35 * z);
+        ctx.fillStyle = lz2 > 0.08 ? '#fff7d6' : cor; ctx.globalAlpha = (st.d ? 0.7 : 1) * (0.5 + 0.5 * z);
         ctx.fillRect(st.x - tam - st.luz, st.y - tam - st.luz, (tam + st.luz) * 2, (tam + st.luz) * 2);
       });
       ctx.globalAlpha = 1;
@@ -1497,6 +1636,7 @@
         ctx.globalAlpha = 1;
         if (bo.rob) luz(ctx, C.ouro, bx, by, 6 + r, fade * 0.6);
       }
+      rot(ctx, (MODELOS_LAB[LAB.modelo] || MODELOS_LAB.orbita).nome.toUpperCase(), w - 24, h - 6, C.dim, 7, 'right', 600);
       // os nomes e os numeros de cada lab (camada guardada)
       porCamada(ctx, s, 'nomes', GRUPOS.map(function (g, i) { return (LAB.rob[i] || 0) + '/' + (LAB.tot[i] || 0); }).join('|'), function (g) {
         // 08/10 (OBRA 11): o nome curto do lab e os robustos (o total fica no titulo e na barra minimizada) - os nomes compridos batiam uns nos outros
