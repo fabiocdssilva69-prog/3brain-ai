@@ -345,21 +345,27 @@
       // 08/10 (OBRA 11, ele: "cada pontinho do vortex vai ser igual a cada batida"): cada evento acende UM ponto (o seu, a altura do
       // andar, na cor do sector) no mesmo instante da batida do coracao, e apaga-se em 1,6 s; um lote grande = um ENXAME de pontos ao
       // mesmo tempo. O ponto continua na espiral (gira com ela). Antes cada pulso acendia uma faixa inteira (nao se via cada evento).
-      var agP = agoraMs(), vivos = 0;
+      // 08/10 noite (ele: "o vortex nao esta reagindo"): medido - reagia, mas um ponto de 2 px durante 1,6 s no meio de 600, com
+      // 2-5 eventos por 10 s de noite, nao se via. Cada evento continua a ser UM ponto (o seu), agora visivel: nucleo maior,
+      // brilho largo e uma ONDA que se expande a partir dele, 2,4 s. Um enxame = varias ondas ao mesmo tempo.
+      var agP = agoraMs(), vivos = 0, VIDA_P = 2.4;
       for (var ip = PULSOS.length - 1; ip >= 0; ip--) {
-        var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > 1.6) break;
+        var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > VIDA_P) break;
         var pa = NUC.p[pu.ip]; if (!pa || pa.sx == null) continue;
-        var fP = 1 - idP / 1.6;
-        luz(ctx, pu.cor, pa.sx, pa.sy, 5 + 9 * fP * (0.7 + 0.3 * (pu.f || 0.6)), 0.95 * fP); vivos++;
+        var fP = 1 - idP / VIDA_P;
+        luz(ctx, pu.cor, pa.sx, pa.sy, 9 + 18 * fP * (0.75 + 0.25 * (pu.f || 0.6)), Math.min(1, 1.1 * fP)); vivos++;
       }
+      ctx.lineWidth = 1.6;
       for (ip = PULSOS.length - 1; ip >= 0; ip--) {
-        pu = PULSOS[ip]; idP = (agP - pu.t) / 1000; if (idP > 1.6) break;
+        pu = PULSOS[ip]; idP = (agP - pu.t) / 1000; if (idP > VIDA_P) break;
         pa = NUC.p[pu.ip]; if (!pa || pa.sx == null) continue;
-        fP = 1 - idP / 1.6; var tamP = 1.6 + 2.4 * fP;
-        ctx.fillStyle = fP > 0.75 ? '#ffffff' : pu.cor; ctx.globalAlpha = Math.min(1, 0.4 + fP);
+        fP = 1 - idP / VIDA_P; var tamP = 2.6 + 3.6 * fP;
+        ctx.fillStyle = fP > 0.7 ? '#ffffff' : pu.cor; ctx.globalAlpha = Math.min(1, 0.45 + fP);
         ctx.fillRect(pa.sx - tamP / 2, pa.sy - tamP / 2, tamP, tamP);
+        ctx.strokeStyle = pu.cor; ctx.globalAlpha = 0.75 * fP;                       // a onda
+        ctx.beginPath(); ctx.arc(pa.sx, pa.sy, 3 + 22 * (idP / VIDA_P), 0, TAU); ctx.stroke();
       }
-      ctx.globalAlpha = 1; NUC.acesos = vivos;
+      ctx.lineWidth = 1; ctx.globalAlpha = 1; NUC.acesos = vivos;
       // os FIOS das passagens: um cordao de particulas que desce/sobe a espiral do andar de quem envia ao de quem recebe
       for (var f = NUC.fios.length - 1; f >= 0; f--) {
         var fi = NUC.fios[f]; fi.t += dt / 1.6;
@@ -557,7 +563,8 @@
       var N = Math.max(40, Math.ceil((w - X0) / PASSO) + 2);
       if (!ECG.y || ECG.y.length !== N) ECG.y = new Array(N).fill(0);
       if (ECG.lote && !ECG.lote.feito) {                               // a batida do lote: ja, sem esperar pela anterior
-        var Lb = ECG.lote, ampL = clamp(Lb.f * (1 + 0.32 * Math.log2(Math.max(1, Lb.n))), 0.2, 1.55);
+        // 08/10 noite: um evento so batia a meia altura (forca 0,5) e de noite parecia parado - o minimo e 75% da altura
+        var Lb = ECG.lote, ampL = clamp(Math.max(0.75, Lb.f) * (1 + 0.32 * Math.log2(Math.max(1, Lb.n))), 0.75, 1.55);
         Lb.feito = true; ECG.nLotes++; ECG.ultimo = agoraMs();
         if (ECG.fila.length > 6) ECG.fila.length = 6;
         if (ECG.fila.length) ECG.fila.push(0);
