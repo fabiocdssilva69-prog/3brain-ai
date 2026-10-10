@@ -23,6 +23,11 @@
 // CONTRATO DE UM MODELO: {id, nome, descricao, desenhar(ctx, w, h, estado, dt), aoEvento(ev, estado)} (+ quem(x, y, estado)
 // para a etiqueta do rato e limpar() para a repeticao). A parte pura (evento -> lab, decaimento, a janela dos 3 min, os
 // planos de reproducao, o registo) corre em Node: node --test sala/testes_lab_modelos.js
+//
+// A 2.a PAGINA (10/10 tarde, sala/lab_modelos2.html + lab_modelos2.js): reaproveita TUDO isto. O lab_modelos2.js regista os
+// seus modelos com LabModelos.registar (e desenha com as mesmas ajudas, LabModelos.kit) e depois chama
+// LabModelos.arrancar({modelos: [ids por ordem], marcas: {id: 'texto'}}) - a grelha dela tem data-arranque="manual". Esta
+// pagina (sem esse atributo) arranca sozinha, com os oito, exactamente como antes.
 'use strict';
 (function (raiz) {
   var TAU = Math.PI * 2;
@@ -439,7 +444,7 @@
 
   // ================================================================ OS MODELOS (o registo)
   var FABRICAS = [];
-  function registar(f) { FABRICAS.push(f); }
+  function registar(f) { if (typeof f === 'function' && FABRICAS.indexOf(f) < 0) FABRICAS.push(f); }
 
   // ---------------------------------------------------------------- 1. COLMEIA
   // 25 celulas hexagonais (uma por lab). O mel e a fraccao de robustos (robustos/total, do labs.json); as contas a volta sao a
@@ -1144,7 +1149,22 @@
     };
   });
 
-  function criarModelos() { return FABRICAS.map(function (f) { return f(); }); }
+  // sem ids: todos os registados, pela ordem do registo (esta pagina: os oito). Com ids: so esses, por essa ordem (a 2.a
+  // pagina mostra a Arvore, a Esfera e os seus seis); um id desconhecido ou repetido salta.
+  function criarModelos(ids) {
+    var todos = FABRICAS.map(function (f) { return f(); });
+    if (!Array.isArray(ids) || !ids.length) return todos;
+    var porId = {}, vistos = {}, out = [];
+    todos.forEach(function (m) { if (m && m.id && !porId[m.id]) porId[m.id] = m; });
+    ids.forEach(function (id) { id = String(id); if (porId[id] && !vistos[id]) { vistos[id] = 1; out.push(porId[id]); } });
+    return out;
+  }
+
+  // as ajudas de desenho, para os modelos da 2.a pagina (o brilho feito uma vez, os lotes num so fill, o texto que cabe)
+  var KIT = { TAU: TAU, C: C, F_MONO: F_MONO, F_SANS: F_SANS, HORA_MS: HORA_MS, num: num, clamp: clamp, decair: decair, seguir: seguir,
+    ease: ease, frac: frac, semente: semente, forcaDe: forcaDe, corTipo: corTipo, novoCanvas: novoCanvas, rgbDe: rgbDe, cor: cor,
+    sprite: sprite, luz: luz, fonte: fonte, porFonte: porFonte, escrever: escrever, escreverCabe: escreverCabe, Lote: Lote,
+    pronto: pronto, faixas: faixas, Arrumador: Arrumador, maisPerto: maisPerto, fmtInt: fmtInt, pct: pct, horaBrt: horaBrt };
 
   var API = {
     TIPOS: TIPOS, GRUPOS: GRUPOS, JANELA_ACT_MS: JANELA_ACT_MS, ARRANQUE_PUB_MS: ARRANQUE_PUB_MS, ESPALHAR_MAX_MS: ESPALHAR_MAX_MS, HORA_MS: HORA_MS,
@@ -1154,21 +1174,29 @@
     podarHistoria: podarHistoria, aplicarEvento: aplicarEvento, actividade: actividade, passo: passo, celulasDoMapa: celulasDoMapa,
     planearLocal: planearLocal, planearPublicado: planearPublicado, planearRepeticao: planearRepeticao, cursorDaRepeticao: cursorDaRepeticao,
     modoPublicado: modoPublicado, horaBrt: horaBrt, fmtInt: fmtInt, criarModelos: criarModelos,
-    ids: function () { return criarModelos().map(function (m) { return m.id; }); }
+    ids: function () { return criarModelos().map(function (m) { return m.id; }); },
+    registar: registar, kit: KIT, arrancar: arrancarPagina
   };
   if (typeof module !== 'undefined' && module && module.exports) module.exports = API;
   if (raiz) raiz.LabModelos = API;
 
   // ================================================================ A PAGINA (so no browser, com a grelha presente)
-  if (typeof document !== 'undefined' && document && typeof document.getElementById === 'function' && document.getElementById('lm_grelha')) arrancar();
+  // arranca sozinha; com data-arranque="manual" na grelha (lab_modelos2.html) espera pelo LabModelos.arrancar do script dela
+  var GRELHA = typeof document !== 'undefined' && document && typeof document.getElementById === 'function' ? document.getElementById('lm_grelha') : null;
+  var ARRANCOU = false;
+  function arrancarPagina(op) { if (!GRELHA || ARRANCOU) return false; ARRANCOU = true; arrancar(op || {}); return true; }
+  if (GRELHA && !(typeof GRELHA.getAttribute === 'function' && GRELHA.getAttribute('data-arranque') === 'manual')) arrancarPagina();
 
-  function arrancar() {
+  function arrancar(op) {
+    op = op || {};
     var doc = document, $ = function (id) { return doc.getElementById(id); };
     var q = String(location.search || '');
     var publicado = /[?&]modo=publicado\b/.test(q) ? true : /[?&]modo=vivo\b/.test(q) ? false : modoPublicado(location);
     var calmo = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     var E = criarEstado({ calmo: calmo, publicado: publicado });
-    var MODELOS = criarModelos(), CARTOES = [], FILA = [], ampliadoIdx = null;
+    var MODELOS = criarModelos(op.modelos), CARTOES = [], FILA = [], ampliadoIdx = null;
+    if (!MODELOS.length) MODELOS = criarModelos();
+    var MARCAS = op.marcas && typeof op.marcas === 'object' ? op.marcas : {};
     var VIVO = { fase: 0, seq: 0, anelDesde: 0, pub: { D: null }, primeira: true, falhas: 0, okEm: 0, vistos: {}, vistosLista: [] };
     var LABS = { falhas: 0, okEm: 0 };
     var AVISO = { txt: '', ate: 0 };
@@ -1186,7 +1214,9 @@
       var art = doc.createElement('article');
       art.className = 'lm-cartao'; art.tabIndex = 0; art.setAttribute('role', 'button'); art.dataset.m = m.id;
       art.setAttribute('aria-label', (i + 1) + ' · ' + m.nome + ' — ampliar');
+      var marca = MARCAS[m.id] ? String(MARCAS[m.id]) : '';   // (so a 2.a pagina as da: "aprovado", "novo")
       art.innerHTML = '<header class="lm-ch"><span class="lm-num">' + (i + 1) + '</span><h2>' + esc(m.nome) + '</h2>' +
+        (marca ? '<span class="lm-tag lm-tag-' + esc(marca.toLowerCase().replace(/[^a-z0-9]+/g, '')) + '">' + esc(marca) + '</span>' : '') +
         '<span class="lm-rep">repetição</span><button type="button" class="lm-fechar" aria-label="voltar à grelha">voltar ✕</button></header>' +
         '<div class="lm-tela"><canvas aria-hidden="true"></canvas></div><p class="lm-desc">' + esc(m.descricao) + '</p>';
       grelha.appendChild(art);
