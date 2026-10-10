@@ -814,13 +814,14 @@
         var k = w + 'x' + h + '|' + E.versao; if (S.chave !== k) { arrumar(w, h, E); S.chave = k; }
         var t = E.t, agora = E.agora || 0, gr = S.grande, cx = S.cx, cy = S.cy, Rp = S.Rp, i, j;
         var inc = S.inc0 + (E.calmo ? 0 : 0.035 * Math.sin(t * 0.15)), si = Math.sin(inc), ci = Math.cos(inc);
-        S.si = si;
+        S.si = si; S.ci = ci; S.t = t; S.calmo = !!E.calmo;
         if (!E.calmo && dt > 0) for (i = 0; i < S.an.length; i++) { var a0 = S.an[i]; S.fase[a0.lab.n] = ((S.fase[a0.lab.n] || 0) + dt * 0.2 * a0.om * (1 + 1.4 * Math.min(1, a0.lab.energia))) % TAU; }
         for (j = 0; j < 8; j++) lotes[j].n = 0;
         acesas.length = 0;
         var tam = gr ? 1.7 : 1.05;
         for (i = 0; i < S.an.length; i++) {
           var an = S.an[i], lab = an.lab, am = lab.amostra, fa = S.fase[lab.n] || 0, e = Math.min(1, lab.energia);
+          an.e = e;
           for (j = 0; j < am.length; j++) {
             var g = am[j], th = an.genes[j * 4] + fa, rr = an.r + an.genes[j * 4 + 1] * (1 + 0.6 * e), cls = classe(g), ac = aceso(g, agora, 250, E.calmo);
             var z = cls === 0 && !E.calmo ? an.genes[j * 4 + 2] * Math.sin(t * 1.2 + an.genes[j * 4 + 3]) : 0;
@@ -898,10 +899,19 @@
         S.an.forEach(function (an) { var rho = Math.sqrt((dx / an.r) * (dx / an.r) + (dy / (an.r * si)) * (dy / (an.r * si))), d = Math.abs(rho - 1) * an.r; if (d < bd) { bd = d; best = an; } });
         return best && bd <= Math.max(5, S.wr * 1.5) ? { lab: best.lab, txt: 'anel ' + (S.an.indexOf(best) + 1) + ' de ' + S.an.length + ' (de dentro para fora)' } : null;
       },
-      // os pontos do anel do lab n no ultimo quadro (a linha do anel, de 2 em 2 graus) - para as provas
+      // os pontos do anel do lab n no ultimo quadro (a linha do anel de 2 em 2 graus e cada particula, com as luas fora do plano)
+      // - para as provas
       onde: function (n) {
         var out = [];
-        S.an.forEach(function (an) { if (an.lab.n !== n) return; for (var k = 0; k < 180; k++) { var th = k / 180 * TAU; out.push(S.cx + an.r * Math.cos(th), S.cy + an.r * Math.sin(th) * S.si); } });
+        S.an.forEach(function (an) {
+          if (an.lab.n !== n) return;
+          for (var k = 0; k < 180; k++) { var th = k / 180 * TAU; out.push(S.cx + an.r * Math.cos(th), S.cy + an.r * Math.sin(th) * S.si); }
+          var am = an.lab.amostra, fa = S.fase[n] || 0, e = an.e || 0;
+          for (var j = 0; j < am.length; j++) {
+            var th2 = an.genes[j * 4] + fa, rr = an.r + an.genes[j * 4 + 1] * (1 + 0.6 * e), z = classe(am[j]) === 0 && !S.calmo ? an.genes[j * 4 + 2] * Math.sin((S.t || 0) * 1.2 + an.genes[j * 4 + 3]) : 0;
+            out.push(S.cx + rr * Math.cos(th2), S.cy + rr * Math.sin(th2) * S.si - z * (S.ci || 1));
+          }
+        });
         return out;
       },
       limpar: function () { S.ondas = []; }
