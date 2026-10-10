@@ -49,7 +49,7 @@
       intMedio = intMedio * 0.92 + iv * 0.08;
       if (intMedio > 22 || R.msMedio > 14) {
         if (!pesadoDesde) pesadoDesde = agora;
-        else if (agora - pesadoDesde > 3000) { R.tecto = 30; pesadoDesde = 0; leveDesde = 0; if (agora - subiuEm < 15000) esperaSubir = Math.min(480000, esperaSubir * 2); }
+        else if (agora - pesadoDesde > 3000) { R.tecto = 30; pesadoDesde = 0; leveDesde = 0; if (subiuEm && agora - subiuEm < 15000) esperaSubir = Math.min(480000, esperaSubir * 2); }   // (so conta se ja tinha subido)
       } else pesadoDesde = 0;
     } else if (R.msMedio < 7) {
       if (!leveDesde) leveDesde = agora;
