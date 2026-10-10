@@ -883,8 +883,10 @@
             if (y != null) escreverCabe(ctx, nome, x, y, 'rgba(242,194,48,.85)', 9, 'center', 600, true, 0, true);
           });
           var act = S.an.filter(function (a7) { return a7.lab.energia > 0.08; }).sort(function (x1, x2) { return x2.lab.energia - x1.lab.energia; }).slice(0, 8);
+          S.rotulos = {};
           act.forEach(function (a8, kk) {
             var y = cy - 4 + (kk - (act.length - 1) / 2) * 13, x = cx - S.Ro - 12;
+            S.rotulos[a8.lab.n] = [x + 4, y - 3, cx - a8.r, cy];
             ctx.strokeStyle = cor(rgbDe(a8.lab.corPulso || C.flash), 0.45); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + 4, y - 3); ctx.lineTo(cx - a8.r, cy); ctx.stroke();
             escreverCabe(ctx, a8.lab.curto, x, y, C.ouroHi, 10, 'right', 500, false, 0, true);
           });
@@ -909,7 +911,9 @@
         var out = [];
         S.an.forEach(function (an) {
           if (an.lab.n !== n) return;
-          for (var k = 0; k < 180; k++) { var th = k / 180 * TAU; out.push(S.cx + an.r * Math.cos(th), S.cy + an.r * Math.sin(th) * S.si); }
+          var nk = Math.max(180, Math.ceil(TAU * an.r / 3));       // um ponto a cada ~3 px da linha do anel
+          for (var k = 0; k < nk; k++) { var th = k / nk * TAU; out.push(S.cx + an.r * Math.cos(th), S.cy + an.r * Math.sin(th) * S.si); }
+          var ro = S.rotulos && S.rotulos[n]; if (ro) out.push(ro[0], ro[1], ro[2], ro[3]);   // o fio da etiqueta (ampliado)
           var am = an.lab.amostra, fa = S.fase[n] || 0, e = an.e || 0;
           for (var j = 0; j < am.length; j++) {
             var th2 = an.genes[j * 4] + fa, rr = an.r + an.genes[j * 4 + 1] * (1 + 0.6 * e), z = classe(am[j]) === 0 && !S.calmo ? an.genes[j * 4 + 2] * Math.sin((S.t || 0) * 1.2 + an.genes[j * 4 + 3]) : 0;
