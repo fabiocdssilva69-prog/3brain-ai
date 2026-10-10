@@ -26,17 +26,41 @@
     // o programa que ele esta a usar. Com foco (ou ele a mexer nela) volta aos 60 na hora. ?foco=sempre desliga isto (sondas).
     semFocoHz: 20,
     foco: true,
-    efectivo: function () { return R.foco ? R.hz : Math.min(R.hz, R.semFocoHz); },
+    // 10/10 (ele: "ta muito travado ainda o computador e a torre tambem"): quando ESTA maquina nao aguenta os 60 (os quadros
+    // chegam a mais de 22 ms em media, ou o trabalho de cada um passa de 14 ms, durante 3 s) a pagina assenta nos 30: 30 certos
+    // sao mais fluidos do que 60 aos solavancos. Com folga (trabalho < 7 ms durante esperaSubir) volta a tentar os 60; se cair
+    // outra vez em menos de 15 s, espera o dobro (ate 8 min). Ele a mexer tem sempre os quadros do ecra. ?ritmo=fixo desliga.
+    tecto: 60,
+    msMedio: 0,
+    efectivo: function () { var h = R.foco ? R.hz : Math.min(R.hz, R.semFocoHz); return Math.min(h, R.tecto || 60); },
     ate: 0,                 // ate quando os quadros sao os do ecra (performance.now())
     quadros: 0,             // quadros servidos (para a sonda)
     nativo: N,
     soltar: function (ms) { var a = performance.now() + (ms || 900); if (a > R.ate) R.ate = a; if (temporizador) { clearTimeout(temporizador); temporizador = null; } agendar(); },
     livre: function () { return performance.now() < R.ate; }
   };
+  var FIXO = typeof location !== 'undefined' && /[?&](ritmo=fixo|foco=sempre)/.test(location.search || '');
+  var tsAnt = 0, intMedio = 16.7, pesadoDesde = 0, leveDesde = 0, subiuEm = 0, esperaSubir = 30000;
+  function adaptar(ts, ms) {
+    var agora = performance.now(), iv = tsAnt ? ts - tsAnt : 0; tsAnt = ts;
+    R.msMedio = R.msMedio * 0.92 + ms * 0.08;
+    if (FIXO || R.livre() || !R.foco || !(iv > 0 && iv < 250)) { pesadoDesde = 0; return; }   // so mede a pagina parada e com foco
+    if (R.tecto > 30) {
+      intMedio = intMedio * 0.92 + iv * 0.08;
+      if (intMedio > 22 || R.msMedio > 14) {
+        if (!pesadoDesde) pesadoDesde = agora;
+        else if (agora - pesadoDesde > 3000) { R.tecto = 30; pesadoDesde = 0; leveDesde = 0; if (agora - subiuEm < 15000) esperaSubir = Math.min(480000, esperaSubir * 2); }
+      } else pesadoDesde = 0;
+    } else if (R.msMedio < 7) {
+      if (!leveDesde) leveDesde = agora;
+      else if (agora - leveDesde > esperaSubir) { R.tecto = 60; leveDesde = 0; subiuEm = agora; intMedio = 16.7; }
+    } else leveDesde = 0;
+  }
   function correr(ts) {
     pedido = 0; ultimo = performance.now(); R.quadros++;
-    var f = fila; fila = [];
+    var f = fila, t0 = ultimo; fila = [];
     for (var i = 0; i < f.length; i++) { try { f[i].cb(ts); } catch (e) { (function (x) { setTimeout(function () { throw x; }); })(e); } }
+    adaptar(ts, performance.now() - t0);
   }
   function agendar() {
     if (pedido || temporizador || !fila.length) return;

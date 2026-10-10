@@ -339,6 +339,8 @@
     passoFita(agora);
     Object.keys(VIVOS).forEach(function (k) {
       var v = VIVOS[k]; if (!v.t0) return;
+      if (!isFinite(v.para)) { v.t0 = 0; v.actual = null; return; }    // 10/10: nunca se anima PARA um NaN...
+      if (!isFinite(v.de)) v.de = v.para;                             // ...nem A PARTIR de um (o "—" preso do em aberto)
       var p = Math.min(1, (agora - v.t0) / v.dur), e = 1 - Math.pow(1 - p, 3);
       v.actual = v.de + (v.para - v.de) * e;
       var esc = 100, f = Math.abs(v.actual) * esc; f = f - Math.floor(f);
@@ -375,8 +377,9 @@
     if (!rl.ativo || pat == null) return null;
     var custo = 0, pos = [];
     (Array.isArray(rl.posicoes) ? rl.posicoes : []).forEach(function (p) {
-      var q = num(p && p.qty), e = num(p && p.entrada);
-      if (q && e) { pos.push({ sym: String(p.simbolo), qty: q, ref: e }); custo += num(p.custo_usdt) != null ? num(p.custo_usdt) : q * e; }
+      var q = num(p && p.qty), e = num(p && p.entrada), cu = num(p && p.custo_usdt);
+      if (!(e > 0) && q > 0 && cu > 0) e = cu / q;          // 10/10: o executor nao guarda a entrada - custo / qty (com a comissao)
+      if (q && e) { pos.push({ sym: String(p.simbolo), qty: q, ref: e }); custo += cu != null ? cu : q * e; }
     });
     var usdt = num(rl.usdt_livre);
     return { cap: pat, hoje: num(rl.hoje_usd), aberto: num(rl.aberto_usd), ini: num(rl.desde_o_inicio_usd),
@@ -431,8 +434,14 @@
     var mudou = ultimoAbertoTxt !== '';
     ultimoAbertoTxt = txtV;
     // q31: interpola entre leituras (900 ms: o livro da Binance mexe ao segundo e o numero nunca salta)
-    var vv = VIVOS.abe; if (!vv) { VIVOS.abe = { de: v, para: v, t0: 0, el: el, formatar: function (x) { return sinal(x, 2) + ' US$'; }, dur: 900 }; odometro(el, txtV); }
-    else { vv.de = vv.actual == null ? vv.para : vv.actual; vv.para = v; vv.t0 = performance.now(); vv.el = el; }
+    // 10/10 (ele: "o card 'em aberto se fechasse agora' ta bugado"): o 1.o valor era NaN (a pagina abre antes do torre.json) e a
+    // animacao partia DELE - NaN + qualquer coisa = NaN - e como o valor seguinte (0,12 no real) nunca mudava, o card ficava no
+    // "—" para sempre. Agora: sem valor, o traco sem animar; o 1.o valor bom entra direito; a animacao nunca parte de um NaN.
+    var vv = VIVOS.abe;
+    if (!isFinite(v)) { if (vv) { vv.t0 = 0; vv.actual = null; vv.para = NaN; } odometro(el, txtV); }
+    else if (!vv || !isFinite(vv.para)) { VIVOS.abe = { de: v, para: v, t0: 0, el: el, formatar: function (x) { return sinal(x, 2) + ' US$'; }, dur: 900 }; odometro(el, txtV); }
+    else { vv.de = vv.actual == null || !isFinite(vv.actual) ? vv.para : vv.actual; vv.para = v; vv.t0 = performance.now(); vv.el = el; }
+    if (vivo == null) { var bx0 = $('bx_abe'); txt(bx0, txtV); if (bx0) bx0.className = cls(v); }   // 10/10: a barra do topo tambem (so mudava ao vivo)
     if (el) el.className = 'v vivo ' + cls(v);
     txt($('n_abe_s'), vivo != null ? 'ao segundo · Binance (' + AOVIVO.pos.length + ' cripto) + ações do ficheiro' : 'do ficheiro (sem preço ao vivo)');
     if (mudou && !doTique) piscarCelula('c_abe', 'abe', 'em aberto → ' + txtV);
