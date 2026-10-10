@@ -890,7 +890,8 @@
         }
         if (S.grande) S.grupos.forEach(function (g) { escreverCabe(ctx, g.nome, (g.x0 + g.x1) / 2, S.base + 34, 'rgba(242,194,48,.8)', 10, 'center', 500, false, Math.max(20, g.x1 - g.x0 + 10)); });
       },
-      aoEvento: function () { /* a altura vem da janela dos 3 min (estado); o clarao vem do pulso do lab */ },
+      // a barra salta ja (a janela dos 3 min so e recalculada de 200 em 200 ms) e a tampa sobe com ela
+      aoEvento: function (r) { var n = r.lab.n; S.v[n] = Math.max(S.v[n] || 0, (r.lab.g3 || 0) + r.n); },
       quem: function (x) { for (var i = 0; i < S.barras.length; i++) { var b = S.barras[i]; if (x >= b.x - S.bw * 0.15 && x <= b.x + b.w + S.bw * 0.15) return { lab: b.lab, txt: fmtInt(b.lab.g3) + ' genes nos últimos 3 min' }; } return null; },
       limpar: function () { S.pico = {}; S.picoT = {}; }
     };
@@ -1071,7 +1072,7 @@
   // Robustos a ouro, demitidos a cinza, genes novos a ciano. Quando um lab calcula, a faixa dele incha, o anel de latitude
   // acende e os genes que calcularam brilham; com mais actividade a esfera roda mais depressa.
   registar(function () {
-    var TILT = 0.42, S = { chave: '', N: 0, px: null, py: null, pz: null, sx: null, sy: null, sz: null, gene: [], lab: [], rot: 0, bandas: [] };
+    var TILT = 0.42, S = { chave: '', N: 0, px: null, py: null, pz: null, sx: null, sy: null, sz: null, gene: [], lab: [], rot: 0, bandas: [], aneis: [] };
     var lotes = []; for (var q = 0; q < 12; q++) lotes.push(new Lote(1600));
     var CORES = [C.rob, 'rgba(242,194,48,.85)', C.novo, C.dem], ALFA = [0.22, 0.5, 0.95];
     function arrumar(E) {
@@ -1117,19 +1118,29 @@
           ctx.beginPath(); ctx.ellipse(cx, cy + b.y * ct * R * k2, Math.max(0.1, rl), Math.max(0.1, rl * st), 0, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
           if (grande && pu > 0.05) escrever(ctx, b.lab.curto, cx + rl + 8, cy + b.y * ct * R * k2 + 3, C.ouroHi, 10, 'left', 500);
         });
+        for (i = S.aneis.length - 1; i >= 0; i--) {          // o calculo solta um anel da faixa do lab, que se afasta e apaga
+          var an = S.aneis[i], u = (E.t - an.t0) / 1.4, bd = null;
+          if (u > 1 || u < -0.5) { S.aneis.splice(i, 1); continue; }
+          for (var j = 0; j < S.bandas.length; j++) if (S.bandas[j].lab === an.lab) { bd = S.bandas[j]; break; }
+          if (!bd || u < 0) continue;
+          var kk = 1 + (E.calmo ? 0.04 : 0.28 * ease(u)) * (0.6 + 0.4 * an.forca), ra = Math.sqrt(Math.max(0, 1 - bd.y * bd.y)) * R * kk;
+          ctx.strokeStyle = an.cor; ctx.globalAlpha = 0.75 * (1 - u); ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.ellipse(cx, cy + bd.y * ct * R * kk, Math.max(0.1, ra), Math.max(0.1, ra * st), 0, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+        }
         ctx.lineWidth = 1;
         for (i = 0; i < S.N; i++) { var gg = S.gene[i]; if (!(gg.luz > 0.05)) continue; luz(ctx, gg.novo > 0.3 ? C.novo : C.flash, S.sx[i], S.sy[i], (grande ? 7 : 5) * (0.6 + 0.4 * gg.luz), gg.luz * (0.35 + 0.65 * (S.sz[i] + 1) / 2)); }
         if (grande && E.labs.length) {
           escrever(ctx, 'em cima: andar ' + E.labs[0].n + ' (' + E.labs[0].curto + ') · em baixo: andar ' + E.labs[E.labs.length - 1].n + ' (' + E.labs[E.labs.length - 1].curto + ')', 14, h - 12, C.dim, 9.5, 'left', 500, true);
         }
       },
-      aoEvento: function () { /* a faixa incha pela energia do lab e os genes acendem pela luz (estado) */ },
+      // (a faixa incha pela energia do lab e os genes acendem pela luz - estado); aqui: o anel que se solta da faixa
+      aoEvento: function (r) { S.aneis.push({ lab: r.lab, t0: arguments[1] ? arguments[1].t : 0, forca: r.forca, cor: corTipo(r.tipo) }); if (S.aneis.length > 40) S.aneis.shift(); },
       quem: function (x, y) {
         var best = -1, bd = 10 * 10;
         for (var i = 0; i < S.N; i++) { if (S.sz[i] < 0) continue; var dx = S.sx[i] - x, dy = S.sy[i] - y, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } }
         return best >= 0 ? { lab: S.lab[best] } : null;
       },
-      limpar: function () { }
+      limpar: function () { S.aneis = []; }
     };
   });
 
@@ -1228,6 +1239,7 @@
     doc.addEventListener('keydown', function (ev) {
       if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
       if (ev.key === 'Escape') { if (ampliadoIdx != null) { ev.preventDefault(); fechar(); } return; }
+      if (ev.key === 'r' || ev.key === 'R') { ev.preventDefault(); repetir(); return; }   // (ampliado, o botao fica por baixo do veu)
       if (/^[1-9]$/.test(ev.key)) { var i = Number(ev.key) - 1; if (i < MODELOS.length) { ev.preventDefault(); if (ampliadoIdx != null) abrir(i, true); else abrir(i); } return; }
       if (ampliadoIdx != null && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft')) { ev.preventDefault(); abrir((ampliadoIdx + (ev.key === 'ArrowRight' ? 1 : MODELOS.length - 1)) % MODELOS.length, true); }
     });
