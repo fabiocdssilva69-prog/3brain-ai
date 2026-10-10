@@ -1,0 +1,1 @@
+{"n":11,"colunas":["id","nome","especie","sector","cargo","estado","lider"],"gente":[["posto:Tesouraria-Treino","Maya Hansen","posto","postos|andar_treino","Associado","ok",true]],"programas":[{"id":"andar_treino","curto":"Supervisor Gilgamesh","sector":"Treinamento","tarefas":["Tesouraria-Treino"]}]}
