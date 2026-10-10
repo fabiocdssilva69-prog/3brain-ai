@@ -503,6 +503,7 @@
           var c2 = Math.max(cg, jump), e2 = Math.min(1, lab.energia), x2 = no.mx, yb = S.y0;
           // proporcoes de cogumelo: o chapeu quase toca os vizinhos quando cresce e o pe nunca passa de ~4 chapeus de altura
           var cw = Math.max(gr ? 2 : 1.2, cwMax * (0.3 + 0.7 * c2) * (0.75 + 0.25 * lab.fr)), hs = (gr ? 3 : 1.5) + c2 * Math.min(hMax * 0.78, cwMax * 4.2), ch = cw * 0.72;
+          no.cog = [x2, yb, x2, yb - hs, x2 - cw, yb - hs, x2 + cw, yb - hs, x2, yb - hs - ch * 0.5, x2, yb - hs - ch];   // (para o onde)
           ctx.strokeStyle = cor('255,236,190', 0.36 + 0.36 * c2); ctx.lineWidth = Math.max(0.9, cw * 0.42);
           ctx.beginPath(); ctx.moveTo(x2, yb); ctx.quadraticCurveTo(x2 + cw * 0.15, yb - hs * 0.5, x2, yb - hs); ctx.stroke();
           ctx.fillStyle = e2 > 0.05 ? cor(rgbDe(lab.corPulso || C.flash), 0.45 + 0.5 * e2) : cor('242,194,48', 0.3 + 0.45 * lab.fr + 0.2 * c2);
@@ -541,6 +542,16 @@
         }
         var no = maisPerto(S.nos, x, y, S.grande ? 20 : 13);
         return no ? { lab: no.lab, txt: no.fios.length + (no.fios.length === 1 ? ' fio' : ' fios') + ' na rede' } : null;
+      },
+      // os pontos do lab n (o no, a raiz, os fios dele, as franjas com as contas e o cogumelo) - para as provas
+      onde: function (n) {
+        var i = S.idx[n], out = []; if (i == null || !S.nos[i]) return out;
+        var no = S.nos[i], add = function (pts) { for (var k = 0; k + 3 < pts.length; k += 2) out.push(pts[k], pts[k + 1], (pts[k] + pts[k + 2]) / 2, (pts[k + 1] + pts[k + 3]) / 2); if (pts.length >= 2) out.push(pts[pts.length - 2], pts[pts.length - 1]); };
+        out.push(no.x, no.y);
+        add(no.raiz.pts); no.fios.forEach(function (fi) { add(S.fios[fi].pts); }); no.franjas.forEach(function (f) { add(f.pts); });
+        for (var k = 0; k < no.lab.amostra.length; k++) out.push(no.contas[k * 2], no.contas[k * 2 + 1]);
+        if (no.cog) for (k = 0; k < no.cog.length; k++) out.push(no.cog[k]);
+        return out;
       },
       limpar: function () { S.pulsos = []; S.salto = {}; S.brilho = {}; }
     };
@@ -712,6 +723,18 @@
         S.bracos.forEach(function (b) { var da = Math.abs(((a - b.ang) % TAU + TAU + Math.PI) % TAU - Math.PI); if (da < bd) { bd = da; best = b; } });
         return best ? { lab: best.lab, txt: fmtInt(S.hora.por[best.lab.n] || 0) + ' genes na última hora' } : null;
       },
+      // os pontos do braco do lab n no ultimo quadro (o pe, cada garfo e o meio de cada segmento, e os polipos) - para as provas
+      onde: function (n) {
+        var i = S.porN[n], out = [], j; if (i == null || !S.bracos[i]) return out;
+        var b = S.bracos[i], sp = S.grande ? 4 : 2.3;
+        out.push(b.bx, b.by);
+        for (j = 0; j < NSEG; j++) { var pp = ((j + 1) >> 1) - 1, sx = pp < 0 ? b.bx : b.pos[pp * 2], sy = pp < 0 ? b.by : b.pos[pp * 2 + 1]; out.push(b.pos[j * 2], b.pos[j * 2 + 1], (sx + b.pos[j * 2]) / 2, (sy + b.pos[j * 2 + 1]) / 2); }
+        for (j = 0; j < b.lab.amostra.length; j++) {
+          var tp = b.ponta[j], p2 = ((tp + 1) >> 1) - 1, ex = b.pos[tp * 2], ey = b.pos[tp * 2 + 1], ux = ex - b.pos[p2 * 2], uy = ey - b.pos[p2 * 2 + 1], ul = Math.sqrt(ux * ux + uy * uy) || 1, o = CACHO[b.cacho[j]];
+          ux /= ul; uy /= ul; out.push(ex + (ux * o[0] - uy * o[1]) * sp, ey + (uy * o[0] + ux * o[1]) * sp);
+        }
+        return out;
+      },
       limpar: function () { S.ondas = []; }
     };
   });
@@ -875,6 +898,12 @@
         S.an.forEach(function (an) { var rho = Math.sqrt((dx / an.r) * (dx / an.r) + (dy / (an.r * si)) * (dy / (an.r * si))), d = Math.abs(rho - 1) * an.r; if (d < bd) { bd = d; best = an; } });
         return best && bd <= Math.max(5, S.wr * 1.5) ? { lab: best.lab, txt: 'anel ' + (S.an.indexOf(best) + 1) + ' de ' + S.an.length + ' (de dentro para fora)' } : null;
       },
+      // os pontos do anel do lab n no ultimo quadro (a linha do anel, de 2 em 2 graus) - para as provas
+      onde: function (n) {
+        var out = [];
+        S.an.forEach(function (an) { if (an.lab.n !== n) return; for (var k = 0; k < 180; k++) { var th = k / 180 * TAU; out.push(S.cx + an.r * Math.cos(th), S.cy + an.r * Math.sin(th) * S.si); } });
+        return out;
+      },
       limpar: function () { S.ondas = []; }
     };
   });
@@ -935,7 +964,7 @@
         var t = E.t, agora = E.agora || 0, gr = S.grande, R = S.R, cx = S.cx, cy = S.cy, i, j, actT = clamp((E.energia || 0) / 3, 0, 1);
         if (!E.calmo && dt > 0) S.rot = (S.rot + dt * (0.05 + 0.16 * actT)) % TAU;
         var til = S.til0 + (E.calmo ? 0 : 0.1 * Math.sin(t * 0.06)), st = Math.sin(til), ct = Math.cos(til), cr = Math.cos(S.rot), sr = Math.sin(S.rot);
-        S.til = til;
+        S.til = til; S.pj = [cr, sr, st, ct];
         // o nucleo: acende com os genes calculados por todos nos ultimos 3 min
         luz(ctx, C.ouro, cx, cy, R * 0.24, 0.2 + 0.32 * escalaLog(E.act ? E.act.genes : 0, 200));
         luz(ctx, '#ffe9a8', cx, cy, R * 0.07, 0.55);
@@ -952,6 +981,7 @@
         for (i = 0; i < S.ag.length; i++) {
           var a = S.ag[i], lab = a.lab, e = Math.min(1, lab.energia), inch = E.calmo ? 1 : 1 + 0.2 * e, am = lab.amostra;
           var ax1 = a.x * cr - a.z * sr, az1 = a.x * sr + a.z * cr;
+          a.inch = inch;
           a.sx = cx + ax1 * R; a.sy = cy + az1 * st * R; a.prof = az1 * ct;
           for (j = 0; j < am.length; j++) {
             var g = am[j], ox = a.x + a.st[j * 3] * inch, oy = a.st[j * 3 + 1] * inch, oz = a.z + a.st[j * 3 + 2] * inch;
@@ -998,6 +1028,17 @@
       quem: function (x, y) {
         var a = maisPerto(S.ag.map(function (b) { return { x: b.sx, y: b.sy, lab: b.lab }; }), x, y, S.grande ? 24 : 15);
         return a ? { lab: a.lab } : null;
+      },
+      // os pontos do aglomerado do lab n no ultimo quadro (o centro e cada estrela) - para as provas
+      onde: function (n) {
+        var i = S.porN[n], out = []; if (i == null || !S.ag[i] || !S.pj) return out;
+        var a = S.ag[i], cr = S.pj[0], sr = S.pj[1], st = S.pj[2], ct = S.pj[3], inch = a.inch || 1;
+        out.push(a.sx, a.sy);
+        for (var j = 0; j < a.lab.amostra.length; j++) {
+          var ox = a.x + a.st[j * 3] * inch, oy = a.st[j * 3 + 1] * inch, oz = a.z + a.st[j * 3 + 2] * inch, x2 = ox * cr - oz * sr, z2 = ox * sr + oz * cr;
+          out.push(S.cx + x2 * S.R, S.cy + (z2 * st - oy * ct) * S.R);
+        }
+        return out;
       },
       limpar: function () { S.chamas = []; }
     };
@@ -1086,7 +1127,7 @@
         var fundo = [], frente = [], tl = gr ? 1.5 : 0.95;
         for (i = 0; i < S.alm.length; i++) {
           var al = S.alm[i], lab = al.lab, e = Math.min(1, lab.energia), inch = E.calmo ? 1 : 1 + 0.18 * e, am = lab.amostra;
-          proj(al.c[0], al.c[1], al.c[2], cr, sr, P3); al.sx = P3[0]; al.sy = P3[1]; al.prof = P3[2]; al.f = 4 / (4 - P3[2]);
+          proj(al.c[0], al.c[1], al.c[2], cr, sr, P3); al.sx = P3[0]; al.sy = P3[1]; al.prof = P3[2]; al.f = 4 / (4 - P3[2]); al.inch = inch;
           (al.prof < 0 ? fundo : frente).push(al);
           var off = al.prof < 0 ? 0 : 4;
           for (j = 0; j < am.length; j++) {
@@ -1168,6 +1209,15 @@
         var best = null;                                         // das almofadas debaixo do rato, a mais a frente
         S.alm.forEach(function (a) { var r = RP * S.U * (a.f || 1) * 1.35, dx = x - a.sx, dy = y - a.sy; if (dx * dx + dy * dy <= r * r && (!best || a.prof > best.prof)) best = a; });
         return best ? { lab: best.lab } : null;
+      },
+      // os pontos do lab n no ultimo quadro (o caminho da seiva do vaso a almofada, o ramo fino, a almofada e as folhas) - provas
+      onde: function (n) {
+        var i = S.porN[n], out = [], j; if (i == null || !S.alm[i]) return out;
+        var a = S.alm[i], cr = S.cr, sr = S.sr, inch = a.inch || 1, r = RP * S.U * (a.f || 1) * (1 + 0.18 * Math.min(1, a.lab.energia)) * 1.12;
+        for (j = 0; j <= 40; j++) { noCaminho(a.cam, j / 40, Q3); proj(Q3[0], Q3[1], Q3[2], cr, sr, P3); out.push(P3[0], P3[1]); }
+        out.push(a.sx, a.sy, a.sx + r, a.sy, a.sx - r, a.sy);
+        for (j = 0; j < a.lab.amostra.length; j++) { proj(a.c[0] + a.fol[j * 3] * inch, a.c[1] + a.fol[j * 3 + 1] * inch, a.c[2] + a.fol[j * 3 + 2] * inch, cr, sr, P3); out.push(P3[0], P3[1]); }
+        return out;
       },
       limpar: function () { S.seiva = []; }
     };
