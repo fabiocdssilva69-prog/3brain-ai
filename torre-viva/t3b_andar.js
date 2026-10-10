@@ -135,7 +135,7 @@ function texturaNome(nome, cor, marca) {
   g.fillStyle = 'rgba(8,8,10,.78)'; g.beginPath(); g.roundRect ? g.roundRect(128 - w / 2, 8, w, 32, 8) : g.rect(128 - w / 2, 8, w, 32); g.fill();
   g.fillStyle = '#' + cor.getHexString(); g.fillRect(128 - w / 2, 8, 4, 32);
   g.fillStyle = '#efede8'; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillText((marca ? marca + ' ' : '') + nome, 128 + 2, 25, w - 16);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; texNome[k] = t; return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.larg = w; texNome[k] = t; return t;   // (larg: a pilula, em 256 avos)
 }
 export function placaDeTexto(nome, sub, cor, larg, plana) {
   const c = document.createElement('canvas'); c.width = 1024; c.height = 224; const g = c.getContext('2d'); g.scale(2, 2);
@@ -528,70 +528,134 @@ export function pintarParedes(ab, ctx) {
   });
 }
 
-// ================================================================ A FITA DO P&L EM 3D (G32, obra 4) — dentro do escritorio
-// Ele (questionario 3): "Fita do P&L 3D -> dentro do escritorio". Uma fita que flutua por cima do corredor das salas, com o
-// resultado em papel ACUMULADO dia a dia (torre.json -> reactor.ja_entrou.por_dia): sobe a verde, desce a vermelho, e a
-// ponta de HOJE brilha. Nao roda em ciclo (sem dados nao mexe): cada evento do P&L (t3b_ligacoes.js: 'fita') faz uma luz
-// correr a fita ate a ponta de hoje, e a ponta pulsar.
-export function actualizarFita(ab, ctx) {
-  if (!ab || !ab.pronto) return;
-  const T = ctx.T3B.estado.T, je = T && T.reactor && T.reactor.ja_entrou, pd = je && je.por_dia;
-  if (!pd || typeof pd !== 'object') return;
-  const dias = Object.keys(pd).sort(); if (dias.length < 2) return;
-  const ass = dias.length + ':' + dias.map(d => pd[d]).join(',');
-  if (ab.fita && ab.fita.ass === ass) return;
-  if (ab.fita) { ab.grupo.remove(ab.fita.g); ab.fita.g.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) { if (x.material.map) x.material.map.dispose(); x.material.dispose(); } }); }
-  let acc = 0; const vals = dias.map(d => (acc += Number(pd[d]) || 0));
-  const { D } = ctx, g = new THREE.Group(); g.userData.proprio = true;
-  const N = vals.length, L = 26, z = -D / 2 + 7.0, base = 2.5, alt = 1.15, prof = 0.34;
-  const mn = Math.min(0, ...vals), mx = Math.max(0, ...vals), sp = (mx - mn) || 1;
-  const X = i => -L / 2 + L * i / (N - 1), Y = v => base + (v - mn) / sp * alt;
-  const pos = [], cor = [], idx = [], c = new THREE.Color();
-  for (let i = 0; i < N; i++) {
-    const sobe = i === 0 ? vals[0] >= 0 : vals[i] >= vals[i - 1];
-    c.set(sobe ? 0x3fd69a : 0xff5a5f);
-    pos.push(X(i), Y(vals[i]), z - prof / 2, X(i), Y(vals[i]), z + prof / 2);
-    cor.push(c.r, c.g, c.b, c.r, c.g, c.b);
-    if (i) { const a = (i - 1) * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
-  }
-  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(cor, 3)); geo.setIndex(idx);
-  const fita = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.78, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
-  g.add(fita);
-  const borda = new THREE.Line(new THREE.BufferGeometry().setFromPoints(vals.map((v, i) => new THREE.Vector3(X(i), Y(v), z + prof / 2))), new THREE.LineBasicMaterial({ color: 0xffdc6a, transparent: true, opacity: 0.85, toneMapped: false }));
-  g.add(borda);
-  // 05/10 (Q4 B9 "mais nitido"): a aresta de tras tambem desenhada - a fita ganha espessura e contorno
-  const borda2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints(vals.map((v, i) => new THREE.Vector3(X(i), Y(v), z - prof / 2))), new THREE.LineBasicMaterial({ color: 0xffdc6a, transparent: true, opacity: 0.45, toneMapped: false }));
-  g.add(borda2);
-  const zero = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-L / 2, Y(0), z), new THREE.Vector3(L / 2, Y(0), z)]), new THREE.LineDashedMaterial({ color: 0x8b8a93, dashSize: 0.3, gapSize: 0.25, transparent: true, opacity: 0.6 }));
-  zero.computeLineDistances(); g.add(zero);
-  const ponta = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshBasicMaterial({ color: 0xf2c230, toneMapped: false }));
-  ponta.position.set(X(N - 1), Y(vals[N - 1]), z + prof / 2); g.add(ponta);
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: ctx.texturaHalo(), color: 0xf2c230, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(1.1, 1.1, 1); ponta.add(halo);
-  const luz = new THREE.Sprite(new THREE.SpriteMaterial({ map: ctx.texturaHalo(), color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); luz.scale.set(0.9, 0.9, 1); g.add(luz);
-  const tot = vals[N - 1], txt = 'P&L em papel acumulado · ' + (tot >= 0 ? '+' : '−') + Math.abs(tot).toFixed(2).replace('.', ',') + ' US$ · ' + N + ' dias';
-  const etq = placaDeTexto(txt.split(' · ')[0], txt.split(' · ').slice(1).join(' · '), new THREE.Color(tot >= 0 ? 0x3fd69a : 0xff5a5f), 3.6, true);
-  etq.position.set(-L / 2 + 1.9, base + alt + 0.55, z); g.add(etq);
-  ab.grupo.add(g);
-  ab.fita = { g, ass, ponta, halo, luz, pts: vals.map((v, i) => new THREE.Vector3(X(i), Y(v), z + prof / 2)), pulso: 0, corre: -1, n: 0 };
-}
-export function pulsoFita(ab) { if (!ab || !ab.fita) return; ab.fita.pulso = 1; ab.fita.corre = 0; ab.fita.lenta = false; ab.fita.n++; }
-export function passoFita(ab, dt) {
-  const f = ab && ab.fita; if (!f) return false;
-  // 05/10 (Q4 B9, ele: "fica - so otimizar, deixar mais fluido e mais nitido"): a fita so mexia com um evento do P&L. Agora a
-  // ponta de hoje respira sempre e uma luz percorre a fita devagar a cada ~4 s (depressa a cada evento real do P&L).
-  f.tt = (f.tt || 0) + dt;
-  const resp = 0.5 + 0.5 * Math.sin(f.tt * 2.2);
-  if (f.pulso > 0.01) f.pulso *= Math.pow(0.25, dt); else f.pulso = 0;
-  f.ponta.scale.setScalar(1 + 0.08 * resp + f.pulso * 0.8); f.halo.material.opacity = 0.55 + 0.25 * resp + f.pulso * 0.3;
-  if (f.corre < 0 && f.tt - (f.fimCorre || 0) > 3.8) { f.corre = 0; f.lenta = true; }
-  if (f.corre >= 0) {
-    f.corre += dt / (f.lenta ? 2.8 : 1.2); const u = Math.min(1, f.corre), k = u * (f.pts.length - 1), i = Math.min(f.pts.length - 2, Math.floor(k));
-    f.luz.position.copy(f.pts[i]).lerp(f.pts[i + 1], k - i); f.luz.material.opacity = u < 1 ? (f.lenta ? 0.55 : 0.9) * Math.sqrt(Math.sin(u * Math.PI)) : 0;
-    if (f.corre >= 1) { f.corre = -1; f.fimCorre = f.tt; f.lenta = false; }
-  }
-  return true;
-}
-
+// ================================================================ A FITA DO P&L EM 3D (G32, obra 4) — dentro do escritorio
+
+// Ele (questionario 3): "Fita do P&L 3D -> dentro do escritorio". Uma fita que flutua por cima do corredor das salas, com o
+
+// resultado em papel ACUMULADO dia a dia (torre.json -> reactor.ja_entrou.por_dia): sobe a verde, desce a vermelho, e a
+
+// ponta de HOJE brilha. Nao roda em ciclo (sem dados nao mexe): cada evento do P&L (t3b_ligacoes.js: 'fita') faz uma luz
+
+// correr a fita ate a ponta de hoje, e a ponta pulsar.
+
+export function actualizarFita(ab, ctx) {
+
+  if (!ab || !ab.pronto) return;
+
+  const T = ctx.T3B.estado.T, je = T && T.reactor && T.reactor.ja_entrou, pd = je && je.por_dia;
+
+  if (!pd || typeof pd !== 'object') return;
+
+  const dias = Object.keys(pd).sort(); if (dias.length < 2) return;
+
+  const ass = dias.length + ':' + dias.map(d => pd[d]).join(',');
+
+  if (ab.fita && ab.fita.ass === ass) return;
+
+  if (ab.fita) { ab.grupo.remove(ab.fita.g); ab.fita.g.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) { if (x.material.map) x.material.map.dispose(); x.material.dispose(); } }); }
+
+  let acc = 0; const vals = dias.map(d => (acc += Number(pd[d]) || 0));
+
+  const { D } = ctx, g = new THREE.Group(); g.userData.proprio = true;
+
+  const N = vals.length, L = 26, z = -D / 2 + 7.0, base = 2.5, alt = 1.15, prof = 0.34;
+
+  const mn = Math.min(0, ...vals), mx = Math.max(0, ...vals), sp = (mx - mn) || 1;
+
+  const X = i => -L / 2 + L * i / (N - 1), Y = v => base + (v - mn) / sp * alt;
+
+  const pos = [], cor = [], idx = [], c = new THREE.Color();
+
+  for (let i = 0; i < N; i++) {
+
+    const sobe = i === 0 ? vals[0] >= 0 : vals[i] >= vals[i - 1];
+
+    c.set(sobe ? 0x3fd69a : 0xff5a5f);
+
+    pos.push(X(i), Y(vals[i]), z - prof / 2, X(i), Y(vals[i]), z + prof / 2);
+
+    cor.push(c.r, c.g, c.b, c.r, c.g, c.b);
+
+    if (i) { const a = (i - 1) * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+
+  }
+
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(cor, 3)); geo.setIndex(idx);
+
+  const fita = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.78, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+
+  g.add(fita);
+
+  const borda = new THREE.Line(new THREE.BufferGeometry().setFromPoints(vals.map((v, i) => new THREE.Vector3(X(i), Y(v), z + prof / 2))), new THREE.LineBasicMaterial({ color: 0xffdc6a, transparent: true, opacity: 0.85, toneMapped: false }));
+
+  g.add(borda);
+
+  // 05/10 (Q4 B9 "mais nitido"): a aresta de tras tambem desenhada - a fita ganha espessura e contorno
+
+  const borda2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints(vals.map((v, i) => new THREE.Vector3(X(i), Y(v), z - prof / 2))), new THREE.LineBasicMaterial({ color: 0xffdc6a, transparent: true, opacity: 0.45, toneMapped: false }));
+
+  g.add(borda2);
+
+  const zero = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-L / 2, Y(0), z), new THREE.Vector3(L / 2, Y(0), z)]), new THREE.LineDashedMaterial({ color: 0x8b8a93, dashSize: 0.3, gapSize: 0.25, transparent: true, opacity: 0.6 }));
+
+  zero.computeLineDistances(); g.add(zero);
+
+  const ponta = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshBasicMaterial({ color: 0xf2c230, toneMapped: false }));
+
+  ponta.position.set(X(N - 1), Y(vals[N - 1]), z + prof / 2); g.add(ponta);
+
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: ctx.texturaHalo(), color: 0xf2c230, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.set(1.1, 1.1, 1); ponta.add(halo);
+
+  const luz = new THREE.Sprite(new THREE.SpriteMaterial({ map: ctx.texturaHalo(), color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); luz.scale.set(0.9, 0.9, 1); g.add(luz);
+
+  const tot = vals[N - 1], txt = 'P&L em papel acumulado · ' + (tot >= 0 ? '+' : '−') + Math.abs(tot).toFixed(2).replace('.', ',') + ' US$ · ' + N + ' dias';
+
+  const etq = placaDeTexto(txt.split(' · ')[0], txt.split(' · ').slice(1).join(' · '), new THREE.Color(tot >= 0 ? 0x3fd69a : 0xff5a5f), 3.6, true);
+
+  etq.position.set(-L / 2 + 1.9, base + alt + 0.55, z); g.add(etq);
+
+  ab.grupo.add(g);
+
+  ab.fita = { g, ass, ponta, halo, luz, pts: vals.map((v, i) => new THREE.Vector3(X(i), Y(v), z + prof / 2)), pulso: 0, corre: -1, n: 0 };
+
+}
+
+export function pulsoFita(ab) { if (!ab || !ab.fita) return; ab.fita.pulso = 1; ab.fita.corre = 0; ab.fita.lenta = false; ab.fita.n++; }
+
+export function passoFita(ab, dt) {
+
+  const f = ab && ab.fita; if (!f) return false;
+
+  // 05/10 (Q4 B9, ele: "fica - so otimizar, deixar mais fluido e mais nitido"): a fita so mexia com um evento do P&L. Agora a
+
+  // ponta de hoje respira sempre e uma luz percorre a fita devagar a cada ~4 s (depressa a cada evento real do P&L).
+
+  f.tt = (f.tt || 0) + dt;
+
+  const resp = 0.5 + 0.5 * Math.sin(f.tt * 2.2);
+
+  if (f.pulso > 0.01) f.pulso *= Math.pow(0.25, dt); else f.pulso = 0;
+
+  f.ponta.scale.setScalar(1 + 0.08 * resp + f.pulso * 0.8); f.halo.material.opacity = 0.55 + 0.25 * resp + f.pulso * 0.3;
+
+  if (f.corre < 0 && f.tt - (f.fimCorre || 0) > 3.8) { f.corre = 0; f.lenta = true; }
+
+  if (f.corre >= 0) {
+
+    f.corre += dt / (f.lenta ? 2.8 : 1.2); const u = Math.min(1, f.corre), k = u * (f.pts.length - 1), i = Math.min(f.pts.length - 2, Math.floor(k));
+
+    f.luz.position.copy(f.pts[i]).lerp(f.pts[i + 1], k - i); f.luz.material.opacity = u < 1 ? (f.lenta ? 0.55 : 0.9) * Math.sqrt(Math.sin(u * Math.PI)) : 0;
+
+    if (f.corre >= 1) { f.corre = -1; f.fimCorre = f.tt; f.lenta = false; }
+
+  }
+
+  return true;
+
+}
+
+
+
 // ================================================================ a grelha e o caminho (BFS 4-vizinhos, pixel-agents)
 const CEL = 0.6;
 function grelhaDoAndar(P, W, D) {
@@ -999,8 +1063,17 @@ export function lodDoAndar(ab, camara, nivel, ctx) {
 // 04/10 (c02 "texto por cima de texto"): a regra dos 1,3 m no chao nao chegava - vistos de lado, dois nomes de mesas diferentes
 // colavam-se no ecra ("Analista Kelly Analista Lawfers"). Agora tambem no ECRA: cada nome ocupa o seu retangulo (projectado pela
 // camara) e quem bate num ja posto fica escondido nesta volta.
-const _pn = new THREE.Vector3();
-export function nomesVisiveis(ab, foco, max, projectar) {
+const _pn = new THREE.Vector3(), _ws = new THREE.Vector3();
+// 10/10 (PC-HuntAI: "as etiquetas dos bonecos sobrepoem-se umas as outras"): o nome e um sprite de TAMANHO FIXO no ecra
+// (sizeAttenuation false): mede escala x P11 x altura/2 pixeis de alto e escala x P11 x altura/2 de largo (a textura inteira) -
+// a pilula ocupa 32/48 da altura e larg/256 da largura. O rectangulo de cada nome era um palpite fixo (17 px de alto, 6,6 px por
+// letra): num palco de 650 px o nome real tem ~24 px e os vizinhos de mesa sobrepunham-se. PURA: testada em testes_t3b.js.
+export function caixaDoNome(escX, escY, larg, pxEscala, nome) {
+  if (!(pxEscala > 0) || !(escX > 0) || !(escY > 0)) return { w: 18 + String(nome || '').length * 6.6, h: 17 };
+  const l = larg > 0 && larg <= 256 ? larg : 236;
+  return { w: escX * pxEscala * (l / 256) + 6, h: escY * pxEscala * (32 / 48) + 4 };
+}
+export function nomesVisiveis(ab, foco, max, projectar, pxEscala) {
   const todos = ab.actores.concat(ab.mensageiros);
   // q06 "o nome a flutuar": quem esta a fazer alguma coisa primeiro (a andar, com balao), depois os mais perto do foco;
   // no maximo `max`, e nunca dois nomes a menos de 1,3 m um do outro (vizinhos de mesa alternam: nada em cima de nada)
@@ -1014,7 +1087,8 @@ export function nomesVisiveis(ab, foco, max, projectar) {
       a.nomeSp.getWorldPosition(_pn); const q = projectar(_pn.x, _pn.y, _pn.z);
       if (q.z >= 1) livre = false;
       else {
-        const w = 18 + String(a.nome || '').length * 6.6, h = 17, r = { l: q.x - w / 2, r: q.x + w / 2, t: q.y - h / 2, b: q.y + h / 2 };
+        a.nomeSp.getWorldScale(_ws); const mp = a.nomeSp.material && a.nomeSp.material.map;
+        const cx = caixaDoNome(_ws.x, _ws.y, mp && mp.userData ? mp.userData.larg : 0, pxEscala, a.nome), w = cx.w, h = cx.h, r = { l: q.x - w / 2, r: q.x + w / 2, t: q.y - h / 2, b: q.y + h / 2 };
         if (rects.some(o => r.l < o.r && o.l < r.r && r.t < o.b && o.t < r.b)) livre = false; else rects.push(r);
       }
     }

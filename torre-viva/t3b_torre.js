@@ -1175,6 +1175,11 @@ function ligarNiveis() {
   nv.addEventListener('click', ev => { const b = ev.target.closest('button[data-k]'); if (!b) return; irNivel(Number(b.dataset.k)); });
   document.addEventListener('keydown', e => { if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return; if (/^[0-3]$/.test(e.key)) irNivel(Number(e.key)); });
 }
+// 10/10: quanto se afasta a camara do escritorio para caber num palco mais estreito do que o dele (2,3:1). PURA: >= 1 e <= 2,2.
+export function factorEscritorio(largura, altura) {
+  const asp = largura > 0 && altura > 0 ? largura / altura : 2.3;
+  return Math.min(2.2, Math.max(1, 2.3 / Math.max(0.5, asp)));
+}
 function irNivel(k) {
   if (!torre) return;
   if (k >= 2 && !aberto) { const n = T3B.estado.andarAberto || andarMaisVivo(); T3B.abrirAndar(n, false); }
@@ -1207,7 +1212,16 @@ function enquadrar(k, animar) {
       alvo = c.clone();
       const ac = aberto && (aberto.actores.find(x => x.lugar && !x.lugar.gerente) || aberto.actores[0]);
       if (ac) { const w = new THREE.Vector3(ac.obj.position.x, 0, ac.obj.position.z).applyAxisAngle(EIXO_Y, ang); alvo.set(c.x + w.x, foco.y + LAJE + 1.0, c.z + w.z); }
-      pos = alvo.clone().add(lado.clone().multiplyScalar(13).add(new THREE.Vector3(0, 8.5, 0)));
+      // 10/10 (PC-HuntAI, 1366x860: "a parte direita do escritorio fica tapada"): a distancia era FIXA, afinada no ecra dele
+      // (palco ~2,3:1); num palco mais estreito o escritorio nao cabia e o cartao do andar tapava a esquerda. Agora afasta-se
+      // pelo que falta de largura (factorEscritorio) e o alvo vai ao centro da ZONA LIVRE (sem cartao, fita e niveis).
+      const z = zonaLivre(), f = factorEscritorio(z.r - z.l, z.b - z.t);
+      const off = lado.clone().multiplyScalar(13).add(new THREE.Vector3(0, 8.5, 0)).multiplyScalar(f);
+      const dist = off.length(), esc = 2 * dist * Math.tan(fov / 2) / Math.max(1, vistaH);
+      const vista = off.clone().negate().normalize(), dirX = new THREE.Vector3().crossVectors(vista, EIXO_Y).normalize(), dirY = new THREE.Vector3().crossVectors(dirX, vista).normalize();
+      const dx = (z.l + z.r) / 2 - vistaW / 2, dy = (z.t + z.b) / 2 - vistaH / 2;
+      alvo.addScaledVector(dirX, -dx * esc).addScaledVector(dirY, dy * esc);
+      pos = alvo.clone().add(off);
     }
   }
   if (!animar || calmo) { camara.position.copy(pos); controles.target.copy(alvo); controles.update(); }
@@ -1266,10 +1280,13 @@ let rotCx = null, rotEls = [], rectCol = null;
 function htmlDoRotulo(a) { return '<b>' + a.n + '</b> ' + U.escH(a.nome) + ' <span>' + a.n_peoes + '</span>'; }
 function rotulosDosAndares() {
   if (!rotCx) { rotCx = document.createElement('div'); rotCx.className = 'rotulos-andares'; rotCx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden;contain:strict'; palco.insertBefore(rotCx, palco.querySelector('.holos')); }
+  if (!rotCx._clique) { rotCx._clique = true; rotCx.addEventListener('click', ev => { const r = ev.target.closest && ev.target.closest('.rot-andar[data-n]'); if (r) { ev.stopPropagation(); T3B.abrirAndar(Number(r.dataset.n), true); } }); }
   rotCx.innerHTML = ''; rotEls = [];
   torre.andares.forEach(a => {
-    const el = document.createElement('div'); el.className = 'rot-andar';
-    el.style.cssText = 'position:absolute;left:0;top:0;transform:translate(-9999px,0);white-space:nowrap;border-left:2px solid #' + new THREE.Color(COR_DIV[a.divisao] || COR.ouro).getHexString();
+    const el = document.createElement('div'); el.className = 'rot-andar'; el.dataset.n = a.n; el.title = 'abrir o andar ' + a.n;
+    // 10/10 (PC-HuntAI: "o clique no nome do andar na torre nao acertou"): a camada dos nomes tem pointer-events:none (para nao
+    // tapar o arrasto da camara) e o clique atravessava o nome e caia no vazio ao lado da torre. O nome e clicavel; o resto nao.
+    el.style.cssText = 'position:absolute;left:0;top:0;transform:translate(-9999px,0);white-space:nowrap;pointer-events:auto;cursor:pointer;border-left:2px solid #' + new THREE.Color(COR_DIV[a.divisao] || COR.ouro).getHexString();
     const html = htmlDoRotulo(a); el.innerHTML = html;
     rotCx.appendChild(el); rotEls.push({ el, a, vis: false, html, w: 0, tr: '' });
   });
@@ -1422,7 +1439,7 @@ function quadro(agora) {
     andarMexeu = ANDAR.passoAndar(aberto, dt, agora, CTX);
     if (agora - ultLod > 250 || camaraMudou) { ultLod = agora; if (ANDAR.lodDoAndar(aberto, camara, nivel, CTX)) andarMexeu = true; }
     if (camaraMudou || alvoCam.anim) ANDAR.esbaterPlacas(aberto, camara.position);
-    if (agora - ultNomes > 500) { ultNomes = agora; let n = 0; aberto.actores.concat(aberto.mensageiros).forEach(ac => { if (ac.estado === 'a_andar') n++; }); U.txt($('pc_and'), String(n)); ANDAR.nomesVisiveis(aberto, nivel >= 3 ? aberto.grupo.worldToLocal(controles.target.clone()) : null, nivel >= 3 ? 12 : 0, projectar); }
+    if (agora - ultNomes > 500) { ultNomes = agora; let n = 0; aberto.actores.concat(aberto.mensageiros).forEach(ac => { if (ac.estado === 'a_andar') n++; }); U.txt($('pc_and'), String(n)); ANDAR.nomesVisiveis(aberto, nivel >= 3 ? aberto.grupo.worldToLocal(controles.target.clone()) : null, nivel >= 3 ? 12 : 0, projectar, camara.projectionMatrix.elements[5] * vistaH / 2); }
   }
   if (ultimoDesenho) { fpsAm.push(1000 / (agora - ultimoDesenho)); if (fpsAm.length > 60) fpsAm.shift(); }
   ultimoDesenho = agora;
