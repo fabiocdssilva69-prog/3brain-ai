@@ -758,8 +758,18 @@
   });
   aoReagir('stark', function (ev) { ROBO.fala = agoraMs() / 1000; ROBO.aceno = 1; ROBO.olho = Math.max(ROBO.olho, ev.k === 'mudou' || ev.k === 'falou' ? 1 : 0.6); });
   // 05/10 (ele: "mais interacoes... mostrar alguma estatistica interessante"): a estatistica real da casa a rodar de 3,5 em 3,5 s
+  // 10/10 (ordem dele): com a conta real activa os numeros de dinheiro dos hologramas sao os DELA (torre.json -> real)
+  function realDaCasa(T) { var rl = obj(T && T.real); return rl.ativo && rl.patrimonio != null && isFinite(Number(rl.patrimonio)) ? rl : null; }
   function statsDoStark() {
-    var T = obj(T3B.estado.T), r = obj(T.reactor), g = obj(r.ganho), je = obj(r.ja_entrou), ex = obj(T.extremis), o = [];
+    var T = obj(T3B.estado.T), r = obj(T.reactor), g = obj(r.ganho), je = obj(r.ja_entrou), ex = obj(T.extremis), o = [], rl = realDaCasa(T);
+    if (rl) {
+      if (rl.hoje_usd != null) o.push(['HOJE · REAL', sinal(rl.hoje_usd, 2) + ' US$', rl.hoje_usd >= 0 ? C.ok : C.mau]);
+      if (rl.aberto_usd != null) o.push(['EM ABERTO · REAL', sinal(rl.aberto_usd, 2) + ' US$ · ' + lista(rl.posicoes).length + ' posições', rl.aberto_usd >= 0 ? C.ok : C.mau]);
+      if (rl.desde_o_inicio_usd != null) o.push(['DESDE O INÍCIO · REAL', sinal(rl.desde_o_inicio_usd, 2) + ' US$ (' + sinal(rl.desde_o_inicio_pct, 2) + '%)', rl.desde_o_inicio_usd >= 0 ? C.ok : C.mau]);
+      if (je.n_ganhos != null) o.push(['ACERTO DO CÉREBRO', fmt(je.n_ganhos / Math.max(1, je.n_ganhos + je.n_perdas) * 100, 1) + '% em ' + fmt(je.operacoes, 0) + ' ops', C.cy]);
+      if (ex.geracao_actual != null) o.push(['EVOLUÇÃO', 'geração ' + ex.geracao_actual + ' · ' + fmt(ex.n_familias, 0) + ' famílias', C.ouroHi]);
+      return o;
+    }
     if (g.realizado_usd != null) o.push(['P&L DE HOJE', sinal(g.realizado_usd, 2) + ' US$', g.realizado_usd >= 0 ? C.ok : C.mau]);
     if (je.n_ganhos != null) o.push(['ACERTO', fmt(je.n_ganhos / Math.max(1, je.n_ganhos + je.n_perdas) * 100, 1) + '% em ' + fmt(je.operacoes, 0) + ' ops', C.cy]);
     if (r.aberto_total_usd != null) o.push(['EM ABERTO', sinal(r.aberto_total_usd, 2) + ' US$ · ' + lista(r.posicoes).length + ' posições', r.aberto_total_usd >= 0 ? C.ok : C.mau]);
@@ -948,6 +958,8 @@
     CONT.genes = fmt(ex.n_genes, 0); CONT.aval = fmt(ex.n_avaliacoes, 0); CONT.ger = ex.geracao_actual != null ? String(ex.geracao_actual) : null; CONT.fam = ex.n_familias != null ? fmt(ex.n_familias, 0) : null;
     CONT.pos = String(lista(r.posicoes).length);
     var g = obj(r.ganho); CONT.hoje = g.realizado_usd != null ? sinal(g.realizado_usd, 2) + ' US$' : null; CONT.aberto = r.aberto_total_usd != null ? sinal(r.aberto_total_usd, 2) + ' US$' : null;
+    var rlC = realDaCasa(T);                                // 10/10: a conta real, quando activa
+    if (rlC) { CONT.pos = String(lista(rlC.posicoes).length); CONT.hoje = rlC.hoje_usd != null ? sinal(rlC.hoje_usd, 2) + ' US$' : null; CONT.aberto = rlC.aberto_usd != null ? sinal(rlC.aberto_usd, 2) + ' US$' : null; }
     CONT.rob = ex.robustos_alguma_vez != null ? fmt(ex.robustos_alguma_vez, 0) : null;
     CONT.acertoN = je.n_ganhos != null ? je.n_ganhos / Math.max(1, je.n_ganhos + je.n_perdas) * 100 : null; CONT.opsN = Number(je.operacoes); CONT.robN = Number(ex.robustos_alguma_vez); CONT.avalN = Number(ex.n_avaliacoes);
     pintarFitaNumeros();

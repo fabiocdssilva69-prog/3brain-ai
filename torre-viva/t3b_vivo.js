@@ -364,19 +364,55 @@
     pintarFita(T);
     T3B.emit('torre', T);
   }
+  // 10/10 (ordem dele): "quando o dinheiro real comecar a girar na torre os numeros dela tem que ser reiniciados, como se a
+  // gente tivesse acabado de comecar com os 99$". Com o bloco real activo (torre.json -> real, mercado/numeros_reais.py) a casa
+  // mostra a CONTA REAL (capital, hoje, em aberto, desde o inicio) e o papel passa a linha de baixo, como o cerebro que o real
+  // espelha. Antes da 1.a volta real com patrimonio medido fica o papel. PURA (sem DOM): testada em sala/testes_t3b.js.
+  function casaReal(T) {
+    var rl = (T && T.real) || {};
+    var num = function (x) { if (x == null || x === '') return null; x = Number(x); return isFinite(x) ? x : null; };
+    var pat = num(rl.patrimonio);
+    if (!rl.ativo || pat == null) return null;
+    var custo = 0, pos = [];
+    (Array.isArray(rl.posicoes) ? rl.posicoes : []).forEach(function (p) {
+      var q = num(p && p.qty), e = num(p && p.entrada);
+      if (q && e) { pos.push({ sym: String(p.simbolo), qty: q, ref: e }); custo += num(p.custo_usdt) != null ? num(p.custo_usdt) : q * e; }
+    });
+    var usdt = num(rl.usdt_livre);
+    return { cap: pat, hoje: num(rl.hoje_usd), aberto: num(rl.aberto_usd), ini: num(rl.desde_o_inicio_usd),
+      iniPct: num(rl.desde_o_inicio_pct), inicial: num(rl.capital_inicial), realizado: num(rl.realizado_usd) || 0, pos: pos,
+      baseCap: (usdt != null ? usdt : pat - custo) + custo, travado: !!rl.travado, velho: !!rl.da_ultima_volta_boa,
+      comecou: rl.comecou_em || rl.desde || null };
+  }
+  var ROTULO_PAPEL = { c_cap: 'capital da casa', c_dia: 'realizado hoje', c_ini: 'realizado desde o início' };
+  var ROTULO_REAL = { c_cap: 'capital da casa · real', c_dia: 'hoje · conta real', c_ini: 'desde o início · real' };
+  function rotulos(R) { Object.keys(R).forEach(function (id) { var c = $(id), u = c && c.querySelector('u'); if (u) txt(u, R[id]); }); }
+  function dataCurta(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] : '—'; }
   function pintarCasa(T) {
     var r = obj(T.reactor), c = obj(r.conta), g = obj(r.ganho), je = obj(r.ja_entrou), p = obj(T.pepper), est = obj(obj(p.totais).estrategias), org = obj(T.orgaos);
     var fUS = function (v) { return fmt(v, 2) + ' US$'; }, sUS = function (v) { return sinal(v, 2) + ' US$'; };
+    var rc = casaReal(T);
+    if (rc) {
+      rotulos(ROTULO_REAL);
+      numeroVivo('cap', 'c_cap', 'n_cap', rc.cap, fUS, '', 'capital');
+      txt($('n_cap_s'), 'começou com ' + fmt(rc.inicial, 2) + ' US$ · cérebro (papel) ' + sinal(je.liquido, 2) + ' US$' + (rc.travado ? ' · Binance à espera' : ''));
+      numeroVivo('dia', 'c_dia', 'n_dia', rc.hoje, sUS, cls(rc.hoje), 'hoje');
+      txt($('n_dia_s'), rc.pos.length + ' posição(ões) na conta real · realizado ' + sinal(rc.realizado, 2) + ' US$');
+      numeroVivo('ini', 'c_ini', 'n_ini', rc.ini, sUS, cls(rc.ini), 'desde o início');
+      txt($('n_ini_s'), (rc.iniPct != null ? sinal(rc.iniPct, 2) + '% · ' : '') + 'desde ' + dataCurta(rc.comecou) + (rc.velho ? ' · da última volta boa' : ''));
+    } else {
+    rotulos(ROTULO_PAPEL);
     numeroVivo('cap', 'c_cap', 'n_cap', c.capital_escala, fUS, '', 'capital');
     txt($('n_cap_s'), 'acumulado em papel ' + sinal(c.acumulado_papel, 2) + ' US$');
     numeroVivo('dia', 'c_dia', 'n_dia', g.realizado_usd, sUS, cls(g.realizado_usd), 'realizado hoje');
     txt($('n_dia_s'), (g.n_entrou_hoje || 0) + ' entrada(s) · ' + (g.n_saiu_hoje || 0) + ' saída(s) · cripto ' + sinal(g.realizado_cripto_usd, 2));
     numeroVivo('ini', 'c_ini', 'n_ini', je.liquido, sUS, cls(je.liquido), 'desde o início');
     txt($('n_ini_s'), fmt(je.operacoes, 0) + ' operações · taxas ' + fmt(je.taxa, 2) + ' US$');
+    }
     numeroVivo('mes', 'c_mes', 'n_mes', est.realizado, sUS, cls(est.realizado), 'livro da mesa');
     txt($('n_mes_s'), (est.n_linhas || 0) + ' estratégias · ' + (est.n || 0) + ' operações');
     pintarEvolucao(T);                                                    // 05/10: no lugar dos "orgaos prontos" (ordem dele)
-    abertoDoFicheiro = Number(r.aberto_total_usd);
+    abertoDoFicheiro = rc ? Number(rc.aberto) : Number(r.aberto_total_usd);
     pintarAberto(false);
   }
   // o "em aberto" mexe ao segundo pelo livro da Binance (o reactor.js calcula-o e escreve-o em #k_aberto); entre
@@ -410,10 +446,15 @@
   // muda quando uma operacao FECHA - esse nao se inventa. As accoes ficam no preco do ficheiro (nao ha fluxo gratis ao segundo).
   var AOVIVO = { pos: [], fluxos: {}, mid: {}, base: null, ult: 0, tPreco: 0, aberto: null, delta: 0 };
   function marcarAoVivo(T) {
-    var r = obj(T.reactor), c = obj(r.conta);
+    var r = obj(T.reactor), c = obj(r.conta), rc = casaReal(T);
+    if (rc) {                                       // 10/10: a conta REAL - o em aberto e o que cada posicao vale a mais do que custou
+      AOVIVO.base = { cap: rc.baseCap, abe: 0 };
+      AOVIVO.pos = rc.pos.map(function (p) { return { sym: p.sym.replace(/USD$/, 'USDT'), qty: p.qty, ref: p.ref }; });
+    } else {
     AOVIVO.base = { cap: Number(c.capital_escala), abe: Number(r.aberto_total_usd) };
     AOVIVO.pos = lista(r.posicoes).filter(function (p) { return p.cripto && isFinite(Number(p.qty)) && Number(p.agora) > 0; })
       .map(function (p) { return { sym: String(p.simbolo).replace(/USD$/, 'USDT'), qty: Number(p.qty), ref: Number(p.agora) }; });
+    }
     if (!window.T3BBinance) return;
     var quer = {}; AOVIVO.pos.forEach(function (p) { quer[p.sym.toLowerCase() + '@bookTicker'] = p.sym; });
     Object.keys(AOVIVO.fluxos).forEach(function (f) { if (!quer[f]) { try { window.T3BBinance.largar(f); } catch (e) { } delete AOVIVO.fluxos[f]; } });
