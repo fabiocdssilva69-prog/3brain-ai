@@ -1139,14 +1139,22 @@ function enquadrarGaveta(ab) {
 // gerente e lideres) cabem TODOS na zona livre e ficam centrados nela - como a gaveta faz com o andar inteiro. A distancia
 // minima e a de sempre (de perto, a do ecra dele); so cresce o que for preciso, ate MAX_ESCRITORIO vezes. So o TAMANHO tem de
 // caber: a posicao acerta-se depois, deslocando o alvo (como em enquadrarGaveta).
-const MAX_ESCRITORIO = 2.6, ALT_NOME = 2.7;
+// (17:3x, 3.o teste no PC-HuntAI: o tecto era 2,6x - com o cartao do andar aberto num palco de 982 px os bonecos espalhados
+// precisam de ~59 m e ficavam 10 pontos de fora, a direita. Provado no node com o three.js do projecto: testes_t3b.js.)
+const MAX_ESCRITORIO = 4.5, ALT_NOME = 2.7;
 function enquadrarEscritorio(ab, dir, base, z) {
   const acs = (ab.actores || []).filter(x => x && x.obj && x.obj.visible !== false);
   if (acs.length < 2 || !(base > 0)) return null;
-  ab.grupo.updateMatrixWorld(true);
+  // a gaveta na posicao FINAL durante a conta (ela desliza 0,9 s; a meio, os bonecos estariam metidos na torre)
+  const gv = ab.gaveta, guardaG = gv ? gv.position.clone() : null;
+  if (gv && ab.a && ab.alvoDesl != null) { gv.position.copy(new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), ab.a.ang).multiplyScalar(ab.alvoDesl)); gv.position.y = ab.a.y; gv.updateMatrixWorld(true); }
+  else ab.grupo.updateMatrixWorld(true);
   const pts = [], cen = new THREE.Vector3();
   acs.forEach(x => { const p = x.obj.getWorldPosition(new THREE.Vector3()); pts.push(p, p.clone().add(new THREE.Vector3(0, ALT_NOME, 0))); cen.add(p); });
   cen.multiplyScalar(1 / acs.length); cen.y += 1.0;
+  // os ecras de parede (o grafico do P&L, a velocidade, os numeros) entram inteiros - cortados no topo pareciam lixo
+  (ab.paredes || []).forEach(pa => { if (pa && pa.mesh) [[-3.2, -1.6], [3.2, -1.6], [-3.2, 1.6], [3.2, 1.6]].forEach(([x, y]) => pts.push(pa.mesh.localToWorld(new THREE.Vector3(x, y, 0)))); });
+  if (gv && guardaG) { gv.position.copy(guardaG); gv.updateMatrixWorld(true); }
   const mg = 14, zz = { l: z.l + mg, r: z.r - mg, t: z.t + mg, b: z.b - mg };
   if (zz.r - zz.l < 60 || zz.b - zz.t < 60) return null;
   const guarda = camara.position.clone(), gq = camara.quaternion.clone();
