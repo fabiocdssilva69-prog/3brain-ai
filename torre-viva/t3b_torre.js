@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=2acfb066fa';
+import * as ANDAR from './t3b_andar.js?v=236bb82273';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 
@@ -141,7 +141,7 @@ function iniciar() {
   else { const a = $('aviso3d'); if (a) { a.hidden = false; a.className = 'aviso3d carrega'; a.textContent = 'a montar a torre…'; } }
   requestAnimationFrame(quadro);
 }
-let vistaW = 0, vistaH = 0, camaraMudou = true, interagindo = false, fimInteracao = 0, camLivre = false;
+let vistaW = 0, vistaH = 0, camaraMudou = true, interagindo = false, fimInteracao = 0, camLivre = false, distEscritorio = 0;   // (10/10: distEscritorio - o limite Escritorio/Gaveta)
 function medirPalco(primeira) {
   const r = palco.getBoundingClientRect(), w = Math.max(200, Math.round(r.width)), h = Math.max(160, Math.round(r.height));
   if (!primeira && w === vistaW && h === vistaH) return;
@@ -1283,6 +1283,7 @@ function enquadrar(k, animar) {
       // bonecos que TRABALHAM cabem todos na zona livre (enquadrarEscritorio); sem andar pronto fica o enquadramento de cima.
       const e = aberto && aberto.pronto ? enquadrarEscritorio(aberto, off.clone().normalize(), off.length() / f, z) : null;
       if (e) { alvo = e.alvo; pos = e.pos; }
+      distEscritorio = pos.distanceTo(alvo);                     // (o limite Escritorio/Gaveta segue este enquadramento)
     }
   }
   if (!animar || calmo) { camara.position.copy(pos); controles.target.copy(alvo); controles.update(); }
@@ -1313,10 +1314,18 @@ function marcarNivel() {
   deslocarVista(nivel);
   T3B.emit('nivel', nivel);
 }
+// 10/10 18:2x (6.o teste no PC-HuntAI: "3 · Escritorio" ficava em "Gaveta"): o limite entre Escritorio e Gaveta era 30 m FIXOS,
+// e o enquadramento do escritorio num palco estreito pede 40-70 m (todos os bonecos na zona livre). O limite passa a ser o do
+// ultimo enquadramento do escritorio + 12% (nunca menos de 30 m). PURA: testada em testes_t3b.js. (distEscritorio: no topo, com camLivre)
+export function nivelDaDistancia(d, comAndar, distEsc) {
+  const lim3 = Math.max(30, (distEsc > 0 ? distEsc : 0) * 1.12);
+  return comAndar ? (d < lim3 ? 3 : 2) : (d < 300 ? 1 : 0);
+}
 function nivelPelaDistancia() {
-  const d = camara.position.distanceTo(controles.target), k = aberto ? (d < 30 ? 3 : 2) : (d < 300 ? 1 : 0);
-  // durante uma viagem pedida (niveis/teclas) manda o nivel pedido; a distancia so decide quando ele usa o rato
-  if (k !== nivel && !alvoCam.anim) { nivel = k; marcarNivel(); }
+  const d = camara.position.distanceTo(controles.target), k = nivelDaDistancia(d, !!aberto, distEscritorio);
+  // durante uma viagem pedida (niveis/teclas) manda o nivel pedido; a distancia so decide quando ELE usa o rato (camLivre).
+  // (10/10: antes decidia tambem depois de cada viagem pedida - e desfazia o "3 · Escritorio" logo que a camara chegava)
+  if (k !== nivel && !alvoCam.anim && camLivre) { nivel = k; marcarNivel(); }
   if (!torre) return;
   // ponto 1: de longe um arranha-ceus liso (nem janelas acesas nem faixas); a aproximar sobem as janelas e as faixas
   const dc = camara.position.distanceTo(new THREE.Vector3(0, Math.min(torre.altura, Math.max(0, camara.position.y)), 0));
