@@ -1623,7 +1623,10 @@
     // 09/10 (ele: "o card de visualizacao do laboratorio ta bugado, quero outros: mais 5 modelos ou ate mais, parecidos mas com
     // a movimentacao e animacao diferentes"): os MESMOS dados e o mesmo desenho de base (cada ponto = um gene real da amostra do
     // /labs.json: dourado forte = robusto, cinza = demitido, acende quando calcula; cada lab um nucleo dourado; as bolhas sobem
-    // de quem calcula) com SEIS movimentos. Escolhe-se nos botoes 1-6 do cartao e fica guardado neste navegador (t3b_lab_modelo).
+    // de quem calcula) com SEIS movimentos. Escolhe-se nos botoes do cartao e fica guardado neste navegador.
+    // 10/10: + a NEBULOSA ESPIRAL (a que ele aprovou na 2.a pagina de testes; bloco <nebulosa> acima): e o botao 1 e o modelo por
+    // omissao; os seis de 09/10 ficam nos botoes 2-7. A escolha guarda-se agora em t3b_lab_modelo2 (a chave t3b_lab_modelo, de
+    // 09/10, fica como estava e ja ninguem a le): assim quem tinha escolhido outro passa uma vez a nebulosa.
     var ONDAS = {}, ULT_NV = {}, PROX_ONDA = {}, VIDA_ONDA = 2600;
     function noAnel(cx, cy, rx, ry, rot, q) { var x = Math.cos(q) * rx, y = Math.sin(q) * ry, cr = Math.cos(rot), sr = Math.sin(rot); return [cx + x * cr - y * sr, cy + x * sr + y * cr]; }
     function nucleoLab(ctx, gi, c, nv, t) {
@@ -1631,8 +1634,10 @@
       luz(ctx, '#ffdc6a', c.x, c.y, 7 + 5 * nv + Math.sin(t * 1.3 + gi), 0.55 + 0.4 * nv);
       ctx.fillStyle = '#ffe9a8'; ctx.beginPath(); ctx.arc(c.x, c.y, 2.4 + 1.2 * nv, 0, TAU); ctx.fill();
     }
-    var ORDEM_LAB = ['orbita', 'espiral', 'atomo', 'pulsar', 'enxame', 'relogio'];
+    var ORDEM_LAB = ['nebulosa', 'orbita', 'espiral', 'atomo', 'pulsar', 'enxame', 'relogio'];
     var MODELOS_LAB = {
+      // 0. NEBULOSA ESPIRAL (10/10, a aprovada): desenha o cartao inteiro (o "desenhar" substitui o mover/quadro dos outros)
+      nebulosa: criarNebulosa(),
       // 1. ORBITAS (o de 07-08/10): cada gene na sua orbita, os de dentro mais depressa; quem calcula acelera
       orbita: { nome: 'Órbitas',
         mover: function (st, c, gr, t, dm, base) {
@@ -1746,10 +1751,11 @@
           for (var a = 0; a < 4; a++) { var r = (0.32 + 0.22 * a) * c.R; ctx.strokeStyle = 'rgba(242,194,48,' + ((a ? 0.1 : 0.22) + 0.2 * nv).toFixed(3) + ')'; ctx.beginPath(); ctx.ellipse(c.x, c.y, r, r * 0.7, 0, 0, TAU); ctx.stroke(); }
         } }
     };
-    try { LAB.modelo = window.localStorage.getItem('t3b_lab_modelo') || 'orbita'; } catch (e) { LAB.modelo = 'orbita'; }
-    if (!MODELOS_LAB[LAB.modelo]) LAB.modelo = 'orbita';
-    EXTRA.lab_modelo = function () { return { modelo: LAB.modelo, modelos: ORDEM_LAB.length }; };
-    (function () {          // os botoes 1-6 no canto do cartao (a pega de arrastar e so o titulo: nao chocam)
+    var CHAVE_LAB = 't3b_lab_modelo2', LAB_OMISSAO = 'nebulosa';
+    try { LAB.modelo = window.localStorage.getItem(CHAVE_LAB) || LAB_OMISSAO; } catch (e) { LAB.modelo = LAB_OMISSAO; }
+    if (!MODELOS_LAB[LAB.modelo]) LAB.modelo = LAB_OMISSAO;
+    EXTRA.lab_modelo = function () { return { modelo: LAB.modelo, modelos: ORDEM_LAB.length, nebulosa: MODELOS_LAB.nebulosa.estado() }; };
+    (function () {          // os botoes 1-7 no canto do cartao (a pega de arrastar e so o titulo: nao chocam)
       var hl = $('h_lab'); if (!hl || hl.querySelector('.lab-mod')) return;
       var bar = document.createElement('div'); bar.className = 'lab-mod'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'modelo do laboratorio');
       ORDEM_LAB.forEach(function (id, i) {
@@ -1757,7 +1763,7 @@
         if (id === LAB.modelo) b.className = 'on';
         b.addEventListener('click', function (ev) {
           ev.stopPropagation(); LAB.modelo = id;
-          try { window.localStorage.setItem('t3b_lab_modelo', id); } catch (e2) { }
+          try { window.localStorage.setItem(CHAVE_LAB, id); } catch (e2) { }
           Array.prototype.forEach.call(bar.children, function (x) { x.className = x.dataset.m === id ? 'on' : ''; });
           LAB.est.forEach(function (st) { st.px = null; });
           sujar(cenaLab, 4000);
@@ -1769,8 +1775,19 @@
     cenaLab = cena(cv, { id: 'lab', holo: $('h_lab'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       if (!LAB.carregado) { rot(ctx, 'a ler os genes dos labs…', w / 2, h / 2 + 8, C.dim, 9, 'center', 500); return; }
+      var MOV = MODELOS_LAB[LAB.modelo] || MODELOS_LAB[LAB_OMISSAO], agora = agoraMs(), base = (ACT.lab || {}).base || 0;
+      if (MOV.desenhar) {
+        // 10/10: a Nebulosa espiral desenha o cartao inteiro (uma galaxia: um braco por especialidade, um aglomerado por lab). A luz
+        // das estrelas do cartao e o brilho das nuvens continuam a apagar-se como nos outros modelos; as bolhas nao entram aqui
+        MOV.desenhar(ctx, w, h, t, dt, agora, base);
+        LAB.est.forEach(function (st) { st.luz *= Math.pow(0.45, dt); });
+        GRUPOS.forEach(function (g, gi) { LAB.nuvem[gi] = (LAB.nuvem[gi] || 0) * Math.pow(0.5, dt); });
+        LAB.bolhas.length = 0;
+        rot(ctx, MOV.nome.toUpperCase(), w - 24, h - 6, C.dim, 7, 'right', 600);
+        return;
+      }
       if (LIG.ver !== LAB.ver || LIG.w !== w || LIG.h !== h) ligar(w, h);
-      var CS = centros(w, h), agora = agoraMs(), base = (ACT.lab || {}).base || 0;
+      var CS = centros(w, h);
       // a posicao de cada gene agora: a casa + a flutuacao (cada um ao seu ritmo)
       // 05/10 (ele: "a movimentacao ta estranha, nao ta compativel com o que e"): cada ponto tremia sozinho; agora cada NUVEM gira
       // inteira e devagar a volta do seu centro (mais depressa quando os genes dela calculam) e respira um pouco
@@ -1778,7 +1795,7 @@
       GRUPOS.forEach(function (g, gi) { LAB.giro[gi] = (LAB.giro[gi] || 0) + (calmo ? 0 : dt * (0.035 + 0.3 * Math.min(1, LAB.nuvem[gi] || 0))); });
       // 07/10 (Q5 B6, ele: "a animacao e fluidez como o card de exemplo 'os labs em orbita'"): as nuvens ficam, mas cada gene tem
       // a SUA orbita (os de dentro mais depressa, como planetas), e o que calcula ACELERA e acende; os robustos a ouro
-      var MOV = MODELOS_LAB[LAB.modelo] || MODELOS_LAB.orbita, dm = calmo ? 0 : dt;
+      var dm = calmo ? 0 : dt;
       if (MOV.antes) MOV.antes(CS, t, dm, base, agora);
       LAB.est.forEach(function (st) {
         st.brilho = 0;
@@ -1826,7 +1843,7 @@
         ctx.globalAlpha = 1;
         if (bo.rob) luz(ctx, C.ouro, bx, by, 6 + r, fade * 0.6);
       }
-      rot(ctx, (MODELOS_LAB[LAB.modelo] || MODELOS_LAB.orbita).nome.toUpperCase(), w - 24, h - 6, C.dim, 7, 'right', 600);
+      rot(ctx, MOV.nome.toUpperCase(), w - 24, h - 6, C.dim, 7, 'right', 600);
       // os nomes e os numeros de cada lab (camada guardada)
       porCamada(ctx, s, 'nomes', GRUPOS.map(function (g, i) { return (LAB.rob[i] || 0) + '/' + (LAB.tot[i] || 0); }).join('|'), function (g) {
         // 08/10 (OBRA 11): o nome curto do lab e os robustos (o total fica no titulo e na barra minimizada) - os nomes compridos batiam uns nos outros
