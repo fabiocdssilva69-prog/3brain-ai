@@ -1362,7 +1362,8 @@
   var GRUPO_DA_ESP = {}; GRUPOS.forEach(function (g, i) { g.esps.forEach(function (e) { GRUPO_DA_ESP[e] = i; }); });
   var GRUPO_DO_ANDAR = {};
   T3B.on('estrutura', function (d) { GRUPO_DO_ANDAR = {}; lista(d.andares).forEach(function (a) { if (GRUPO_DA_ESP[a.esp] != null) GRUPO_DO_ANDAR[a.n] = GRUPO_DA_ESP[a.esp]; }); });
-  var LAB = { est: [], porChave: {}, tot: {}, rob: {}, dem: {}, ger: null, nEv: 0, ultimo: null, carregado: false, ver: 0, nuvem: {}, bolhas: [] };
+  // (10/10: labs/labPorAndar/chamas = a Nebulosa espiral - os labs todos com a sua amostra e as explosoes; ver o bloco <nebulosa>)
+  var LAB = { est: [], porChave: {}, tot: {}, rob: {}, dem: {}, ger: null, nEv: 0, ultimo: null, carregado: false, ver: 0, nuvem: {}, bolhas: [], labs: [], labPorAndar: {}, chamas: [] };
   function estrelaNova(gi, gene, i) {
     var sem = U.semente(gene.k + i);
     return { g: gi, k: gene.k, r: !!gene.r, d: !!gene.d, andar: gene.andar, ang: (sem % 6283) / 1000, raio: Math.sqrt(((sem >> 4) % 1000) / 1000), v: 0.12 + ((sem >> 9) % 300) / 1000, luz: 0, t: 0 };
@@ -1381,6 +1382,7 @@
         var quota = Math.max(10, Math.round(170 * (LAB.tot[gi] || 0) / Math.max(1, total)));   // 05/10: 110 -> 170 (as nuvens precisam de corpo)
         porGrupo[gi].slice(0, quota).forEach(function (gene, i) { var s = antigas[gene.k] || estrelaNova(gi, gene, i); s.r = !!gene.r; s.d = !!gene.d; s.g = gi; LAB.est.push(s); LAB.porChave[s.k] = s; });
       });
+      amostraDosLabs(d.labs);   // 10/10: a Nebulosa espiral (um aglomerado por lab: as estrelas acima so chegam aos 1.os labs de cada grupo)
       LAB.carregado = true; LAB.ver++; sujar(cenaLab, 0); pintarLegendaLab();
     }).catch(function () { });
   }
@@ -1400,18 +1402,194 @@
         s.luz = 1; s.t = agora; LAB.nuvem[gi] = 1;
         if (LAB.bolhas.length < 140) LAB.bolhas.push({ st: s, t0: agora, rob: s.r });   // 05/10: o gene que calcula solta uma bolha
       });
+      genesNoLab(ev, rob, agora);   // 10/10: a Nebulosa espiral (a amostra do lab inteira, a energia e a explosao do aglomerado)
     } else {
       // um funcionario de um lab escreveu (o organismo, a sombra, a revisao): a constelacao desse andar brilha
       var g2 = GRUPO_DO_ANDAR[r.andar]; LAB.est.forEach(function (s) { if (g2 == null || s.g === g2) s.luz = Math.max(s.luz, 0.35); }); if (g2 != null) LAB.nuvem[g2] = Math.max(LAB.nuvem[g2] || 0, 0.6);
     }
     sujar(cenaLab, 2200); pintarLegendaLab();
   });
-  EXTRA.lab = function () { var acesas = LAB.est.filter(function (s) { return s.luz > 0.05; }).length; return { estrelas: LAB.est.length, acesas: acesas, robustas: LAB.est.filter(function (s) { return s.r && !s.d; }).length, demitidas: LAB.est.filter(function (s) { return s.d; }).length, eventos: LAB.nEv }; };
+  EXTRA.lab = function () { var acesas = LAB.est.filter(function (s) { return s.luz > 0.05; }).length; return { estrelas: LAB.est.length, acesas: acesas, robustas: LAB.est.filter(function (s) { return s.r && !s.d; }).length, demitidas: LAB.est.filter(function (s) { return s.d; }).length, eventos: LAB.nEv, modelo: EXTRA.lab_modelo ? EXTRA.lab_modelo() : null }; };
   T3B.on('torre', function (T) { var ex = obj(T.extremis); if (ex.geracao_actual !== LAB.ger) { if (LAB.ger != null) creditarHolo('lab', 'lab', 'geração ' + ex.geracao_actual); LAB.ger = ex.geracao_actual; } U.txt($('h_lab_e'), 'geração ' + (ex.geracao_actual || '?') + ' · ' + fmt(ex.n_familias, 0) + ' famílias'); });
   function pintarLegendaLab() {
     var rob = 0, tot = 0; Object.keys(LAB.tot).forEach(function (g) { tot += LAB.tot[g] || 0; rob += LAB.rob[g] || 0; });
     mini('hm_lab', [['genes', fmt(tot, 0)], ['robustos', fmt(rob, 0)], ['acesos', String(LAB.est.filter(function (s) { return s.luz > 0.05; }).length)]]);
   }
+  // ---------------------------------------------------------------- <nebulosa> 10/10: A NEBULOSA ESPIRAL, o modelo aprovado
+  // Ele (10/10, depois da 2.a pagina de testes, sala/lab_modelos2.html): "gostei do nebulosa espiral pode aprovar esse por
+  // enquanto". E o modelo 7 do sala/lab_modelos2.js trazido para o cartao com os dados que o cartao JA tem (o mesmo pedido ao
+  // /labs.json e os mesmos eventos "genes"; nada de outro pedido nem de outro relogio): uma galaxia em 3D a rodar devagar e a
+  // balancar a inclinacao. Cada BRACO e uma especialidade (GRUPOS) e cada AGLOMERADO ao longo dele e um lab (o 1.o perto do
+  // nucleo, o ultimo na ponta); as estrelas sao os genes da amostra do lab (ate NEB_POR_LAB, os robustos primeiro): douradas =
+  // robustas, cinza = demitidas, ciano = novas (tocadas por uma evolucao: meia-vida de 25 s ate 0,08, como na pagina de testes).
+  // Quando um lab calcula, o aglomerado dele ACENDE numa explosao (um anel que se abre no plano do disco) e as estrelas que
+  // calcularam brilham; o nucleo acende com a actividade dos labs (3 min), o po do braco com a da sua especialidade, e com mais
+  // actividade a galaxia roda mais depressa. Com prefers-reduced-motion fica parada e sem explosoes (so acende).
+  // Leve para o portatil (UHD 620): ~20 pinturas por quadro (o po e as estrelas vao em lotes de uma cor so: um fill por lote).
+  // As provas (sala/testes_t3b.js) extraem este bloco e desenham-no num canvas falso.
+  var NEB_POR_LAB = 24;          // metade da amostra do /labs.json (48): o cartao tem 252 px de largura e o portatil e fraco
+  var NEB_NOVO_MS = 91000, NEB_MEIA_E = 1600, NEB_MEIA_P = 450;   // gene novo ~91 s; energia do lab 1,6 s e pulso 0,45 s de meia-vida
+  var NEB_COR = { rob: '#ffd65a', gene: 'rgba(242,194,48,.62)', novo: '#2dd4e8', dem: '#5c5c66', flash: '#fff3c4' };
+  // a energia do lab agora (cada calculo soma 0,55 a 1,45, ate 4) e o pulso (1 no calculo): contas pelo relogio, nao por quadro
+  function energiaLab(L, agora) { var v = L && L.e > 0 ? L.e * Math.pow(0.5, Math.max(0, agora - L.tE) / NEB_MEIA_E) : 0; return v > 1e-4 && isFinite(v) ? v : 0; }
+  function pulsoLab(L, agora) { if (!L || !(L.tP > 0)) return 0; var v = Math.pow(0.5, Math.max(0, agora - L.tP) / NEB_MEIA_P); return v > 1e-3 ? v : 0; }
+  // os labs do /labs.json (o mesmo pedido do cartao) com a sua amostra: um aglomerado por lab. O mesmo lab (pelo andar) guarda a
+  // energia e o mesmo gene (pelo lab e pela chave) guarda quando calculou
+  function amostraDosLabs(dlabs) {
+    var labsV = LAB.labPorAndar || {}, genesV = {};
+    (LAB.labs || []).forEach(function (L) { L.genes.forEach(function (g) { genesV[L.n + '|' + g.k] = g; }); });
+    LAB.labs = []; LAB.labPorAndar = {};
+    (Array.isArray(dlabs) ? dlabs : []).forEach(function (l) {
+      var gi = l ? GRUPO_DO_ANDAR[l.n] : null; if (gi == null || LAB.labPorAndar[l.n]) return;
+      var L = labsV[l.n] || { n: l.n, e: 0, tE: 0, tP: 0, cor: NEB_COR.flash };
+      L.g = gi; L.genes = []; L.porChave = {};
+      (Array.isArray(l.amostra) ? l.amostra : []).forEach(function (s) {
+        if (!s || s.k == null || L.porChave[s.k] || L.genes.length >= NEB_POR_LAB) return;
+        var g = genesV[l.n + '|' + s.k] || { k: s.k, t: 0, tn: 0 }; g.r = !!s.r; g.d = !!s.d; L.genes.push(g); L.porChave[s.k] = g;
+      });
+      LAB.labs.push(L); LAB.labPorAndar[l.n] = L;
+    });
+    LAB.labs.sort(function (a, b) { return a.g - b.g || a.n - b.n; });
+  }
+  // o lab que calcula (evento "genes"): os genes dele acendem (o que nao esta na amostra fica no lugar do mais antigo nao
+  // robusto, como na pagina de testes), a energia e o pulso do lab sobem e fica marcada a explosao do aglomerado
+  function genesNoLab(ev, rob, agora) {
+    var L = ev ? LAB.labPorAndar[ev.andar] : null; if (!L) return;
+    var ch = Array.isArray(ev.chaves) ? ev.chaves : [], n = Number(ev.n), evo = ev.tipo === 'evolucao';
+    if (!isFinite(n) || n < ch.length) n = ch.length;
+    ch.slice(0, 32).forEach(function (k) {
+      if (k == null) return;
+      var g = L.porChave[k], i;
+      if (!g) {
+        for (i = 0; i < L.genes.length; i++) { var x = L.genes[i]; if (x.r && !x.d) continue; if (!g || x.t < g.t) g = x; }
+        if (!g) for (i = 0; i < L.genes.length; i++) if (!g || L.genes[i].t < g.t) g = L.genes[i];
+        if (!g) return;
+        delete L.porChave[g.k]; g.k = k; g.r = false; g.d = false; g.tn = 0; L.porChave[k] = g;
+      }
+      if (rob && rob[k]) g.r = true;
+      g.t = agora; if (evo) g.tn = agora;
+    });
+    var forca = clamp(Math.log(1 + n) / Math.log(65), 0.18, 1);
+    L.e = Math.min(4, energiaLab(L, agora) + 0.55 + 0.9 * forca); L.tE = agora; L.tP = agora;
+    L.cor = evo ? NEB_COR.novo : ev.tipo === 'revisao' ? C.ouroHi : NEB_COR.flash;
+    if (!calmo) { LAB.chamas.push({ n: L.n, t0: agora, cor: L.cor, forca: forca }); if (LAB.chamas.length > 40) LAB.chamas.shift(); }
+  }
+  // muitos quadradinhos da mesma cor num so fill (um Float32Array reaproveitado: nada de lixo por quadro)
+  function LoteNeb(n) { this.cap = Math.max(1, n); this.b = new Float32Array(this.cap * 3); this.n = 0; }
+  LoteNeb.prototype.por = function (x, y, s) { if (this.n >= this.cap) return; var i = this.n++ * 3; this.b[i] = x - s; this.b[i + 1] = y - s; this.b[i + 2] = s * 2; };
+  LoteNeb.prototype.pintar = function (ctx, cor, a) {
+    if (this.n) { ctx.globalAlpha = a; ctx.fillStyle = cor; ctx.beginPath(); for (var i = 0; i < this.n; i++) { var k = i * 3; ctx.rect(this.b[k], this.b[k + 1], this.b[k + 2], this.b[k + 2]); } ctx.fill(); ctx.globalAlpha = 1; }
+    this.n = 0;
+  };
+  // o modelo: { nome, desenhar(ctx, w, h, t, dt, agora, base), estado() } - desenha o cartao inteiro (uma galaxia so)
+  function criarNebulosa() {
+    var PASSO = 1.8;                                             // 1/tan(inclinacao do braco): ~210 graus de volta do nucleo a ponta
+    var CORES = [NEB_COR.rob, NEB_COR.gene, NEB_COR.novo, NEB_COR.dem], ALFA = [0.42, 0.7, 1], TAM = [0.6, 0.85, 1.15];
+    var S = { chave: '', ag: [], porN: {}, bracos: [], gas: new Float32Array(0), nGas: 0, b0: 0, R: 6, cx: 0, cy: 0, til0: 0.55, rot: 0.4, estrelas: 0 };
+    var lotes = [], lGas = new LoteNeb(64), acesas = [], q;
+    for (q = 0; q < 12; q++) lotes.push(new LoteNeb(64));       // [robusto, gene, novo, demitido] x [longe, meio, perto]
+    // um gerador com semente (mulberry32): o mesmo lab desenha sempre o mesmo aglomerado
+    function aleatorio(s) {
+      var a = (Number(s) >>> 0) || 0x9e3779b9;
+      return function () { a = (a + 0x6d2b79f5) >>> 0; var t = Math.imul(a ^ (a >>> 15), a | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    }
+    function gauss(rnd) { return (rnd() + rnd() + rnd() + rnd() - 2) * 1.73; }   // ~ normal(0, 1), sem caudas infinitas
+    function angulo(th0, r) { return th0 + Math.log(Math.max(0.05, r) / 0.12) * PASSO; }
+    // o gene acende 0,35 s depois do calculo (a onda chega) e apaga-se em ~1 s; sem movimento, acende ja
+    function aceso(g, agora) { if (!(g.t > 0)) return 0; var d = agora - g.t - (calmo ? 0 : 350); return d >= 0 && d <= 6000 ? Math.exp(-d / 900) : 0; }
+    function arrumar(w, h) {
+      var top = TOPO + 2, hh = Math.max(1, h - 12 - top), pad = 6, i;   // entre a faixa do titulo e a linha dos botoes
+      S.til0 = clamp(0.32 + 0.38 * (hh / Math.max(1, w)), 0.45, 1.25);
+      var st = Math.sin(Math.min(1.45, S.til0 + 0.1));
+      S.R = Math.max(6, Math.min((w - 2 * pad) / 2, (hh - 2 * pad) / (2 * st + 0.1)));
+      S.cx = w / 2; S.cy = top + hh / 2; S.ag = []; S.porN = {}; S.bracos = []; S.estrelas = 0;
+      var porG = {}, gs = [];
+      LAB.labs.forEach(function (L) { if (!porG[L.g]) { porG[L.g] = []; gs.push(L.g); } porG[L.g].push(L); });
+      var G = Math.max(1, gs.length);
+      gs.forEach(function (gi, bi) {
+        var th0 = bi / G * TAU, ls = porG[gi], m = ls.length;
+        S.bracos.push({ g: gi, th0: th0, i0: 0, i1: 0 });
+        ls.forEach(function (L, j) {
+          var r = m > 1 ? 0.27 + 0.62 * j / (m - 1) : 0.52, th = angulo(th0, r), rnd = aleatorio(U.semente('nebulosa ' + L.n)), am = L.genes.length, k;
+          var tx = Math.cos(th) - PASSO * Math.sin(th), tz = Math.sin(th) + PASSO * Math.cos(th), tl = Math.sqrt(tx * tx + tz * tz) || 1;
+          tx /= tl; tz /= tl;
+          var st3 = new Float32Array(Math.max(1, am) * 3);
+          for (k = 0; k < am; k++) {                              // em volta do centro, esticado ao longo do braco
+            var a1 = gauss(rnd) * 0.055, a2 = gauss(rnd) * 0.026;
+            st3[k * 3] = tx * a1 - tz * a2; st3[k * 3 + 1] = gauss(rnd) * 0.013; st3[k * 3 + 2] = tz * a1 + tx * a2;
+          }
+          S.porN[L.n] = S.ag.length; S.estrelas += am;
+          S.ag.push({ L: L, b: bi, x: r * Math.cos(th), z: r * Math.sin(th), st: st3, n: am, sx: S.cx, sy: S.cy, e: 0, p: 0 });
+        });
+      });
+      // o po dos bracos e o bojo do nucleo (estrutura do desenho, nao sao dados); a densidade da pagina de testes no tamanho do cartao
+      var kd = clamp(w * hh / (360 * 212), 0.45, 1), porB = Math.round(85 * kd), nB = Math.round(80 * kd), rnd2 = aleatorio(U.semente('nebulosa po')), pts = [];
+      S.bracos.forEach(function (b) {
+        b.i0 = pts.length / 3;
+        for (i = 0; i < porB; i++) {
+          var r2 = 0.1 + 0.92 * Math.pow(rnd2(), 0.8), th2 = angulo(b.th0, r2) + gauss(rnd2) * 0.06, sp = gauss(rnd2) * 0.025 * (0.6 + r2);
+          pts.push(r2 * Math.cos(th2) - Math.sin(th2) * sp, gauss(rnd2) * 0.008, r2 * Math.sin(th2) + Math.cos(th2) * sp);
+        }
+        b.i1 = pts.length / 3;
+      });
+      S.b0 = pts.length / 3;
+      for (i = 0; i < nB; i++) pts.push(gauss(rnd2) * 0.05, gauss(rnd2) * 0.03, gauss(rnd2) * 0.05);
+      S.gas = new Float32Array(pts); S.nGas = pts.length / 3;
+      if (lGas.cap < S.nGas) lGas = new LoteNeb(S.nGas + 16);
+      if (lotes[0].cap < S.estrelas) for (q = 0; q < 12; q++) lotes[q] = new LoteNeb(S.estrelas + 16);
+    }
+    return {
+      nome: 'Nebulosa espiral',
+      desenhar: function (ctx, w, h, t, dt, agora, base) {
+        if (!LAB.labs.length) { rot(ctx, 'o labs.json não trouxe laboratórios', w / 2, h / 2 + 8, C.dim, 9, 'center', 500); return; }
+        var chave = w + 'x' + h + '|' + LAB.ver; if (S.chave !== chave) { arrumar(w, h); S.chave = chave; }
+        var R = S.R, cx = S.cx, cy = S.cy, gas = S.gas, tt = isFinite(t) ? t : 0, i, j, soma = 0;
+        for (i = 0; i < S.ag.length; i++) { var a0 = S.ag[i], e0 = energiaLab(a0.L, agora); soma += e0; a0.e = Math.min(1, e0); a0.p = pulsoLab(a0.L, agora); }
+        // mais actividade, mais depressa: 0,05 rad/s parada, ate 0,21 com os labs a calcular
+        if (!calmo && dt > 0) S.rot = (S.rot + dt * (0.05 + 0.16 * clamp(soma / 3, 0, 1))) % TAU;
+        var til = S.til0 + (calmo ? 0 : 0.1 * Math.sin(tt * 0.06)), st = Math.sin(til), ct = Math.cos(til), cr = Math.cos(S.rot), sr = Math.sin(S.rot);
+        // o nucleo: acende com a actividade dos labs nos ultimos 3 min
+        luz(ctx, C.ouro, cx, cy, R * 0.24, 0.2 + 0.32 * clamp(base || 0, 0, 1));
+        luz(ctx, '#ffe9a8', cx, cy, R * 0.07, 0.55);
+        // o po: um lote por braco (o braco acende com a actividade da sua especialidade, LAB.nuvem) e um para o bojo
+        for (i = 0; i <= S.bracos.length; i++) {
+          var b = S.bracos[i], j0 = b ? b.i0 : S.b0, j1 = b ? b.i1 : S.nGas;
+          for (j = j0; j < j1; j++) { var gx = gas[j * 3], gy = gas[j * 3 + 1], gz = gas[j * 3 + 2], x1 = gx * cr - gz * sr, z1 = gx * sr + gz * cr; lGas.por(cx + x1 * R, cy + (z1 * st - gy * ct) * R, 0.6); }
+          lGas.pintar(ctx, 'rgb(242,194,48)', 0.22 + (b ? 0.3 * clamp(LAB.nuvem[b.g] || 0, 0, 1) : 0));
+        }
+        // as estrelas (os genes): cor pela classe, tamanho e opacidade pela profundidade (longe, meio, perto)
+        for (i = 0; i < S.ag.length; i++) {
+          var a = S.ag[i], gs = a.L.genes, inch = calmo ? 1 : 1 + 0.2 * a.e, nn = Math.min(a.n, gs.length);
+          var ax1 = a.x * cr - a.z * sr, az1 = a.x * sr + a.z * cr;
+          a.sx = cx + ax1 * R; a.sy = cy + az1 * st * R;
+          for (j = 0; j < nn; j++) {
+            var g = gs[j], ox = a.x + a.st[j * 3] * inch, oy = a.st[j * 3 + 1] * inch, oz = a.z + a.st[j * 3 + 2] * inch;
+            var x2 = ox * cr - oz * sr, z2 = ox * sr + oz * cr, X = cx + x2 * R, Y = cy + (z2 * st - oy * ct) * R, prof = z2 * ct + oy * st;
+            var bin = prof < -0.25 ? 0 : prof < 0.25 ? 1 : 2, cls = g.d ? 3 : g.r ? 0 : g.tn > 0 && agora - g.tn < NEB_NOVO_MS ? 2 : 1;
+            var ac = aceso(g, agora), s = TAM[bin] * (cls === 0 ? 1.35 : 1) * (1 + 0.7 * ac);
+            lotes[cls * 3 + bin].por(X, Y, s);
+            if (ac > 0.05) acesas.push(X, Y, ac, cls === 2 ? 1 : 0);
+          }
+        }
+        for (var bn = 0; bn < 3; bn++) { lotes[3 + bn].pintar(ctx, CORES[1], ALFA[bn]); lotes[9 + bn].pintar(ctx, CORES[3], ALFA[bn]); lotes[6 + bn].pintar(ctx, CORES[2], ALFA[bn]); lotes[bn].pintar(ctx, CORES[0], ALFA[bn]); }
+        // o aglomerado de quem calcula acende; a explosao abre um anel no plano do disco
+        for (i = 0; i < S.ag.length; i++) { var a2 = S.ag[i]; if (a2.e < 0.05 && a2.p < 0.03) continue; luz(ctx, a2.L.cor || NEB_COR.flash, a2.sx, a2.sy, R * 0.07 * (1 + a2.e), Math.min(1, 0.25 * a2.e + 0.6 * a2.p)); }
+        for (i = LAB.chamas.length - 1; i >= 0; i--) {
+          var ch = LAB.chamas[i], a3 = S.ag[S.porN[ch.n]], u = (agora - ch.t0) / 1600;
+          if (!a3 || !(u <= 1) || u < -0.5) { LAB.chamas.splice(i, 1); continue; }
+          if (u < 0) continue;
+          var rr = R * (0.015 + 0.09 * ease(u)) * (0.6 + 0.4 * ch.forca);
+          ctx.strokeStyle = ch.cor; ctx.globalAlpha = 0.85 * (1 - u); ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.ellipse(a3.sx, a3.sy, Math.max(0.1, rr), Math.max(0.1, rr * st), 0, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+          luz(ctx, ch.cor, a3.sx, a3.sy, R * 0.035 * (1 + ch.forca), 1 - u);
+        }
+        for (i = 0; i < acesas.length; i += 4) luz(ctx, acesas[i + 3] ? NEB_COR.novo : NEB_COR.flash, acesas[i], acesas[i + 1], 4.5, acesas[i + 2]);
+        acesas.length = 0;
+      },
+      estado: function () { return { aglomerados: S.ag.length, bracos: S.bracos.length, estrelas: S.estrelas, po: S.nGas, chamas: LAB.chamas.length, rot: Math.round(S.rot * 1e4) / 1e4, R: Math.round(S.R) }; }
+    };
+  }
+  // </nebulosa>
   var cenaLab = null;
   (function () {
     var cv = canvasDe('h_lab'); if (!cv) return;
