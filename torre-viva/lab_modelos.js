@@ -1134,7 +1134,7 @@
         }
       },
       // (a faixa incha pela energia do lab e os genes acendem pela luz - estado); aqui: o anel que se solta da faixa
-      aoEvento: function (r) { S.aneis.push({ lab: r.lab, t0: arguments[1] ? arguments[1].t : 0, forca: r.forca, cor: corTipo(r.tipo) }); if (S.aneis.length > 40) S.aneis.shift(); },
+      aoEvento: function (r, E) { S.aneis.push({ lab: r.lab, t0: E ? E.t : 0, forca: r.forca, cor: corTipo(r.tipo) }); if (S.aneis.length > 40) S.aneis.shift(); },
       quem: function (x, y) {
         var best = -1, bd = 10 * 10;
         for (var i = 0; i < S.N; i++) { if (S.sz[i] < 0) continue; var dx = S.sx[i] - x, dy = S.sy[i] - y, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } }
