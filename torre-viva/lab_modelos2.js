@@ -1049,15 +1049,17 @@
         var a = maisPerto(S.ag.map(function (b) { return { x: b.sx, y: b.sy, lab: b.lab }; }), x, y, S.grande ? 24 : 15);
         return a ? { lab: a.lab } : null;
       },
-      // os pontos do aglomerado do lab n no ultimo quadro (o centro e cada estrela) - para as provas
+      // os pontos do aglomerado do lab n no ultimo quadro (o centro, cada estrela e o disco onde se abre o anel da explosao)
+      // - para as provas
       onde: function (n) {
-        var i = S.porN[n], out = []; if (i == null || !S.ag[i] || !S.pj) return out;
+        var i = S.porN[n], out = [], j, k; if (i == null || !S.ag[i] || !S.pj) return out;
         var a = S.ag[i], cr = S.pj[0], sr = S.pj[1], st = S.pj[2], ct = S.pj[3], inch = a.inch || 1;
         out.push(a.sx, a.sy);
-        for (var j = 0; j < a.lab.amostra.length; j++) {
+        for (j = 0; j < a.lab.amostra.length; j++) {
           var ox = a.x + a.st[j * 3] * inch, oy = a.st[j * 3 + 1] * inch, oz = a.z + a.st[j * 3 + 2] * inch, x2 = ox * cr - oz * sr, z2 = ox * sr + oz * cr;
           out.push(S.cx + x2 * S.R, S.cy + (z2 * st - oy * ct) * S.R);
         }
+        for (k = 1; k <= 7; k++) for (j = 0; j < 24; j++) { var ang = j / 24 * TAU, rr = S.R * 0.105 * k / 7; out.push(a.sx + Math.cos(ang) * rr, a.sy + Math.sin(ang) * rr * st); }
         return out;
       },
       limpar: function () { S.chamas = []; }
@@ -1235,7 +1237,8 @@
         var i = S.porN[n], out = [], j; if (i == null || !S.alm[i]) return out;
         var a = S.alm[i], cr = S.cr, sr = S.sr, inch = a.inch || 1, r = RP * S.U * (a.f || 1) * (1 + 0.18 * Math.min(1, a.lab.energia)) * 1.12;
         for (j = 0; j <= 40; j++) { noCaminho(a.cam, j / 40, Q3); proj(Q3[0], Q3[1], Q3[2], cr, sr, P3); out.push(P3[0], P3[1]); }
-        out.push(a.sx, a.sy, a.sx + r, a.sy, a.sx - r, a.sy);
+        out.push(a.sx, a.sy);
+        for (j = 0; j < 24; j++) { var ang = j / 24 * TAU; out.push(a.sx + Math.cos(ang) * r, a.sy + Math.sin(ang) * r * (0.4 + 0.5 * SE)); }   // a silhueta da almofada
         for (j = 0; j < a.lab.amostra.length; j++) { proj(a.c[0] + a.fol[j * 3] * inch, a.c[1] + a.fol[j * 3 + 1] * inch, a.c[2] + a.fol[j * 3 + 2] * inch, cr, sr, P3); out.push(P3[0], P3[1]); }
         return out;
       },
