@@ -1049,13 +1049,17 @@ function trocarLod(ab, ac, inst) {
 }
 // o LOD (obra 4): sentado e quieto E (na gaveta, de fora - nivel 2 - ou a mais de 15 m da camara) = instancia; o resto = boneco
 const _camL = new THREE.Vector3();
-export function lodDoAndar(ab, camara, nivel, ctx) {
+// 10/10 18:4x (7.o teste no PC-HuntAI: "nesta distancia nao aparece nenhuma etiqueta de nome"): os 15 m eram da camara antiga
+// (de perto); o Escritorio enquadrado num palco estreito fica a 40-70 m e todos os sentados viravam instancia - sem nome. No
+// Escritorio o limite e o que a torre passa (o enquadramento + 25%): os que trabalham (poucos) ficam bonecos, com nome.
+export function lodDoAndar(ab, camara, nivel, ctx, limiteM) {
   if (!ab || !ab.pronto) return false;
   _camL.copy(camara.position); ab.grupo.worldToLocal(_camL);
   let mudou = false;
+  const lim = Math.max(15, limiteM > 0 ? limiteM : 15), lim2 = lim * lim;
   ab.actores.forEach(ac => {
     if (!ac.inst) return;
-    const inst = estaQuieto(ac) && (nivel <= 2 || ac.obj.position.distanceToSquared(_camL) > 225);
+    const inst = estaQuieto(ac) && (nivel <= 2 || ac.obj.position.distanceToSquared(_camL) > lim2);
     if (trocarLod(ab, ac, inst)) mudou = true;
   });
   return mudou;

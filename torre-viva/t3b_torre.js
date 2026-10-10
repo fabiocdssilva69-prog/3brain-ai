@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=236bb82273';
+import * as ANDAR from './t3b_andar.js?v=3f78e6d55b';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 
@@ -1507,7 +1507,7 @@ function quadro(agora) {
     // LOD no escritorio (obra 4): o passo corre a cada quadro desenhado (os quadros ja sao poucos quando nada mexe); quem esta
     // sentado e parado nao gasta (t3b_andar.js: sem mixer, e de longe vira a multidao instanciada)
     andarMexeu = ANDAR.passoAndar(aberto, dt, agora, CTX);
-    if (agora - ultLod > 250 || camaraMudou) { ultLod = agora; if (ANDAR.lodDoAndar(aberto, camara, nivel, CTX)) andarMexeu = true; }
+    if (agora - ultLod > 250 || camaraMudou) { ultLod = agora; if (ANDAR.lodDoAndar(aberto, camara, nivel, CTX, nivel >= 3 ? distEscritorio * 1.25 : 15)) andarMexeu = true; }
     if (camaraMudou || alvoCam.anim) ANDAR.esbaterPlacas(aberto, camara.position);
     if (agora - ultNomes > 500) { ultNomes = agora; let n = 0; aberto.actores.concat(aberto.mensageiros).forEach(ac => { if (ac.estado === 'a_andar') n++; }); U.txt($('pc_and'), String(n)); ANDAR.nomesVisiveis(aberto, nivel >= 3 ? aberto.grupo.worldToLocal(controles.target.clone()) : null, nivel >= 3 ? 12 : 0, projectar, camara.projectionMatrix.elements[5] * vistaH / 2); }
   }
