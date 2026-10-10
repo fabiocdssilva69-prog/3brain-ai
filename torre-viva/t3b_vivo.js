@@ -387,6 +387,16 @@
       baseCap: (usdt != null ? usdt : pat - custo) + custo, travado: !!rl.travado, velho: !!rl.da_ultima_volta_boa,
       comecou: rl.comecou_em || rl.desde || null };
   }
+  // 10/10 19:0x (ele: "nao vejo eles mexer faz tempo"): o executor real mede o patrimonio de HORA a HORA; o "Hoje" e o "Desde o
+  // inicio" sao esse patrimonio menos uma base FIXA (o inicio do dia = pat - hoje; o capital inicial). Com o patrimonio AO VIVO
+  // (o capital da casa, que ja segue a Binance) saem ao segundo. PURA: testada em testes_t3b.js.
+  function vivosDoReal(capV, R) {
+    capV = Number(capV);
+    if (!R || !isFinite(capV)) return null;
+    var pat = Number(R.pat), hoje = Number(R.hoje), ini = Number(R.ini);
+    return { dia: (R.pat != null && R.hoje != null && isFinite(pat) && isFinite(hoje)) ? capV - (pat - hoje) : null,
+      ini: (R.ini != null && isFinite(ini) && ini > 0) ? capV - ini : null };
+  }
   var ROTULO_PAPEL = { c_cap: 'capital da casa', c_dia: 'realizado hoje', c_ini: 'realizado desde o início' };
   var ROTULO_REAL = { c_cap: 'capital da casa · real', c_dia: 'hoje · conta real', c_ini: 'desde o início · real' };
   function rotulos(R) { Object.keys(R).forEach(function (id) { var c = $(id), u = c && c.querySelector('u'); if (u) txt(u, R[id]); }); }
@@ -397,11 +407,14 @@
     var rc = casaReal(T);
     if (rc) {
       rotulos(ROTULO_REAL);
-      numeroVivo('cap', 'c_cap', 'n_cap', rc.cap, fUS, '', 'capital');
+      // 10/10 19:0x: com o preco ao vivo a chegar, o capital, o hoje e o desde o inicio sao os do aoPreco (ao segundo) - o
+      // ficheiro (de hora a hora) nao os puxa para tras a cada leitura; sem preco ao vivo, valem os do ficheiro
+      var aoVivoOk = !!(AOVIVO.real && AOVIVO.tPreco && Date.now() - AOVIVO.tPreco < 15000), seg = aoVivoOk ? ' · ao segundo' : ' · de hora a hora';
+      if (!aoVivoOk) numeroVivo('cap', 'c_cap', 'n_cap', rc.cap, fUS, '', 'capital');
       txt($('n_cap_s'), 'começou com ' + fmt(rc.inicial, 2) + ' US$ · cérebro (papel) ' + sinal(je.liquido, 2) + ' US$' + (rc.travado ? ' · Binance à espera' : ''));
-      numeroVivo('dia', 'c_dia', 'n_dia', rc.hoje, sUS, cls(rc.hoje), 'hoje');
-      txt($('n_dia_s'), rc.pos.length + ' posição(ões) na conta real · realizado ' + sinal(rc.realizado, 2) + ' US$');
-      numeroVivo('ini', 'c_ini', 'n_ini', rc.ini, sUS, cls(rc.ini), 'desde o início');
+      if (!aoVivoOk) numeroVivo('dia', 'c_dia', 'n_dia', rc.hoje, sUS, cls(rc.hoje), 'hoje');
+      txt($('n_dia_s'), rc.pos.length + ' posição(ões) na conta real · realizado ' + sinal(rc.realizado, 2) + ' US$' + seg);
+      if (!aoVivoOk) numeroVivo('ini', 'c_ini', 'n_ini', rc.ini, sUS, cls(rc.ini), 'desde o início');
       txt($('n_ini_s'), (rc.iniPct != null ? sinal(rc.iniPct, 2) + '% · ' : '') + 'desde ' + dataCurta(rc.comecou) + (rc.velho ? ' · da última volta boa' : ''));
     } else {
     rotulos(ROTULO_PAPEL);
@@ -459,7 +472,9 @@
     if (rc) {                                       // 10/10: a conta REAL - o em aberto e o que cada posicao vale a mais do que custou
       AOVIVO.base = { cap: rc.baseCap, abe: 0 };
       AOVIVO.pos = rc.pos.map(function (p) { return { sym: p.sym.replace(/USD$/, 'USDT'), qty: p.qty, ref: p.ref }; });
+      AOVIVO.real = { pat: rc.cap, hoje: rc.hoje, ini: rc.inicial };     // 10/10 19:0x: as bases do hoje e do desde o inicio
     } else {
+    AOVIVO.real = null;
     AOVIVO.base = { cap: Number(c.capital_escala), abe: Number(r.aberto_total_usd) };
     AOVIVO.pos = lista(r.posicoes).filter(function (p) { return p.cripto && isFinite(Number(p.qty)) && Number(p.agora) > 0; })
       .map(function (p) { return { sym: String(p.simbolo).replace(/USD$/, 'USDT'), qty: Number(p.qty), ref: Number(p.agora) }; });
@@ -480,10 +495,17 @@
     var dl = 0; AOVIVO.pos.forEach(function (p) { var m = AOVIVO.mid[p.sym]; if (m) dl += p.qty * (m - p.ref); });
     AOVIVO.delta = dl;
     if (AOVIVO.base && isFinite(AOVIVO.base.cap)) quieto('cap', AOVIVO.base.cap + dl, 700);
+    if (AOVIVO.real && AOVIVO.base && isFinite(AOVIVO.base.cap)) {      // 10/10 19:0x: no real, HOJE e DESDE O INICIO tambem ao segundo
+      var vr = vivosDoReal(AOVIVO.base.cap + dl, AOVIVO.real);
+      if (vr && vr.dia != null) quietoCls('dia', 'n_dia', vr.dia);
+      if (vr && vr.ini != null) quietoCls('ini', 'n_ini', vr.ini);
+    }
     AOVIVO.aberto = AOVIVO.base && isFinite(AOVIVO.base.abe) ? AOVIVO.base.abe + dl : null;
     if (AOVIVO.aberto != null) { var bx = $('bx_abe'); txt(bx, sinal(AOVIVO.aberto, 2) + ' US$'); if (bx) bx.className = cls(AOVIVO.aberto); }
     pintarAberto(true);
   }
+  // (10/10 19:0x) o mesmo, e a cor segue o sinal (o hoje pode passar de verde a vermelho ao segundo)
+  function quietoCls(chave, id, valor) { quieto(chave, valor, 700); var el = $(id), c = cls(valor); if (el) el.className = 'v vivo' + (c ? ' ' + c : ''); }
   // o numero desliza para o valor novo SEM piscar a celula (o mercado mexeu, nao um funcionario)
   function quieto(chave, valor, dur) { var v = VIVOS[chave]; if (!v || !isFinite(valor) || v.para === valor) return; v.de = v.actual == null ? v.para : v.actual; v.para = valor; v.t0 = performance.now(); v.dur = dur || 700; }
   // 05/10 (ele: "orgaos prontos nao pode ser isso, quero que seja algo como novas evolucoes... o quanto fez de evolucao no dia
