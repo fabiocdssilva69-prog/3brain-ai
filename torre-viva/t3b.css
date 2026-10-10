@@ -939,3 +939,8 @@ nav.dir .car-orig, nav.dir .car-copia { gap: 6px; padding-right: 6px; }
 .holo .lab-mod button:hover { border-color: rgba(242, 194, 48, .7); }
 .holo .lab-mod button.on { background: rgba(242, 194, 48, .25); color: #fff3c4; border-color: rgba(242, 194, 48, .85); }
 .holo.min .lab-mod { display: none; }
+
+/* 10/10 17:1x (reteste no PC-HuntAI): dentro do andar, os ecras de parede (o grafico do P&L, "-10,33 US$") ficam por tras da barra
+   de estado do palco - sem fundo, o texto embaralhava. Cada item ganha a sua pilula escura (so nos niveis de perto). */
+.palco.perto .pc span { background: rgba(8, 8, 10, .82); padding: 1px 6px; border-radius: 4px; }
+.palco.perto .pc { height: 18px; }

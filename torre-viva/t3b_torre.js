@@ -1135,6 +1135,37 @@ function enquadrarGaveta(ab) {
   return { alvo: alvoF, pos: alvoF.clone().addScaledVector(dir, dist) };
 }
 
+// 10/10 17:1x (reteste no PC-HuntAI, 1366x860): no Escritorio, os bonecos que TRABALHAM (os actores: programas do andar,
+// gerente e lideres) cabem TODOS na zona livre e ficam centrados nela - como a gaveta faz com o andar inteiro. A distancia
+// minima e a de sempre (de perto, a do ecra dele); so cresce o que for preciso, ate MAX_ESCRITORIO vezes. So o TAMANHO tem de
+// caber: a posicao acerta-se depois, deslocando o alvo (como em enquadrarGaveta).
+const MAX_ESCRITORIO = 2.6, ALT_NOME = 2.7;
+function enquadrarEscritorio(ab, dir, base, z) {
+  const acs = (ab.actores || []).filter(x => x && x.obj && x.obj.visible !== false);
+  if (acs.length < 2 || !(base > 0)) return null;
+  ab.grupo.updateMatrixWorld(true);
+  const pts = [], cen = new THREE.Vector3();
+  acs.forEach(x => { const p = x.obj.getWorldPosition(new THREE.Vector3()); pts.push(p, p.clone().add(new THREE.Vector3(0, ALT_NOME, 0))); cen.add(p); });
+  cen.multiplyScalar(1 / acs.length); cen.y += 1.0;
+  const mg = 14, zz = { l: z.l + mg, r: z.r - mg, t: z.t + mg, b: z.b - mg };
+  if (zz.r - zz.l < 60 || zz.b - zz.t < 60) return null;
+  const guarda = camara.position.clone(), gq = camara.quaternion.clone();
+  const cabe = d => {
+    camara.position.copy(cen).addScaledVector(dir, d); camara.lookAt(cen); camara.updateMatrixWorld(); camara.updateProjectionMatrix();
+    let l = 1e9, tp = 1e9, r = -1e9, b = -1e9; pts.forEach(p => { const q = projectar(p.x, p.y, p.z); l = Math.min(l, q.x); r = Math.max(r, q.x); tp = Math.min(tp, q.y); b = Math.max(b, q.y); });
+    return { ok: r - l <= zz.r - zz.l && b - tp <= zz.b - zz.t, l, t: tp, r, b };
+  };
+  let lo = base, hi = base * MAX_ESCRITORIO;
+  if (cabe(lo).ok) hi = lo;
+  else for (let i = 0; i < 22; i++) { const md = (lo + hi) / 2; if (cabe(md).ok) hi = md; else lo = md; }
+  const caixa = cabe(hi), dx = (zz.l + zz.r) / 2 - (caixa.l + caixa.r) / 2, dy = (zz.t + zz.b) / 2 - (caixa.t + caixa.b) / 2;
+  const esc = 2 * hi * Math.tan(camara.fov * Math.PI / 360) / Math.max(1, vistaH);
+  const dirX = new THREE.Vector3().setFromMatrixColumn(camara.matrixWorld, 0), dirY = new THREE.Vector3().setFromMatrixColumn(camara.matrixWorld, 1);
+  const alvoF = cen.clone().addScaledVector(dirX, -dx * esc).addScaledVector(dirY, dy * esc);
+  camara.position.copy(guarda); camara.quaternion.copy(gq); camara.updateMatrixWorld();
+  return { alvo: alvoF, pos: alvoF.clone().addScaledVector(dir, hi) };
+}
+
 // ================================================================ ALERTAS (03/10): farois na torre e no andar
 function aplicarAlertas(A) {
   if (!torre) return;
@@ -1222,6 +1253,10 @@ function enquadrar(k, animar) {
       const dx = (z.l + z.r) / 2 - vistaW / 2, dy = (z.t + z.b) / 2 - vistaH / 2;
       alvo.addScaledVector(dirX, -dx * esc).addScaledVector(dirY, dy * esc);
       pos = alvo.clone().add(off);
+      // 10/10 17:1x (reteste no PC-HuntAI: "continua cortado a direita; a camara quase nao mudou"): com o andar pronto, os
+      // bonecos que TRABALHAM cabem todos na zona livre (enquadrarEscritorio); sem andar pronto fica o enquadramento de cima.
+      const e = aberto && aberto.pronto ? enquadrarEscritorio(aberto, off.clone().normalize(), off.length() / f, z) : null;
+      if (e) { alvo = e.alvo; pos = e.pos; }
     }
   }
   if (!animar || calmo) { camara.position.copy(pos); controles.target.copy(alvo); controles.update(); }
