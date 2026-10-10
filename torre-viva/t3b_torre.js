@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=2e313f1907';
+import * as ANDAR from './t3b_andar.js?v=2acfb066fa';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 
@@ -1036,6 +1036,22 @@ export function urlDoAndar(n, publicado, agora) {
   return pub ? 'andar/' + n + '.json?_=' + Math.floor(t / 60000) : 'andar.json?n=' + n + '&t=' + t;
 }
 
+// 10/10 18:0x (5.o teste no PC-HuntAI: "bonecos 0" com um 503 na consola): um pedido falhado deixava o escritorio VAZIO para
+// sempre (o andar abria sem ninguem). Agora tenta 3 vezes (0, 1,2 s, 2,5 s) antes de desistir - o CDN do site da 503 de vez em
+// quando. Cada tentativa e um endereco novo (urlDoAndar leva o minuto; a 2.a e a 3.a levam tambem a tentativa).
+async function buscarAndar(n) {
+  let ult = null;
+  for (let k = 0; k < 3; k++) {
+    if (k) await new Promise(r => setTimeout(r, k === 1 ? 1200 : 2500));
+    try {
+      const u = urlDoAndar(n) + (k ? (urlDoAndar(n).indexOf('?') >= 0 ? '&' : '?') + 'tent=' + k : '');
+      const r = await fetch(u, { cache: 'no-store' });
+      if (!r.ok) throw new Error('andar ' + n + ': HTTP ' + r.status);
+      return await r.json();
+    } catch (e) { ult = e; }
+  }
+  throw ult || new Error('andar ' + n + ': sem resposta');
+}
 async function abrirAndar(n, voar) {
   if (!torre || !torre.porN[n]) return;
   const a = torre.porN[n];
@@ -1052,7 +1068,7 @@ async function abrirAndar(n, voar) {
   U.txt($('pc_andar'), n + ' · ' + a.nome);
   precisaDesenhar = true;
   try {
-    const [gente] = await Promise.all([fetch(urlDoAndar(n), { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error('andar ' + n + ': HTTP ' + r.status); return r.json(); }), ANDAR.carregarModelos()]);
+    const [gente] = await Promise.all([buscarAndar(n), ANDAR.carregarModelos()]);
     if (!aberto || aberto.n !== n) return;
     ANDAR.construirEscritorio(aberto, gente, CTX);
     aberto.actores.forEach(ac => { ac.ab = aberto; });
@@ -1143,7 +1159,9 @@ function enquadrarGaveta(ab) {
 // precisam de ~59 m e ficavam 10 pontos de fora, a direita. Provado no node com o three.js do projecto: testes_t3b.js.)
 const MAX_ESCRITORIO = 4.5, ALT_NOME = 2.7;
 function enquadrarEscritorio(ab, dir, base, z) {
-  const acs = (ab.actores || []).filter(x => x && x.obj && x.obj.visible !== false);
+  // (18:0x, 5.o teste: o LOD esconde - obj.visible=false - os bonecos sentados quando a camara esta longe, trocando-os pela
+  //  instancia da multidao; filtrar os invisiveis deixava < 2 e caia no enquadramento antigo. Contam TODOS os que existem.)
+  const acs = (ab.actores || []).filter(x => x && x.obj);
   if (acs.length < 2 || !(base > 0)) return null;
   // a gaveta na posicao FINAL durante a conta (ela desliza 0,9 s; a meio, os bonecos estariam metidos na torre)
   const gv = ab.gaveta, guardaG = gv ? gv.position.clone() : null;
