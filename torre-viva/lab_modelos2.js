@@ -324,6 +324,15 @@
         if (!best) { var bd = S.uw * 0.6; S.arv.forEach(function (a2) { var d = Math.abs(a2.x - x); if (d < bd && Math.abs(a2.yb - y) < Math.max(12, a2.Hc)) { bd = d; best = a2; } }); }
         return best ? { lab: best.lab, txt: (best.esp ? best.esp + ' · ' : '') + fmtInt(S.hora.por[best.lab.n] || 0) + ' genes na última hora' } : null;
       },
+      // os pontos da arvore do lab n no ultimo quadro (o tronco por onde sobe a seiva, os ramos e as folhas) - para as provas
+      onde: function (n) {
+        var a = S.porN[n], out = [], j, nv, sg; if (!a) return out;
+        var H = a.Hc || a.H, Hx = H * (a.fx || 1), sw = a.sw || 0, X = function (ux, uy) { return a.x + (ux + sw * uy * uy) * Hx; };
+        for (j = 0; j <= 14; j++) { var uy = j * 0.05; out.push(a.x + sw * uy * uy * H * (a.fx || 1), a.yb - uy * H); }
+        for (nv = 0; nv < a.geo.niveis.length; nv++) { sg = a.geo.niveis[nv]; for (j = 0; j < sg.length; j += 4) out.push(X(sg[j], sg[j + 1]), a.yb - sg[j + 1] * H, X(sg[j + 2], sg[j + 3]), a.yb - sg[j + 3] * H, X((sg[j] + sg[j + 2]) / 2, (sg[j + 1] + sg[j + 3]) / 2), a.yb - (sg[j + 1] + sg[j + 3]) / 2 * H); }
+        for (j = 0; j < a.lab.amostra.length; j++) out.push(X(a.folhas[j * 4], a.folhas[j * 4 + 1]), a.yb - a.folhas[j * 4 + 1] * H);
+        return out;
+      },
       limpar: function () { S.seiva = []; }
     };
   });
