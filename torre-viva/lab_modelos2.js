@@ -328,9 +328,12 @@
       onde: function (n) {
         var a = S.porN[n], out = [], j, nv, sg; if (!a) return out;
         var H = a.Hc || a.H, Hx = H * (a.fx || 1), sw = a.sw || 0, X = function (ux, uy) { return a.x + (ux + sw * uy * uy) * Hx; };
-        for (j = 0; j <= 14; j++) { var uy = j * 0.05; out.push(a.x + sw * uy * uy * H * (a.fx || 1), a.yb - uy * H); }
+        for (j = 0; j <= 14; j++) { var uy = j * 0.05; out.push(a.x + sw * uy * uy * Hx, a.yb - uy * H, a.x, a.yb - uy * H); }
         for (nv = 0; nv < a.geo.niveis.length; nv++) { sg = a.geo.niveis[nv]; for (j = 0; j < sg.length; j += 4) out.push(X(sg[j], sg[j + 1]), a.yb - sg[j + 1] * H, X(sg[j + 2], sg[j + 3]), a.yb - sg[j + 3] * H, X((sg[j] + sg[j + 2]) / 2, (sg[j + 1] + sg[j + 3]) / 2), a.yb - (sg[j + 1] + sg[j + 3]) / 2 * H); }
-        for (j = 0; j < a.lab.amostra.length; j++) out.push(X(a.folhas[j * 4], a.folhas[j * 4 + 1]), a.yb - a.folhas[j * 4 + 1] * H);
+        for (j = 0; j < a.lab.amostra.length; j++) {               // cada folha: o pe, o meio e a ponta
+          var fx0 = X(a.folhas[j * 4], a.folhas[j * 4 + 1]), fy0 = a.yb - a.folhas[j * 4 + 1] * H, dx = a.folhas[j * 4 + 2] * Hx, dy = -a.folhas[j * 4 + 3] * H;
+          out.push(fx0, fy0, fx0 + dx / 2, fy0 + dy / 2, fx0 + dx, fy0 + dy);
+        }
         return out;
       },
       limpar: function () { S.seiva = []; }
@@ -861,6 +864,7 @@
         var energiaG = {}, corG = {};
         S.an.forEach(function (a4) { var e4 = Math.min(1, a4.lab.energia); if (e4 > (energiaG[a4.g] || 0)) { energiaG[a4.g] = e4; corG[a4.g] = a4.lab.corPulso || C.flash; } });
         var nG = 0; S.an.forEach(function (a5) { nG = Math.max(nG, a5.g + 1); });
+        S.nG = nG;
         Object.keys(energiaG).forEach(function (gk) {
           var eg = energiaG[gk]; if (eg < 0.05) return;
           var zb = clamp(6 - Math.round(Number(gk) * 6 / Math.max(1, nG - 1)), 0, 6);
@@ -911,6 +915,12 @@
             var th2 = an.genes[j * 4] + fa, rr = an.r + an.genes[j * 4 + 1] * (1 + 0.6 * e), z = classe(am[j]) === 0 && !S.calmo ? an.genes[j * 4 + 2] * Math.sin((S.t || 0) * 1.2 + an.genes[j * 4 + 3]) : 0;
             out.push(S.cx + rr * Math.cos(th2), S.cy + rr * Math.sin(th2) * S.si - z * (S.ci || 1));
           }
+          // a faixa da especialidade no planeta (acende com o calculo): as duas latitudes que a limitam, a parte da frente
+          var zb = clamp(6 - Math.round(an.g * 6 / Math.max(1, (S.nG || 1) - 1)), 0, 6), ci = S.ci || 1;
+          [-1.05 + zb * 0.3, -0.75 + zb * 0.3].forEach(function (lat) {
+            var rx = Math.cos(lat) * S.Rp, yc = S.cy - Math.sin(lat) * S.Rp * ci;
+            for (var k2 = 0; k2 <= 24; k2++) { var a2 = Math.PI * k2 / 24; out.push(S.cx + rx * Math.cos(a2), yc + rx * S.si * Math.sin(a2)); }
+          });
         });
         return out;
       },
