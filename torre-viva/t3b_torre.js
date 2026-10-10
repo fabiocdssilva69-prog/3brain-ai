@@ -831,108 +831,211 @@ function animarLetreiro(agora, dt) {
   return !calmo;
 }
 
-// ================================================================ O GLOBO DOS MERCADOS (G23, obra 4) — um objecto 3D ao pe da torre
-// Ele (questionario 3): "perto da torre, sem sobrepor". O globo em arame vive na cena 3D mas fica PRESO ao ecra no espaco livre
-// entre a torre e a coluna de perto (posicionarGlobo: a meio dessa faixa, em baixo) - nunca por cima de um painel nem da torre,
-// em qualquer tamanho de ecra. Os mercados: Binance (cripto), Nova Iorque (accoes), Sao Paulo (Brasil), Londres (macro e
-// mundo) e a TORRE (Florianopolis). Cada ordem ou cotacao nova (t3b_ligacoes.js: o holograma 'globo') acende um arco do seu
-// mercado ate a torre; o globo so gira com actividade de mercado (a base dos ultimos 3 minutos) - parado, fica parado.
-const HUBS = { binance: { n: 'BINANCE', lat: 1.3, lon: 103.8, cor: 0xf2c230 }, ny: { n: 'NOVA IORQUE', lat: 40.7, lon: -74, cor: 0x60a5fa },
-  sp: { n: 'SÃO PAULO', lat: -23.5, lon: -46.6, cor: 0x3fd69a }, londres: { n: 'LONDRES', lat: 51.5, lon: -0.1, cor: 0xb265f5 }, torre: { n: 'TORRE', lat: -27.6, lon: -48.5, cor: 0xffdc6a } };
-const MERCADO_DO_PROGRAMA = { binance_real: 'binance', papel_cripto: 'binance', fluxo_binance: 'binance', papel: 'ny', alpaca: 'ny', fabrica_execucao: 'ny', noticias_eua: 'ny', fluxo_etf: 'ny',
-  cambio: 'sp', noticias_brasil: 'sp', macro: 'londres', juros_fed: 'ny', liquidez: 'londres', noticias_macro: 'londres', noticias_mundo: 'londres', precos_extra: 'binance', noticias_cripto: 'binance' };
-let globo = null, globoOculto = false; const _v2g = new THREE.Vector3();   // 04/10: oculto enquanto o detalhe de um cartao esta aberto
-function pontoNoGlobo(lat, lon, r) { const la = lat * Math.PI / 180, lo = lon * Math.PI / 180; return new THREE.Vector3(r * Math.cos(la) * Math.cos(lo), r * Math.sin(la), -r * Math.cos(la) * Math.sin(lo)); }
-function etiquetaGlobo(txt, cor) {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
-  g.font = (window.T3BTexto ? window.T3BTexto.fonteCanvas(600, 26) : '600 26px monospace'); g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillStyle = 'rgba(6,8,12,.72)'; const w = Math.min(250, g.measureText(txt).width + 18); g.fillRect(128 - w / 2, 14, w, 36);
-  g.fillStyle = '#' + new THREE.Color(cor).getHexString(); g.fillText(txt, 128, 33);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, depthTest: false, sizeAttenuation: false }));
-  sp.scale.set(0.15, 0.15 * 64 / 256, 1); sp.renderOrder = 20; return sp;
-}
-function criarGlobo() {
-  const g = new THREE.Group(); g.name = 'globo';
-  const corpo = new THREE.Group(); g.add(corpo);
-  const pts = [], R = 1;
-  for (let lat = -60; lat <= 60; lat += 30) for (let lon = 0; lon < 360; lon += 6) { pts.push(pontoNoGlobo(lat, lon, R), pontoNoGlobo(lat, lon + 6, R)); }
-  for (let lon = 0; lon < 360; lon += 30) for (let lat = -90; lat < 90; lat += 6) { pts.push(pontoNoGlobo(lat, lon, R), pontoNoGlobo(lat + 6, lon, R)); }
-  const arame = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: COR.cy, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
-  corpo.add(arame);
-  const casca = new THREE.Mesh(new THREE.SphereGeometry(R * 0.985, 32, 20), new THREE.MeshBasicMaterial({ color: 0x0a1a24, transparent: true, opacity: 0.55, depthWrite: true }));
-  corpo.add(casca);
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaHalo(), color: COR.cy, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false }));
-  halo.scale.set(2.5, 2.5, 1); halo.material.opacity = 0.12; g.add(halo);
-  const hubs = {};
-  Object.keys(HUBS).forEach(k => {
-    const h = HUBS[k], p = pontoNoGlobo(h.lat, h.lon, R * 1.01);
-    const m = new THREE.Mesh(new THREE.SphereGeometry(k === 'torre' ? 0.055 : 0.04, 10, 8), new THREE.MeshBasicMaterial({ color: h.cor, toneMapped: false }));
-    m.position.copy(p); corpo.add(m);
-    const brilho = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaHalo(), color: h.cor, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })); brilho.scale.set(0.22, 0.22, 1); m.add(brilho);
-    const etq = etiquetaGlobo(h.n, h.cor); etq.position.copy(p.clone().multiplyScalar(1.22)); corpo.add(etq);
-    hubs[k] = { m, brilho, etq, p, pulso: 0 };
-  });
-  globo = { grupo: g, corpo, arame, casca, halo, hubs, arcos: [], R, giro: 0, visivel: false, rPx: 0, rect: null, n: 0 };
-  g.visible = false;
-  return globo;
-}
-// o arco de um mercado ate a torre: uma curva sobre a esfera que se desenha (1,2 s) e se apaga (2,5 s)
-function arcoNoGlobo(ev) {
-  if (!globo) return;
+// ================================================================ O GLOBO DOS MERCADOS (G23, obra 4) — um objecto 3D ao pe da torre
+
+// Ele (questionario 3): "perto da torre, sem sobrepor". O globo em arame vive na cena 3D mas fica PRESO ao ecra no espaco livre
+
+// entre a torre e a coluna de perto (posicionarGlobo: a meio dessa faixa, em baixo) - nunca por cima de um painel nem da torre,
+
+// em qualquer tamanho de ecra. Os mercados: Binance (cripto), Nova Iorque (accoes), Sao Paulo (Brasil), Londres (macro e
+
+// mundo) e a TORRE (Florianopolis). Cada ordem ou cotacao nova (t3b_ligacoes.js: o holograma 'globo') acende um arco do seu
+
+// mercado ate a torre; o globo so gira com actividade de mercado (a base dos ultimos 3 minutos) - parado, fica parado.
+
+const HUBS = { binance: { n: 'BINANCE', lat: 1.3, lon: 103.8, cor: 0xf2c230 }, ny: { n: 'NOVA IORQUE', lat: 40.7, lon: -74, cor: 0x60a5fa },
+
+  sp: { n: 'SÃO PAULO', lat: -23.5, lon: -46.6, cor: 0x3fd69a }, londres: { n: 'LONDRES', lat: 51.5, lon: -0.1, cor: 0xb265f5 }, torre: { n: 'TORRE', lat: -27.6, lon: -48.5, cor: 0xffdc6a } };
+
+const MERCADO_DO_PROGRAMA = { binance_real: 'binance', papel_cripto: 'binance', fluxo_binance: 'binance', papel: 'ny', alpaca: 'ny', fabrica_execucao: 'ny', noticias_eua: 'ny', fluxo_etf: 'ny',
+
+  cambio: 'sp', noticias_brasil: 'sp', macro: 'londres', juros_fed: 'ny', liquidez: 'londres', noticias_macro: 'londres', noticias_mundo: 'londres', precos_extra: 'binance', noticias_cripto: 'binance' };
+
+let globo = null, globoOculto = false; const _v2g = new THREE.Vector3();   // 04/10: oculto enquanto o detalhe de um cartao esta aberto
+
+function pontoNoGlobo(lat, lon, r) { const la = lat * Math.PI / 180, lo = lon * Math.PI / 180; return new THREE.Vector3(r * Math.cos(la) * Math.cos(lo), r * Math.sin(la), -r * Math.cos(la) * Math.sin(lo)); }
+
+function etiquetaGlobo(txt, cor) {
+
+  const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
+
+  g.font = (window.T3BTexto ? window.T3BTexto.fonteCanvas(600, 26) : '600 26px monospace'); g.textAlign = 'center'; g.textBaseline = 'middle';
+
+  g.fillStyle = 'rgba(6,8,12,.72)'; const w = Math.min(250, g.measureText(txt).width + 18); g.fillRect(128 - w / 2, 14, w, 36);
+
+  g.fillStyle = '#' + new THREE.Color(cor).getHexString(); g.fillText(txt, 128, 33);
+
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, depthTest: false, sizeAttenuation: false }));
+
+  sp.scale.set(0.15, 0.15 * 64 / 256, 1); sp.renderOrder = 20; return sp;
+
+}
+
+function criarGlobo() {
+
+  const g = new THREE.Group(); g.name = 'globo';
+
+  const corpo = new THREE.Group(); g.add(corpo);
+
+  const pts = [], R = 1;
+
+  for (let lat = -60; lat <= 60; lat += 30) for (let lon = 0; lon < 360; lon += 6) { pts.push(pontoNoGlobo(lat, lon, R), pontoNoGlobo(lat, lon + 6, R)); }
+
+  for (let lon = 0; lon < 360; lon += 30) for (let lat = -90; lat < 90; lat += 6) { pts.push(pontoNoGlobo(lat, lon, R), pontoNoGlobo(lat + 6, lon, R)); }
+
+  const arame = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: COR.cy, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+
+  corpo.add(arame);
+
+  const casca = new THREE.Mesh(new THREE.SphereGeometry(R * 0.985, 32, 20), new THREE.MeshBasicMaterial({ color: 0x0a1a24, transparent: true, opacity: 0.55, depthWrite: true }));
+
+  corpo.add(casca);
+
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaHalo(), color: COR.cy, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false }));
+
+  halo.scale.set(2.5, 2.5, 1); halo.material.opacity = 0.12; g.add(halo);
+
+  const hubs = {};
+
+  Object.keys(HUBS).forEach(k => {
+
+    const h = HUBS[k], p = pontoNoGlobo(h.lat, h.lon, R * 1.01);
+
+    const m = new THREE.Mesh(new THREE.SphereGeometry(k === 'torre' ? 0.055 : 0.04, 10, 8), new THREE.MeshBasicMaterial({ color: h.cor, toneMapped: false }));
+
+    m.position.copy(p); corpo.add(m);
+
+    const brilho = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaHalo(), color: h.cor, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })); brilho.scale.set(0.22, 0.22, 1); m.add(brilho);
+
+    const etq = etiquetaGlobo(h.n, h.cor); etq.position.copy(p.clone().multiplyScalar(1.22)); corpo.add(etq);
+
+    hubs[k] = { m, brilho, etq, p, pulso: 0 };
+
+  });
+
+  globo = { grupo: g, corpo, arame, casca, halo, hubs, arcos: [], R, giro: 0, visivel: false, rPx: 0, rect: null, n: 0 };
+
+  g.visible = false;
+
+  return globo;
+
+}
+
+// o arco de um mercado ate a torre: uma curva sobre a esfera que se desenha (1,2 s) e se apaga (2,5 s)
+
+function arcoNoGlobo(ev) {
+
+  if (!globo) return;
+
   const esp = window.T3BLigacoes ? window.T3BLigacoes.espDoAndar(ev.andar) : null;
-  const k = MERCADO_DO_PROGRAMA[ev.id] || (ev.k === 'cotacao' ? 'binance' : esp === 'macro' ? 'londres' : 'ny');
-  const h = globo.hubs[k]; if (!h) return;
-  h.pulso = 1; globo.n++;
-  if (ev.k === 'cotacao' || globo.arcos.length >= 8) return;          // a cotacao so faz o mercado piscar; o arco e para as ordens e os eventos
-  const a = h.p, b = globo.hubs.torre.p, pts = [];
-  for (let i = 0; i <= 40; i++) { const u = i / 40, v = a.clone().lerp(b, u).normalize().multiplyScalar(globo.R * (1.02 + Math.sin(u * Math.PI) * 0.35)); pts.push(v); }
-  const geo = new THREE.BufferGeometry().setFromPoints(pts); geo.setDrawRange(0, 0);
-  const linha = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: HUBS[k].cor, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
-  globo.corpo.add(linha); globo.arcos.push({ linha, t: 0 });
-  precisaDesenhar = true;
-}
-function passoGlobo(dt) {
-  if (!globo || !globo.visivel) return false;
-  let mexe = false;
-  const base = (window.__t3bHolo && window.__t3bHolo.base) ? window.__t3bHolo.base('globo') : 0;
-  if (!calmo && base > 0.01) { globo.corpo.rotation.y += dt * 0.35 * base; mexe = true; }
-  for (let i = globo.arcos.length - 1; i >= 0; i--) {
-    const a = globo.arcos[i]; a.t += dt; mexe = true;
-    a.linha.geometry.setDrawRange(0, Math.ceil(41 * Math.min(1, a.t / 1.2)));
-    if (a.t > 1.2) a.linha.material.opacity = Math.max(0, 0.95 - (a.t - 1.2) / 1.3);
-    if (a.t > 2.5) { globo.corpo.remove(a.linha); a.linha.geometry.dispose(); a.linha.material.dispose(); globo.arcos.splice(i, 1); }
-  }
-  Object.keys(globo.hubs).forEach(k => { const h = globo.hubs[k]; if (h.pulso > 0.01) { h.pulso *= Math.pow(0.2, dt); h.brilho.scale.setScalar(0.22 + h.pulso * 0.5); mexe = true; }
-    // a etiqueta de um mercado que esta do lado de tras do globo esconde-se (nao se le atraves da esfera)
-    h.m.getWorldPosition(_v); _v.sub(globo.grupo.position); h.etq.visible = _v.dot(_v2g.copy(camara.position).sub(globo.grupo.position)) > 0; });
-  return mexe;
-}
-// preso ao ECRA na faixa livre entre a torre e a coluna de perto (ou a da direita), em baixo
-function posicionarGlobo() {
-  if (!globo || !torre) return;
-  const mostrar = nivel <= 1 && !T3B.pequeno && !globoOculto;   // 04/10 (sonda): o detalhe do cartao abria por cima do globo
-  if (!mostrar) { globo.grupo.visible = false; globo.visivel = false; globo.rect = null; return; }
-  const pr = palco.getBoundingClientRect(), colP = document.querySelector('.holos.perto'), colD = document.querySelector('.holos.dir');
-  let xMax = vistaW - 16; [colP, colD].forEach(c => { if (!c) return; const r = c.getBoundingClientRect(); if (r.width > 4 && r.left - pr.left < xMax) xMax = r.left - pr.left - 10; });
-  // a aresta direita da torre no ecra (cantos da base, do meio e do topo)
-  let xT = -1e9; [0, 0.25, 0.5].forEach(f => { const y = torre.altura * f; [[W / 2, D / 2], [W / 2, -D / 2], [-W / 2, D / 2], [-W / 2, -D / 2]].forEach(([x, z]) => { _v.set(x, y, z).applyAxisAngle(EIXO_Y, angDe(y)); const q = projectar(_v.x, _v.y, _v.z); if (q.z < 1 && q.x > xT) xT = q.x; }); });
-  const z = zonaLivre(), x0 = Math.max(xT + 10, z.l), x1 = Math.min(xMax, z.r), larg = x1 - x0;
-  if (larg < 70) { globo.grupo.visible = false; globo.visivel = false; globo.rect = null; return; }
-  const rPx = Math.max(28, Math.min(74, larg / 2 - 8)), cx = (x0 + x1) / 2, cy = z.b - rPx - 22;
-  const ndc = _v.set(cx / vistaW * 2 - 1, -(cy / vistaH) * 2 + 1, 0.5).unproject(camara), dir = ndc.sub(camara.position).normalize();
-  const dist = camara.position.distanceTo(controles.target), mpp = 2 * dist * Math.tan(camara.fov * Math.PI / 360) / vistaH;
-  globo.grupo.position.copy(camara.position).addScaledVector(dir, dist);
+  const k = MERCADO_DO_PROGRAMA[ev.id] || (ev.k === 'cotacao' ? 'binance' : esp === 'macro' ? 'londres' : 'ny');
+
+  const h = globo.hubs[k]; if (!h) return;
+
+  h.pulso = 1; globo.n++;
+
+  if (ev.k === 'cotacao' || globo.arcos.length >= 8) return;          // a cotacao so faz o mercado piscar; o arco e para as ordens e os eventos
+
+  const a = h.p, b = globo.hubs.torre.p, pts = [];
+
+  for (let i = 0; i <= 40; i++) { const u = i / 40, v = a.clone().lerp(b, u).normalize().multiplyScalar(globo.R * (1.02 + Math.sin(u * Math.PI) * 0.35)); pts.push(v); }
+
+  const geo = new THREE.BufferGeometry().setFromPoints(pts); geo.setDrawRange(0, 0);
+
+  const linha = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: HUBS[k].cor, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+
+  globo.corpo.add(linha); globo.arcos.push({ linha, t: 0 });
+
+  precisaDesenhar = true;
+
+}
+
+function passoGlobo(dt) {
+
+  if (!globo || !globo.visivel) return false;
+
+  let mexe = false;
+
+  const base = (window.__t3bHolo && window.__t3bHolo.base) ? window.__t3bHolo.base('globo') : 0;
+
+  if (!calmo && base > 0.01) { globo.corpo.rotation.y += dt * 0.35 * base; mexe = true; }
+
+  for (let i = globo.arcos.length - 1; i >= 0; i--) {
+
+    const a = globo.arcos[i]; a.t += dt; mexe = true;
+
+    a.linha.geometry.setDrawRange(0, Math.ceil(41 * Math.min(1, a.t / 1.2)));
+
+    if (a.t > 1.2) a.linha.material.opacity = Math.max(0, 0.95 - (a.t - 1.2) / 1.3);
+
+    if (a.t > 2.5) { globo.corpo.remove(a.linha); a.linha.geometry.dispose(); a.linha.material.dispose(); globo.arcos.splice(i, 1); }
+
+  }
+
+  Object.keys(globo.hubs).forEach(k => { const h = globo.hubs[k]; if (h.pulso > 0.01) { h.pulso *= Math.pow(0.2, dt); h.brilho.scale.setScalar(0.22 + h.pulso * 0.5); mexe = true; }
+
+    // a etiqueta de um mercado que esta do lado de tras do globo esconde-se (nao se le atraves da esfera)
+
+    h.m.getWorldPosition(_v); _v.sub(globo.grupo.position); h.etq.visible = _v.dot(_v2g.copy(camara.position).sub(globo.grupo.position)) > 0; });
+
+  return mexe;
+
+}
+
+// preso ao ECRA na faixa livre entre a torre e a coluna de perto (ou a da direita), em baixo
+
+function posicionarGlobo() {
+
+  if (!globo || !torre) return;
+
+  const mostrar = nivel <= 1 && !T3B.pequeno && !globoOculto;   // 04/10 (sonda): o detalhe do cartao abria por cima do globo
+
+  if (!mostrar) { globo.grupo.visible = false; globo.visivel = false; globo.rect = null; return; }
+
+  const pr = palco.getBoundingClientRect(), colP = document.querySelector('.holos.perto'), colD = document.querySelector('.holos.dir');
+
+  let xMax = vistaW - 16; [colP, colD].forEach(c => { if (!c) return; const r = c.getBoundingClientRect(); if (r.width > 4 && r.left - pr.left < xMax) xMax = r.left - pr.left - 10; });
+
+  // a aresta direita da torre no ecra (cantos da base, do meio e do topo)
+
+  let xT = -1e9; [0, 0.25, 0.5].forEach(f => { const y = torre.altura * f; [[W / 2, D / 2], [W / 2, -D / 2], [-W / 2, D / 2], [-W / 2, -D / 2]].forEach(([x, z]) => { _v.set(x, y, z).applyAxisAngle(EIXO_Y, angDe(y)); const q = projectar(_v.x, _v.y, _v.z); if (q.z < 1 && q.x > xT) xT = q.x; }); });
+
+  const z = zonaLivre(), x0 = Math.max(xT + 10, z.l), x1 = Math.min(xMax, z.r), larg = x1 - x0;
+
+  if (larg < 70) { globo.grupo.visible = false; globo.visivel = false; globo.rect = null; return; }
+
+  const rPx = Math.max(28, Math.min(74, larg / 2 - 8)), cx = (x0 + x1) / 2, cy = z.b - rPx - 22;
+
+  const ndc = _v.set(cx / vistaW * 2 - 1, -(cy / vistaH) * 2 + 1, 0.5).unproject(camara), dir = ndc.sub(camara.position).normalize();
+
+  const dist = camara.position.distanceTo(controles.target), mpp = 2 * dist * Math.tan(camara.fov * Math.PI / 360) / vistaH;
+
+  globo.grupo.position.copy(camara.position).addScaledVector(dir, dist);
+
   const S = rPx * mpp; globo.grupo.scale.setScalar(S);
   // as etiquetas dos mercados tem tamanho FIXO no ecra (sizeAttenuation false) - mas herdam a escala do grupo: compensa-se
-  Object.keys(globo.hubs).forEach(k => { const e = globo.hubs[k].etq; e.scale.set(0.13 / S, 0.13 * 64 / 256 / S, 1); });
-  globo.grupo.visible = true; globo.visivel = true; globo.rPx = rPx;
-  globo.rect = { l: pr.left + cx - rPx - 14, t: pr.top + cy - rPx - 14, r: pr.left + cx + rPx + 14, b: pr.top + cy + rPx + 14 };
-}
-
+  Object.keys(globo.hubs).forEach(k => { const e = globo.hubs[k].etq; e.scale.set(0.13 / S, 0.13 * 64 / 256 / S, 1); });
+
+  globo.grupo.visible = true; globo.visivel = true; globo.rPx = rPx;
+
+  globo.rect = { l: pr.left + cx - rPx - 14, t: pr.top + cy - rPx - 14, r: pr.left + cx + rPx + 14, b: pr.top + cy + rPx + 14 };
+
+}
+
+
+
 // ================================================================ A GAVETA (q20, ponto 4)
 const CTX = { W, D, H, LAJE, COR, T3B, U, animados, molduraRect, nomeDoSector, texturaHalo, get noite() { return noite; }, get nivel() { return nivel; } };
 const DESL_GAVETA = W * 1.32;   // sai mais para fora do que antes (1,08): ha um vao entre a gaveta e a torre
+// 10/10: a copia publica (3brain.com.br/torre-viva/) nao tem servidor - cada andar e uma fotografia em andar/N.json
+// (publicar_torre.py). Antes pedia andar.json?n=N tambem la: 404, e a gaveta abria sem ninguem no PC-HuntAI.
+export function urlDoAndar(n, publicado, agora) {
+  const pub = publicado === undefined ? !!window.T3B_PUBLICADO : publicado, t = agora === undefined ? Date.now() : agora;
+  return pub ? 'andar/' + n + '.json?_=' + Math.floor(t / 60000) : 'andar.json?n=' + n + '&t=' + t;
+}
+
 async function abrirAndar(n, voar) {
   if (!torre || !torre.porN[n]) return;
   const a = torre.porN[n];
@@ -949,7 +1052,7 @@ async function abrirAndar(n, voar) {
   U.txt($('pc_andar'), n + ' · ' + a.nome);
   precisaDesenhar = true;
   try {
-    const [gente] = await Promise.all([fetch('andar.json?n=' + n + '&t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()), ANDAR.carregarModelos()]);
+    const [gente] = await Promise.all([fetch(urlDoAndar(n), { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error('andar ' + n + ': HTTP ' + r.status); return r.json(); }), ANDAR.carregarModelos()]);
     if (!aberto || aberto.n !== n) return;
     ANDAR.construirEscritorio(aberto, gente, CTX);
     aberto.actores.forEach(ac => { ac.ab = aberto; });
