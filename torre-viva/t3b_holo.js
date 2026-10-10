@@ -397,14 +397,38 @@
   // o feixe PARAVA sem batimento recente e saltava a cada batimento. Agora roda sempre (o periodo e a volta do vigia) e acerta
   // a fase pelo batimento devagar (sem saltos); os pontos sao FOSFORO - acendem quando o feixe passa e esmorecem ate a volta
   // seguinte; o aro tem um traco por andar (59) e os numeros 1/15/30/45; o centro pulsa; a camada parada e guardada.
-  var RAD = { pontos: {}, pings: [], tBat: 0, intervalo: 9000, seq: null, abertas: 0, verdes: 0, vermelhos: 0, volta: null, ang: -Math.PI / 2, corr: 0 };
-  function anguloDoAndar(n) { return ((Number(n) || 1) - 1) / 59 * TAU - Math.PI / 2; }
+  var RAD = { pontos: {}, pings: [], tBat: 0, intervalo: 9000, seq: null, abertas: 0, verdes: 0, vermelhos: 0, volta: null, ang: -Math.PI / 2, corr: 0, maxAndar: 68 };
+  // 10/10 (ele, print: "shield e essa luz de alerta nao estao sincronizados... a shield mostra uma coisa e ali mostra outra"):
+  // a luz dizia o PROGRAMA (Sombra previa, Noticias chat...) pela ordem de chegada; a lista do radar dizia o FUNCIONARIO que o
+  // tem (Analista Bruner...) pelo mais antigo e cortava em 3; e no radar 3 das 5 avarias (todas do andar 38) caiam no MESMO
+  // ponto, e os andares acima de 59 davam a volta (o aro tinha 59 tracos e a torre tem 68 andares). Agora a luz, a lista e o
+  // radar leem as contas deste bloco: os mesmos casos, pela mesma ordem (vermelhos primeiro, depois os mais antigos), com o
+  // mesmo nome (o do programa) e o andar; os casos do mesmo andar abrem-se em leque; o aro vai ate ao andar mais alto.
+  // <radar-puro> (sem DOM: testes_t3b.js corre este bloco)
+  var ANDAR_MAX_RADAR = 68;
+  function numAndar(n) { var v = parseInt(String(n == null ? '' : n).replace(/[^0-9]/g, ''), 10); return v > 0 && v < 1000 ? v : 1; }
+  function anguloDoAndar(n, max) { var M = Math.max(59, Number(max) || RAD.maxAndar || ANDAR_MAX_RADAR); return (Math.min(numAndar(n), M) - 1) / M * TAU - Math.PI / 2; }
+  function avariasAbertas(pontos) {
+    return Object.keys(pontos || {}).map(function (id) { return pontos[id]; }).filter(function (p) { return p && !p.ok; }).sort(function (a, b) {
+      return (a.sev === 'vermelho' ? 0 : 1) - (b.sev === 'vermelho' ? 0 : 1) || (a.t0 || 0) - (b.t0 || 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    });
+  }
+  // o leque: {id: desvio} - a posicao de cada caso no grupo do seu andar menos o meio (-1, 0, +1 para tres no mesmo andar)
+  function leques(pontos) {
+    var g = {}, out = {};
+    Object.keys(pontos || {}).sort().forEach(function (id) { var n = numAndar(pontos[id].andar); (g[n] = g[n] || []).push(id); });
+    Object.keys(g).forEach(function (n) { var L = g[n]; L.forEach(function (id, i) { out[id] = i - (L.length - 1) / 2; }); });
+    return out;
+  }
+  // </radar-puro>
+  function nomeDaAvaria(p) { return TX.limpar(TX.nomeDeId(p.id)); }
   function difAng(a) { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; }
   T3B.on('enxame', function (e) {
     var b = obj(e.batimento); if (b.volta_ms) RAD.intervalo = clamp(Number(b.volta_ms) || 9000, 3000, 60000);
     var vistos = {};
     lista(e.fora_do_verde).forEach(function (f) {
       if (!f || !f.id) return; vistos[f.id] = 1;
+      RAD.maxAndar = Math.max(RAD.maxAndar || ANDAR_MAX_RADAR, numAndar(f.andar));
       var p = RAD.pontos[f.id];
       if (!p) RAD.pontos[f.id] = { id: f.id, andar: f.andar, sev: f.sev, t0: agoraMs(), ok: 0 };
       else { p.sev = f.sev; p.andar = f.andar; if (p.ok) { p.ok = 0; p.t0 = agoraMs(); } }
@@ -419,14 +443,14 @@
       RAD.tBat = agora; RAD.volta = (ev.txt || '').replace(/\D+/g, ' ').trim().split(' ')[0] || RAD.volta;
       RAD.corr = difAng(-Math.PI / 2 - RAD.ang);            // a volta do vigia comeca no topo: acerta-se a fase devagar (~1 s)
     }
-    else if (ev.k === 'avaria') { RAD.pontos[ev.id] = { id: ev.id, andar: ev.andar, sev: ev.sev || 'vermelho', t0: agora, ok: 0, novo: 1 }; }
+    else if (ev.k === 'avaria') { RAD.maxAndar = Math.max(RAD.maxAndar || ANDAR_MAX_RADAR, numAndar(ev.andar)); RAD.pontos[ev.id] = { id: ev.id, andar: ev.andar, sev: ev.sev || 'vermelho', t0: agora, ok: 0, novo: 1 }; }
     else if (ev.k === 'consertou') { var p = RAD.pontos[ev.id]; if (p) p.ok = agora; else RAD.pontos[ev.id] = { id: ev.id, andar: ev.andar, sev: 'amarelo', t0: agora, ok: agora }; }
     else if (ev.k === 'visita' || ev.andar != null) { if (RAD.pings.length < 12) RAD.pings.push({ andar: ev.k === 'visita' ? ev.para : ev.andar, t0: agora }); }
     pintarLegendaRadar();
   });
-  EXTRA.radar = function () { return { pontos: Object.keys(RAD.pontos).length, abertas: RAD.abertas, pings: RAD.pings.length, batimento_ha_ms: RAD.tBat ? Math.round(agoraMs() - RAD.tBat) : null }; };
+  EXTRA.radar = function () { return { pontos: Object.keys(RAD.pontos).length, abertas: RAD.abertas, maxAndar: RAD.maxAndar, lista: avariasAbertas(RAD.pontos).map(function (p) { return p.id; }), pings: RAD.pings.length, batimento_ha_ms: RAD.tBat ? Math.round(agoraMs() - RAD.tBat) : null }; };
   function pintarLegendaRadar() {
-    var ab = 0; Object.keys(RAD.pontos).forEach(function (id) { if (!RAD.pontos[id].ok) ab++; }); RAD.abertas = ab;
+    var abertas = avariasAbertas(RAD.pontos), ab = abertas.length; RAD.abertas = ab;
     U.txt($('ra_kn'), ab + ' avaria' + (ab === 1 ? '' : 's') + ' · ' + RAD.verdes + ' verdes');
     var leg = $('ra_leg');
     if (leg) leg.innerHTML = '<i><b style="color:' + (ab ? C.mau : C.ok) + '">' + ab + '</b> fora do verde</i><i>volta <b>' + U.escH(RAD.volta || '—') + '</b> do vigia</i>';
@@ -434,16 +458,13 @@
     // 09/10 (ele: "nao ta sincronizado a luz amarela/vermelha/verde com o radar da shield"): a luz do cabecalho sai DAQUI, dos
     // mesmos pontos do radar (vigia: fora_do_verde + avaria/consertou). Antes vinha dos 'programas em erro' da estrutura
     // (t3b_vivo.pintarHUDEstrutura: outra fonte, outro ritmo, so verde/vermelho) e discordava do radar.
-    var nv = 0, na = 0, nomes = [];
-    Object.keys(RAD.pontos).forEach(function (id) {
-      var p = RAD.pontos[id]; if (p.ok) return;
-      if (p.sev === 'vermelho') nv++; else na++;
-      if (nomes.length < 4) nomes.push(TX.limpar(TX.nomeDeId(id)));
-    });
+    // 10/10: a MESMA lista e a MESMA ordem da lista do radar (avariasAbertas), o mesmo nome e o andar
+    var nv = abertas.filter(function (p) { return p.sev === 'vermelho'; }).length, na = ab - nv;
+    var nomes = abertas.slice(0, 6).map(function (p) { return nomeDaAvaria(p) + ' (andar ' + numAndar(p.andar) + ')'; });
     var led = $('b_led');
     if (led && (RAD.tBat || Object.keys(RAD.pontos).length || RAD.verdes)) {
       led.className = 'led pulsa ' + (nv ? 'mau' : na ? 'at' : 'ok');
-      led.title = (nv + na) ? (nv + ' vermelho(s) e ' + na + ' amarelo(s) no radar da S.H.I.E.L.D.: ' + nomes.join(', ') + (nv + na > nomes.length ? '…' : ''))
+      led.title = (nv + na) ? (nv + ' vermelho(s) e ' + na + ' amarelo(s) no radar da S.H.I.E.L.D.: ' + nomes.join(', ') + (ab > nomes.length ? ' e mais ' + (ab - nomes.length) : ''))
         : 'tudo verde no radar da S.H.I.E.L.D. (' + RAD.verdes + ' verdes)';
     }
   }
@@ -462,18 +483,18 @@
       for (var i = 1; i <= 4; i++) { g.strokeStyle = i === 4 ? 'rgba(45,212,232,.32)' : 'rgba(45,212,232,.11)'; g.beginPath(); g.arc(cx, cy, R * i / 4, 0, TAU); g.stroke(); }
       g.strokeStyle = 'rgba(45,212,232,.08)';
       for (var j = 0; j < 12; j++) { var q = j / 12 * TAU; g.beginPath(); g.moveTo(cx + Math.cos(q) * R * 0.08, cy + Math.sin(q) * R * 0.08); g.lineTo(cx + Math.cos(q) * R, cy + Math.sin(q) * R); g.stroke(); }
-      for (var a = 1; a <= 59; a++) {                        // o aro: um traco por andar, maior de 5 em 5
+      for (var a = 1, M = Math.max(59, RAD.maxAndar || ANDAR_MAX_RADAR); a <= M; a++) {   // o aro: um traco por andar (ate ao mais alto), maior de 5 em 5
         var qa = anguloDoAndar(a), l = a % 5 === 0 ? 6 : 3;
         g.strokeStyle = a % 5 === 0 ? 'rgba(45,212,232,.55)' : 'rgba(45,212,232,.25)';
         g.beginPath(); g.moveTo(cx + Math.cos(qa) * (R + 2), cy + Math.sin(qa) * (R + 2)); g.lineTo(cx + Math.cos(qa) * (R + 2 + l), cy + Math.sin(qa) * (R + 2 + l)); g.stroke();
       }
-      [1, 15, 30, 45].forEach(function (n) { var qn = anguloDoAndar(n); rot(g, String(n), cx + Math.cos(qn) * (R + 14), cy + Math.sin(qn) * (R + 14) + 3, 'rgba(139,138,147,.85)', 7.5, 'center', 600); });
+      [1, 15, 30, 45, 60].filter(function (n) { return n <= Math.max(59, RAD.maxAndar || ANDAR_MAX_RADAR); }).forEach(function (n) { var qn = anguloDoAndar(n); rot(g, String(n), cx + Math.cos(qn) * (R + 14), cy + Math.sin(qn) * (R + 14) + 3, 'rgba(139,138,147,.85)', 7.5, 'center', 600); });
       g.setLineDash([2, 4]); g.strokeStyle = 'rgba(45,212,232,.16)'; g.beginPath(); g.arc(cx, cy, R * 0.5, 0, TAU); g.stroke(); g.setLineDash([]);
     }
     cenaRadar = cena(cv, { id: 'radar', bloco: $('bl_radar'), desenhar: function (ctx, w, h, t, dt, s) {
       var agora = agoraMs(), GR = geoRadar(w, h), cx = GR.cx, cy = GR.cy, R = GR.R;
       ctx.clearRect(0, 0, w, h);
-      porCamada(ctx, s, 'fundo', '', fundo);
+      porCamada(ctx, s, 'fundo', String(RAD.maxAndar), fundo);   // (o aro muda se a torre ganhar andares)
       // o feixe: roda sempre, ao periodo da volta do vigia; o batimento acerta a fase aos poucos
       if (!calmo) {
         RAD.ang += dt * TAU / (RAD.intervalo / 1000);
@@ -503,11 +524,14 @@
         var fr = ((t * 0.37 + sp * 0.213) % 1), al = Math.sin(fr * Math.PI) * 0.7, rr0 = R * (0.2 + 0.75 * ((sp * 0.618 + Math.floor(t * 0.37 + sp * 0.213) * 0.31) % 1));
         ctx.fillStyle = 'rgba(180,245,255,' + al.toFixed(2) + ')'; ctx.fillRect(cx + Math.cos(a - 0.05) * rr0 - 0.8, cy + Math.sin(a - 0.05) * rr0 - 0.8, 1.6, 1.6);
       }
-      // os pontos: FOSFORO - acendem quando o feixe passa e esmorecem ate a volta seguinte (nunca apagam de todo)
+      // os pontos: FOSFORO - acendem quando o feixe passa e esmorecem ate a volta seguinte (nunca apagam de todo). 10/10: os do
+      // mesmo andar em leque (angulo e raio) e uma avaria aberta nunca desce de 62% (a 35% sumia no fundo: 5 avarias, 2 pontos)
+      var LQ = leques(RAD.pontos);
       Object.keys(RAD.pontos).forEach(function (id) {
-        var p = RAD.pontos[id], q = anguloDoAndar(p.andar), rr = R * (p.sev === 'vermelho' ? 0.5 : 0.78) + ((U.semente(id) % 9) - 4) * 0.8;
+        var p = RAD.pontos[id], dv = LQ[id] || 0, q = anguloDoAndar(p.andar) + dv * 0.24;
+        var rr = clamp(R * ((p.sev === 'vermelho' ? 0.5 : 0.78) + dv * 0.1) + ((U.semente(id) % 9) - 4) * 0.3, R * 0.18, R * 0.96);
         var x = cx + Math.cos(q) * rr, y = cy + Math.sin(q) * rr, idade = (agora - p.t0) / 1000, atras = (a - q) % TAU; if (atras < 0) atras += TAU;
-        var fosforo = 0.35 + 0.65 * Math.exp(-atras * 0.9), cor, base = 1;
+        var fosforo = p.ok ? 0.35 + 0.65 * Math.exp(-atras * 0.9) : 0.62 + 0.38 * Math.exp(-atras * 0.9), cor, base = 1;
         if (p.ok) { var ida = (agora - p.ok) / 1000; if (ida > 9) { delete RAD.pontos[id]; return; } base = 1 - ida / 9; cor = C.ok; }
         else cor = p.sev === 'vermelho' ? C.mau : C.am;
         ctx.globalAlpha = base * fosforo; ctx.fillStyle = cor;
@@ -527,14 +551,18 @@
       luz(ctx, C.cy, cx, cy, 6 + 2 * pul, 0.55 + 0.25 * pul);
       rot(ctx, 'AVARIAS ' + RAD.abertas, 8, h - 6, RAD.abertas ? C.mau : C.ok, 9, 'left', 600);
       // 05/10 (ele: "mais detalhes e informacoes relevantes"): os 3 casos abertos mais antigos - quem e ha quanto tempo
-      var foraV = Object.keys(RAD.pontos).map(function (id) { return RAD.pontos[id]; }).filter(function (p) { return !p.ok; }).sort(function (a, b) { return a.t0 - b.t0; });
+      // 10/10: a MESMA lista da luz do cabecalho (avariasAbertas: vermelhos primeiro, depois os mais antigos), com o nome do
+      // PROGRAMA e o andar (era o funcionario que o tem - "Analista Bruner" - e a luz dizia o programa: pareciam outros casos)
+      var foraV = avariasAbertas(RAD.pontos);
       var xL = GR.lado ? w * 0.58 : 6, nL = GR.lado ? Math.max(1, Math.min(6, Math.floor((h - TOPO - 24) / 13))) : 3, cL = GR.lado ? Math.floor((w * 0.42 - 8) / 4.6) : 26;
       if (GR.lado) rot(ctx, foraV.length ? 'FORA DO VERDE · ' + foraV.length : 'TUDO VERDE', xL, TOPO + 10, foraV.length ? C.am : C.ok, 7.5, 'left', 700);
-      foraV.slice(0, nL).forEach(function (p, i) {
-        var q = T3B.quem ? T3B.quem(p.id) : null, nm = TX.limpar((q && q.nome) || TX.nomeDeId(p.id)), min = Math.max(1, Math.round((agora - p.t0) / 60000));
+      var cabem = foraV.length > nL ? Math.max(1, nL - 1) : nL;          // a ultima linha diz quantos faltam, se nao couberem todos
+      foraV.slice(0, cabem).forEach(function (p, i) {
+        var min = Math.max(1, Math.round((agora - p.t0) / 60000));
         var ha = min < 60 ? min + ' min' : Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0');
-        rot(ctx, TX.cortar('● ' + nm + ' · há ' + ha, cL), xL, (GR.lado ? TOPO + 24 : 12) + i * (GR.lado ? 13 : 11), p.sev === 'vermelho' ? C.mau : C.am, 7.5, 'left', 600);
+        rot(ctx, TX.cortar('● ' + nomeDaAvaria(p) + ' · and. ' + numAndar(p.andar) + ' · há ' + ha, cL), xL, (GR.lado ? TOPO + 24 : 12) + i * (GR.lado ? 13 : 11), p.sev === 'vermelho' ? C.mau : C.am, 7.5, 'left', 600);
       });
+      if (foraV.length > cabem) rot(ctx, '+ ' + (foraV.length - cabem) + ' (passe o mouse na luz do topo)', xL, (GR.lado ? TOPO + 24 : 12) + cabem * (GR.lado ? 13 : 11), C.am, 7, 'left', 600);
     } });
   })();
 

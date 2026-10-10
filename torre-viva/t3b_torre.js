@@ -1396,7 +1396,7 @@ function quadro(agora) {
   // a cadencia: interaccao todos os quadros; vivo 30/s; repouso 6/s (sem respiracao - reduced motion - so quando um dado muda)
   // (a torre a girar sozinha e o letreiro: 20 quadros/s chegam - 0,1 grau por quadro; bonecos a andar dentro do andar: 30)
   const cad = calmo && modo === 'repouso' ? (precisaDesenhar ? 0 : 1e9) : modo === 'repouso' && precisaDesenhar ? 0 : CADENCIA[modo];
-  cadPedida = Math.max(cad >= 1e9 ? 0 : cad, RIT && !RIT.livre() ? 1000 / RIT.hz : 0);
+  cadPedida = Math.max(cad >= 1e9 ? 0 : cad, RIT && !RIT.livre() ? 1000 / (RIT.efectivo ? RIT.efectivo() : RIT.hz) : 0);   // 10/10: sem foco sao 20 de proposito (a escada nao borra)
   if (ultimoDesenho && agora - ultimoDesenho < cad - 2) return;
   const dt = ultimo ? Math.min(0.1, (agora - ultimo) / 1000) : 0.016;
   const intervalo = ultimoDesenho ? agora - ultimoDesenho : 0;

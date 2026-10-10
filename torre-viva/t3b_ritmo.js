@@ -20,6 +20,13 @@
   var fila = [], seq = 0, temporizador = null, pedido = 0, ultimo = 0;
   var R = window.T3BRitmo = {
     hz: 60,                 // 05/10 (Q4 D1, ele: "sempre vivos e suaves, 60 q/s"): era 20 - o "fotograma" da pagina inteira
+    // 10/10 (ele: "melhora o desempenho dessa maquina ou deixa a torre mais fluida porque ta travando DEMAIS o computador";
+    // medido as 15:3x: a aba da torre ~2,2 nucleos e a placa integrada a pintar 60 q/s enquanto ele usava o VS Code ao lado):
+    // com a janela SEM FOCO a pagina inteira anda a semFocoHz - continua viva no canto do olho, mas larga o CPU e a placa para
+    // o programa que ele esta a usar. Com foco (ou ele a mexer nela) volta aos 60 na hora. ?foco=sempre desliga isto (sondas).
+    semFocoHz: 20,
+    foco: true,
+    efectivo: function () { return R.foco ? R.hz : Math.min(R.hz, R.semFocoHz); },
     ate: 0,                 // ate quando os quadros sao os do ecra (performance.now())
     quadros: 0,             // quadros servidos (para a sonda)
     nativo: N,
@@ -33,8 +40,9 @@
   }
   function agendar() {
     if (pedido || temporizador || !fila.length) return;
-    if (R.livre() || R.hz >= 55) { pedido = N(correr); return; }   // a 60 q/s, direito ao ecra: um temporizador pelo meio falhava quadros (soluco)
-    var espera = 1000 / Math.max(1, R.hz) - (performance.now() - ultimo) - 3;
+    var hz = R.efectivo();
+    if (R.livre() || hz >= 55) { pedido = N(correr); return; }     // a 60 q/s, direito ao ecra: um temporizador pelo meio falhava quadros (soluco)
+    var espera = 1000 / Math.max(1, hz) - (performance.now() - ultimo) - 3;
     if (espera <= 0) { pedido = N(correr); return; }
     temporizador = setTimeout(function () { temporizador = null; if (!pedido && fila.length) pedido = N(correr); }, espera);
   }
@@ -49,4 +57,12 @@
   ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown', 'touchstart', 'touchmove'].forEach(function (k) {
     window.addEventListener(k, mexe, { passive: true, capture: true });
   });
+  // 10/10: o foco da janela (o blur/focus falham as vezes - alt-tab rapido, outro monitor - e por isso confere-se de 2 em 2 s)
+  var SEMPRE = typeof location !== 'undefined' && /[?&]foco=sempre/.test(location.search || '');
+  function poeFoco(f) { if (SEMPRE) f = true; if (f === R.foco) return; R.foco = f; if (f) R.soltar(300); }
+  function verFoco() { var f = true; try { f = !document.hasFocus || document.hasFocus(); } catch (e) { f = true; } poeFoco(f); }
+  window.addEventListener('focus', function () { poeFoco(true); });
+  window.addEventListener('blur', function () { poeFoco(false); });
+  setInterval(verFoco, 2000);
+  verFoco();
 })();
