@@ -664,17 +664,26 @@
     var v = Number(s); return isFinite(v) && /\d/.test(s) ? v : null;
   }
   function actualizarVel(T, creditar) {
-    var r = obj(T && T.reactor), md = obj(r.medidor), S = obj(window.__md && window.__md.S);
-    var v = lerAgoraDoInstrumento(); if (v == null) v = Number(md.agora);
-    if (!isFinite(v)) return;
-    var n = function (x) { x = Number(x); return isFinite(x) ? x : null; };
-    VEL.stop = n(obj(r.limites).perda_dia_usd); VEL.meta = n(S.meta); VEL.esp = n(S.esp != null ? S.esp : obj(r.cartao_plano).esperado_usd);
+    var r = obj(T && T.reactor), md = obj(r.medidor), S = obj(window.__md && window.__md.S), rl = realDaCasa(T);
+    var n = function (x) { x = Number(x); return isFinite(x) ? x : null; }, v;
+    if (rl) {
+      // 10/10 21:3x (ordem dele: "nada dos numeros de simulacao"): com a conta real activa o dia e o DELA - ao vivo quando ha preco
+      // (t3b_vivo.js: realHoje), senao o da ultima volta do executor; sem as marcas do plano do papel (stop, meta, esperado)
+      v = n(T3B.estado.realHoje); if (v == null) v = n(rl.hoje_usd); if (v == null) return;
+      VEL.stop = null; VEL.meta = null; VEL.esp = null; VEL.real = true;
+    } else {
+      v = lerAgoraDoInstrumento(); if (v == null) v = Number(md.agora);
+      if (!isFinite(v)) return;
+      VEL.real = false;
+      VEL.stop = n(obj(r.limites).perda_dia_usd); VEL.meta = n(S.meta); VEL.esp = n(S.esp != null ? S.esp : obj(r.cartao_plano).esperado_usd);
+    }
     var vals = [v, 0, VEL.stop, VEL.meta, VEL.esp].filter(function (x) { return x != null; });
     var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals), folga = Math.max(1, (mx - mn) * 0.15);
     VEL.min = mn - folga; VEL.max = mx + folga;
     if (VEL.a !== v) { var mudou = VEL.a != null; VEL.a = v; if (VEL.v == null) VEL.v = v; if (mudou && creditar) creditarHolo('velocimetro', 'velocimetro', 'resultado do dia → ' + sinal(v, 2)); T3B.estado.resultadoDia = v; T3B.emit('resultadoDia', v); sujar(cenaVel, 1500); }
     // c02 "painel vazio ou —": sem meta definida diz-se "sem meta", nunca um traco
-    mini('hm_velocimetro', [['', sinal(v, 2), 'US$', v >= 0 ? 'up' : 'dn'], ['stop', VEL.stop != null ? sinal(VEL.stop, 2) : 'sem stop'], ['meta', VEL.meta != null ? sinal(VEL.meta, 2) : 'sem meta']]);
+    mini('hm_velocimetro', VEL.real ? [['', sinal(v, 2), 'US$', v >= 0 ? 'up' : 'dn'], ['conta', 'real · Binance'], ['desde o início', rl && rl.desde_o_inicio_usd != null ? sinal(rl.desde_o_inicio_usd, 2) : '—']]
+      : [['', sinal(v, 2), 'US$', v >= 0 ? 'up' : 'dn'], ['stop', VEL.stop != null ? sinal(VEL.stop, 2) : 'sem stop'], ['meta', VEL.meta != null ? sinal(VEL.meta, 2) : 'sem meta']]);
   }
   T3B.on('torre', function (T) { actualizarVel(T, true); });
   setInterval(function () { if (T3B.estado.T) actualizarVel(T3B.estado.T, false); }, 1000);
@@ -713,12 +722,21 @@
 
   // ================================================================ 5. TRILHO DO DIA (G10, D.linha): a linha escreve-se e desliza
   var TRI = { d: [], ass: '', t0: 0, sl: -9 };
-  T3B.on('torre', function (T) {
-    var md = obj(obj(T.reactor).medidor), serie = lista(md.serie);
+  // 10/10 21:3x (ordem dele): com a conta real activa o trilho do dia e o da CONTA REAL - a serie que o t3b_vivo.js escreve na
+  // pagina (um ponto por minuto, a partir do "hoje" ao vivo); o pico e o vale saem dela. Sem conta real, o medidor do papel.
+  function serieDoDia(T) {
+    var md = obj(obj(T.reactor).medidor), rl = realDaCasa(T);
+    if (!rl) return { serie: lista(md.serie), agora: Number(md.agora), pico: md.pico, vale: md.vale, real: false };
+    var s = lista(T3B.estado.serieReal), vs = s.map(function (p) { return Number(p[1]); }).filter(isFinite);
+    var ag = T3B.estado.realHoje != null ? Number(T3B.estado.realHoje) : Number(rl.hoje_usd);
+    return { serie: s, agora: ag, pico: vs.length ? Math.max.apply(null, vs.concat([0])) : null, vale: vs.length ? Math.min.apply(null, vs.concat([0])) : null, real: true };
+  }
+  function actualizarTrilho(T) {
+    var sd = serieDoDia(T), serie = sd.serie, pico = sd.pico != null ? sinal(sd.pico, 2) : '—', vale = sd.vale != null ? sinal(sd.vale, 2) : '—';
     var ass = serie.length + ':' + (serie.length ? serie[serie.length - 1].join(',') : '');
-    var ult = serie.length ? Number(serie[serie.length - 1][1]) : Number(md.agora);
-    mini('hm_trilho', [['agora', isFinite(ult) ? sinal(ult, 2) : 'sem pontos', '', ult >= 0 ? 'up' : 'dn'], ['pico', sinal(md.pico, 2)], ['vale', sinal(md.vale, 2)]]);
-    U.txt($('h_trilho_e'), 'pico ' + sinal(md.pico, 2) + ' · vale ' + sinal(md.vale, 2));
+    var ult = serie.length ? Number(serie[serie.length - 1][1]) : sd.agora;
+    mini('hm_trilho', [['agora', isFinite(ult) ? sinal(ult, 2) : 'sem pontos', '', ult >= 0 ? 'up' : 'dn'], ['pico', pico], ['vale', vale]]);
+    U.txt($('h_trilho_e'), (sd.real ? 'conta real · ' : '') + 'pico ' + pico + ' · vale ' + vale);
     if (ass === TRI.ass) return;
     var novo = TRI.ass !== '' && serie.length > TRI.d.length;
     TRI.ass = ass;
@@ -728,7 +746,9 @@
     if (!TRI.t0) TRI.t0 = performance.now() / 1000;
     if (novo) { TRI.sl = performance.now() / 1000; creditarHolo('trilho', 'trilho', 'trilho +1 ponto ' + (serie[serie.length - 1] || [])[0]); }
     sujar(cenaTri, 1700);
-  });
+  }
+  T3B.on('torre', actualizarTrilho);
+  T3B.on('serieReal', function () { if (T3B.estado.T) actualizarTrilho(T3B.estado.T); });
   aoReagir('trilho', function () { sujar(cenaTri, 1300); });
   var cenaTri = null;
   (function () {
@@ -794,7 +814,7 @@
       if (rl.hoje_usd != null) o.push(['HOJE · REAL', sinal(rl.hoje_usd, 2) + ' US$', rl.hoje_usd >= 0 ? C.ok : C.mau]);
       if (rl.aberto_usd != null) o.push(['EM ABERTO · REAL', sinal(rl.aberto_usd, 2) + ' US$ · ' + lista(rl.posicoes).length + ' posições', rl.aberto_usd >= 0 ? C.ok : C.mau]);
       if (rl.desde_o_inicio_usd != null) o.push(['DESDE O INÍCIO · REAL', sinal(rl.desde_o_inicio_usd, 2) + ' US$ (' + sinal(rl.desde_o_inicio_pct, 2) + '%)', rl.desde_o_inicio_usd >= 0 ? C.ok : C.mau]);
-      if (je.n_ganhos != null) o.push(['ACERTO DO CÉREBRO', fmt(je.n_ganhos / Math.max(1, je.n_ganhos + je.n_perdas) * 100, 1) + '% em ' + fmt(je.operacoes, 0) + ' ops', C.cy]);
+      if (rl.realizado_usd != null) o.push(['REALIZADO HOJE · REAL', sinal(rl.realizado_usd, 2) + ' US$', rl.realizado_usd >= 0 ? C.ok : C.mau]);   // 10/10 21:3x: sem o acerto do papel
       if (ex.geracao_actual != null) o.push(['EVOLUÇÃO', 'geração ' + ex.geracao_actual + ' · ' + fmt(ex.n_familias, 0) + ' famílias', C.ouroHi]);
       return o;
     }
@@ -978,7 +998,7 @@
     if (!odoRelevante()) { odoPor(s); if (ODO.rot && ODO.rot.textContent !== 'eventos reais') ODO.rot.textContent = 'eventos reais'; }
     if (seqVisto != null && s > seqVisto + 25) creditarHolo('numeros', 'numeros', 'eventos ' + fmt(s, 0));
     if (seqVisto == null || s > seqVisto + 25) seqVisto = s;
-    mini('hm_numeros', [['eventos', fmt(s, 0)], ['ops', CONT.ops || '0'], ['genes', CONT.genes || '0']]);
+    mini('hm_numeros', [['eventos', fmt(s, 0)], ['ops', CONT.ops != null ? CONT.ops : '—'], ['genes', CONT.genes || '0']]);
   });
   T3B.on('torre', function (T) {
     var r = obj(T.reactor), je = obj(r.ja_entrou), ex = obj(T.extremis);
@@ -990,6 +1010,7 @@
     if (rlC) { CONT.pos = String(lista(rlC.posicoes).length); CONT.hoje = rlC.hoje_usd != null ? sinal(rlC.hoje_usd, 2) + ' US$' : null; CONT.aberto = rlC.aberto_usd != null ? sinal(rlC.aberto_usd, 2) + ' US$' : null; }
     CONT.rob = ex.robustos_alguma_vez != null ? fmt(ex.robustos_alguma_vez, 0) : null;
     CONT.acertoN = je.n_ganhos != null ? je.n_ganhos / Math.max(1, je.n_ganhos + je.n_perdas) * 100 : null; CONT.opsN = Number(je.operacoes); CONT.robN = Number(ex.robustos_alguma_vez); CONT.avalN = Number(ex.n_avaliacoes);
+    if (rlC) { CONT.ops = null; CONT.acerto = null; CONT.acertoN = null; CONT.opsN = NaN; }   // 10/10 21:3x (ordem dele): operacoes e acerto sao do papel - fora com a conta real
     pintarFitaNumeros();
   });
   T3B.on('estrutura', function (d) { var pt = obj(obj(d.predio).totais); CONT.censo = fmt(pt.censo || obj(d.totais).peoes, 0); pintarFitaNumeros(); });
@@ -1030,14 +1051,16 @@
     b.animate([{ filter: 'brightness(2.4)', opacity: 1 }, { filter: 'none' }], { duration: 900, easing: 'ease-out' });
   });
   T3B.on('torre', function (T) {
-    var r = obj(T.reactor), pos = lista(r.posicoes);
-    U.txt($('h_mesa_e'), pos.length + ' posições · ' + fmt(obj(r.alocacao).em_uso, 0) + ' US$ em uso');
+    // 10/10 21:3x (ordem dele): com a conta real activa a mesa lista as posicoes REAIS (torre.json -> real.posicoes)
+    var r = obj(T.reactor), rlB = realDaCasa(T), pos = rlB ? lista(rlB.posicoes) : lista(r.posicoes);
+    var emUso = rlB ? pos.reduce(function (a, p) { return a + (Number(p.custo_usdt) || 0); }, 0) : obj(r.alocacao).em_uso, abertoT = rlB ? Number(rlB.aberto_usd) : Number(r.aberto_total_usd);
+    U.txt($('h_mesa_e'), pos.length + ' posições · ' + fmt(emUso, 0) + ' US$ em uso' + (rlB ? ' · conta real' : ''));
     var mv = lista(r.movimentacoes).slice(-6), ass = mv.map(function (m) { return m.t + m.evento + m.simbolo; }).join('|');
     if (BAR.assMov && ass !== BAR.assMov) creditarHolo('mesa', 'mesa', 'movimentação ' + ((mv[mv.length - 1] || {}).evento || ''));
     BAR.assMov = ass;
-    if (!BAR.v.length) amostraMesa(Number(r.aberto_total_usd), false);
-    var v = BAR.v.length ? BAR.v[BAR.v.length - 1] : Number(r.aberto_total_usd);
-    mini('hm_mesa', [['', String(pos.length), 'posições'], ['aberto', sinal(v, 2), '', v >= 0 ? 'up' : 'dn'], ['em uso', fmt(obj(r.alocacao).em_uso, 0)]]);
+    if (!BAR.v.length) amostraMesa(abertoT, false);
+    var v = BAR.v.length ? BAR.v[BAR.v.length - 1] : abertoT;
+    mini('hm_mesa', [['', String(pos.length), 'posições'], ['aberto', sinal(v, 2), '', v >= 0 ? 'up' : 'dn'], ['em uso', fmt(emUso, 0)]]);
   });
 
   // ================================================================ 9. LIVRO DE OFERTAS VIVO (G24, D.livro) — na Mesa de Operacoes
@@ -2082,8 +2105,9 @@
       var T = T3B.estado.T; if (!T) return '';
       var esp = String(a.esp || ''), r = obj(T.reactor), linha = function (x, y) { return '<tr><td>' + U.escH(x) + '</td><td>' + U.escH(y) + '</td></tr>'; };
       var tt = a.turnos || a.censo, extra = tt ? linha('A trabalhar agora', fmt(tt.a_trabalhar_agora, 0) + ' de ' + fmt(tt.registados, 0)) + linha('Em turno · a evoluir', fmt(tt.em_turno, 0) + ' · ' + fmt(tt.em_descanso_a_evoluir, 0)) : '';
-      if (/sr_stark|conselho|socios/.test(esp)) { var c = obj(r.conta), g = obj(r.ganho); return '<table><tbody>' + linha('Resultado de hoje', sinal(c.pnl_hoje, 2) + ' US$') + linha('Realizado hoje', sinal(g.realizado_usd, 2) + ' US$') + linha('Acumulado em papel', sinal(c.acumulado_papel, 2) + ' US$') + extra + '</tbody></table>'; }
+      if (/sr_stark|conselho|socios/.test(esp)) { var c = obj(r.conta), g = obj(r.ganho), rlS = realDaCasa(T); if (rlS) return '<table><tbody>' + linha('Hoje · conta real', sinal(rlS.hoje_usd, 2) + ' US$') + linha('Realizado hoje · real', sinal(rlS.realizado_usd, 2) + ' US$') + linha('Desde o início · real', sinal(rlS.desde_o_inicio_usd, 2) + ' US$') + extra + '</tbody></table>'; return '<table><tbody>' + linha('Resultado de hoje', sinal(c.pnl_hoje, 2) + ' US$') + linha('Realizado hoje', sinal(g.realizado_usd, 2) + ' US$') + linha('Acumulado em papel', sinal(c.acumulado_papel, 2) + ' US$') + extra + '</tbody></table>'; }
       if (esp === 'risco') { var v = obj(T.vingadores), k = obj(T.killian); return '<table><tbody>' + linha('N efectivo', fmt(v.n_ef, 2)) + linha('Posições', v.n_posicoes || 0) + linha('Rotações recusadas', k.rotacoes_recusadas || 0) + extra + '</tbody></table>'; }
+      if (esp === 'mesa' && realDaCasa(T)) return '<table><tbody>' + lista(realDaCasa(T).posicoes).map(function (p) { return linha(p.simbolo, fmt(p.custo_usdt != null ? p.custo_usdt : Number(p.qty) * Number(p.entrada), 2) + ' US$ em uso · conta real'); }).join('') + extra + '</tbody></table>';
       if (esp === 'mesa') return '<table><tbody>' + lista(r.posicoes).map(function (p) { return linha(p.simbolo, sinal(p.pnl_aberto_usd, 2) + ' US$ · ' + fmt(p.valor_usd, 2) + ' em uso'); }).join('') + extra + '</tbody></table>';
       if (/celulas|cripto|volume_fluxo|preco_accao|reversao_media|tendencia/.test(esp)) { var e = obj(T.extremis); return '<table><tbody>' + linha('Geração actual', e.geracao_actual) + linha('Genes na memória', fmt(e.n_genes, 0)) + linha('Famílias', e.n_familias) + extra + '</tbody></table>'; }
       return extra ? '<table><tbody>' + extra + '</tbody></table>' : '';

@@ -477,8 +477,11 @@ function texturaEcra(ctx) {
   const c = document.createElement('canvas'); c.width = 512; c.height = 320; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   t.userData.c = c; t.userData.ass = ''; pintarEcra(t, ctx); return t;
 }
+// 10/10 21:3x (ordem dele: nada do papel na tela): a conta real esta activa? (torre.json -> real; o mesmo criterio do t3b_vivo.casaReal)
+export function realActivo(T) { const rl = T && T.real; return !!(rl && rl.ativo && isFinite(Number(rl.patrimonio))); }
 export function pintarEcra(t, ctx) {
-  const T = ctx.T3B.estado.T, md = (T && T.reactor && T.reactor.medidor) || {}, serie = Array.isArray(md.serie) ? md.serie : [];
+  const T = ctx.T3B.estado.T, md = (T && T.reactor && T.reactor.medidor) || {}, real = realActivo(T);
+  const serie = real ? (Array.isArray(ctx.T3B.estado.serieReal) ? ctx.T3B.estado.serieReal : []) : (Array.isArray(md.serie) ? md.serie : []);
   const ass = serie.length + ':' + (serie.length ? serie[serie.length - 1][1] : '') + ':' + (ctx.noite ? 1 : 0);
   if (t.userData.ass === ass) return; t.userData.ass = ass;
   const c = t.userData.c, g = c.getContext('2d'), w = 256, h = 160;
@@ -492,15 +495,17 @@ export function pintarEcra(t, ctx) {
     g.strokeStyle = vals[vals.length - 1] >= 0 ? '#3fd69a' : '#ff5a5f'; g.lineWidth = 3; g.stroke();
     g.font = '600 22px "JetBrains Mono", monospace'; g.fillStyle = g.strokeStyle; g.fillText((vals[vals.length - 1] >= 0 ? '+' : '') + vals[vals.length - 1].toFixed(2), 8, 24);
   } else { g.font = '500 18px "JetBrains Mono", monospace'; g.fillStyle = '#6a6a76'; g.fillText('à espera do dia…', 10, h / 2); }
-  g.font = '500 12px "JetBrains Mono", monospace'; g.fillStyle = '#f2c230'; g.fillText('3BRAIN · resultado do dia', 8, h - 8);
+  g.font = '500 12px "JetBrains Mono", monospace'; g.fillStyle = '#f2c230'; g.fillText('3BRAIN · resultado do dia' + (real ? ' · conta real' : ''), 8, h - 8);
   t.needsUpdate = true;
 }
 // os tres ecras de parede: trilho, velocimetro, numeros do andar (so se repintam quando o dado muda)
 export function pintarParedes(ab, ctx) {
   const T = ctx.T3B.estado.T; if (!ab.paredes) return;
-  const r = (T && T.reactor) || {}, md = r.medidor || {}, je = r.ja_entrou || {}, serie = Array.isArray(md.serie) ? md.serie : [];
+  const r = (T && T.reactor) || {}, md = r.medidor || {}, je = r.ja_entrou || {}, real = realActivo(T), rl = real ? T.real : {};
+  const serie = real ? (Array.isArray(ctx.T3B.estado.serieReal) ? ctx.T3B.estado.serieReal : []) : (Array.isArray(md.serie) ? md.serie : []);
+  const agoraV = real ? (ctx.T3B.estado.realHoje != null ? Number(ctx.T3B.estado.realHoje) : Number(rl.hoje_usd)) : Number(md.agora);
   ab.paredes.forEach(p => {
-    const ass = p.tipo + ':' + serie.length + ':' + md.agora + ':' + je.operacoes + ':' + (ctx.T3B.estado.ritmo ? ctx.T3B.estado.ritmo.n : 0) + ':' + ab.andarPessoas;
+    const ass = p.tipo + ':' + serie.length + ':' + (real ? agoraV.toFixed(2) : md.agora) + ':' + (real ? rl.desde_o_inicio_usd : je.operacoes) + ':' + (ctx.T3B.estado.ritmo ? ctx.T3B.estado.ritmo.n : 0) + ':' + ab.andarPessoas;
     if (p.ass === ass) return; p.ass = ass;
     const g = p.c.getContext('2d'), w = 512, h = 256;
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, p.c.width, p.c.height); g.setTransform(2, 0, 0, 2, 0, 0); g.fillStyle = 'rgba(8,10,14,.92)'; g.beginPath(); g.roundRect ? g.roundRect(0, 0, w, h, 18) : g.rect(0, 0, w, h); g.fill();
@@ -513,14 +518,16 @@ export function pintarParedes(ab, ctx) {
       else { g.fillStyle = '#6a6a76'; g.fillText('sem trilho ainda', 20, h / 2); }
     } else if (p.tipo === 'veloc') {
       g.fillText('RESULTADO DO DIA', 20, 34);
-      const v = Number(md.agora), lim = Number((r.limites || {}).perda_dia_usd), mx = Math.max(10, Math.abs(v) * 1.3, Math.abs(lim) || 0);
+      const v = agoraV, lim = real ? NaN : Number((r.limites || {}).perda_dia_usd), mx = Math.max(real ? 1 : 10, Math.abs(v) * 1.3, Math.abs(lim) || 0);
       const cx = w / 2, cy = h * 0.78, R = 90, a0 = Math.PI * 5 / 6, a1 = Math.PI * 13 / 6, ang = x => a0 + (a1 - a0) * Math.max(0, Math.min(1, (x + mx) / (2 * mx)));
       g.lineCap = 'round'; g.lineWidth = 12; g.strokeStyle = '#22222b'; g.beginPath(); g.arc(cx, cy, R, a0, a1); g.stroke();
       if (isFinite(v)) { g.strokeStyle = v >= 0 ? '#3fd69a' : '#ff5a5f'; g.beginPath(); g.arc(cx, cy, R, Math.min(ang(0), ang(v)), Math.max(ang(0), ang(v))); g.stroke(); g.strokeStyle = '#ffdc6a'; g.lineWidth = 4; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(ang(v)) * (R - 6), cy + Math.sin(ang(v)) * (R - 6)); g.stroke(); g.fillStyle = v >= 0 ? '#3fd69a' : '#ff5a5f'; g.font = '600 30px "JetBrains Mono", monospace'; g.textAlign = 'center'; g.fillText((v >= 0 ? '+' : '') + v.toFixed(2), cx, cy + 36); g.textAlign = 'left'; }
     } else {
       g.fillText('ANDAR ' + ab.n + ' · ' + cortarTexto(String(ab.a.nome || ''), 22).toUpperCase(), 20, 34);
       const rit = ctx.T3B.estado.ritmo || {}, ev = (rit.porAndar || {})[String(ab.n)] || 0;
-      const linhas = [['funcionários', ab.andarPessoas], ['eventos · 60 s', ev], ['operações', je.operacoes != null ? je.operacoes : '—'], ['acerto', je.acerto_pct != null ? Number(je.acerto_pct).toFixed(1) + '%' : '—']];
+      const sn = x => (x = Number(x), isFinite(x) ? (x >= 0 ? '+' : '') + x.toFixed(2) : '—');
+      const linhas = real ? [['funcionários', ab.andarPessoas], ['eventos · 60 s', ev], ['hoje · conta real', sn(agoraV)], ['desde o início', sn(rl.desde_o_inicio_usd)]]
+        : [['funcionários', ab.andarPessoas], ['eventos · 60 s', ev], ['operações', je.operacoes != null ? je.operacoes : '—'], ['acerto', je.acerto_pct != null ? Number(je.acerto_pct).toFixed(1) + '%' : '—']];
       g.font = '500 20px "JetBrains Mono", monospace';
       linhas.forEach((l, i) => { g.fillStyle = '#9797a3'; g.fillText(l[0], 20, 80 + i * 40); g.fillStyle = '#ffdc6a'; g.font = '600 26px "JetBrains Mono", monospace'; g.textAlign = 'right'; g.fillText(String(l[1]), w - 24, 82 + i * 40); g.textAlign = 'left'; g.font = '500 20px "JetBrains Mono", monospace'; });
     }
@@ -541,6 +548,10 @@ export function pintarParedes(ab, ctx) {
 export function actualizarFita(ab, ctx) {
 
   if (!ab || !ab.pronto) return;
+  if (realActivo(ctx.T3B.estado.T)) {      // 10/10 21:3x (ordem dele): a fita e o acumulado do PAPEL dia a dia - com a conta real activa sai
+    if (ab.fita) { ab.grupo.remove(ab.fita.g); ab.fita.g.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) { if (x.material.map) x.material.map.dispose(); x.material.dispose(); } }); ab.fita = null; }
+    return;
+  }
 
   const T = ctx.T3B.estado.T, je = T && T.reactor && T.reactor.ja_entrou, pd = je && je.por_dia;
 

@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=4672c45be0';
+import * as ANDAR from './t3b_andar.js?v=ca1ebf329a';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 
@@ -230,6 +230,11 @@ function chao() {
 // com perda grande vira TEMPESTADE com relampagos.
 const CLIMA = { modo: 'neutro', chuva: null, sol: null, I: 0, flash: 0, proxFlash: 3 };
 const ESCALA_CLIMA = 10;      // US$ do dia que dao a forca maxima (capital ~US$500: 2%)
+// 10/10 21:3x (ordem dele: nada do papel na tela): com a conta real activa a escala do clima e 2% do capital REAL (99 US$ -> ~2 US$),
+// nunca menos de 0,50 US$. PURA: testada em testes_t3b.js.
+export function escalaClima(capitalReal) {
+  return isFinite(capitalReal) && capitalReal > 0 ? Math.max(0.5, Math.round(capitalReal * 0.02 * 100) / 100) : ESCALA_CLIMA;
+}
 function texturaRaios() {
   const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), m = 128;
   for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, gr = g.createLinearGradient(m, m, m + Math.cos(a) * 128, m + Math.sin(a) * 128);
@@ -255,8 +260,13 @@ function clima() {
 function climaPeloMercado(T) {
   // q21 "chuva em queda, sol em alta": o MESMO resultado do dia que o velocimetro mostra (o instrumento ao segundo:
   // realizado + o aberto); o medidor.agora do ficheiro ficava a 0,00 com o dia a -10 US$ e nunca chovia
-  const r = (T && T.reactor) || {}; let v = Number(T3B.estado.resultadoDia); if (!isFinite(v)) v = Number((r.medidor || {}).agora); if (!isFinite(v)) v = Number((r.ganho || {}).realizado_usd); if (!isFinite(v)) return;
-  const modo = v < -0.5 ? 'chuva' : v > 0.5 ? 'sol' : 'neutro', I = Math.min(1, Math.abs(v) / ESCALA_CLIMA);
+  const r = (T && T.reactor) || {}, rl = (T && T.real) || {}, real = !!(rl.ativo && isFinite(Number(rl.patrimonio)));
+  let v = Number(T3B.estado.resultadoDia);
+  if (real) { if (!isFinite(v)) v = Number(rl.hoje_usd); }      // 10/10 21:3x (ordem dele): com a conta real activa, nunca o medidor do papel
+  else { if (!isFinite(v)) v = Number((r.medidor || {}).agora); if (!isFinite(v)) v = Number((r.ganho || {}).realizado_usd); }
+  if (!isFinite(v)) return;
+  const esc = escalaClima(real ? Number(rl.patrimonio) : NaN), lim = esc * 0.05;
+  const modo = v < -lim ? 'chuva' : v > lim ? 'sol' : 'neutro', I = Math.min(1, Math.abs(v) / esc);
   const us = (v >= 0 ? '+' : '') + v.toFixed(2) + ' US$';
   U.txt($('pc_clima'), modo === 'chuva' ? (I > 0.55 ? 'tempestade · ' : 'chuva · ') + us : modo === 'sol' ? (I > 0.6 ? 'sol de verão · ' : I > 0.25 ? 'sol forte · ' : 'sol · ') + us : 'limpo · ' + us);
   if (Math.abs(I - CLIMA.I) > 0.04) { CLIMA.I = I; precisaDesenhar = true; }

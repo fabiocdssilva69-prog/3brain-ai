@@ -397,6 +397,28 @@
     return { dia: (R.pat != null && R.hoje != null && isFinite(pat) && isFinite(hoje)) ? capV - (pat - hoje) : null,
       ini: (R.ini != null && isFinite(ini) && ini > 0) ? capV - ini : null };
   }
+  // 10/10 21:3x (ordem dele: "nao pode mostrar nada dos numeros de simulacao"): o TRILHO DO DIA da conta REAL escreve-se aqui,
+  // um ponto por minuto, a partir do "hoje" ao vivo (o executor real so mede o patrimonio de hora a hora); guarda-se no browser
+  // por dia para sobreviver a um recarregar. PURA: acumularSerie, testada em testes_t3b.js.
+  function acumularSerie(serie, hhmm, v, max) {
+    v = Number(v); if (!isFinite(v) || !hhmm) return Array.isArray(serie) ? serie : [];
+    var s = Array.isArray(serie) ? serie.slice() : [], ult = s.length ? s[s.length - 1] : null, r = Math.round(v * 100) / 100;
+    if (ult && ult[0] === hhmm) s[s.length - 1] = [hhmm, r]; else s.push([hhmm, r]);
+    max = max || 720; if (s.length > max) s = s.slice(s.length - max);
+    return s;
+  }
+  var SERIE_REAL = { dia: null, s: [] };
+  function hhmmAgora() { var d = new Date(); return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes(); }
+  function tocarSerieReal(T, v) {
+    var dia = String(obj(T && T.reactor).dia || new Date().toISOString().slice(0, 10));
+    if (SERIE_REAL.dia !== dia) {
+      SERIE_REAL.dia = dia; SERIE_REAL.s = [];
+      try { var g = JSON.parse(localStorage.getItem('t3b_serie_real:' + dia) || '[]'); if (Array.isArray(g)) SERIE_REAL.s = g; } catch (e) { }
+    }
+    var antes = SERIE_REAL.s.length, s = acumularSerie(SERIE_REAL.s, hhmmAgora(), v, 720);
+    SERIE_REAL.s = s; T3B.estado.serieReal = s; T3B.estado.realHoje = Number(v);
+    if (s.length !== antes) { try { localStorage.setItem('t3b_serie_real:' + dia, JSON.stringify(s)); } catch (e) { } T3B.emit('serieReal', s); }
+  }
   var ROTULO_PAPEL = { c_cap: 'capital da casa', c_dia: 'realizado hoje', c_ini: 'realizado desde o início' };
   var ROTULO_REAL = { c_cap: 'capital da casa · real', c_dia: 'hoje · conta real', c_ini: 'desde o início · real' };
   function rotulos(R) { Object.keys(R).forEach(function (id) { var c = $(id), u = c && c.querySelector('u'); if (u) txt(u, R[id]); }); }
@@ -411,12 +433,14 @@
       // ficheiro (de hora a hora) nao os puxa para tras a cada leitura; sem preco ao vivo, valem os do ficheiro
       var aoVivoOk = !!(AOVIVO.real && AOVIVO.tPreco && Date.now() - AOVIVO.tPreco < 15000), seg = aoVivoOk ? ' · ao segundo' : ' · de hora a hora';
       if (!aoVivoOk) numeroVivo('cap', 'c_cap', 'n_cap', rc.cap, fUS, '', 'capital');
-      txt($('n_cap_s'), 'começou com ' + fmt(rc.inicial, 2) + ' US$ · cérebro (papel) ' + sinal(je.liquido, 2) + ' US$' + (rc.travado ? ' · Binance à espera' : ''));
+      txt($('n_cap_s'), 'começou com ' + fmt(rc.inicial, 2) + ' US$ · conta real na Binance' + (rc.travado ? ' · Binance à espera' : ''));   // 10/10 21:3x: sem o numero do papel
       if (!aoVivoOk) numeroVivo('dia', 'c_dia', 'n_dia', rc.hoje, sUS, cls(rc.hoje), 'hoje');
+      T3B.estado.realActivo = true; if (!aoVivoOk && rc.hoje != null) tocarSerieReal(T, rc.hoje);     // 10/10 21:3x: o trilho real (de hora a hora, sem preco ao vivo)
       txt($('n_dia_s'), rc.pos.length + ' posição(ões) na conta real · realizado ' + sinal(rc.realizado, 2) + ' US$' + seg);
       if (!aoVivoOk) numeroVivo('ini', 'c_ini', 'n_ini', rc.ini, sUS, cls(rc.ini), 'desde o início');
       txt($('n_ini_s'), (rc.iniPct != null ? sinal(rc.iniPct, 2) + '% · ' : '') + 'desde ' + dataCurta(rc.comecou) + (rc.velho ? ' · da última volta boa' : ''));
     } else {
+    T3B.estado.realActivo = false; T3B.estado.realHoje = null;
     rotulos(ROTULO_PAPEL);
     numeroVivo('cap', 'c_cap', 'n_cap', c.capital_escala, fUS, '', 'capital');
     txt($('n_cap_s'), 'acumulado em papel ' + sinal(c.acumulado_papel, 2) + ' US$');
@@ -499,6 +523,7 @@
       var vr = vivosDoReal(AOVIVO.base.cap + dl, AOVIVO.real);
       if (vr && vr.dia != null) quietoCls('dia', 'n_dia', vr.dia);
       if (vr && vr.ini != null) quietoCls('ini', 'n_ini', vr.ini);
+      if (vr && vr.dia != null) tocarSerieReal(T3B.estado.T, vr.dia);                                    // 10/10 21:3x: o trilho real ao segundo
     }
     AOVIVO.aberto = AOVIVO.base && isFinite(AOVIVO.base.abe) ? AOVIVO.base.abe + dl : null;
     if (AOVIVO.aberto != null) { var bx = $('bx_abe'); txt(bx, sinal(AOVIVO.aberto, 2) + ' US$'); if (bx) bx.className = cls(AOVIVO.aberto); }
