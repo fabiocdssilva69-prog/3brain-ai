@@ -384,7 +384,7 @@
     var usdt = num(rl.usdt_livre);
     return { cap: pat, hoje: num(rl.hoje_usd), aberto: num(rl.aberto_usd), ini: num(rl.desde_o_inicio_usd),
       iniPct: num(rl.desde_o_inicio_pct), inicial: num(rl.capital_inicial), realizado: num(rl.realizado_usd) || 0, pos: pos,
-      baseCap: (usdt != null ? usdt : pat - custo) + custo, travado: !!rl.travado, velho: !!rl.da_ultima_volta_boa,
+      usdt: usdt, baseCap: (usdt != null ? usdt : pat - custo) + custo, travado: !!rl.travado, velho: !!rl.da_ultima_volta_boa,
       comecou: rl.comecou_em || rl.desde || null };
   }
   // 10/10 19:0x (ele: "nao vejo eles mexer faz tempo"): o executor real mede o patrimonio de HORA a HORA; o "Hoje" e o "Desde o
@@ -419,8 +419,8 @@
     SERIE_REAL.s = s; T3B.estado.serieReal = s; T3B.estado.realHoje = Number(v);
     if (s.length !== antes) { try { localStorage.setItem('t3b_serie_real:' + dia, JSON.stringify(s)); } catch (e) { } T3B.emit('serieReal', s); }
   }
-  var ROTULO_PAPEL = { c_cap: 'capital da casa', c_dia: 'realizado hoje', c_ini: 'realizado desde o início' };
-  var ROTULO_REAL = { c_cap: 'capital da casa · real', c_dia: 'hoje · conta real', c_ini: 'desde o início · real' };
+  var ROTULO_PAPEL = { c_cap: 'capital da casa', c_dia: 'realizado hoje', c_ini: 'realizado desde o início', c_mes: 'livro da mesa' };
+  var ROTULO_REAL = { c_cap: 'capital da casa · real', c_dia: 'hoje · conta real', c_ini: 'desde o início · real', c_mes: 'realizado · conta real' };
   function rotulos(R) { Object.keys(R).forEach(function (id) { var c = $(id), u = c && c.querySelector('u'); if (u) txt(u, R[id]); }); }
   function dataCurta(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] : '—'; }
   function pintarCasa(T) {
@@ -449,8 +449,13 @@
     numeroVivo('ini', 'c_ini', 'n_ini', je.liquido, sUS, cls(je.liquido), 'desde o início');
     txt($('n_ini_s'), fmt(je.operacoes, 0) + ' operações · taxas ' + fmt(je.taxa, 2) + ' US$');
     }
+    if (rc) {      // 10/10 21:4x (ordem dele): o livro da mesa e das estrategias em PAPEL - com a conta real activa o card e o realizado REAL de hoje
+      numeroVivo('mes', 'c_mes', 'n_mes', rc.realizado, sUS, cls(rc.realizado), 'realizado · conta real');
+      txt($('n_mes_s'), 'USDT livre ' + fmt(rc.usdt, 2) + ' · patrimônio ' + fmt(rc.cap, 2) + ' US$' + (rc.travado ? ' · Binance à espera' : ''));
+    } else {
     numeroVivo('mes', 'c_mes', 'n_mes', est.realizado, sUS, cls(est.realizado), 'livro da mesa');
     txt($('n_mes_s'), (est.n_linhas || 0) + ' estratégias · ' + (est.n || 0) + ' operações');
+    }
     pintarEvolucao(T);                                                    // 05/10: no lugar dos "orgaos prontos" (ordem dele)
     abertoDoFicheiro = rc ? Number(rc.aberto) : Number(r.aberto_total_usd);
     pintarAberto(false);
@@ -790,8 +795,9 @@
   ligarCarrossel('hud_tr', 45);
   // as celulas novas da barra (05/10): o que a torre tem aberto e o que evoluiu
   function pintarExtrasHUD(T) {
-    var r = obj(T.reactor), ex = obj(T.extremis), ps = lista(r.posicoes), cr = ps.filter(function (p) { return p.cripto; }).length;
-    txt($('bx_pos'), ps.length + ' (' + cr + ' cripto · ' + (ps.length - cr) + ' ações)');
+    // 10/10 21:4x (ordem dele): com a conta real activa a celula conta as posicoes REAIS
+    var r = obj(T.reactor), ex = obj(T.extremis), rcH = casaReal(T), ps = rcH ? rcH.pos : lista(r.posicoes), cr = rcH ? ps.length : ps.filter(function (p) { return p.cripto; }).length;
+    txt($('bx_pos'), rcH ? ps.length + ' (conta real · Binance)' : ps.length + ' (' + cr + ' cripto · ' + (ps.length - cr) + ' ações)');
     txt($('bx_ger'), fmt(ex.geracao_actual, 0)); txt($('bx_fam'), fmt(ex.n_familias, 0)); txt($('bx_rob'), fmt(ex.robustos_alguma_vez, 0));
   }
   T3B.on('eventos', function (evs) {             // o botao do andar acende quando alguem la mexe
