@@ -384,6 +384,7 @@
     var usdt = num(rl.usdt_livre);
     return { cap: pat, hoje: num(rl.hoje_usd), aberto: num(rl.aberto_usd), ini: num(rl.desde_o_inicio_usd),
       iniPct: num(rl.desde_o_inicio_pct), inicial: num(rl.capital_inicial), realizado: num(rl.realizado_usd) || 0, pos: pos,
+      aportado: num(rl.capital_aportado),        // 12/10 (ele): o capital depositado nao e ganho - o 'desde o inicio' conta-se dele
       usdt: usdt, baseCap: (usdt != null ? usdt : pat - custo) + custo, travado: !!rl.travado, velho: !!rl.da_ultima_volta_boa,
       comecou: rl.comecou_em || rl.desde || null };
   }
@@ -433,7 +434,7 @@
       // ficheiro (de hora a hora) nao os puxa para tras a cada leitura; sem preco ao vivo, valem os do ficheiro
       var aoVivoOk = !!(AOVIVO.real && AOVIVO.tPreco && Date.now() - AOVIVO.tPreco < 15000), seg = aoVivoOk ? ' · ao segundo' : ' · de hora a hora';
       if (!aoVivoOk) numeroVivo('cap', 'c_cap', 'n_cap', rc.cap, fUS, '', 'capital');
-      txt($('n_cap_s'), 'começou com ' + fmt(rc.inicial, 2) + ' US$ · conta real na Binance' + (rc.travado ? ' · Binance à espera' : ''));   // 10/10 21:3x: sem o numero do papel
+      txt($('n_cap_s'), 'começou com ' + fmt(rc.inicial, 2) + ' US$' + (rc.aportado != null && rc.inicial != null && rc.aportado - rc.inicial > 0.005 ? ' · +' + fmt(rc.aportado - rc.inicial, 2) + ' aportados' : '') + ' · conta real na Binance' + (rc.travado ? ' · Binance à espera' : ''));   // 10/10 21:3x: sem o numero do papel
       if (!aoVivoOk) numeroVivo('dia', 'c_dia', 'n_dia', rc.hoje, sUS, cls(rc.hoje), 'hoje');
       T3B.estado.realActivo = true; if (!aoVivoOk && rc.hoje != null) tocarSerieReal(T, rc.hoje);     // 10/10 21:3x: o trilho real (de hora a hora, sem preco ao vivo)
       txt($('n_dia_s'), rc.pos.length + ' posição(ões) na conta real · realizado ' + sinal(rc.realizado, 2) + ' US$' + seg);
@@ -501,7 +502,7 @@
     if (rc) {                                       // 10/10: a conta REAL - o em aberto e o que cada posicao vale a mais do que custou
       AOVIVO.base = { cap: rc.baseCap, abe: 0 };
       AOVIVO.pos = rc.pos.map(function (p) { return { sym: p.sym.replace(/USD$/, 'USDT'), qty: p.qty, ref: p.ref }; });
-      AOVIVO.real = { pat: rc.cap, hoje: rc.hoje, ini: rc.inicial };     // 10/10 19:0x: as bases do hoje e do desde o inicio
+      AOVIVO.real = { pat: rc.cap, hoje: rc.hoje, ini: (rc.aportado != null ? rc.aportado : rc.inicial) };   // 12/10: os aportes nao sao ganho
     } else {
     AOVIVO.real = null;
     AOVIVO.base = { cap: Number(c.capital_escala), abe: Number(r.aberto_total_usd) };
