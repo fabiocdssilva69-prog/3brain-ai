@@ -129,10 +129,18 @@
   function pintarAviso() { aviso.hidden = !novasAbaixo; aviso.textContent = novasAbaixo + ' nova' + (novasAbaixo === 1 ? '' : 's') + ' ↓'; }
 
   var vistosTexto = {};
+  // 12/10 (ele: "quando 1 sector publica no chat, o mesmo publica 5/6 vezes seguidas; cada um envia 1 coisa por vez e so
+  // volta a enviar depois de outro ter enviado"): o mesmo autor nunca entra duas vezes seguidas no fio (historico e ao vivo).
+  // As perguntas dele e as respostas do chat ficam fora da regra.
+  var ultimoNoFio = null;
+  function autorDoFio(m) { var a = m.autor || {}; return a.id || a.titulo || m.de_sector || null; }
   function juntar(m, animar) {
     var chave = m.mid || ('s' + m.s);
     if (vistos[chave]) return;
     vistos[chave] = 1;
+    var quemFio = autorDoFio(m);
+    if (!m.chat && m.tipo !== 'pergunta' && quemFio && quemFio === ultimoNoFio) return;
+    ultimoNoFio = quemFio;
     // 09/10 (ele: "o chat ta bugado varias mensagens repetidas"): um RECADO nao tem id de mensagem (a chave e o numero do evento),
     // e o mesmo recado (de, para, texto) chegava varias vezes com numeros diferentes. Em 6 h so entra uma vez.
     if (m.tipo === 'recado') {
