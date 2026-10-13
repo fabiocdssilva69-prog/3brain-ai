@@ -121,7 +121,7 @@
   // ---------------------------------------------------------------- o agendador (um relogio so)
   var FONTES = [
     { nome: 'vivo', url: function () { return 'vivo.json?desde=' + E.vivoSeq + (document.hidden ? '' : '&vista=1') + (window.T3B_PUBLICADO ? '&_=' + Math.floor(Date.now() / 15000) : ''); }, cada: window.T3B_PUBLICADO ? 15000 : 1000, aplicar: aplicarVivo },   // 09/10: na copia publica o '&_=' fura a cache de 10 min do site (a mesma fotografia vinha repetida)   // 05/10: vista=1 liga o modo espectador (mercado/espectador.py)
-    { nome: 'torre', url: function () { return 'torre.json'; }, cada: 2000, aplicar: aplicarTorre },
+    { nome: 'torre', url: function () { return 'torre.json'; }, cada: 5000, aplicar: aplicarTorre },   // 13/10: era 2 s (78 KB; muda ~1x/min)
     { nome: 'enxame', url: function () { return 'enxame.json'; }, cada: 10000, aplicar: aplicarEnxame },
     { nome: 'estrutura', url: function () { return 'estrutura.json'; }, cada: 60000, aplicar: aplicarEstrutura, primeiro: true },
     { nome: 'pend', url: function () { return 'pendencias.json'; }, cada: 60000, aplicar: aplicarPend },
