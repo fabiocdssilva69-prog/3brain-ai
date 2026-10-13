@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=3a522f563c';
+import * as ANDAR from './t3b_andar.js?v=715f70e6bf';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 
@@ -1489,7 +1489,7 @@ function quadro(agora) {
   // o relogio da pagina (t3b_ritmo.js): a interagir (ou a camara/gaveta a viajar) os quadros sao os do ecra; senao 20 por
   // segundo, 30 com bonecos a andar dentro do andar - e os outros ciclos (hologramas, numeros, reactor) vao no mesmo quadro
   const RIT = window.T3BRitmo;
-  if (RIT) { if (modo === 'interaccao') RIT.soltar(160); RIT.hz = 60; }   // 05/10: a pagina a 60 sempre (os hologramas andam mesmo com a torre quieta)
+  if (RIT) { if (modo === 'interaccao') RIT.soltar(160); RIT.hz = 30; }   // 13/10 (ele: "aliviar"): 30 q/s parado, 45 a mexer (t3b_ritmo)
   // a cadencia: interaccao todos os quadros; vivo 30/s; repouso 6/s (sem respiracao - reduced motion - so quando um dado muda)
   // (a torre a girar sozinha e o letreiro: 20 quadros/s chegam - 0,1 grau por quadro; bonecos a andar dentro do andar: 30)
   const cad = calmo && modo === 'repouso' ? (precisaDesenhar ? 0 : 1e9) : modo === 'repouso' && precisaDesenhar ? 0 : CADENCIA[modo];

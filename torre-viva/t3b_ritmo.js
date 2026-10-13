@@ -19,7 +19,8 @@
   var N = window.requestAnimationFrame.bind(window);
   var fila = [], seq = 0, temporizador = null, pedido = 0, ultimo = 0;
   var R = window.T3BRitmo = {
-    hz: 60,                 // 05/10 (Q4 D1, ele: "sempre vivos e suaves, 60 q/s"): era 20 - o "fotograma" da pagina inteira
+    hz: 30,                 // 13/10 (ele: "pode fazer os ajustes pra aliviar"; a 05/10 tinha pedido 60): 30 parado (medido: -37% de CPU)
+    mexerHz: 45,            // 13/10: a mexer (rato, roda, camara) ate 45 q/s - antes eram TODOS os do ecra, e era a mexer que travava
     // 10/10 (ele: "melhora o desempenho dessa maquina ou deixa a torre mais fluida porque ta travando DEMAIS o computador";
     // medido as 15:3x: a aba da torre ~2,2 nucleos e a placa integrada a pintar 60 q/s enquanto ele usava o VS Code ao lado):
     // com a janela SEM FOCO a pagina inteira anda a semFocoHz - continua viva no canto do olho, mas larga o CPU e a placa para
@@ -51,9 +52,22 @@
         if (!pesadoDesde) pesadoDesde = agora;
         else if (agora - pesadoDesde > 3000) { R.tecto = 30; pesadoDesde = 0; leveDesde = 0; if (subiuEm && agora - subiuEm < 15000) esperaSubir = Math.min(480000, esperaSubir * 2); }   // (so conta se ja tinha subido)
       } else pesadoDesde = 0;
+    } else if (R.tecto > 20 && Math.min(R.hz, 30) >= 30) {
+      // 13/10: o degrau 30 -> 20 - a 30 q/s ainda pesado (quadros a mais de 45 ms ou trabalho de mais de 25 ms durante 3 s)
+      intMedio = intMedio * 0.92 + iv * 0.08;
+      if (intMedio > 45 || R.msMedio > 25) {
+        if (!pesadoDesde) pesadoDesde = agora;
+        else if (agora - pesadoDesde > 3000) { R.tecto = 20; pesadoDesde = 0; leveDesde = 0; }
+      } else {
+        pesadoDesde = 0;
+        if (R.msMedio < 7 && R.hz > 30) {               // so volta aos 60 quem pediu 60 (hz); com hz 30 fica nos 30
+          if (!leveDesde) leveDesde = agora;
+          else if (agora - leveDesde > esperaSubir) { R.tecto = 60; leveDesde = 0; subiuEm = agora; intMedio = 16.7; }
+        } else leveDesde = 0;
+      }
     } else if (R.msMedio < 7) {
       if (!leveDesde) leveDesde = agora;
-      else if (agora - leveDesde > esperaSubir) { R.tecto = 60; leveDesde = 0; subiuEm = agora; intMedio = 16.7; }
+      else if (agora - leveDesde > esperaSubir) { R.tecto = R.tecto < 30 ? 30 : 60; leveDesde = 0; subiuEm = agora; intMedio = 33; }
     } else leveDesde = 0;
   }
   function correr(ts) {
@@ -65,7 +79,8 @@
   function agendar() {
     if (pedido || temporizador || !fila.length) return;
     var hz = R.efectivo();
-    if (R.livre() || hz >= 55) { pedido = N(correr); return; }     // a 60 q/s, direito ao ecra: um temporizador pelo meio falhava quadros (soluco)
+    if (R.livre()) hz = Math.min(R.mexerHz || 45, R.tecto || 60);    // 13/10: a mexer tambem tem tecto
+    if (hz >= 55) { pedido = N(correr); return; }     // a 60 q/s, direito ao ecra: um temporizador pelo meio falhava quadros (soluco)
     var espera = 1000 / Math.max(1, hz) - (performance.now() - ultimo) - 3;
     if (espera <= 0) { pedido = N(correr); return; }
     temporizador = setTimeout(function () { temporizador = null; if (!pedido && fila.length) pedido = N(correr); }, espera);
