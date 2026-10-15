@@ -20,8 +20,8 @@
   'use strict';
   var Nativo = window.WebSocket;
   if (!Nativo) return;
-  var BASE = 'wss://stream.binance.com:9443/stream?streams=';
-  var RX = /^wss:\/\/stream\.binance\.com(?::9443)?\/stream\?streams=/;
+  var BASE = 'wss://stream.binance.com:443/stream?streams=';   // 15/10: porta 443 - a 9443 e bloqueada em muitas redes moveis e Wi-Fi publicos
+  var RX = /^wss:\/\/stream\.binance\.com(?::9443|:443)?\/stream\?streams=/;
   var real = null, noReal = [], pedido = 1, actual = null, extras = {}, falhasExtras = 0, reabrirT = null;
 
   function depois(fn) { setTimeout(fn, 0); }

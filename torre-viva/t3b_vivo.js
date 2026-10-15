@@ -421,7 +421,9 @@
     if (s.length !== antes) { try { localStorage.setItem('t3b_serie_real:' + dia, JSON.stringify(s)); } catch (e) { } T3B.emit('serieReal', s); }
   }
   var ROTULO_PAPEL = { c_cap: 'capital da casa', c_dia: 'realizado hoje', c_ini: 'realizado desde o início', c_mes: 'livro da mesa' };
-  var ROTULO_REAL = { c_cap: 'capital da casa · real', c_dia: 'hoje · conta real', c_ini: 'desde o início · real', c_mes: 'realizado · conta real' };
+  // 15/10 (ele: "o hoje positivo e o em aberto negativo - sao bug?"): nao - o HOJE e o patrimonio de agora menos o das 00h; o EM
+  // ABERTO e cada posicao contra o preco a que foi COMPRADA (dias antes). Os rotulos passam a dize-lo.
+  var ROTULO_REAL = { c_cap: 'capital da casa · real', c_dia: 'hoje · desde as 00h', c_abe: 'em aberto · desde a compra', c_ini: 'desde o início · real', c_mes: 'realizado · vendas fechadas' };
   function rotulos(R) { Object.keys(R).forEach(function (id) { var c = $(id), u = c && c.querySelector('u'); if (u) txt(u, R[id]); }); }
   function dataCurta(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] : '—'; }
   function pintarCasa(T) {
@@ -432,14 +434,15 @@
       rotulos(ROTULO_REAL);
       // 10/10 19:0x: com o preco ao vivo a chegar, o capital, o hoje e o desde o inicio sao os do aoPreco (ao segundo) - o
       // ficheiro (de hora a hora) nao os puxa para tras a cada leitura; sem preco ao vivo, valem os do ficheiro
-      var aoVivoOk = !!(AOVIVO.real && AOVIVO.tPreco && Date.now() - AOVIVO.tPreco < 15000), seg = aoVivoOk ? ' · ao segundo' : ' · de hora a hora';
+      var aoVivoOk = !!(AOVIVO.real && AOVIVO.tPreco && Date.now() - AOVIVO.tPreco < 15000), seg = aoVivoOk ? ' · ao segundo' : ' · do ficheiro';
       if (!aoVivoOk) numeroVivo('cap', 'c_cap', 'n_cap', rc.cap, fUS, '', 'capital');
-      txt($('n_cap_s'), 'começou com ' + fmt(rc.inicial, 2) + ' US$' + (rc.aportado != null && rc.inicial != null && rc.aportado - rc.inicial > 0.005 ? ' · +' + fmt(rc.aportado - rc.inicial, 2) + ' aportados' : '') + ' · conta real na Binance' + (rc.travado ? ' · Binance à espera' : ''));   // 10/10 21:3x: sem o numero do papel
+      txt($('n_cap_s'), (rc.aportado != null ? 'aportado ' + fmt(rc.aportado, 2) + ' US$' : 'começou com ' + fmt(rc.inicial, 2) + ' US$') + ' · Binance' + (rc.travado ? ' · à espera' : ''));   // 15/10: curto (cortava no telemovel)
       if (!aoVivoOk) numeroVivo('dia', 'c_dia', 'n_dia', rc.hoje, sUS, cls(rc.hoje), 'hoje');
       T3B.estado.realActivo = true; if (!aoVivoOk && rc.hoje != null) tocarSerieReal(T, rc.hoje);     // 10/10 21:3x: o trilho real (de hora a hora, sem preco ao vivo)
-      txt($('n_dia_s'), rc.pos.length + ' posição(ões) na conta real · realizado ' + sinal(rc.realizado, 2) + ' US$' + seg);
+      txt($('n_dia_s'), rc.pos.length + ' posições' + seg);
       if (!aoVivoOk) numeroVivo('ini', 'c_ini', 'n_ini', rc.ini, sUS, cls(rc.ini), 'desde o início');
-      txt($('n_ini_s'), (rc.iniPct != null ? sinal(rc.iniPct, 2) + '% · ' : '') + 'desde ' + dataCurta(rc.comecou) + (rc.velho ? ' · da última volta boa' : ''));
+      var abAgora = (AOVIVO.aberto != null && Date.now() - AOVIVO.tPreco < 15000) ? AOVIVO.aberto : rc.aberto;   // 15/10: a conta que ele pediu
+      txt($('n_ini_s'), (rc.iniPct != null ? sinal(rc.iniPct, 2) + '% · ' : '') + '= realizado ' + sinal(rc.realizado, 2) + (abAgora != null ? ' + em aberto ' + sinal(abAgora, 2) : ''));
     } else {
     T3B.estado.realActivo = false; T3B.estado.realHoje = null;
     rotulos(ROTULO_PAPEL);
@@ -452,7 +455,7 @@
     }
     if (rc) {      // 10/10 21:4x (ordem dele): o livro da mesa e das estrategias em PAPEL - com a conta real activa o card e o realizado REAL de hoje
       numeroVivo('mes', 'c_mes', 'n_mes', rc.realizado, sUS, cls(rc.realizado), 'realizado · conta real');
-      txt($('n_mes_s'), 'USDT livre ' + fmt(rc.usdt, 2) + ' · patrimônio ' + fmt(rc.cap, 2) + ' US$' + (rc.travado ? ' · Binance à espera' : ''));
+      txt($('n_mes_s'), 'desde ' + dataCurta(rc.comecou) + ' · USDT livre ' + fmt(rc.usdt, 2) + (rc.travado ? ' · à espera' : ''));
     } else {
     numeroVivo('mes', 'c_mes', 'n_mes', est.realizado, sUS, cls(est.realizado), 'livro da mesa');
     txt($('n_mes_s'), (est.n_linhas || 0) + ' estratégias · ' + (est.n || 0) + ' operações');
@@ -486,7 +489,7 @@
     else { vv.de = vv.actual == null || !isFinite(vv.actual) ? vv.para : vv.actual; vv.para = v; vv.t0 = performance.now(); vv.el = el; }
     if (vivo == null) { var bx0 = $('bx_abe'); txt(bx0, txtV); if (bx0) bx0.className = cls(v); }   // 10/10: a barra do topo tambem (so mudava ao vivo)
     if (el) el.className = 'v vivo ' + cls(v);
-    txt($('n_abe_s'), vivo != null ? 'ao segundo · Binance (' + AOVIVO.pos.length + ' cripto) + ações do ficheiro' : 'do ficheiro (sem preço ao vivo)');
+    txt($('n_abe_s'), 'contra o preço de compra · ' + (vivo != null ? 'ao segundo' + (AOVIVO.fonte === 'rest' ? ' (5 s)' : '') : 'do ficheiro'));
     if (mudou && !doTique) piscarCelula('c_abe', 'abe', 'em aberto → ' + txtV);
     // (05/10: o tique do mercado ja nao acende a etiqueta - agora chega 4 vezes por segundo e tapava o numero; o subtitulo diz 'ao segundo')
   }
@@ -514,7 +517,7 @@
     Object.keys(AOVIVO.fluxos).forEach(function (f) { if (!quer[f]) { try { window.T3BBinance.largar(f); } catch (e) { } delete AOVIVO.fluxos[f]; } });
     Object.keys(quer).forEach(function (f) {
       if (AOVIVO.fluxos[f]) return; AOVIVO.fluxos[f] = 1;
-      (function (sym) { window.T3BBinance.assinar(f, function (d) { aoPreco(sym, d); }); })(quer[f]);
+      (function (sym) { window.T3BBinance.assinar(f, function (d) { AOVIVO.fonte = 'ws'; aoPreco(sym, d); }); })(quer[f]);
     });
   }
   function aoPreco(sym, d) {
@@ -535,6 +538,34 @@
     if (AOVIVO.aberto != null) { var bx = $('bx_abe'); txt(bx, sinal(AOVIVO.aberto, 2) + ' US$'); if (bx) bx.className = cls(AOVIVO.aberto); }
     pintarAberto(true);
   }
+  // 15/10 (ele: "o instrumento do dia nao atualiza em tempo real"): se o fluxo da Binance nao trouxer preco em 10 s (a porta
+  // bloqueada na rede movel, o websocket caido), a pagina pede o livro a Binance de 5 em 5 s - o hoje, o em aberto, o desde o
+  // inicio e o velocimetro continuam a mexer. A API publica de dados (data-api.binance.vision) aceita pedidos de qualquer pagina.
+  // <rest-puro>
+  function midsDoRest(lista) {
+    var m = {};
+    (Array.isArray(lista) ? lista : []).forEach(function (x) {
+      var b = Number(x && x.bidPrice), a = Number(x && x.askPrice);
+      if (x && x.symbol && b > 0 && a > 0 && isFinite(b) && isFinite(a)) m[String(x.symbol)] = { b: b, a: a };
+    });
+    return m;
+  }
+  // </rest-puro>
+  var REST_URL = 'https://data-api.binance.vision/api/v3/ticker/bookTicker?symbols=', REST_EM_VOO = false;
+  setInterval(function () {
+    if (REST_EM_VOO || !AOVIVO.pos.length || !window.fetch || Date.now() - AOVIVO.tPreco < 10000) return;
+    var syms = AOVIVO.pos.map(function (p) { return p.sym; });
+    REST_EM_VOO = true;
+    fetch(REST_URL + encodeURIComponent(JSON.stringify(syms)), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (lista) {
+        var m = midsDoRest(lista), ks = Object.keys(m);
+        ks.forEach(function (s, i) { if (i === ks.length - 1) AOVIVO.ult = 0; aoPreco(s, m[s]); });
+        if (ks.length) AOVIVO.fonte = 'rest';
+      })
+      .catch(function () { })
+      .then(function () { REST_EM_VOO = false; });
+  }, 5000);
   // (10/10 19:0x) o mesmo, e a cor segue o sinal (o hoje pode passar de verde a vermelho ao segundo)
   function quietoCls(chave, id, valor) { quieto(chave, valor, 700); var el = $(id), c = cls(valor); if (el) el.className = 'v vivo' + (c ? ' ' + c : ''); }
   // o numero desliza para o valor novo SEM piscar a celula (o mercado mexeu, nao um funcionario)

@@ -52,7 +52,7 @@ body.t3b { background: var(--bg); color: var(--txt); font: 13px/1.45 var(--f-s);
 .casa > div:last-child { border-right: 0; }
 .casa u { display: block; text-decoration: none; font: 500 9.5px var(--f-m); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
 .casa .v { font: 500 21px/1.15 var(--f-m); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; }
-.casa .s { font-size: 10.5px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.casa .s { font-size: 10.5px; color: var(--dim); white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }   /* 15/10 (ele: "texto comido"): ate 2 linhas */
 /* 03/10 23:xx: o "por <quem>" ficava POR CIMA da linha de baixo (".s") no ecra dele - agora ocupa a linha inteira com o
    fundo do cartao enquanto acende (4,5 s) e depois a linha volta */
 .casa .autor { position: absolute; left: 16px; right: 10px; bottom: 5px; font: 500 10px var(--f-m); color: var(--ouro); opacity: 0;
