@@ -206,7 +206,11 @@ function efeitoSubida(d,de,ate){ if(Math.abs(d)<0.004) return; const s=d>0?1:-1;
   S.trend=s; S.fxBrilho=Math.min(1,S.fxBrilho+0.35+Math.min(0.65,Math.abs(d)/Math.max(0.01,S.esc*0.02)));
   if(S.fxDelta&&S.fxDelta.s===s&&S.fxDelta.t<0.7){ S.fxDelta.v+=d; S.fxDelta.t=0.12; } else S.fxDelta={v:d,s,t:0};
   if(!calmo){ if(s>0&&(!S.fxVarre||S.fxVarre.t>0.6)) S.fxVarre={t:0}; S.fxRastro={de,ate,t:0,s}; } forcar=true; }
-function recalcular(){ if(S.fech==null) return; const novo=diaCom(0), antes=S.real; S.real=novo; if(antes!=null&&S.pronto) efeitoSubida(novo-antes,antes,novo);
+// 16/10: com a CONTA REAL (o torre.js passa conta_real) o ponteiro e o HOJE da conta - o mesmo do cartao 'hoje', ao segundo pela
+// t3b_vivo.js (T3B.estado.realHoje) - e o aberto e o EM ABERTO (T3B.estado.realAberto); sem o ao vivo, os do ficheiro
+function hojeReal(){ const e=(window.T3B&&window.T3B.estado)||{}, v=Number(e.realHoje); return (e.realHoje!=null&&isFinite(v))?v:(Number(S.contaReal&&S.contaReal.hoje)||0); }
+function abertoReal(){ const e=(window.T3B&&window.T3B.estado)||{}, v=Number(e.realAberto); return (e.realAberto!=null&&isFinite(v))?v:(Number(S.contaReal&&S.contaReal.aberto)||0); }
+function recalcular(){ if(S.fech==null) return; const novo=S.contaReal?hojeReal():diaCom(0), antes=S.real; S.real=novo; if(antes!=null&&S.pronto) efeitoSubida(novo-antes,antes,novo);
   S.escAlvo=escala(Math.max(4,Math.abs(novo),Math.abs(S.esp||0),Math.abs(S.alvos||0),Math.abs(S.meta||0),Math.abs(S.pico||0),Math.abs(S.vale||0),Math.abs(S.stopP||0))*1.12);
   amostra(novo); cruzamentos(novo); forcar=true; }
 let ws=null, wsFalhas=0, pollT=null, rq=false, chaveWs='';
@@ -227,6 +231,7 @@ function ligarBinance(){ const syms=Object.keys(S.cr).sort(), streams=syms.map(s
   }catch(e){ iniciarPoll(); } }
 window.medidorVivo=function(v){ try{
   const gn=v.ganho||{}, pl=v.cartao_plano||{}, pos=v.posicoes||[], md=v.medidor||{}, lim=v.limites||{};
+  S.contaReal=v.conta_real||null;   // 16/10: a conta real (o torre.js) - o ponteiro passa a ser o hoje da conta
   const fech=Number(gn.liquido_realista_usd!=null?gn.liquido_realista_usd:(gn.realizado_usd||0));
   const novo={}; pos.filter(p=>p.cripto&&p.qty).forEach(p=>{ const s=String(p.simbolo), ant=S.cr[s]||{}; novo[s]={bin:ant.bin,basis:ant.bin!=null?Number(p.agora)-ant.bin:null,agora:Number(p.agora)}; });
   S.pat=v.patrimonio||{}; S.gv=((v.gv||{}).garantido)||{};   // 20/09: o bloco O dinheiro e os tres cartoes
@@ -260,7 +265,7 @@ function sinal(id,v){ const k=v==null?'':(v>0.004?'p':(v<-0.004?'n':'')); if(cac
 function larg(id,pct,esq){ const e=$(id); if(!e) return; const w=clamp(pct,0,100).toFixed(1)+'%'; if(e.style.width!==w) e.style.width=w; if(esq!=null){ const l=clamp(esq,0,100).toFixed(1)+'%'; if(e.style.left!==l) e.style.left=l; } }
 const US=v=>v==null||!isFinite(v)?'—':sgn(v);
 const dist=x=>(S.real==null||x==null)?'':'Δ '+sgn(S.real-x);
-function textos(){ if(S.real==null) return; const ab=S.real-(S.fech||0);
+function textos(){ if(S.real==null) return; const ab=S.contaReal?abertoReal():S.real-(S.fech||0);   // 16/10: na conta real, o em aberto
   put('md_dia_data',S.dataDia||''); put('md_agora',US(S.real)); sinal('md_agora',S.real); put('md_fech',US(S.fech)); sinal('md_fech',S.fech); put('md_aberto',US(ab)); sinal('md_aberto',ab);
   // 20/09 (ordem dele): os CARTOES do saldo. Mesma fonte do mostrador - aqui so se escolhe o que vai em grande.
   // Nao ha conta nova nenhuma: `ab` e o mesmo aberto do md_aberto e S.je e o acumulado dos fills da corretora.
