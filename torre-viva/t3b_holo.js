@@ -191,7 +191,9 @@
 
   // ================================================================ A REACCAO (a regra dele) e a actividade de base
   // ACT[holo]: reacoes contadas, a janela dos ultimos 3 min (para a base), o pulso (1 -> 0 em ~1,2 s) e o ultimo evento.
-  var ACT = {}, CB = {}, ELS = {}, ESCALA = { coracao: 140, equalizador: 140, vortex: 30, numeros: 20, radar: 12, lab: 25, globo: 30 };
+  // 15/10: o radar, o laboratorio, o globo e os numeros passaram a representar mais sectores (t3b_ligacoes.js) - a escala do brilho
+  // (eventos por minuto para o aro cheio) sobe na mesma proporcao, senao ficavam sempre no maximo
+  var ACT = {}, CB = {}, ELS = {}, ESCALA = { coracao: 140, equalizador: 140, vortex: 30, numeros: 35, radar: 30, lab: 40, globo: 40, turnos: 15 };
   var JANELA_MS = 180000;
   function act(id) { return ACT[id] || (ACT[id] = { reacoes: 0, janela: [], pulso: 0, tPulso: 0, ultimo: null, base: 0, porAndar: {} }); }
   function pulsoDe(id, agora) { var A = ACT[id]; if (!A || !A.tPulso) return 0; return clamp(1 - ((agora || agoraMs()) - A.tPulso) / 1200, 0, 1); }

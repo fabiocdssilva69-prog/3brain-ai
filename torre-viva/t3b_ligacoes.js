@@ -20,23 +20,31 @@
   // os laboratorios (os andares com genes); a Mesa guarda os genes da carteira e conta para os eventos "genes"
   var ESP_LABS = ['macro', 'celulas', 'cripto', 'volume_fluxo', 'preco_accao', 'reversao_media', 'tendencia'];
   var LABS = [];
+  // 15/10 (ele: "a reacao dos hologramas ainda nao esta sincronizada com as acoes dos setores"). MEDIDO em 538 eventos reais com os
+  // andares de hoje: velocimetro, trilho, fita e risco reagiam 2 vezes, contra 538 do coracao - os programas do resultado do dia eram
+  // os do PAPEL (desligado a 12/10) e o numeros_reais (o resultado real, andar 62) nao estava em nenhum; 21 especialidades de hoje
+  // nao tinham holograma (so o coracao e o equalizador as viam). Cada especialidade com gente passa a ter o holograma do seu dominio:
+  // dinheiro -> velocimetro/trilho/fita/mesa; vigilancia -> risco; auditoria, manutencao e gerentes -> radar (a S.H.I.E.L.D.);
+  // antenas, imprensa e dados -> globo; ideias, inovacao, pesquisa, ensaios, validacao, treino e ciclo de vida -> laboratorio;
+  // formacao, compras, logistica e continuidade -> turnos (as pessoas); o atrio (a propria pagina e o predio) -> numeros.
+  var LAB_EXTRA = ['ideias', 'inovacao', 'comite_produto', 'pesquisa', 'registo_ensaios', 'validacao', 'treinamento', 'ciclo_vida'];
   var FORCA = { mudou: 1, falou: 0.85, escreveu: 0.6, recado: 0.75, visita: 0.9, batimento: 0.5, avaria: 1, consertou: 1, genes: 0.8, turno: 0.7, cotacao: 0.35 };
   var H = {
     velocimetro: { titulo: 'Velocímetro (o dia)', galeria: 'G18', onde: 'coluna da esquerda · P&L (and. 47)', esps: ['pnl'],
-      programas: ['painel', 'realizado', 'papel_cripto', 'binance_real', 'fecho', 'resultados'],
+      programas: ['numeros_reais', 'binance_real', 'cotas_real', 'painel', 'realizado', 'papel_cripto', 'fecho', 'resultados'],
       fonte: 'torre.json → reactor.medidor (o resultado do dia) e o livro da Binance ao segundo (reactor.js)',
       reage: 'cada escreveu/mudou/falou do P&L (and. 47) ou de quem escreve o resultado do dia: o arco acende e salta uma faísca da agulha' },
-    trilho: { titulo: 'Trilho do dia', galeria: 'G10', onde: 'coluna da esquerda · P&L', esps: ['pnl'], programas: ['painel', 'realizado', 'fecho'],
+    trilho: { titulo: 'Trilho do dia', galeria: 'G10', onde: 'coluna da esquerda · P&L', esps: ['pnl'], programas: ['numeros_reais', 'binance_real', 'painel', 'realizado', 'fecho'],
       fonte: 'torre.json → reactor.medidor.serie (um ponto por minuto)', reage: 'cada evento do P&L: a ponta da linha lança um anel; o brilho da linha segue a actividade do P&L' },
     stark: { titulo: 'Sr. Stark (decisões + anel de agentes)', galeria: 'G19 + G2', onde: 'coluna da esquerda · ático (sócios, conselho, Sr. Stark)', esps: ['socios_directores', 'conselho', 'sr_stark'],
       programas: ['stark', 'sr_stark', 'alocador', 'capital', 'carteiro', 'barramento', 'cortex'], tipos: ['visita'],
       fonte: 'enxame.json → stark.parecer (as decisões dele) e shield.cargos (os agentes da S.H.I.E.L.D.)',
       reage: 'o parecer novo do Sr. Stark põe-no a andar com a decisão no balão; cada visita da S.H.I.E.L.D. acende o agente no anel e lança o cometa; os eventos do ático (57-59) fazem o núcleo piscar' },
-    numeros: { titulo: 'Números (conta-quilómetros)', galeria: 'G7', onde: 'coluna da esquerda · Estatística', esps: ['estatistica'],
+    numeros: { titulo: 'Números (conta-quilómetros)', galeria: 'G7', onde: 'coluna da esquerda · Estatística', esps: ['estatistica', 'atrio'],
       programas: ['realizado', 'pulso', 'revisao', 'validacao_independente', 'conversa', 'dsr'],
       fonte: '/vivo.json → seq (todos os eventos reais desde que o servidor arrancou) e torre.json (operações, genes, gerações)',
       reage: 'o conta-quilómetros sobe com CADA evento da torre (é o contador); os eventos da Estatística (and. 46) fazem a fita andar e os dígitos acender' },
-    mesa: { titulo: 'Mesa de operações (barras)', galeria: 'G9', onde: 'coluna da direita · Mesa de Operações', esps: ['mesa'],
+    mesa: { titulo: 'Mesa de operações (barras)', galeria: 'G9', onde: 'coluna da direita · Mesa de Operações', esps: ['mesa', 'tesouraria_preco'],
       programas: ['papel_cripto', 'papel', 'binance_real', 'fabrica_execucao', 'execucao', 'papel_intradia', 'papel_swing', 'mesa'],
       fonte: 'torre.json → reactor.posicoes / aberto_total_usd e o livro da Binance ao segundo',
       reage: 'cada evento da Mesa (and. 49): a barra de ouro cresce e pisca; a altura das barras é o "em aberto"' },
@@ -47,26 +55,26 @@
     equalizador: { titulo: 'Equalizador dos andares', galeria: 'G28', onde: 'coluna perto da torre · Mesa (and. 49)', todos: true, porAndar: true,
       fonte: '/estrutura.json → censo e turnos de cada andar (a trabalhar agora / registados) + /vivo.json (eventos por andar)',
       reage: 'cada evento de um andar faz saltar a barra DESSE andar (e só essa); o pico fica marcado e desce devagar' },
-    risco: { titulo: 'Risco (anéis)', galeria: 'G8', onde: 'coluna da direita · Risco', esps: ['risco'],
+    risco: { titulo: 'Risco (anéis)', galeria: 'G8', onde: 'coluna da direita · Risco', esps: ['risco', 'vigilancia'],
       programas: ['risco', 'trava_real', 'stop_do_dia', 'tecto_perda', 'stop_medir', 'concentracao', 'correlacao', 'hrp'],
       fonte: 'reactor.js → S.trava, S.limite, S.aloc (o que as travas usam de facto)', reage: 'cada evento do Risco (and. 50): os anéis acendem e o anel que mexeu dá um pulso' },
-    turnos: { titulo: 'Relógio dos turnos', galeria: 'G27', onde: 'coluna perto da torre · Risco', esps: ['recrutamento', 'pessoal', 'risco'],
+    turnos: { titulo: 'Relógio dos turnos', galeria: 'G27', onde: 'coluna perto da torre · Risco', esps: ['recrutamento', 'pessoal', 'risco', 'formacao', 'compras', 'logistica', 'continuidade'],
       programas: ['turnos', 'forca_trabalho', 'gerentes', 'trabalhador_frota', 'recrutamento', 'dim_sonnet'], tipos: ['turno'],
       fonte: 'enxame.json → pessoal.turnos.barra (obra 2) e /estrutura.json → turnos por andar',
       reage: 'cada evento do Pessoal/Recrutamento (and. 33-34) e do Risco (50): os pontos dos andares piscam; cada andar acende o SEU ponto quando lá alguém trabalha' },
-    lab: { titulo: 'Laboratório (mapa de estrelas)', galeria: 'G3', onde: 'coluna da direita · Labs (Macro, Células, Cripto, Volume, Preço, Reversão, Tendência)', esps: ESP_LABS,
+    lab: { titulo: 'Laboratório (mapa de estrelas)', galeria: 'G3', onde: 'coluna da direita · Labs (Macro, Células, Cripto, Volume, Preço, Reversão, Tendência) + Ideias, Inovação, Pesquisa, Ensaios, Validação', esps: ESP_LABS.concat(LAB_EXTRA),
       programas: ['organismo', 'sombra_previa', 'revisao', 'fabrica_ideias', 'organismo_p7', 'mesa_de_agentes', 'prefiltro_vbt', 'vbt_trabalhador'], tipos: ['genes'],
       fonte: '/labs.json (os genes de cada lab: quais, robustos, demitidos) + /vivo.json → eventos "genes" (prévia da sombra, revisão, evolução, por lab e por minuto)',
       reage: 'cada estrela é um gene DESSE lab: acende quando o gene calcula, fica dourada quando é robusto, cinza quando a família foi demitida' },
     vortex: { titulo: 'Vortex (passagens)', galeria: 'G16', onde: 'coluna do lado (maior)', passagens: true, tipos: ['recado', 'visita'],
       fonte: '/vivo.json → recados do barramento (sector → sector), visitas da S.H.I.E.L.D. e respostas a perguntas',
       reage: 'cada passagem real entre funcionários lança um fio de partículas do andar de quem envia para o de quem recebe; a velocidade da espiral é o número de passagens do último minuto' },
-    radar: { titulo: 'Radar da S.H.I.E.L.D.', galeria: 'G21', onde: 'coluna do lado · no lugar da S.H.I.E.L.D.', esps: ['supervisores_operacoes'], tipos: ['avaria', 'consertou', 'batimento', 'visita'],
+    radar: { titulo: 'Radar da S.H.I.E.L.D.', galeria: 'G21', onde: 'coluna do lado · no lugar da S.H.I.E.L.D.', esps: ['supervisores_operacoes', 'auditoria', 'manutencao', 'gerentes_operacoes'], tipos: ['avaria', 'consertou', 'batimento', 'visita'],
       fonte: 'enxame.json → fora_do_verde (avarias por andar) + /vivo.json → avaria / consertou / batimento / visita',
       reage: 'cada avaria acende um ponto vermelho no ângulo do SEU andar; o conserto pinta-o de verde; cada volta do vigia é uma volta do feixe' },
     coracao: { titulo: 'Coração da torre', galeria: 'G22', onde: 'coluna do lado, entre o vortex e o chat', todos: true,
       fonte: '/vivo.json → todos os eventos reais (cada um é uma batida) e o batimento do vigia', reage: 'cada evento da torre é uma batida (a altura pela força do evento); o batimento do vigia é a batida forte; o número é batidas por minuto' },
-    globo: { titulo: 'Globo dos mercados (3D)', galeria: 'G23', onde: 'objecto 3D ao pé da torre', esps: ['macro', 'mesa'],
+    globo: { titulo: 'Globo dos mercados (3D)', galeria: 'G23', onde: 'objecto 3D ao pé da torre', esps: ['macro', 'mesa', 'antenas_arquivo', 'imprensa', 'aquisicao_dados', 'inventario_fontes'],
       programas: ['binance_real', 'papel_cripto', 'papel', 'alpaca', 'cambio', 'juros_fed', 'liquidez', 'macro', 'noticias_cripto', 'noticias_eua', 'noticias_brasil', 'noticias_macro', 'noticias_mundo', 'fluxo_binance', 'precos_extra', 'fluxo_etf'],
       tipos: ['cotacao'], fonte: 'reactor.js → as cotações da Binance ao segundo + /vivo.json (ordens da Mesa, Macro e Mundo, antenas de mercado)',
       reage: 'cada ordem ou cotação nova acende um arco do seu mercado (Binance, Nova Iorque, São Paulo, Londres) até à torre' },
@@ -74,7 +82,7 @@
       programas: ['cota', 'regulador', 'cota_torre', 'regulador_cota', 'agente_claude', 'medidor_cota', 'dim_sonnet', 'arquiteto_andares'],
       fonte: 'torre.json → jarvis (sessão/semana) + /vivo.json → cota (modo e ritmo, dados/enxame/modo_cota.json)',
       reage: 'cada evento de quem gasta ou mede a cota faz cair um grão e acender o fio; a areia é o que resta da semana, a cor o modo' },
-    fita: { titulo: 'Fita do P&L em 3D', galeria: 'G32', onde: 'dentro do escritório (objecto 3D)', esps: ['pnl'], programas: ['realizado', 'painel', 'fecho'],
+    fita: { titulo: 'Fita do P&L em 3D', galeria: 'G32', onde: 'dentro do escritório (objecto 3D)', esps: ['pnl'], programas: ['numeros_reais', 'binance_real', 'realizado', 'painel', 'fecho'],
       fonte: 'torre.json → reactor.ja_entrou.por_dia (o resultado de cada dia, acumulado)', reage: 'cada evento do P&L (and. 47) faz a ponta de hoje brilhar e a fita acender por onde passa' }
   };
   // os numeros dos andares de cada holograma, a partir das especialidades (POR_ESP)
@@ -146,7 +154,7 @@
     var h = H[nome]; if (!h) return null;
     if (h.todos) return { certo: { k: 'mudou', id: 'qualquer', andar: 12, txt: 'prova' }, outro: { k: 'numero', id: 'painel', andar: 47, txt: 'credito local' }, nota: 'representa a torre inteira: o "outro" é um não-evento (crédito local de um número)' };
     if (h.passagens) return { certo: { k: 'recado', id: 'sector:pnl', de: 47, para: 46, txt: 'prova' }, outro: { k: 'escreveu', id: 'arca', andar: 30, ficheiro: 'x' }, nota: 'só passagens entre funcionários' };
-    if (nome === 'radar') return { certo: { k: 'avaria', id: 'arca', andar: 30, sev: 'vermelho' }, outro: { k: 'escreveu', id: 'arca', andar: 30 } };
+    if (nome === 'radar') { var aOut = (POR_ESP.tendencia || [26])[0]; return { certo: { k: 'avaria', id: 'arca', andar: 30, sev: 'vermelho' }, outro: { k: 'escreveu', id: 'organismo_x', andar: aOut } }; }
     if (nome === 'lab') { var al = (POR_ESP.reversao_media || [20])[0], ae = (POR_ESP.estatistica || [46])[0]; return { certo: { k: 'genes', id: 'lab:' + al, andar: al, n: 12, chaves: ['g|a|h1'] }, outro: { k: 'genes', id: 'lab:' + ae, andar: ae, n: 3 } }; }
     if (nome === 'ampulheta') return { certo: { k: 'escreveu', id: 'cota_torre', andar: 30 }, outro: { k: 'escreveu', id: 'arca', andar: 30 } };
     var a = h.andares[0], outroAndar = (POR_ESP.manutencao || [30])[0];   // um andar que nenhum destes representa (Manutencao)
