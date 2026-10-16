@@ -285,24 +285,37 @@
   // genes de um lab num minuto, as regras de um ficheiro de testes, as linhas novas de um contratado) e grupo = 1 quando sao n
   // funcionarios diferentes. O numero e a SOMA dos n (o servidor conta igual: torre_vivo.ritmo_do_anel) e os funcionarios contam os
   // n dos grupos; um funcionario que age varias vezes conta uma. Os registos (eventos no fio) ficam ao lado, para diagnostico.
+  // 16/10 17h (ele, com a print do telemovel: "o coracao da torre ainda bate errado, as vezes 300/min, as vezes 10/min"): o numero
+  // era a SOMA dos n do ULTIMO MINUTO - um lote de 300 genes num minuto dava 345 e o minuto seguinte, sem lote, 10. O coracao diz
+  // "cada evento e uma batida": o numero passa a ser EVENTOS por minuto (um evento conta 1, seja qual for o seu n), na MEDIA dos
+  // ultimos RITMO_JANELA_MS (5 min: a copia publica recebe os eventos em lotes de 2 em 2 min e a torre trabalha em voltas de 1-2
+  // min - uma janela de 1 min so via picos e buracos). As accoes (a soma dos n) ficam ao lado, na mesma janela (acoes/min). Os
+  // funcionarios e o por andar continuam no ultimo minuto (os hologramas e o andar mais vivo foram calibrados assim). `desdeMs` =
+  // quando a pagina comecou a tocar: com a janela ainda a encher divide-se pelo tempo coberto (nunca menos de 1 min).
   // <ritmo-puro>
+  var RITMO_JANELA_MS = 5 * 60000;
   function nDoEvento(e) { var v = Number(e && e.n); return isFinite(v) && v >= 1 ? Math.floor(v) : 1; }
-  function ritmoDosTocados(log, agora, janelaMs) {
-    janelaMs = janelaMs || 60000;
-    var n = 0, reg = 0, ids = {}, nIds = 0, extra = 0, porAndar = {};
+  function ritmoDosTocados(log, agora, janelaMs, desdeMs) {
+    janelaMs = janelaMs || RITMO_JANELA_MS;
+    var reg = 0, acc = 0, reg60 = 0, acc60 = 0, ids = {}, nIds = 0, extra = 0, porAndar = {}, t0 = Infinity;
     (log || []).forEach(function (x) {
       if (!x || !(agora - x.t <= janelaMs) || x.t > agora + 1000) return;
       var k = nDoEvento(x);
-      n += k; reg++;
+      reg++; acc += k; if (x.t < t0) t0 = x.t;
+      if (agora - x.t > 60000) return;                        // daqui para baixo: so o ultimo minuto
+      reg60++; acc60 += k;
       if (x.g) extra += k;
       else if (x.id != null && !ids[x.id]) { ids[x.id] = 1; nIds++; }
       if (x.andar != null) porAndar[x.andar] = (porAndar[x.andar] || 0) + k;
     });
-    return { n: n, registos: reg, quem: nIds + extra, porAndar: porAndar };
+    var d = Number(desdeMs), ini = Math.min(isFinite(d) && d > 0 ? d : agora - janelaMs, t0);
+    var min = Math.max(1, Math.min(janelaMs, agora - Math.max(agora - janelaMs, ini)) / 60000);
+    return { n: Math.round(reg / min), acoes: Math.round(acc / min), janela_min: Math.round(min * 10) / 10, registos: reg,
+             eventos_60s: reg60, acoes_60s: acc60, quem: nIds + extra, porAndar: porAndar };
   }
   // </ritmo-puro>
   T3B.nDoEvento = nDoEvento;
-  var TOCADOS = [];
+  var TOCADOS = [], PAGINA_DESDE = Date.now();
   T3B.on('eventos', function (g) {
     var agora = Date.now();
     (g || []).forEach(function (e) {
@@ -312,18 +325,18 @@
       if (e.historia) { if (window.T3B_PUBLICADO) return; var c = Number(e.c) * 1000; x.t = isFinite(c) && c > 0 ? c : e.ms; if (!(x.t > 0)) return; }
       TOCADOS.push(x);
     });
-    if (TOCADOS.length > 4000) TOCADOS.splice(0, TOCADOS.length - 4000);
+    if (TOCADOS.length > 20000) TOCADOS.splice(0, TOCADOS.length - 20000);
   });
   setInterval(function () {
     var agora = Date.now();
-    while (TOCADOS.length && agora - TOCADOS[0].t > 120000) TOCADOS.shift();
-    var r = ritmoDosTocados(TOCADOS, agora);
+    while (TOCADOS.length && agora - TOCADOS[0].t > RITMO_JANELA_MS + 60000) TOCADOS.shift();
+    var r = ritmoDosTocados(TOCADOS, agora, RITMO_JANELA_MS, PAGINA_DESDE);
     r.agora = new Date(agora).toISOString(); r.servidor = E.ritmoServidor ? E.ritmoServidor.n : null;
     E.ritmo = r;
     // 16/10: na copia publica, a fotografia parada (o servidor do PC nao responde ao publicar) diz-se - nunca um numero velho calado
     var parada = window.T3B_PUBLICADO && E.pubEmMudou && agora - E.pubEmMudou > 4 * 60000 && E.pubEm;
-    txt($('b_ritmo'), r.n + ' ev · ' + r.quem + ' func.' + (parada ? ' · fotografia parada desde ' + String(E.pubEm).slice(-8, -3) : ''));
-    var br = $('b_ritmo'); if (br) br.title = r.n + ' acções de funcionários no último minuto (' + r.registos + ' eventos no fio; um lote de genes ou de regras conta cada um) · ' + r.quem + ' funcionários diferentes' + (r.servidor != null ? ' · servidor: ' + r.servidor : '');
+    txt($('b_ritmo'), r.n + ' ev/min · ' + r.quem + ' func.' + (parada ? ' · fotografia parada desde ' + String(E.pubEm).slice(-8, -3) : ''));
+    var br = $('b_ritmo'); if (br) br.title = r.n + ' eventos por minuto (média dos últimos ' + r.janela_min + ' min; cada evento é uma batida) · ' + r.acoes + ' acções/min (um lote de genes ou de regras conta cada uma) · no último minuto: ' + r.eventos_60s + ' eventos e ' + r.acoes_60s + ' acções de ' + r.quem + ' funcionários' + (r.servidor != null ? ' · servidor: ' + r.servidor : '');
     T3B.emit('ritmo', r);
   }, 1000);
 
