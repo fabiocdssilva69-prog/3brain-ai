@@ -1307,7 +1307,32 @@
   // Uma barra por andar: a altura de base e quem esta A TRABALHAR AGORA nesse andar (o censo da obra 2: turnos por andar /
   // registados); cada evento de um andar faz saltar a barra DESSE andar (e so essa - a reaccao); o pico fica marcado e
   // desce devagar.
-  var EQ = { ns: [], base: {}, salto: {}, pico: {}, t: 0, ultimoAndar: null, agora: 0 };
+  // 16/10 20h (ele: "o equalizador... nao esta mostrando os dados do seu sector, nao esta sincronizado"). MEDIDO: a altura de cada
+  // barra era a FRACCAO de gente escalada nesse andar (a trabalhar agora / registados, do censo de 60 em 60 s) e os 3 nomes de cima
+  // eram os de maior fraccao - andares pequenos (Validacao, Continuidade, Compras) com 1 de 2 escalado ficavam no topo enquanto o
+  // trabalho estava noutros (o Atrio, os Macro, a Mesa). Agora a barra e o TRABALHO REAL do andar: as accoes por minuto dos ultimos
+  // 3 min (os mesmos eventos que fazem bater o coracao, com o n de cada um), a escala pela raiz do andar mais activo, e os 3 nomes
+  // de cima sao os andares com mais accoes agora (com o numero). Ao abrir a pagina, antes de haver 3 min, conta tambem o que o
+  // servidor viu no ultimo minuto (vivo.json -> por_andar_60s). Cada evento continua a fazer saltar a barra DESSE andar.
+  // <equalizador-puro>
+  var EQ_JANELA_MS = 180000;
+  function ritmoPorAndar(janelas, agoraMs_, janelaMs, semente, desdeMs) {
+    var fora = {}, jm = janelaMs || EQ_JANELA_MS, corte = agoraMs_ - jm;
+    var vidaMin = Math.max(1, Math.min(jm, agoraMs_ - (Number(desdeMs) || (agoraMs_ - jm))) / 60000);
+    Object.keys(janelas || {}).forEach(function (n) {
+      var soma = 0; (janelas[n] || []).forEach(function (x) { if (x && x[0] >= corte) soma += x[1] || 1; });
+      if (soma > 0) fora[n] = soma / vidaMin;
+    });
+    // com menos de 3 min de pagina, o ultimo minuto do servidor completa (o maior dos dois: nunca soma o mesmo trabalho 2 vezes)
+    if (semente && vidaMin < jm / 60000) Object.keys(semente).forEach(function (n) { var v = Number(semente[n]) || 0; if (v > (fora[n] || 0)) fora[n] = v; });
+    return fora;
+  }
+  function alturaDoAndar(porMin, maxPorMin, salto) {
+    var r = maxPorMin > 0 ? Math.sqrt(Math.max(0, porMin) / maxPorMin) : 0;
+    return Math.max(0.02, Math.min(1, 0.03 + 0.85 * r + 0.35 * (salto || 0)));
+  }
+  // </equalizador-puro>
+  var EQ = { ns: [], base: {}, salto: {}, pico: {}, t: 0, ultimoAndar: null, agora: 0, jan: {}, rit: {}, max: 0, tot: 0, desde: Date.now() };
   T3B.on('estrutura', function (d) {
     var ands = lista(d.andares).filter(function (a) { return a.obra !== 'em_obras'; }).sort(function (x, y) { return x.n - y.n; });
     EQ.ns = ands.map(function (a) { return a.n; }); EQ.agora = 0;
@@ -1316,11 +1341,22 @@
   });
   aoReagir('equalizador', function (ev, r) {
     var n = r.andar; if (n == null) return;
+    var w = nDe(ev);
+    (EQ.jan[n] = EQ.jan[n] || []).push([Date.now(), w]);
     // 16/10: o salto cresce com as accoes reais do evento (log: 1 -> x1, 8 -> x4 no maximo) - 30 regras que correram no andar saltam mais
-    EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.35 * (r.forca || 0.5) * Math.min(4, 1 + Math.log2(nDe(ev)))); EQ.ultimoAndar = n;
+    EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.35 * (r.forca || 0.5) * Math.min(4, 1 + Math.log2(w))); EQ.ultimoAndar = n;
     sujar(cenaEq, 2500);
   });
-  EXTRA.equalizador = function () { var o = {}; Object.keys(EQ.salto).forEach(function (n) { if (EQ.salto[n] > 0.01) o[n] = Math.round(EQ.salto[n] * 100) / 100; }); return { saltos: o, ultimo: EQ.ultimoAndar }; };
+  function recalcularEq() {
+    var agora = Date.now(), corte = agora - EQ_JANELA_MS;
+    Object.keys(EQ.jan).forEach(function (n) { var j = EQ.jan[n]; while (j.length && j[0][0] < corte) j.shift(); if (!j.length) delete EQ.jan[n]; });
+    EQ.rit = ritmoPorAndar(EQ.jan, agora, EQ_JANELA_MS, obj(obj(T3B.estado.ritmoServidor).porAndar), EQ.desde);
+    var mx = 0, tot = 0; Object.keys(EQ.rit).forEach(function (n) { var v = EQ.rit[n]; tot += v; if (v > mx) mx = v; });
+    EQ.max = Math.max(5, mx); EQ.tot = tot;
+    sujar(cenaEq, 0);
+  }
+  setInterval(recalcularEq, 1000);
+  EXTRA.equalizador = function () { var o = {}; Object.keys(EQ.salto).forEach(function (n) { if (EQ.salto[n] > 0.01) o[n] = Math.round(EQ.salto[n] * 100) / 100; }); var top = Object.keys(EQ.rit).sort(function (a, b) { return EQ.rit[b] - EQ.rit[a]; }).slice(0, 5).map(function (n) { return [Number(n), Math.round(EQ.rit[n] * 10) / 10]; }); return { saltos: o, ultimo: EQ.ultimoAndar, accoes_min: Math.round(EQ.tot * 10) / 10, mais_activos: top }; };
   var cenaEq = null;
   (function () {
     var cv = canvasDe('h_equalizador'); if (!cv) return;
@@ -1328,24 +1364,22 @@
     // 05/10 (Q4 B4, ele: "vivo e suave"; a09 "ta se travando, ta bugado"): o salto decaia por quadro (a 12 q/s, aos degraus) e a
     // barra ia direita ao valor novo. Agora cada barra SEGUE o seu alvo com suavidade, respira um pouco mesmo quieta (cada andar
     // ao seu ritmo, mais com actividade), salta com os eventos do seu andar e cai devagar; o pico fica 0,6 s e desce.
-    // Uma so gradacao para as 56 barras (antes: 56 gradacoes novas por quadro); os rotulos sao uma camada guardada.
+    // Uma so gradacao para as barras; os rotulos sao uma camada guardada.
     var V = {}, FASE = {}, PK = {};
     cenaEq = cena(cv, { id: 'equalizador', holo: $('h_equalizador'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       var N = EQ.ns.length; if (!N) { rot(ctx, 'a ler os andares…', w / 2, h / 2 + 8, C.dim, 9, 'center', 500); return; }
       // 07/10 (Q5 B5, ele: "as legendas embaixo pode tirar que buga"): sem a linha de baixo, as barras ganham a altura
       var x0 = 6, bw = (w - 12) / N, base = h - 4, alt = base - TOPO - 14, act = (ACT.equalizador || {}).base || 0, larg = Math.max(1, bw - 1.2);
-      if (!s.gEq || s.gEqH !== h) { var gq = ctx.createLinearGradient(0, base, 0, base - alt); gq.addColorStop(0, 'rgba(45,212,232,.2)'); gq.addColorStop(0.55, 'rgba(45,212,232,.78)'); gq.addColorStop(1, '#8af3ff'); s.gEq = gq; s.gEqH = h; }
-      var quentes = [], picos = [], acimaSec = [];
+      var picos = [], quentes = [], acimaSec = [];
       if (s.corEqChave !== EQ.ns.join(',')) { COR_EQ = {}; s.corEqChave = EQ.ns.join(','); }
-      ctx.fillStyle = s.gEq;
       for (var i = 0; i < N; i++) {
         var n = EQ.ns[i], sl = (EQ.salto[n] || 0) * Math.exp(-dt * 0.9); EQ.salto[n] = sl < 0.004 ? 0 : sl;
         if (!FASE[n]) { var sm = U.semente('eq' + n); FASE[n] = [(sm % 628) / 100, 0.7 + ((sm >> 4) % 100) / 90, 1.6 + ((sm >> 9) % 100) / 70]; }
-        var f = FASE[n], resp = calmo ? 0 : (0.022 + 0.05 * act) * (0.6 * Math.sin(t * f[1] + f[0]) + 0.4 * Math.sin(t * f[2] + f[0] * 1.7));
-        var alvo = clamp((EQ.base[n] || 0) * 0.7 + sl * 0.8 + 0.035 + resp, 0.015, 1);
+        var f = FASE[n], pm = EQ.rit[n] || 0, resp = calmo ? 0 : (0.012 + 0.04 * Math.min(1, pm / EQ.max)) * (0.6 * Math.sin(t * f[1] + f[0]) + 0.4 * Math.sin(t * f[2] + f[0] * 1.7));
+        var alvo = clamp(alturaDoAndar(pm, EQ.max, sl) + resp, 0.015, 1);
         var v = V[n] = seguir(V[n] == null ? alvo : V[n], alvo, 7, dt), hh = Math.max(1, v * alt), x = x0 + i * bw;
-        ctx.fillStyle = COR_EQ[n] || (COR_EQ[n] = (U.corDoAndar ? U.corDoAndar(n) : '#2dd4e8')); ctx.globalAlpha = 0.86;   // 07/10 (Q5 B5, eq_sector)
+        ctx.fillStyle = COR_EQ[n] || (COR_EQ[n] = (U.corDoAndar ? U.corDoAndar(n) : '#2dd4e8')); ctx.globalAlpha = pm > 0 ? 0.9 : 0.35;   // 07/10 (Q5 B5, eq_sector); parado = apagado
         ctx.fillRect(x, base - hh, larg, hh); ctx.globalAlpha = 1;
         var pk = PK[n] || (PK[n] = { v: 0, t: 0 }); if (v >= pk.v) { pk.v = v; pk.t = t; } else if (t - pk.t > 0.6) pk.v = Math.max(v, pk.v - dt * 0.16);
         picos.push(x, base - pk.v * alt - 1.5);
@@ -1353,10 +1387,11 @@
       }
       ctx.fillStyle = 'rgba(255,255,255,.82)';
       for (var p = 0; p < picos.length; p += 2) ctx.fillRect(picos[p], picos[p + 1], larg, 1.3);
-      // 05/10 (ele: "tem que mostrar mais informacoes relevantes"): os 3 andares mais activos agora, pelo nome
-      var top3 = EQ.ns.slice().sort(function (a, b) { return ((EQ.salto[b] || 0) * 2 + (EQ.base[b] || 0)) - ((EQ.salto[a] || 0) * 2 + (EQ.base[a] || 0)); }).slice(0, 3);
+      // os 3 andares com MAIS accoes agora (3 min), pelo nome e com o numero por minuto
+      var top3 = Object.keys(EQ.rit).sort(function (a, b) { return EQ.rit[b] - EQ.rit[a]; }).slice(0, 3);
       var col3 = (w - 12) / 3, max3 = Math.max(6, Math.floor((col3 - 6) / 4.6));
-      top3.forEach(function (n, i) { var an = T3B.andar ? T3B.andar(n) : null; rot(ctx, TX.cortar((i ? '' : '▲ ') + n + (an && an.nome ? ' ' + TX.limpar(an.nome) : ''), max3), 6 + i * col3, TOPO + 9, i ? C.mute : C.ouroHi, 7.5, 'left', i ? 500 : 700); });   // (cada um na sua coluna)
+      if (!top3.length) rot(ctx, 'à espera do primeiro trabalho…', 6, TOPO + 9, C.dim, 7.5, 'left', 500);
+      top3.forEach(function (nn, i) { var an = T3B.andar ? T3B.andar(Number(nn)) : null, nm = an ? TX.limpar(an.sector || an.nome || '') : ''; rot(ctx, TX.cortar((i ? '' : '▲ ') + nn + ' ' + fmt(EQ.rit[nn], 0) + '/min' + (nm ? ' ' + nm : ''), max3), 6 + i * col3, TOPO + 9, i ? C.mute : C.ouroHi, 7.5, 'left', i ? 500 : 700); });
       // 07/10 (Q5 B5, eq_sector: "a legenda pode aparecer conforme a reacao de cada setor acima do limite das barras"): o nome do
       // SECTOR por cima da barra que acabou de reagir - as 3 mais fortes, arrumadas para nao se taparem
       acimaSec.sort(function (a, b) { return b.sl - a.sl; });
@@ -1371,7 +1406,7 @@
       }
     } });
   })();
-  setInterval(function () { mini('hm_equalizador', [['', fmt(EQ.agora, 0), 'a trabalhar'], ['mais vivo', EQ.ultimoAndar != null ? 'and. ' + EQ.ultimoAndar : 'nenhum']]); }, 2000);
+  setInterval(function () { var top = Object.keys(EQ.rit).sort(function (a, b) { return EQ.rit[b] - EQ.rit[a]; })[0], an = top != null && T3B.andar ? T3B.andar(Number(top)) : null; mini('hm_equalizador', [['', fmt(EQ.tot, 0), 'acções/min'], ['mais ativo', top != null ? (an && (an.sector || an.nome) ? TX.cortar(TX.limpar(an.sector || an.nome), 16) : 'and. ' + top) : 'nenhum']]); }, 2000);
 
   // ================================================================ 11. RISCO (G8, D.aneis): tres aneis de progresso
   var RIS = { v: [null, null, null], d: [0, 0, 0], rot: ['trava', 'dia', 'capital'], pz: [0, 0, 0] };

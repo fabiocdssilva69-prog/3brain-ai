@@ -20,7 +20,7 @@
 'use strict';
 (function (raiz) {
   var LM = raiz && raiz.LabModelos;
-  if (!LM && typeof require === 'function') { try { LM = require('./lab_modelos.js?v=5f914e705a'); } catch (e) { LM = null; } }
+  if (!LM && typeof require === 'function') { try { LM = require('./lab_modelos.js?v=c2fe12f378'); } catch (e) { LM = null; } }
   if (!LM || !LM.kit || typeof LM.registar !== 'function') {
     if (typeof console !== 'undefined' && console && console.warn) console.warn('lab_modelos2.js: falta o lab_modelos.js (tem de ser carregado antes)');
     return;
