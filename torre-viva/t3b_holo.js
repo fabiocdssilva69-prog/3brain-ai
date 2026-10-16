@@ -811,6 +811,11 @@
   function primeiraFrase(p) { var s = String(p || '').replace(/\s+/g, ' ').trim(); var m = /^(.{12,}?[.;!?])(\s|$)/.exec(s); return (m ? m[1] : s).slice(0, 200); }
   T3B.on('enxame', function (e) {
     var s = obj(e.stark), p = TX.semMarkdown(TX.limpar(String(s.parecer || ''))); if (!p) return;
+    // 16/10 (ele: "os hologramas nao mostram os dados certos"): o parecer em vigor ainda falava do PAPEL ("o dinheiro em papel vai bem:
+    // +72,59") - o briefing do Stark so lhe dava o papel. Com a conta real activa, um parecer do papel nao se mostra como se fosse real
+    if (realDaCasa(T3B.estado.T) && /\bem papel\b|\bpapel\b.{0,40}(liquid|vai bem|positivo)|dinheiro em papel/i.test(p)) {
+      p = 'O meu último parecer ainda era sobre a simulação em papel, que acabou a 12/10. O próximo já vem com a conta real da Binance.';
+    }
     ROBO.mod = s.modelo || ROBO.mod; ROBO.t = s.t_iso || ROBO.t;
     if (p === ROBO.parecer) return;
     var primeira = !ROBO.parecer; ROBO.parecer = p;
@@ -827,7 +832,9 @@
       if (rl.hoje_usd != null) o.push(['HOJE · REAL', sinal(rl.hoje_usd, 2) + ' US$', rl.hoje_usd >= 0 ? C.ok : C.mau]);
       if (rl.aberto_usd != null) o.push(['EM ABERTO · REAL', sinal(rl.aberto_usd, 2) + ' US$ · ' + lista(rl.posicoes).length + ' posições', rl.aberto_usd >= 0 ? C.ok : C.mau]);
       if (rl.desde_o_inicio_usd != null) o.push(['DESDE O INÍCIO · REAL', sinal(rl.desde_o_inicio_usd, 2) + ' US$ (' + sinal(rl.desde_o_inicio_pct, 2) + '%)', rl.desde_o_inicio_usd >= 0 ? C.ok : C.mau]);
-      if (rl.realizado_usd != null) o.push(['REALIZADO HOJE · REAL', sinal(rl.realizado_usd, 2) + ' US$', rl.realizado_usd >= 0 ? C.ok : C.mau]);   // 10/10 21:3x: sem o acerto do papel
+      // 16/10: o 'realizado hoje' mostrava o realizado DESDE O INICIO - agora o de hoje (as vendas fechadas desde as 00h11) e o acumulado
+      if (rl.realizado_hoje_usd != null) o.push(['REALIZADO HOJE · REAL', sinal(rl.realizado_hoje_usd, 2) + ' US$', rl.realizado_hoje_usd >= 0 ? C.ok : C.mau]);
+      if (rl.realizado_usd != null) o.push(['REALIZADO · DESDE O INÍCIO', sinal(rl.realizado_usd, 2) + ' US$', rl.realizado_usd >= 0 ? C.ok : C.mau]);
       if (ex.geracao_actual != null) o.push(['EVOLUÇÃO', 'geração ' + ex.geracao_actual + ' · ' + fmt(ex.n_familias, 0) + ' famílias', C.ouroHi]);
       return o;
     }
@@ -983,7 +990,7 @@
   var CONT = {};
   function pintarFitaNumeros() {
     if (!ODO.fita) return;
-    var it = [['REALIZADO HOJE', CONT.hoje], ['EM ABERTO', CONT.aberto], ['ACERTO', CONT.acerto], ['OPERAÇÕES', CONT.ops], ['POSIÇÕES', CONT.pos], ['GENES ROBUSTOS', CONT.rob], ['AVALIAÇÕES', CONT.aval], ['GERAÇÃO', CONT.ger], ['FAMÍLIAS', CONT.fam], ['GENES', CONT.genes], ['FUNCIONÁRIOS', CONT.censo]].filter(function (x) { return x[1] != null; });
+    var it = [[CONT.hojeRot || 'REALIZADO HOJE', CONT.hoje], ['EM ABERTO', CONT.aberto], ['ACERTO', CONT.acerto], ['OPERAÇÕES', CONT.ops], ['POSIÇÕES', CONT.pos], ['GENES ROBUSTOS', CONT.rob], ['AVALIAÇÕES', CONT.aval], ['GERAÇÃO', CONT.ger], ['FAMÍLIAS', CONT.fam], ['GENES', CONT.genes], ['FUNCIONÁRIOS', CONT.censo]].filter(function (x) { return x[1] != null; });
     var ht = it.map(function (i) { return '<span>' + i[0] + ' <b>' + U.escH(i[1]) + '</b></span>'; }).join('');
     // 05/10 (ele: "corrija o carrossel em baixo que nao ta correndo"): andava um passo por evento da Estatistica - agora corre sempre
     if (ODO.fita.dataset.h !== ht) { ODO.fita.dataset.h = ht; ODO.fita.innerHTML = ht + ht; ODO.largura = 0; ODO.fita.classList.add('corre'); ODO.fita.style.setProperty('--dur', Math.max(20, Math.round(ht.length / 9)) + 's'); }
@@ -1021,6 +1028,7 @@
     var g = obj(r.ganho); CONT.hoje = g.realizado_usd != null ? sinal(g.realizado_usd, 2) + ' US$' : null; CONT.aberto = r.aberto_total_usd != null ? sinal(r.aberto_total_usd, 2) + ' US$' : null;
     var rlC = realDaCasa(T);                                // 10/10: a conta real, quando activa
     if (rlC) { CONT.pos = String(lista(rlC.posicoes).length); CONT.hoje = rlC.hoje_usd != null ? sinal(rlC.hoje_usd, 2) + ' US$' : null; CONT.aberto = rlC.aberto_usd != null ? sinal(rlC.aberto_usd, 2) + ' US$' : null; }
+    CONT.hojeRot = rlC ? 'HOJE · REAL' : 'REALIZADO HOJE';   // 16/10: o valor e o hoje (com o aberto), nao so o realizado
     CONT.rob = ex.robustos_alguma_vez != null ? fmt(ex.robustos_alguma_vez, 0) : null;
     CONT.acertoN = je.n_ganhos != null ? je.n_ganhos / Math.max(1, je.n_ganhos + je.n_perdas) * 100 : null; CONT.opsN = Number(je.operacoes); CONT.robN = Number(ex.robustos_alguma_vez); CONT.avalN = Number(ex.n_avaliacoes);
     if (rlC) { CONT.ops = null; CONT.acerto = null; CONT.acertoN = null; CONT.opsN = NaN; }   // 10/10 21:3x (ordem dele): operacoes e acerto sao do papel - fora com a conta real
@@ -2118,7 +2126,7 @@
       var T = T3B.estado.T; if (!T) return '';
       var esp = String(a.esp || ''), r = obj(T.reactor), linha = function (x, y) { return '<tr><td>' + U.escH(x) + '</td><td>' + U.escH(y) + '</td></tr>'; };
       var tt = a.turnos || a.censo, extra = tt ? linha('A trabalhar agora', fmt(tt.a_trabalhar_agora, 0) + ' de ' + fmt(tt.registados, 0)) + linha('Em turno · a evoluir', fmt(tt.em_turno, 0) + ' · ' + fmt(tt.em_descanso_a_evoluir, 0)) : '';
-      if (/sr_stark|conselho|socios/.test(esp)) { var c = obj(r.conta), g = obj(r.ganho), rlS = realDaCasa(T); if (rlS) return '<table><tbody>' + linha('Hoje · conta real', sinal(rlS.hoje_usd, 2) + ' US$') + linha('Realizado hoje · real', sinal(rlS.realizado_usd, 2) + ' US$') + linha('Desde o início · real', sinal(rlS.desde_o_inicio_usd, 2) + ' US$') + extra + '</tbody></table>'; return '<table><tbody>' + linha('Resultado de hoje', sinal(c.pnl_hoje, 2) + ' US$') + linha('Realizado hoje', sinal(g.realizado_usd, 2) + ' US$') + linha('Acumulado em papel', sinal(c.acumulado_papel, 2) + ' US$') + extra + '</tbody></table>'; }
+      if (/sr_stark|conselho|socios/.test(esp)) { var c = obj(r.conta), g = obj(r.ganho), rlS = realDaCasa(T); if (rlS) return '<table><tbody>' + linha('Hoje · conta real', sinal(rlS.hoje_usd, 2) + ' US$') + linha('Realizado hoje · real', sinal(rlS.realizado_hoje_usd != null ? rlS.realizado_hoje_usd : 0, 2) + ' US$') + linha('Realizado desde o início · real', sinal(rlS.realizado_usd, 2) + ' US$') + linha('Desde o início · real', sinal(rlS.desde_o_inicio_usd, 2) + ' US$') + extra + '</tbody></table>'; return '<table><tbody>' + linha('Resultado de hoje', sinal(c.pnl_hoje, 2) + ' US$') + linha('Realizado hoje', sinal(g.realizado_usd, 2) + ' US$') + linha('Acumulado em papel', sinal(c.acumulado_papel, 2) + ' US$') + extra + '</tbody></table>'; }
       if (esp === 'risco') { var v = obj(T.vingadores), k = obj(T.killian); return '<table><tbody>' + linha('N efectivo', fmt(v.n_ef, 2)) + linha('Posições', v.n_posicoes || 0) + linha('Rotações recusadas', k.rotacoes_recusadas || 0) + extra + '</tbody></table>'; }
       if (esp === 'mesa' && realDaCasa(T)) return '<table><tbody>' + lista(realDaCasa(T).posicoes).map(function (p) { return linha(p.simbolo, fmt(p.custo_usdt != null ? p.custo_usdt : Number(p.qty) * Number(p.entrada), 2) + ' US$ em uso · conta real'); }).join('') + extra + '</tbody></table>';
       if (esp === 'mesa') return '<table><tbody>' + lista(r.posicoes).map(function (p) { return linha(p.simbolo, sinal(p.pnl_aberto_usd, 2) + ' US$ · ' + fmt(p.valor_usd, 2) + ' em uso'); }).join('') + extra + '</tbody></table>';
