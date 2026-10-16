@@ -707,11 +707,20 @@
   }
   // </reais-puro>
   var LEG_CAP = '';
+  // 16/10 20h (ele: "porque a conversao em reais nao aparece em alguns navegadores?"): os reais so apareciam se o PROPRIO navegador
+  // chegasse a Binance (o websocket na porta 9443 ou o livro publico) - numa rede ou num navegador que bloqueia a Binance, nunca. Agora,
+  // sem a cotacao do navegador (ou com ela parada ha mais de 2 min), vale a do torre.json (real.usdt_brl, o servidor da torre pede-a
+  // junto com os precos das posicoes): os reais aparecem em qualquer navegador.
+  function cotacaoBrl() {
+    if (AOVIVO.brl > 0 && Date.now() - (AOVIVO.tBrl || 0) < 120000) return { v: AOVIVO.brl, fonte: 'ao segundo (Binance, par USDTBRL)' };
+    var s = Number(obj(E.T && E.T.real).usdt_brl);
+    return s > 0 ? { v: s, fonte: 'da torre (Binance, par USDTBRL, de 15 em 15 s)' } : null;
+  }
   function pintarReais() {
     var el = $('n_cap_s'); if (!el || !AOVIVO.real) return;
-    var r = textoReais(E.capAgora, AOVIVO.brl);
+    var cb = cotacaoBrl(), r = cb ? textoReais(E.capAgora, cb.v) : '';
     txt(el, (r ? r + ' · ' : '') + LEG_CAP);
-    if (r) el.title = 'o capital da casa em reais, ao segundo: USDT a R$ ' + Number(AOVIVO.brl).toFixed(3) + ' (Binance, par USDTBRL)';
+    if (r) el.title = 'o capital da casa em reais: USDT a R$ ' + Number(cb.v).toFixed(3) + ' ' + cb.fonte;
   }
   var REST_URL = 'https://data-api.binance.vision/api/v3/ticker/bookTicker?symbols=', REST_EM_VOO = false, BRL_EM_VOO = false;
   setInterval(function () {      // 16/10: sem o fluxo do USDT/BRL ha 30 s, o livro publico
