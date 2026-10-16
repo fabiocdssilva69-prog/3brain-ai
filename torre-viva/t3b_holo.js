@@ -601,8 +601,9 @@
   // abaixo do pixel (amostras a 60 por segundo e o resto da conta empurra o desenho); a batida tem a forma PQRST; sem eventos a
   // linha fica quase plana mas viva (um ruido de 1-2%); o traco tem rasto (mais apagado a esquerda) e uma ponta que brilha; o
   // numero e o coracao pequeno batem a cada batida real; a grelha e uma camada guardada.
-  var ECG = { y: null, fila: [], bat: [], ultimo: 0, n: 0, acc: 0, tBat: 0, lote: null, lotes: [], nLotes: 0, normal: null };
+  var ECG = { y: null, fila: [], bat: [], ultimo: 0, n: 0, acc: 0, tBat: 0, lote: null, lotes: [], nLotes: 0, normal: null, batT: [] };
   var PQRST = [0, 0.04, 0.08, 0.04, 0, 0, -0.1, 1, -0.42, -0.08, 0, 0.06, 0.12, 0.16, 0.12, 0.05, 0];
+  var PQRST_CURTO = PQRST.filter(function (v, i) { return i % 2 === 0; });   // 16/10: a batida curta de uma rajada (9 amostras, 0,15 s)
   aoReagir('coracao', function (ev, r) {
     if (ev.historia) { ECG.bat.push(ev.ms || Date.now()); ECG.n++; return; }   // o passado (a 1.a leitura): conta, mas nao bate nem acende
     var f = clamp(r.forca || 0.5, 0.2, 1) * (ev.k === 'batimento' ? 1.4 : 1), ag = agoraMs();
@@ -634,11 +635,18 @@
       if (!ECG.y || ECG.y.length !== N) ECG.y = new Array(N).fill(0);
       if (ECG.lote && !ECG.lote.feito) {                               // a batida do lote: ja, sem esperar pela anterior
         // 08/10 noite: um evento so batia a meia altura (forca 0,5) e de noite parecia parado - o minimo e 75% da altura
-        var Lb = ECG.lote, ampL = clamp(Math.max(0.75, Lb.f) * (1 + 0.32 * Math.log2(Math.max(1, Lb.n))), 0.75, 1.55);
-        Lb.feito = true; ECG.nLotes++; ECG.ultimo = agoraMs();
-        if (ECG.fila.length > 6) ECG.fila.length = 6;
+        // 16/10 (ele: "o ritmo ainda nao esta certo"; medido: 24 eventos/min davam 11 batidas): cada evento do lote BATE - ate 8 por
+        // lote, em batidas curtas seguidas; numa rajada maior a ultima e mais forte. O numero e as batidas que se veem sao os mesmos.
+        var Lb = ECG.lote, k = Math.min(8, Math.max(1, Lb.n)), ampB = clamp(Math.max(0.75, Lb.f), 0.75, 1.2);
+        Lb.feito = true; ECG.nLotes += k; ECG.ultimo = agoraMs();
+        for (var ibt = 0, agB = Date.now(); ibt < k; ibt++) ECG.batT.push(agB);
+        if (ECG.fila.length > 60) ECG.fila.length = 60;          // no maximo 1 s de batidas por desenhar (nunca fica para tras)
         if (ECG.fila.length) ECG.fila.push(0);
-        PQRST.forEach(function (v) { ECG.fila.push(v * ampL); });
+        if (k === 1) PQRST.forEach(function (v) { ECG.fila.push(v * ampB); });
+        else for (var jb = 0; jb < k; jb++) {
+          var a2 = jb === k - 1 && Lb.n > 8 ? Math.min(1.55, ampB * (1 + 0.32 * Math.log2(Lb.n / 8 + 1))) : ampB;
+          PQRST_CURTO.forEach(function (v) { ECG.fila.push(v * a2); }); ECG.fila.push(0);
+        }
       }
       ECG.acc += dt * AMOSTRAS_S;
       while (ECG.acc >= 1) {
@@ -646,6 +654,7 @@
         ECG.y.push(ECG.fila.length ? ECG.fila.shift() : 0.012 * Math.sin(t * 9.1) + 0.008 * Math.sin(t * 23.7) + 0.006 * Math.sin(t * 2.3));
       }
       var corte = Date.now() - 60000; while (ECG.bat.length && ECG.bat[0] < corte) ECG.bat.shift();
+      while (ECG.batT.length && ECG.batT[0] < corte) ECG.batT.shift();
       ctx.clearRect(0, 0, w, h);
       porCamada(ctx, s, 'grelha', '', grelha);
       var base = h * 0.6, amp = h * 0.46, sub = ECG.acc * PASSO, ult = ECG.y.length - 1;
@@ -679,9 +688,9 @@
       ctx.beginPath(); ctx.moveTo(hx, hy + hs * 0.9); ctx.bezierCurveTo(hx - hs * 1.6, hy - hs * 0.2, hx - hs * 0.6, hy - hs * 1.3, hx, hy - hs * 0.45); ctx.bezierCurveTo(hx + hs * 0.6, hy - hs * 1.3, hx + hs * 1.6, hy - hs * 0.2, hx, hy + hs * 0.9); ctx.fill();
       if (bt > 0.05) luz(ctx, C.mau, hx, hy, 11, bt * 0.8);
       // 16/10 (medido: 24 eventos/min davam 11 batidas - os do mesmo segundo batem juntos): as batidas aparecem ao lado dos eventos
-      if (s.desenhos % 30 === 0) { var cbt = Date.now() - 60000, nbt = 0; (ECG.lotes || []).forEach(function (x) { if (x[0] > cbt) nbt++; });
+      if (s.desenhos % 30 === 0) { var nbt = ECG.batT.length;   // 16/10: as batidas que se veem (cada evento bate)
         mini('hm_coracao', [['', fmt(bpm, 0), 'eventos/min'], ['', fmt(nbt, 0), 'batidas/min'], ['total', fmt(ECG.n, 0)]]);
-        var blc = $('bl_coracao'); if (blc) blc.title = bpm + ' eventos no último minuto em ' + nbt + ' batidas (os eventos do mesmo segundo batem juntos)'; }
+        var blc = $('bl_coracao'); if (blc) blc.title = bpm + ' eventos no último minuto · ' + nbt + ' batidas (cada evento bate; numa rajada, até 8 batidas curtas)'; }
     } });
   })();
 
