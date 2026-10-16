@@ -625,6 +625,9 @@
   aoReagir('coracao', function (ev, r) {
     var w = nDe(ev);
     if (ev.historia) { ECG.bat.push([ev.ms || Date.now(), 1]); ECG.n += 1; return; }   // o passado (a 1.a leitura): conta, mas nao bate nem acende
+    // 16/10 18h: um evento que toca com mais de 3 s de atraso (o telemovel congelou os temporizadores com a pagina em segundo plano)
+    // conta, mas nao bate: ao voltar a pagina, minutos de eventos acumulados disparavam de uma vez e o coracao ficava 'acelerado'
+    if (ev.alvo_ms && Date.now() - ev.alvo_ms > 3000) { ECG.bat.push([ev.alvo_ms, 1]); ECG.n += 1; return; }
     var f = clamp(r.forca || 0.5, 0.2, 1) * (ev.k === 'batimento' ? 1.4 : 1), ag = agoraMs();
     // 08/10 (OBRA 11): o que chega JUNTO (o mesmo lote do /vivo.json) e UMA batida, mais forte quanto mais coisas mexem. Antes cada
     // evento punha uma batida inteira (0,3 s) na fila: uma rajada de 10 deixava o coracao 3,5 s atrasado do vortex e dos cartoes
@@ -638,7 +641,9 @@
     NUC.nPontos = (NUC.nPontos || 0) + np; if (PULSOS.length > PULSOS_MAX) PULSOS.splice(0, PULSOS.length - PULSOS_MAX);
   });
   EXTRA.coracao = function () { return { eventos: ECG.n, batidas: ECG.nLotes, na_fila: ECG.fila.length, bpm: somaBat(), ultimo_lote: ECG.lote ? ECG.lote.n : 0 }; };
-  T3B.on('ritmo', function (r) { if (ECG.normal == null && r && r.n > 0) ECG.normal = Math.max(20, r.n); });   // o ritmo normal da torre: comeca no do servidor
+  // o ritmo normal da torre (para a cor): 16/10 18h - so com 3+ min de medida (com a janela a encher comecava baixo e tudo parecia
+  // 'acelerado' durante ~20 min); ate la a cor e a neutra
+  T3B.on('ritmo', function (r) { if (ECG.normal == null && r && r.n > 0 && (r.janela_min || 0) >= 3) ECG.normal = Math.max(20, r.n); });
   var cenaEcg = null;
   (function () {
     var cv = $('cv_coracao'); if (!cv) return;
@@ -688,7 +693,7 @@
       // torre (media dos ultimos ~20 min), nao contra numeros fixos (de dia a torre fica sempre acima de 90/min e era sempre vermelho)
       var bpm = NUC.ritmo && NUC.ritmo.n != null ? NUC.ritmo.n : somaBat();
       if (ECG.normal != null) ECG.normal += (Math.max(20, bpm) - ECG.normal) * Math.min(1, dt / 1200);
-      var nor = ECG.normal || 40, estado = bpm >= nor * 1.5 ? 2 : bpm >= nor * 0.7 ? 1 : 0, RGB3 = ['63,214,154', '242,194,48', '255,90,95'], g = ECG.grad;
+      var nor = ECG.normal || Math.max(20, bpm), estado = bpm >= nor * 1.5 ? 2 : bpm >= nor * 0.7 ? 1 : 0, RGB3 = ['63,214,154', '242,194,48', '255,90,95'], g = ECG.grad;
       if (!g || ECG.gradW !== w || ECG.gradE !== estado) { g = ECG.grad = ctx.createLinearGradient(X0, 0, w, 0); g.addColorStop(0, 'rgba(' + RGB3[estado] + ',0)'); g.addColorStop(0.35, 'rgba(' + RGB3[estado] + ',.55)'); g.addColorStop(1, 'rgba(' + RGB3[estado] + ',1)'); ECG.gradW = w; ECG.gradE = estado; }
       ctx.save(); ctx.beginPath(); ctx.rect(X0, 0, w - X0, h); ctx.clip();
       ctx.beginPath();

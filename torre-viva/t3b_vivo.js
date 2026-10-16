@@ -253,6 +253,9 @@
     ok.forEach(function (e) { var k = String(Math.floor(e.mc / 1000)); if (!porT[k]) { porT[k] = []; grupos.push(porT[k]); } porT[k].push(e); });
     grupos.forEach(function (g) {
       var atraso = g[0].mc + PUB.D - agora;
+      // 16/10 18h: a hora a que o grupo DEVIA tocar - o contador conta por ela (o telemovel congela os setTimeout com a pagina em
+      // segundo plano e, ao voltar, disparam todos de uma vez: contados pela hora do disparo, o numero subia para 98 'acelerado')
+      var alvo = g[0].mc + PUB.D; g.forEach(function (e) { e.alvo_ms = alvo; });
       var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); };
       if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
     });
@@ -268,8 +271,10 @@
     // segundo real tem a sua batida. O lote normal (1 s) nao muda.
     var span = 0; grupos.forEach(function (g) { if (g[0].ms && isFinite(m0)) span = Math.max(span, g[0].ms - m0); });
     var n1 = grupos.length - 1, passo = n1 > 0 ? Math.min(5000, Math.max(170 * n1, Math.min(span, 5000))) / n1 : 0;
+    var agoraR = Date.now();
     grupos.forEach(function (g, i) {
       var atraso = span <= teto ? (isFinite(m0) && g[0].ms ? Math.min(teto, Math.max(0, g[0].ms - m0)) : 0) : Math.min(5000, i * passo);
+      var alvoR = agoraR + atraso; g.forEach(function (e) { e.alvo_ms = alvoR; });   // 16/10 18h: a hora a que devia tocar
       var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); };
       if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
     });
@@ -313,6 +318,8 @@
     return { n: Math.round(reg / min), acoes: Math.round(acc / min), janela_min: Math.round(min * 10) / 10, registos: reg,
              eventos_60s: reg60, acoes_60s: acc60, quem: nIds + extra, porAndar: porAndar };
   }
+  // 16/10 18h: a hora com que um evento tocado entra no contador - a que devia tocar (alvo) quando ja passou; senao a de agora
+  function tempoDoTocado(alvo, agora) { return isFinite(alvo) && alvo > 0 && alvo <= agora ? alvo : agora; }
   // </ritmo-puro>
   T3B.nDoEvento = nDoEvento;
   var TOCADOS = [], PAGINA_DESDE = Date.now();
@@ -320,7 +327,9 @@
     var agora = Date.now();
     (g || []).forEach(function (e) {
       if (!e) return;
-      var x = { t: agora, id: e.id, andar: e.andar, n: nDoEvento(e), g: e.grupo ? 1 : 0 };
+      // 16/10 18h: conta pela hora a que o evento DEVIA tocar (alvo_ms) - um disparo atrasado (pagina em segundo plano no
+      // telemovel) conta no minuto dele, e o que ja passou da janela nao entra
+      var a = Number(e.alvo_ms), x = { t: tempoDoTocado(a, agora), id: e.id, andar: e.andar, n: nDoEvento(e), g: e.grupo ? 1 : 0 };
       // o passado que a 1.a leitura traz (torre do PC) conta pela hora a que CHEGOU a torre (c; sem ele, a do evento) - igual ao servidor
       if (e.historia) { if (window.T3B_PUBLICADO) return; var c = Number(e.c) * 1000; x.t = isFinite(c) && c > 0 ? c : e.ms; if (!(x.t > 0)) return; }
       TOCADOS.push(x);
