@@ -525,7 +525,7 @@
       var aoVivoOk = !!(AOVIVO.real && AOVIVO.tPreco && Date.now() - AOVIVO.tPreco < 15000), seg = aoVivoOk ? ' · ao segundo' : ' · do ficheiro';
       if (!aoVivoOk) numeroVivo('cap', 'c_cap', 'n_cap', rc.cap, fUS, '', 'capital');
       var lg = legendasReal(rc, seg, function (x) { return fmt(x, 2); });
-      txt($('n_cap_s'), lg.cap);   // 15/10: curto (cortava no telemovel); 21:3x: o deposito ainda nao lido e o executor parado
+      LEG_CAP = lg.cap; if (!aoVivoOk) E.capAgora = rc.cap; pintarReais();   // 15/10: curto; 16/10: com o valor em reais por cima
       if (!aoVivoOk) numeroVivo('dia', 'c_dia', 'n_dia', rc.hoje, sUS, cls(rc.hoje), 'hoje');
       T3B.estado.realActivo = true; if (!aoVivoOk && rc.hoje != null) tocarSerieReal(T, rc.hoje);     // 10/10 21:3x: o trilho real (de hora a hora, sem preco ao vivo)
       txt($('n_dia_s'), lg.dia);
@@ -602,6 +602,11 @@
       .map(function (p) { return { sym: String(p.simbolo).replace(/USD$/, 'USDT'), qty: Number(p.qty), ref: Number(p.agora) }; });
     }
     if (!window.T3BBinance) return;
+    // 16/10 (ele: "o valor em reais em tempo real"): o USDT/BRL da Binance ao segundo, so com a conta real (uma vez)
+    if (AOVIVO.real && !AOVIVO.brlLigado) {
+      AOVIVO.brlLigado = true;
+      try { window.T3BBinance.assinar('usdtbrl@bookTicker', function (d) { d = d && d.data ? d.data : d; var b = Number(d && d.b), a = Number(d && d.a); if (b > 0 && a > 0) { AOVIVO.brl = (a + b) / 2; AOVIVO.tBrl = Date.now(); pintarReais(); } }); } catch (e) { }
+    }
     var quer = {}; AOVIVO.pos.forEach(function (p) { quer[p.sym.toLowerCase() + '@bookTicker'] = p.sym; });
     Object.keys(AOVIVO.fluxos).forEach(function (f) { if (!quer[f]) { try { window.T3BBinance.largar(f); } catch (e) { } delete AOVIVO.fluxos[f]; } });
     Object.keys(quer).forEach(function (f) {
@@ -617,6 +622,7 @@
     var dl = 0; AOVIVO.pos.forEach(function (p) { var m = AOVIVO.mid[p.sym]; if (m) dl += p.qty * (m - p.ref); });
     AOVIVO.delta = dl;
     if (AOVIVO.base && isFinite(AOVIVO.base.cap)) quieto('cap', AOVIVO.base.cap + dl, 700);
+    if (AOVIVO.real && AOVIVO.base && isFinite(AOVIVO.base.cap)) { E.capAgora = AOVIVO.base.cap + dl; if (Date.now() - (AOVIVO.tReais || 0) > 1000) { AOVIVO.tReais = Date.now(); pintarReais(); } }   // 16/10: os reais ao segundo
     if (AOVIVO.real && AOVIVO.base && isFinite(AOVIVO.base.cap)) {      // 10/10 19:0x: no real, HOJE e DESDE O INICIO tambem ao segundo
       var vr = vivosDoReal(AOVIVO.base.cap + dl, AOVIVO.real);
       if (vr && vr.dia != null) quietoCls('dia', 'n_dia', vr.dia);
@@ -641,7 +647,33 @@
     return m;
   }
   // </rest-puro>
-  var REST_URL = 'https://data-api.binance.vision/api/v3/ticker/bookTicker?symbols=', REST_EM_VOO = false;
+  // 16/10 (ele: "embaixo do capital da casa em dolar, o valor em reais em tempo real"): o capital x o USDT/BRL. PURA: textoReais.
+  // <reais-puro>
+  function textoReais(capUsd, brl) {
+    capUsd = Number(capUsd); brl = Number(brl);
+    if (!(capUsd > 0) || !(brl > 0) || !isFinite(capUsd) || !isFinite(brl)) return '';
+    var v = Math.round(capUsd * brl * 100) / 100, ip = Math.floor(v), dec = Math.round((v - ip) * 100);
+    var s = String(ip).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return '≈ R$ ' + s + ',' + (dec < 10 ? '0' : '') + dec;
+  }
+  // </reais-puro>
+  var LEG_CAP = '';
+  function pintarReais() {
+    var el = $('n_cap_s'); if (!el || !AOVIVO.real) return;
+    var r = textoReais(E.capAgora, AOVIVO.brl);
+    txt(el, (r ? r + ' · ' : '') + LEG_CAP);
+    if (r) el.title = 'o capital da casa em reais, ao segundo: USDT a R$ ' + Number(AOVIVO.brl).toFixed(3) + ' (Binance, par USDTBRL)';
+  }
+  var REST_URL = 'https://data-api.binance.vision/api/v3/ticker/bookTicker?symbols=', REST_EM_VOO = false, BRL_EM_VOO = false;
+  setInterval(function () {      // 16/10: sem o fluxo do USDT/BRL ha 30 s, o livro publico
+    if (BRL_EM_VOO || !AOVIVO.real || !window.fetch || (AOVIVO.tBrl && Date.now() - AOVIVO.tBrl < 30000)) return;
+    BRL_EM_VOO = true;
+    fetch(REST_URL + encodeURIComponent('["USDTBRL"]'), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (lista) { var m = midsDoRest(lista); if (m.USDTBRL) { AOVIVO.brl = (m.USDTBRL.a + m.USDTBRL.b) / 2; AOVIVO.tBrl = Date.now(); pintarReais(); } })
+      .catch(function () { })
+      .then(function () { BRL_EM_VOO = false; });
+  }, 5000);
   setInterval(function () {
     if (REST_EM_VOO || !AOVIVO.pos.length || !window.fetch || Date.now() - AOVIVO.tPreco < 10000) return;
     var syms = AOVIVO.pos.map(function (p) { return p.sym; });
