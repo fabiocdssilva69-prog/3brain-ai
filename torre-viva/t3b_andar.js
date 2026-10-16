@@ -48,15 +48,20 @@ export function carregarModelos() {
   const mob = ['table_medium_long', 'chair_A', 'cactus_medium_A', 'lamp_standing', 'couch', 'table_low', 'cabinet_medium', 'shelf_B_small_decorated', 'chair_stool', 'armchair'];
   carregando = (async () => {
     const variantes = [];
-    for (let i = 0; i < VARIANTES.length; i += 6) {
-      const lote = await Promise.all(VARIANTES.slice(i, i + 6).map(l => ld.loadAsync(DIR_MOD + 'bonecos_adultos/character-' + l + '.glb')));
+    // 16/10 (medido pelo CDP: os 18 bonecos em lotes de 6 ocupavam as 6 ligacoes que o navegador abre ao servidor - com a maquina
+    // carregada cada um levava 3-25 s e, nesse tempo, os /vivo.json da pagina ficavam na fila e abortavam: 40-120 s sem eventos e os
+    // hologramas parados logo a seguir a abrir a torre). Lotes de 3: sobram ligacoes para o vivo, a estrutura e o resto.
+    const LOTE_MOD = 3;
+    for (let i = 0; i < VARIANTES.length; i += LOTE_MOD) {
+      const lote = await Promise.all(VARIANTES.slice(i, i + LOTE_MOD).map(l => ld.loadAsync(DIR_MOD + 'bonecos_adultos/character-' + l + '.glb')));
       lote.forEach((g, k) => {
         const cena = g.scene, cx = new THREE.Box3().setFromObject(cena), alt = Math.max(0.01, cx.max.y - cx.min.y);
         variantes.push({ letra: VARIANTES[i + k], cena, clips: g.animations, escala: ALT_PESSOA / alt, base: -cx.min.y });
       });
     }
     const mobilia = {};
-    const lm = await Promise.all(mob.map(nm => ld.loadAsync(DIR_MOD + 'mobilia/' + nm + '.gltf').catch(() => null)));
+    const lm = [];                                                      // 16/10: a mobilia tambem em lotes de 3 (eram 10 de uma vez)
+    for (let i = 0; i < mob.length; i += LOTE_MOD) lm.push(...await Promise.all(mob.slice(i, i + LOTE_MOD).map(nm => ld.loadAsync(DIR_MOD + 'mobilia/' + nm + '.gltf').catch(() => null))));
     lm.forEach((g, k) => { if (!g) return; let geo = null, mat = null; g.scene.traverse(x => { if (x.isMesh && !geo) { x.updateWorldMatrix(true, false); geo = x.geometry.clone().applyMatrix4(x.matrixWorld); mat = x.material; } }); mobilia[mob[k]] = { geo, mat }; });
     // ponto 6 ("bonecos quadrados"): os Kenney vem com normais PLANAS (cada face do cubo e um bloco de cor chapada). A
     // sombra passa a ser SUAVE: a normal de cada vertice e a media das faces que se tocam nesse ponto (pela posicao, para
