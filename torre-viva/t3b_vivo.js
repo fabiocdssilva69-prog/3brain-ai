@@ -129,7 +129,10 @@
     { nome: 'conversa', url: function () { return 'conversa.json'; }, cada: 0, aplicar: function (c) { T3B.emit('conversa_historia', c); } },
     // 03/10: o ALERTA 3D. sala/alertas.json e escrito pelo conserto (mercado/conserto.py: alertas()) quando a escada inteira
     // nao resolveu; sem ficheiro (404) ou vazio = nada aparece, e isso NAO e erro (opcional).
-    { nome: 'alertas', url: function () { return 'alertas.json'; }, cada: 15000, aplicar: aplicarAlertas, opcional: true }
+    { nome: 'alertas', url: function () { return 'alertas.json'; }, cada: 15000, aplicar: aplicarAlertas, opcional: true },
+    // 15/10 (ele: "tem muitos pedidos no chat que eu nao vejo se sao resolvidos"): o ponto do circuito de cada pedido do barramento
+    // (mercado/barramento.py escrever_estados_chat, a cada volta do carteiro) - o chat mostra-o em cada pedido
+    { nome: 'pedidos', url: function () { return 'pedidos_estado.json'; }, cada: 60000, aplicar: function (d) { E.pedidos = d; T3B.emit('pedidos_estado', d); }, opcional: true }
   ];
   FONTES.forEach(function (f) { f.ult = 0; f.emVoo = false; f.falhas = 0; f.feito = false; });
   function buscar(f, agora) {

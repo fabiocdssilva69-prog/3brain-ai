@@ -164,7 +164,15 @@ body.t3b { background: var(--bg); color: var(--txt); font: 13px/1.45 var(--f-s);
 .msg .tag { font: 600 8.5px var(--f-m); letter-spacing: .1em; padding: 1px 5px; border-radius: 4px; background: var(--line); color: var(--mute); }
 .msg .tag.lucro { background: rgba(63, 214, 154, .14); color: var(--ok); } .msg .tag.perda, .msg .tag.risco { background: rgba(255, 90, 95, .13); color: var(--mau); }
 .msg .tag.noticia { background: rgba(45, 212, 232, .13); color: var(--cy); } .msg .tag.director { background: var(--ouro-v); color: var(--ouro); }
-.msg .tag.recado { background: rgba(178, 101, 245, .14); color: var(--vi); } .msg .tag.lab { background: rgba(96, 165, 250, .14); color: var(--az); }
+.msg .tag.recado { background: rgba(178, 101, 245, .14); color: var(--vi); }
+/* 15/10: o selo do circuito de cada pedido (aberto -> em curso -> resolvido -> usado) */
+.msg .ped { font: 600 8.5px var(--f-m); letter-spacing: .04em; padding: 1px 6px; border-radius: 9px; border: 1px solid var(--line2); color: var(--mute); white-space: nowrap; }
+.msg .ped.ok { color: var(--ok); border-color: rgba(63, 214, 154, .45); background: rgba(63, 214, 154, .10); }
+.msg .ped.mau { color: var(--mau); border-color: rgba(255, 90, 95, .45); background: rgba(255, 90, 95, .09); }
+.msg .ped.am { color: var(--am); border-color: rgba(251, 191, 36, .45); background: rgba(251, 191, 36, .08); }
+.msg .ped.res { color: var(--az); border-color: rgba(96, 165, 250, .45); background: rgba(96, 165, 250, .08); }
+.msg .ped.cur { color: var(--ouro); border-color: var(--ouro-dk); }
+.msg .ped.dim { color: var(--dim); } .msg .tag.lab { background: rgba(96, 165, 250, .14); color: var(--az); }
 .msg .txt { font-size: 12px; color: #d9d6cf; word-wrap: break-word; }
 .msg .txt .n { font-family: var(--f-m); font-size: 11.5px; }
 .msg .cita { border-left: 2px solid var(--ouro-dk); padding: 1px 7px; margin: 3px 0 4px; font-size: 10.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

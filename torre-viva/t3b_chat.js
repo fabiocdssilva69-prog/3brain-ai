@@ -60,6 +60,48 @@
     return true;
   }
 
+  // 15/10 (ele: "tem muitos pedidos que eu nao vejo se sao resolvidos; confirmar que a demanda foi entregue ao solicitante e que
+  // ele fez o planeado com ela"): o SELO do circuito em cada pedido do barramento - aberto, em curso, resolvido (falta confirmar
+  // o uso), entregue por usar, USADO (com prova), nao serviu (voltou a quem entregou), sem confirmacao, recusado, expirou.
+  // Vem de sala/pedidos_estado.json; o pedido reconhece-se pelo id do evento ou pela chave de-para-texto. PURA: seloPedido.
+  // <selo-puro>
+  var SEGUIR_PED = { pedido: 1, ajuste: 1, pendente: 1, auditoria: 1, piora: 1 };
+  function chaveTextoPedido(de, para, texto) { return String(de || '') + '|' + String(para || '') + '|' + String(texto || '').replace(/\s+/g, ' ').trim().slice(0, 40); }
+  function seloPedido(par) {
+    if (!par) return null;
+    var st = par[0], cf = par[1] || '';
+    if (st === 'resolvida') {
+      if (cf === 'usada') return { t: '✓ usado', c: 'ok' };
+      if (cf === 'nao_serviu') return { t: '✗ não serviu · voltou', c: 'mau' };
+      if (cf === 'recebida') return { t: 'entregue · ainda não usado', c: 'am' };
+      if (cf === 'sem_confirmacao') return { t: 'entregue · sem confirmação', c: 'mau' };
+      return { t: 'resolvido · falta confirmar o uso', c: 'res' };
+    }
+    var M = { aberta: ['aberto', 'ab'], vista: ['visto', 'ab'], em_curso: ['em curso', 'cur'], recusada: ['recusado', 'mau'], expirada: ['expirou sem resposta', 'mau'], substituida: ['substituído', 'dim'] };
+    return M[st] ? { t: M[st][0], c: M[st][1] } : null;
+  }
+  // </selo-puro>
+  var PED = { porId: {}, porK: {} };
+  function parDoPedido(m) {
+    var id = m.bid || PED.porK[chaveTextoPedido(m.de_sector, m.para_sector, m.texto)];
+    return id ? PED.porId[id] : null;
+  }
+  function htmlSelo(m) {
+    if (m.tipo !== 'recado' || !SEGUIR_PED[m.subtipo]) return '';
+    var s = seloPedido(parDoPedido(m));
+    return '<span class="ped' + (s ? ' ' + s.c : '') + '" data-k="' + escH(chaveTextoPedido(m.de_sector, m.para_sector, m.texto)) + '"' + (m.bid ? ' data-bid="' + escH(m.bid) + '"' : '') + (s ? '' : ' hidden') + '>' + (s ? escH(s.t) : '') + '</span>';
+  }
+  T3B.on('pedidos_estado', function (d) {
+    var ps = (d && d.pedidos) || {}, porK = {};
+    Object.keys(ps).forEach(function (id) { var k = ps[id] && ps[id][2]; if (k && !porK[k]) porK[k] = id; });
+    PED.porId = ps; PED.porK = porK;
+    var els = lista.querySelectorAll('.ped');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i], id = el.getAttribute('data-bid') || porK[el.getAttribute('data-k')], s = seloPedido(id ? ps[id] : null);
+      if (!s) { el.hidden = true; continue; }
+      el.hidden = false; el.className = 'ped ' + s.c; el.textContent = s.t;
+    }
+  });
   function cartaoDaMensagem(m) {
     var a = m.autor || {}, nome = limpo(a.titulo || (TX ? TX.nomeDeId(a.id) : a.id) || '?'), and = a.andar, cor = U.corDoAndar(and);
     var heroi = /Stark|Director|Supervisor|Gerente de Opera/.test(nome);
@@ -91,7 +133,7 @@
     el.innerHTML = '<div class="av">' + (grupo ? '' : U.avatarSVG(nome, cor, !!a.feminino, heroi)) + '</div>' +
       '<div class="bal">' + (grupo ? '' : '<div class="cab"><b style="color:' + corDoNome(nome) + '">' + escH(nome) + '</b>' +
         (and != null ? '<span class="and" style="color:' + cor + ';border-color:' + cor + '">and. ' + escH(and) + '</span>' : '') +
-        (ETQ[m.tipo] && m.tipo !== 'recado' ? '<span class="tag ' + escH(m.tipo) + '">' + ETQ[m.tipo] + '</span>' : '') + rotaCab + '<span class="t">' + hora + '</span>' +
+        (ETQ[m.tipo] && m.tipo !== 'recado' ? '<span class="tag ' + escH(m.tipo) + '">' + ETQ[m.tipo] + '</span>' : '') + rotaCab + htmlSelo(m) + '<span class="t">' + hora + '</span>' +
         '</div>') +
       cita + rota + '<div class="txt">' + enriquecer(m.texto) + (grupo ? '<span class="hora">' + hora + '</span>' : '') + '</div>' + link + via + '</div>';
     if (m.chat) el.dataset.chat = '1';
@@ -175,7 +217,7 @@
     if (e.k === 'falou') return { mid: e.mid, s: e.s, ms: e.ms, t_iso: e.t, tipo: e.tipo, texto: e.txt, autor: e.autor || { id: e.id, titulo: e.quem, andar: e.andar },
       responde_a: e.responde_a, valor_usd: e.valor_usd, pct: e.pct, url: e.url, fonte: e.fonte, chat: e.chat, via: e.via, para: e.chat ? e.para : null, para_andar: e.para_andar };
     if (e.k === 'recado' && e.chat) return null;      // o recado que leva a pergunta do chat ja esta no fio como pergunta/resposta
-    if (e.k === 'recado') return { s: e.s, ms: e.ms, t_iso: e.t, tipo: 'recado', subtipo: e.tipo, texto: e.txt, de_sector: e.de_sector, para_sector: e.para_sector, para: e.para,
+    if (e.k === 'recado') return { s: e.s, ms: e.ms, t_iso: e.t, tipo: 'recado', subtipo: e.tipo, texto: e.txt, de_sector: e.de_sector, para_sector: e.para_sector, para: e.para, bid: e.mid || null,
       para_nome: e.para_nome, autor: { id: e.id, titulo: limpo(e.de_nome || e.quem || (TX ? TX.nomeDeId(e.de_sector) : e.de_sector)), andar: e.de } };
     return null;
   }
