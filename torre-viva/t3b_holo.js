@@ -1615,6 +1615,7 @@
   aoReagir('lab', function (ev, r) {
     var agora = agoraMs(); LAB.nEv++; LAB.ultimo = ev;
     if (ev.k === 'genes') {
+      LAB.tGenes = agora; LAB.genesUlt = { n: nDe(ev), quem: ev.quem || '', tipo: ev.tipo || '' };   // 16/10 20h: o estado do cartao
       var gi = GRUPO_DO_ANDAR[ev.andar]; if (gi == null) return;
       var rob = {}; (ev.robustas || []).forEach(function (k) { rob[k] = 1; });
       (ev.chaves || []).slice(0, 16).forEach(function (k) {
@@ -1638,7 +1639,20 @@
   T3B.on('torre', function (T) { var ex = obj(T.extremis); if (ex.geracao_actual !== LAB.ger) { if (LAB.ger != null) creditarHolo('lab', 'lab', 'geração ' + ex.geracao_actual); LAB.ger = ex.geracao_actual; } U.txt($('h_lab_e'), 'geração ' + (ex.geracao_actual || '?') + ' · ' + fmt(ex.n_familias, 0) + ' famílias'); });
   function pintarLegendaLab() {
     var rob = 0, tot = 0; Object.keys(LAB.tot).forEach(function (g) { tot += LAB.tot[g] || 0; rob += LAB.rob[g] || 0; });
-    mini('hm_lab', [['genes', fmt(tot, 0)], ['robustos', fmt(rob, 0)], ['acesos', String(LAB.est.filter(function (s) { return s.luz > 0.05; }).length)]]);
+    var ha = LAB.tGenes ? Math.floor((agoraMs() - LAB.tGenes) / 60000) : null;
+    mini('hm_lab', [['genes', fmt(tot, 0)], ['robustos', fmt(rob, 0)], ['calculou', ha == null ? '—' : ha < 1 ? 'agora' : 'há ' + ha + ' min', '', ha != null && ha > 30 ? 'dn' : '']]);
+  }
+  setInterval(pintarLegendaLab, 20000);
+  // 16/10 20h (ele: "o laboratorio nao mostra os dados do seu sector"): MEDIDO - as 19h51 a previa da sombra saiu pelo vigia interno e
+  // deixou 2 trabalhadores orfaos com o log aberto; todas as corridas seguintes sairam com 1 sem calcular nada e o cartao ficou com as
+  // estrelas paradas, sem dizer porque. O cartao diz agora o estado do trabalho dos genes: a calcular (o lab e quantos), ou ha quanto
+  // tempo foi o ultimo calculo - a ambar passados 30 min (a previa corre de 15 em 15 min).
+  function estadoDoLab(ctx, w, agora) {
+    var ha = LAB.tGenes ? agora - LAB.tGenes : null, g = LAB.genesUlt || {}, txt, cor;
+    if (ha != null && ha < 12000) { txt = 'a calcular: ' + TX.limpar(g.quem || 'lab') + ' · ' + fmt(g.n || 1, 0) + ' genes'; cor = C.ouroHi; }
+    else if (ha != null) { var m = Math.floor(ha / 60000); txt = 'último cálculo ' + (m < 1 ? 'agora mesmo' : 'há ' + m + ' min'); cor = m > 30 ? C.am : C.dim; }
+    else { txt = 'à espera do 1.º cálculo dos genes'; cor = C.dim; }
+    rot(ctx, TX.cortar(txt, Math.max(8, Math.floor((w - 12) / 4.6))), 6, TOPO + 9, cor, 7.5, 'left', 600);
   }
   // ---------------------------------------------------------------- <nebulosa> 10/10: A NEBULOSA ESPIRAL, o modelo aprovado
   // Ele (10/10, depois da 2.a pagina de testes, sala/lab_modelos2.html): "gostei do nebulosa espiral pode aprovar esse por
@@ -2005,6 +2019,7 @@
         // 10/10: a Nebulosa espiral desenha o cartao inteiro (uma galaxia: um braco por especialidade, um aglomerado por lab). A luz
         // das estrelas do cartao e o brilho das nuvens continuam a apagar-se como nos outros modelos; as bolhas nao entram aqui
         MOV.desenhar(ctx, w, h, t, dt, agora, base);
+        estadoDoLab(ctx, w, agora);
         LAB.est.forEach(function (st) { st.luz *= Math.pow(0.45, dt); });
         GRUPOS.forEach(function (g, gi) { LAB.nuvem[gi] = (LAB.nuvem[gi] || 0) * Math.pow(0.5, dt); });
         LAB.bolhas.length = 0;
@@ -2075,6 +2090,7 @@
         var etq = GRUPOS.map(function (gg, i) { return { t: gg.nome.toLowerCase() + ' ' + fmt(LAB.rob[i] || 0, 0), x: CS[i].x, y: CS[i].y + CS[i].R * 0.72 + 10, cor: 'rgba(242,194,48,.9)', tam: 7.5 }; });
         arrumarEtiquetas(g, 'lab', etq, w, h);
       });
+      estadoDoLab(ctx, w, agora);
     } });
   })();
 
