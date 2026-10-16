@@ -386,7 +386,10 @@
       iniPct: num(rl.desde_o_inicio_pct), inicial: num(rl.capital_inicial), realizado: num(rl.realizado_usd) || 0, pos: pos,
       aportado: num(rl.capital_aportado),        // 12/10 (ele): o capital depositado nao e ganho - o 'desde o inicio' conta-se dele
       usdt: usdt, baseCap: (usdt != null ? usdt : pat - custo) + custo, travado: !!rl.travado, velho: !!rl.da_ultima_volta_boa,
-      comecou: rl.comecou_em || rl.desde || null };
+      comecou: rl.comecou_em || rl.desde || null,
+      // 15/10: o deposito que a conta ainda nao leu (ja somado ao patrimonio e ao USDT livre pelo numeros_reais.py) e a hora a
+      // que o executor LEU a conta (com o executor parado, os numeros sao os dessa leitura x o preco de agora)
+      pend: num(rl.aportes_pendentes_usd), pendT: rl.aportes_pendentes_t || null, medidoT: rl.patrimonio_hora_t || rl.patrimonio_t || null };
   }
   // 10/10 19:0x (ele: "nao vejo eles mexer faz tempo"): o executor real mede o patrimonio de HORA a HORA; o "Hoje" e o "Desde o
   // inicio" sao esse patrimonio menos uma base FIXA (o inicio do dia = pat - hoje; o capital inicial). Com o patrimonio AO VIVO
@@ -426,6 +429,26 @@
   var ROTULO_REAL = { c_cap: 'capital da casa · real', c_dia: 'hoje · desde as 00h', c_abe: 'em aberto · desde a compra', c_ini: 'desde o início · real', c_mes: 'realizado · vendas fechadas' };
   function rotulos(R) { Object.keys(R).forEach(function (id) { var c = $(id), u = c && c.querySelector('u'); if (u) txt(u, R[id]); }); }
   function dataCurta(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? m[3] + '/' + m[2] : '—'; }
+  // 15/10 21:3x (ele: "um card mostra -118 desde o inicio; confirma se todos mostram a informacao do sitio certo"): as legendas
+  // dizem DE ONDE vem cada numero - o aportado (com o deposito que a conta ainda nao leu), a hora a que o executor leu a conta
+  // quando esta parado (IP recusado, rede em baixo). PURA: testada em testes_t3b.js.
+  // <legendas-puro>
+  function horaBrt(iso) {
+    var ms = Date.parse(String(iso || '')); if (!isFinite(ms)) return '';
+    var d = new Date(ms - 3 * 3600000), p = function (x) { return (x < 10 ? '0' : '') + x; };
+    return p(d.getUTCHours()) + ':' + p(d.getUTCMinutes());
+  }
+  function legendasReal(rc, seg, f2) {
+    f2 = f2 || function (x) { return (Math.round(Number(x) * 100) / 100).toFixed(2).replace('.', ','); };
+    var parado = rc.travado ? ' · executor parado' : '';
+    var cap = rc.aportado != null ? 'aportado ' + f2(rc.aportado) + ' US$' : 'começou com ' + f2(rc.inicial) + ' US$';
+    if (rc.pend > 0) cap += ' · depósito de ' + f2(rc.pend) + (horaBrt(rc.pendT) ? ' às ' + horaBrt(rc.pendT) : '');
+    else if (!rc.travado) cap += ' · Binance';
+    var lida = rc.travado && horaBrt(rc.medidoT) ? ' · conta lida às ' + horaBrt(rc.medidoT) : '';
+    var np = rc.pos ? rc.pos.length : 0;
+    return { cap: cap + parado, dia: np + (np === 1 ? ' posição' : ' posições') + (seg || '') + lida, mes: parado };
+  }
+  // </legendas-puro>
   function pintarCasa(T) {
     var r = obj(T.reactor), c = obj(r.conta), g = obj(r.ganho), je = obj(r.ja_entrou), p = obj(T.pepper), est = obj(obj(p.totais).estrategias), org = obj(T.orgaos);
     var fUS = function (v) { return fmt(v, 2) + ' US$'; }, sUS = function (v) { return sinal(v, 2) + ' US$'; };
@@ -436,15 +459,16 @@
       // ficheiro (de hora a hora) nao os puxa para tras a cada leitura; sem preco ao vivo, valem os do ficheiro
       var aoVivoOk = !!(AOVIVO.real && AOVIVO.tPreco && Date.now() - AOVIVO.tPreco < 15000), seg = aoVivoOk ? ' · ao segundo' : ' · do ficheiro';
       if (!aoVivoOk) numeroVivo('cap', 'c_cap', 'n_cap', rc.cap, fUS, '', 'capital');
-      txt($('n_cap_s'), (rc.aportado != null ? 'aportado ' + fmt(rc.aportado, 2) + ' US$' : 'começou com ' + fmt(rc.inicial, 2) + ' US$') + ' · Binance' + (rc.travado ? ' · à espera' : ''));   // 15/10: curto (cortava no telemovel)
+      var lg = legendasReal(rc, seg, function (x) { return fmt(x, 2); });
+      txt($('n_cap_s'), lg.cap);   // 15/10: curto (cortava no telemovel); 21:3x: o deposito ainda nao lido e o executor parado
       if (!aoVivoOk) numeroVivo('dia', 'c_dia', 'n_dia', rc.hoje, sUS, cls(rc.hoje), 'hoje');
       T3B.estado.realActivo = true; if (!aoVivoOk && rc.hoje != null) tocarSerieReal(T, rc.hoje);     // 10/10 21:3x: o trilho real (de hora a hora, sem preco ao vivo)
-      txt($('n_dia_s'), rc.pos.length + ' posições' + seg);
-      if (!aoVivoOk) numeroVivo('ini', 'c_ini', 'n_ini', rc.ini, sUS, cls(rc.ini), 'desde o início');
+      txt($('n_dia_s'), lg.dia);
+      if (!aoVivoOk) { numeroVivo('ini', 'c_ini', 'n_ini', rc.ini, sUS, cls(rc.ini), 'desde o início'); T3B.estado.realIni = rc.ini; }
       var abAgora = (AOVIVO.aberto != null && Date.now() - AOVIVO.tPreco < 15000) ? AOVIVO.aberto : rc.aberto;   // 15/10: a conta que ele pediu
       txt($('n_ini_s'), (rc.iniPct != null ? sinal(rc.iniPct, 2) + '% · ' : '') + '= realizado ' + sinal(rc.realizado, 2) + (abAgora != null ? ' + em aberto ' + sinal(abAgora, 2) : ''));
     } else {
-    T3B.estado.realActivo = false; T3B.estado.realHoje = null;
+    T3B.estado.realActivo = false; T3B.estado.realHoje = null; T3B.estado.realIni = null;
     rotulos(ROTULO_PAPEL);
     numeroVivo('cap', 'c_cap', 'n_cap', c.capital_escala, fUS, '', 'capital');
     txt($('n_cap_s'), 'acumulado em papel ' + sinal(c.acumulado_papel, 2) + ' US$');
@@ -455,7 +479,7 @@
     }
     if (rc) {      // 10/10 21:4x (ordem dele): o livro da mesa e das estrategias em PAPEL - com a conta real activa o card e o realizado REAL de hoje
       numeroVivo('mes', 'c_mes', 'n_mes', rc.realizado, sUS, cls(rc.realizado), 'realizado · conta real');
-      txt($('n_mes_s'), 'desde ' + dataCurta(rc.comecou) + ' · USDT livre ' + fmt(rc.usdt, 2) + (rc.travado ? ' · à espera' : ''));
+      txt($('n_mes_s'), 'desde ' + dataCurta(rc.comecou) + ' · USDT livre ' + fmt(rc.usdt, 2) + legendasReal(rc).mes);
     } else {
     numeroVivo('mes', 'c_mes', 'n_mes', est.realizado, sUS, cls(est.realizado), 'livro da mesa');
     txt($('n_mes_s'), (est.n_linhas || 0) + ' estratégias · ' + (est.n || 0) + ' operações');
@@ -531,7 +555,7 @@
     if (AOVIVO.real && AOVIVO.base && isFinite(AOVIVO.base.cap)) {      // 10/10 19:0x: no real, HOJE e DESDE O INICIO tambem ao segundo
       var vr = vivosDoReal(AOVIVO.base.cap + dl, AOVIVO.real);
       if (vr && vr.dia != null) quietoCls('dia', 'n_dia', vr.dia);
-      if (vr && vr.ini != null) quietoCls('ini', 'n_ini', vr.ini);
+      if (vr && vr.ini != null) { quietoCls('ini', 'n_ini', vr.ini); T3B.estado.realIni = vr.ini; }   // 15/10: o velocimetro mostra o mesmo
       if (vr && vr.dia != null) tocarSerieReal(T3B.estado.T, vr.dia);                                    // 10/10 21:3x: o trilho real ao segundo
     }
     AOVIVO.aberto = AOVIVO.base && isFinite(AOVIVO.base.abe) ? AOVIVO.base.abe + dl : null;

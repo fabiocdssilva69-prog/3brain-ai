@@ -682,7 +682,7 @@
     VEL.min = mn - folga; VEL.max = mx + folga;
     if (VEL.a !== v) { var mudou = VEL.a != null; VEL.a = v; if (VEL.v == null) VEL.v = v; if (mudou && creditar) creditarHolo('velocimetro', 'velocimetro', 'resultado do dia → ' + sinal(v, 2)); T3B.estado.resultadoDia = v; T3B.emit('resultadoDia', v); sujar(cenaVel, 1500); }
     // c02 "painel vazio ou —": sem meta definida diz-se "sem meta", nunca um traco
-    mini('hm_velocimetro', VEL.real ? [['', sinal(v, 2), 'US$', v >= 0 ? 'up' : 'dn'], ['conta', 'real · Binance'], ['desde o início', rl && rl.desde_o_inicio_usd != null ? sinal(rl.desde_o_inicio_usd, 2) : '—']]
+    mini('hm_velocimetro', VEL.real ? [['', sinal(v, 2), 'US$', v >= 0 ? 'up' : 'dn'], ['conta', 'real · Binance'], ['desde o início', T3B.estado.realIni != null ? sinal(T3B.estado.realIni, 2) : (rl && rl.desde_o_inicio_usd != null ? sinal(rl.desde_o_inicio_usd, 2) : '—')]]
       : [['', sinal(v, 2), 'US$', v >= 0 ? 'up' : 'dn'], ['stop', VEL.stop != null ? sinal(VEL.stop, 2) : 'sem stop'], ['meta', VEL.meta != null ? sinal(VEL.meta, 2) : 'sem meta']]);
   }
   T3B.on('torre', function (T) { actualizarVel(T, true); });
