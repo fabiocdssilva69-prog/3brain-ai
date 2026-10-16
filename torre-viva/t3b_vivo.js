@@ -533,7 +533,7 @@
       var abAgora = (AOVIVO.aberto != null && Date.now() - AOVIVO.tPreco < 15000) ? AOVIVO.aberto : rc.aberto;   // 15/10: a conta que ele pediu
       txt($('n_ini_s'), (rc.iniPct != null ? sinal(rc.iniPct, 2) + '% · ' : '') + '= realizado ' + sinal(rc.realizado, 2) + (abAgora != null ? ' + em aberto ' + sinal(abAgora, 2) : ''));
     } else {
-    T3B.estado.realActivo = false; T3B.estado.realHoje = null; T3B.estado.realIni = null;
+    T3B.estado.realActivo = false; T3B.estado.realHoje = null; T3B.estado.realIni = null; T3B.estado.realAberto = null;
     rotulos(ROTULO_PAPEL);
     numeroVivo('cap', 'c_cap', 'n_cap', c.capital_escala, fUS, '', 'capital');
     txt($('n_cap_s'), 'acumulado em papel ' + sinal(c.acumulado_papel, 2) + ' US$');
@@ -624,6 +624,7 @@
       if (vr && vr.dia != null) tocarSerieReal(T3B.estado.T, vr.dia);                                    // 10/10 21:3x: o trilho real ao segundo
     }
     AOVIVO.aberto = AOVIVO.base && isFinite(AOVIVO.base.abe) ? AOVIVO.base.abe + dl : null;
+    T3B.estado.realAberto = AOVIVO.real ? AOVIVO.aberto : null;   // 16/10: o Instrumento do dia (reactor.js) le o mesmo em aberto
     if (AOVIVO.aberto != null) { var bx = $('bx_abe'); txt(bx, sinal(AOVIVO.aberto, 2) + ' US$'); if (bx) bx.className = cls(AOVIVO.aberto); }
     pintarAberto(true);
   }

@@ -311,11 +311,40 @@
     }
   }
 
+  // 16/10 (ele, 15/10 21:0x: "o instrumento do dia ainda esta bugado e nao esta sincronizado"). MEDIDO: o Instrumento do dia (o
+  // reactor.js) lia o torre.json["reactor"] - o PAPEL, a simulacao desligada a 12/10 - e mostrava o dia do papel ao lado dos
+  // cartoes da conta real. Com a conta real activa passa a ler a CONTA REAL: o ponteiro e o HOJE (o mesmo do cartao, ao segundo), o
+  // aberto e o EM ABERTO, o fechado e o realizado de hoje, as posicoes sao as da Binance e o trilho e o do dia real. PURA.
+  // <reactor-real-puro>
+  function reactorDoReal(d, serieReal) {
+    var rl = (d && d.real) || {}, num = function (x) { if (x == null || x === '') return null; x = Number(x); return isFinite(x) ? x : null; };
+    if (!rl.ativo || num(rl.patrimonio) == null) return null;
+    var pos = (Array.isArray(rl.posicoes) ? rl.posicoes : []).filter(function (p) { return p && num(p.qty) > 0 && num(p.entrada) > 0; }).map(function (p) {
+      var q = num(p.qty), e = num(p.entrada), a = num(p.agora) || e;
+      return { simbolo: String(p.simbolo).replace(/USDT$/, 'USD'), qty: q, entrada: e, agora: a, cripto: true, pnl_aberto_usd: Math.round(q * (a - e) * 100) / 100, nucleo: p.nucleo || null };
+    });
+    var s = (Array.isArray(serieReal) ? serieReal : []).filter(function (x) { return Array.isArray(x) && x[1] != null && isFinite(Number(x[1])); });
+    var vs = s.map(function (x) { return Number(x[1]); }), pat = num(rl.patrimonio), usdt = num(rl.usdt_livre), rh = num(rl.realizado_hoje_usd);
+    return { conta_real: { hoje: num(rl.hoje_usd), aberto: num(rl.aberto_usd), realizado_hoje: rh, travado: !!rl.travado },
+      ganho: { liquido_realista_usd: rh != null ? rh : 0, realizado_usd: rh != null ? rh : 0 },
+      posicoes: pos, cartao_plano: {},
+      medidor: { dia: String((d.reactor && d.reactor.dia) || String(d.t_iso || '').slice(0, 10)), serie: s,
+        pico: vs.length ? Math.max.apply(null, vs) : 0, vale: vs.length ? Math.min.apply(null, vs) : 0 },
+      limites: { capital_usd: pat }, alocacao: { em_uso_cripto: pat != null && usdt != null ? Math.max(0, pat - usdt) : 0, em_uso_acoes: 0 },
+      ja_entrou: { liquido: num(rl.realizado_usd) }, patrimonio: {}, gv: {}, precos: {}, t_iso: d.t_iso };
+  }
+  // </reactor-real-puro>
+
   // ---------- ciclo ----------
   function pintar(d) {
     D = d;
     barraTopo(d); pepper(d); extremis(d); vingadores(d); killian(d); feed(d); cadeiras(d); rodape(d);
-    try { if (window.medidorVivo) window.medidorVivo(d.reactor || {}); } catch (e) { if (window.console) console.warn('reactor', e); }
+    try {
+      if (window.medidorVivo) {
+        var rr = reactorDoReal(d, window.T3B && window.T3B.estado ? window.T3B.estado.serieReal : null);   // 16/10: a conta real, se activa
+        window.medidorVivo(rr || d.reactor || {});
+      }
+    } catch (e) { if (window.console) console.warn('reactor', e); }
     tUltimo = Date.now();
   }
 
