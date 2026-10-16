@@ -29,6 +29,39 @@
   var ETQ = { mercado: 'MERCADO', lucro: 'LUCRO', perda: 'PERDA', director: 'DIRECÇÃO', contratacao: 'CONTRATAÇÃO', inauguracao: 'INAUGURAÇÃO',
     lab: 'LAB', risco: 'RISCO', resposta: 'RESPOSTA', noticia: 'NOTÍCIA', dados: 'DADOS', auditoria: 'AUDITORIA', estatistica: 'ESTATÍSTICA', recado: 'RECADO', pergunta: 'PERGUNTA' };
   var DINHEIRO = /^(lucro|perda|mercado|risco|director)$/;
+  // 16/10 (ele: "os funcionarios conversam, perguntam, se cumprimentam, se cobram, se agradecem... eu nao vi nada disso"): o social
+  // ja existia no barramento, mas no chat era tudo 'RECADO' no meio de mil respostas. Cada tipo social tem a sua etiqueta e ha o
+  // filtro 'conversas'. PURA: tipoSocial.
+  // <social-puro>
+  function tipoSocial(m) {
+    if (!m || m.tipo !== 'recado') return null;
+    var st = String(m.subtipo || ''), t = String(m.texto || '');
+    if (st === 'cumprimento' || st === 'agradecimento' || st === 'cobranca' || st === 'advertencia') return st;
+    if (/^QUEIXA de /.test(t)) return 'queixa';
+    if (/^PERGUNTA-TESTE/.test(t)) return 'teste';
+    if (/^Sobre 'PERGUNTA-TESTE/.test(t)) return 'teste_resposta';
+    return null;
+  }
+  // </social-puro>
+  var ETQ_SOCIAL = { cumprimento: 'CUMPRIMENTO', agradecimento: 'AGRADECIMENTO', cobranca: 'COBRANÇA', advertencia: 'ADVERTÊNCIA',
+    queixa: 'QUEIXA', teste: 'PERGUNTA-TESTE', teste_resposta: 'RESPONDEU AO TESTE' };
+  (function () {                       // 16/10: o filtro 'conversas' e as cores das etiquetas sociais, sem mexer no html
+    try {
+      var bt = document.querySelector('button[data-f="todos"]');
+      if (bt && bt.parentNode && !document.querySelector('button[data-f="conversas"]')) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.setAttribute('data-f', 'conversas'); b.textContent = 'conversas';
+        b.title = 'cumprimentos, agradecimentos, cobranças, advertências, queixas e perguntas-teste entre os sectores';
+        bt.parentNode.appendChild(b);
+      }
+      var css = document.createElement('style');
+      css.textContent = '.tag.soc{border-radius:3px;padding:0 4px;letter-spacing:.04em}' +
+        '.tag.cumprimento{background:#1f6f43;color:#dff7e8}.tag.agradecimento{background:#2c5d8a;color:#e1efff}' +
+        '.tag.cobranca{background:#8a6a1f;color:#fff3d6}.tag.advertencia{background:#8a2c2c;color:#ffe1e1}' +
+        '.tag.queixa{background:#7a2f6a;color:#ffe3f6}.tag.teste,.tag.teste_resposta{background:#3d3d7a;color:#e6e6ff}';
+      document.head.appendChild(css);
+    } catch (e) { }
+  })();
 
   // os numeros do texto em mono e a cor do proprio sinal; "andar 43" vira um botao que abre o andar
   var RE = /([+\-−]\d[\d.]*(?:,\d+)?\s?(?:%|US\$|pb|p\.p\.)?|\d[\d.]*(?:,\d+)?\s?(?:%|US\$|pb)|andar(?:es)?\s+\d{1,2})/g;
@@ -57,6 +90,7 @@
     if (filtro === 'recado') return m.tipo === 'recado';
     if (filtro === 'direccao') return m.tipo === 'director' || (m.autor && Number(m.autor.andar) >= 52);
     if (filtro === 'perguntas') return !!m.chat;
+    if (filtro === 'conversas') return !!tipoSocial(m);             // 16/10: so o social
     return true;
   }
 
@@ -133,7 +167,9 @@
     el.innerHTML = '<div class="av">' + (grupo ? '' : U.avatarSVG(nome, cor, !!a.feminino, heroi)) + '</div>' +
       '<div class="bal">' + (grupo ? '' : '<div class="cab"><b style="color:' + corDoNome(nome) + '">' + escH(nome) + '</b>' +
         (and != null ? '<span class="and" style="color:' + cor + ';border-color:' + cor + '">and. ' + escH(and) + '</span>' : '') +
-        (ETQ[m.tipo] && m.tipo !== 'recado' ? '<span class="tag ' + escH(m.tipo) + '">' + ETQ[m.tipo] + '</span>' : '') + rotaCab + htmlSelo(m) + '<span class="t">' + hora + '</span>' +
+        (ETQ[m.tipo] && m.tipo !== 'recado' ? '<span class="tag ' + escH(m.tipo) + '">' + ETQ[m.tipo] + '</span>'
+          : (tipoSocial(m) ? '<span class="tag soc ' + escH(tipoSocial(m)) + '">' + ETQ_SOCIAL[tipoSocial(m)] + '</span>' : '')) +   // 16/10
+        rotaCab + htmlSelo(m) + '<span class="t">' + hora + '</span>' +
         '</div>') +
       cita + rota + '<div class="txt">' + enriquecer(m.texto) + (grupo ? '<span class="hora">' + hora + '</span>' : '') + '</div>' + link + via + '</div>';
     if (m.chat) el.dataset.chat = '1';
