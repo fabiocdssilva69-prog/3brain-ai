@@ -139,9 +139,12 @@
     f.emVoo = true; f.ult = agora;
     var u = f.url(); u += (u.indexOf('?') >= 0 ? '&' : '?') + 't=' + agora;
     // 16/10 (medido 15/10 23:35: um /vivo.json pendurado deixou a fonte 'em voo' 170 s e os contadores congelados no ultimo valor):
-    // cada pedido tem tempo-limite - o vivo 4 s no PC (10 s na copia publica, o ficheiro e maior), os outros 15 s
+    // cada pedido tem tempo-limite - o vivo 8 s no PC (10 s na copia publica, o ficheiro e maior), os outros 15 s
+    // 16/10 (medido pelo CDP com a maquina carregada: 11 /vivo.json seguidos abortados aos 4,0 s sem cabecalho, com o servidor a responder
+    // em 4-5 s aos outros pedidos da mesma pagina): 4 s deitava fora respostas que chegavam. 8 s ainda corta um pedido pendurado, e o
+    // pedido seguinte leva tudo desde o ultimo seq (nada se perde)
     var ctl = window.AbortController ? new AbortController() : null;
-    var tm = ctl ? setTimeout(function () { try { ctl.abort(); } catch (e) { } }, f.nome === 'vivo' ? (window.T3B_PUBLICADO ? 10000 : 4000) : 15000) : null;
+    var tm = ctl ? setTimeout(function () { try { ctl.abort(); } catch (e) { } }, f.nome === 'vivo' ? (window.T3B_PUBLICADO ? 10000 : 8000) : 15000) : null;
     fetch(u, ctl ? { cache: 'no-store', signal: ctl.signal } : { cache: 'no-store' }).then(function (r) { if (!r.ok) { if (f.opcional) return null; throw new Error(r.status); } return r.json(); })
       .then(function (d) { f.falhas = 0; f.feito = true; f.aplicar(d); })
       .catch(function (e) { f.falhas++; if (f.falhas === 3 && window.console) console.warn('t3b: ' + f.nome + ' falha', String(e).slice(0, 80)); })
