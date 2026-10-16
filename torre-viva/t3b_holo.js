@@ -1464,9 +1464,21 @@
     TUR.ands = lista(d.andares).filter(function (a) { var t = a.turnos || a.censo; return t && (t.registados || 0) > 0; }).map(function (a) { var t = a.turnos || a.censo; return { n: a.n, em: t.em_turno || 0, trab: t.a_trabalhar_no_turno || 0, evol: t.em_descanso_a_evoluir || 0, reg: t.registados || 0 }; });
     sujar(cenaTur, 0);
   });
-  T3B.on('enxame', function (e) { var tb = obj(obj(e.pessoal).turnos); lista(tb.barra).forEach(function (x) { TUR.barra[x.id] = x.valor; }); TUR.carga = tb.carga_horaria_pct; sujar(cenaTur, 0); });
-  T3B.on('eventos', function (evs) { evs.forEach(function (e) { if (e.andar != null && TUR.ands.length && e.k !== 'numero') { TUR.flash[e.andar] = agoraMs(); TUR.ult = e; } }); });
-  aoReagir('turnos', function () { TUR.todos = agoraMs(); sujar(cenaTur, 1300); });
+  T3B.on('enxame', function (e) { var tb = obj(obj(e.pessoal).turnos); lista(tb.barra).forEach(function (x) { TUR.barra[x.id] = x.valor; }); TUR.carga = tb.carga_horaria_pct; TUR.esp = obj(tb.por_especie); sujar(cenaTur, 0); });
+  // cada andar acende o SEU ponto quando la alguem trabalha (todos os eventos com andar)
+  T3B.on('eventos', function (evs) { evs.forEach(function (e) { if (e.andar != null && TUR.ands.length && e.k !== 'numero') TUR.flash[e.andar] = agoraMs(); }); });
+  // 16/10 20h (ele: "o relogio do turno nao mostra os dados do seu sector"): o "agora:" de baixo era o ULTIMO evento da torre inteira
+  // (um analista do Macro, da Mesa...). Agora e quem trabalhou nos sectores do relogio (Pessoal, Recrutamento, Formacao, Compras,
+  // Logistica, Continuidade, os turnos, a frota dos contratados) - os mesmos eventos que o fazem reagir
+  aoReagir('turnos', function (ev) { TUR.todos = agoraMs(); TUR.ult = ev; TUR.tUlt = agoraMs(); sujar(cenaTur, 1300); });
+  // <turnos-puro>
+  // quem faltou ao turno, por especie (enxame.json -> pessoal.turnos.por_especie): "genes 1.541 · regras 853 · contratados 789"
+  var NOME_ESP_TURNO = { algoritmo: 'genes', regra: 'regras', agente: 'contratados', posto: 'postos', script: 'scripts' };
+  function faltasPorEspecie(esp) {
+    return Object.keys(esp || {}).map(function (e) { return [NOME_ESP_TURNO[e] || e, Number((esp[e] || {}).faltou) || 0]; })
+      .filter(function (x) { return x[1] > 0; }).sort(function (a, b) { return b[1] - a[1]; });
+  }
+  // </turnos-puro>
   EXTRA.turnos = function () { return { pulso_todos_ha_ms: TUR.todos ? Math.round(agoraMs() - TUR.todos) : null, andares: TUR.ands.length }; };
   var cenaTur = null;
   (function () {
@@ -1530,7 +1542,9 @@
       ctx.fillStyle = 'rgba(7,7,10,.82)'; ctx.beginPath(); ctx.arc(cx, cy + 3, Math.min(R * 0.42, 19), 0, TAU); ctx.fill();
       rot(ctx, String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0'), cx, cy + 3, '#fff', 11, 'center', 700);
       rot(ctx, String(Math.floor(seg)).padStart(2, '0'), cx, cy + 13, C.mute, 7.5, 'center', 600);
-      if (TUR.ult) rot(ctx, 'agora: ' + TX.cortar(TX.limpar(TUR.ult.quem || TX.nomeDeId(TUR.ult.id)), 20) + ' · and. ' + TUR.ult.andar, 4, h - 3, C.mute, 7.5, 'left', 500);
+      var fl3 = faltasPorEspecie(TUR.esp);
+      if (fl3.length) rot(ctx, TX.cortar('faltaram: ' + fl3.slice(0, 3).map(function (x) { return x[0] + ' ' + fmt(x[1], 0); }).join(' · '), Math.floor((w - 8) / 4.4)), 4, h - 13, C.am, 7.5, 'left', 600);
+      if (TUR.ult) { ctx.globalAlpha = clamp(1 - (agora - (TUR.tUlt || 0)) / 60000, 0.45, 1); rot(ctx, TX.cortar('agora: ' + TX.limpar(TUR.ult.quem || TX.nomeDeId(TUR.ult.id)) + (TUR.ult.andar != null ? ' · and. ' + TUR.ult.andar : ''), Math.floor((w - 8) / 4.4)), 4, h - 3, C.mute, 7.5, 'left', 500); ctx.globalAlpha = 1; }
     } });
   })();
   setInterval(function () { mini('hm_turnos', [['em turno', fmt(TUR.barra.em_turno, 0)], ['a trab.', fmt(TUR.barra.a_trabalhar_agora, 0)], ['evoluir', fmt(TUR.barra.a_evoluir, 0)]]); }, 2000);
