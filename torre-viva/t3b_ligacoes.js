@@ -30,7 +30,7 @@
   var LAB_EXTRA = ['ideias', 'inovacao', 'comite_produto', 'pesquisa', 'registo_ensaios', 'validacao', 'treinamento', 'ciclo_vida'];
   var FORCA = { mudou: 1, falou: 0.85, escreveu: 0.6, recado: 0.75, visita: 0.9, batimento: 0.5, avaria: 1, consertou: 1, genes: 0.8, turno: 0.7, cotacao: 0.35 };
   var H = {
-    velocimetro: { titulo: 'Velocímetro (o dia)', galeria: 'G18', onde: 'coluna da esquerda · P&L (and. 47)', esps: ['pnl'],
+    velocimetro: { titulo: 'Velocímetro (o dia)', galeria: 'G18', naPagina: false, onde: 'coluna da esquerda · P&L (and. 47)', esps: ['pnl'],
       programas: ['numeros_reais', 'binance_real', 'cotas_real', 'painel', 'realizado', 'papel_cripto', 'fecho', 'resultados'],
       fonte: 'torre.json → reactor.medidor (o resultado do dia) e o livro da Binance ao segundo (reactor.js)',
       reage: 'cada escreveu/mudou/falou do P&L (and. 47) ou de quem escreve o resultado do dia: o arco acende e salta uma faísca da agulha' },
@@ -39,12 +39,12 @@
     stark: { titulo: 'Sr. Stark (decisões + anel de agentes)', galeria: 'G19 + G2', onde: 'coluna da esquerda · ático (sócios, conselho, Sr. Stark)', esps: ['socios_directores', 'conselho', 'sr_stark'],
       programas: ['stark', 'sr_stark', 'alocador', 'capital', 'carteiro', 'barramento', 'cortex'], tipos: ['visita'],
       fonte: 'enxame.json → stark.parecer (as decisões dele) e shield.cargos (os agentes da S.H.I.E.L.D.)',
-      reage: 'o parecer novo do Sr. Stark põe-no a andar com a decisão no balão; cada visita da S.H.I.E.L.D. acende o agente no anel e lança o cometa; os eventos do ático (57-59) fazem o núcleo piscar' },
+      reage: 'o parecer novo do Sr. Stark põe-no a andar com a decisão no balão; cada visita da S.H.I.E.L.D. acende o agente no anel e lança o cometa; os eventos do ático (sócios, conselho e Sr. Stark - os andares de cima) fazem o núcleo piscar' },
     numeros: { titulo: 'Números (conta-quilómetros)', galeria: 'G7', onde: 'coluna da esquerda · Estatística', esps: ['estatistica', 'atrio'],
       programas: ['realizado', 'pulso', 'revisao', 'validacao_independente', 'conversa', 'dsr'],
       fonte: '/vivo.json → seq (todos os eventos reais desde que o servidor arrancou) e torre.json (operações, genes, gerações)',
       reage: 'o conta-quilómetros sobe com CADA evento da torre (é o contador); os eventos da Estatística (and. 46) fazem a fita andar e os dígitos acender' },
-    mesa: { titulo: 'Mesa de operações (barras)', galeria: 'G9', onde: 'coluna da direita · Mesa de Operações', esps: ['mesa', 'tesouraria_preco'],
+    mesa: { titulo: 'Mesa de operações (barras)', galeria: 'G9', naPagina: false, onde: 'coluna da direita · Mesa de Operações', esps: ['mesa', 'tesouraria_preco'],
       programas: ['papel_cripto', 'papel', 'binance_real', 'fabrica_execucao', 'execucao', 'papel_intradia', 'papel_swing', 'mesa'],
       fonte: 'torre.json → reactor.posicoes / aberto_total_usd e o livro da Binance ao segundo',
       reage: 'cada evento da Mesa (and. 49): a barra de ouro cresce e pisca; a altura das barras é o "em aberto"' },
@@ -55,7 +55,7 @@
     equalizador: { titulo: 'Equalizador dos andares', galeria: 'G28', onde: 'coluna perto da torre · Mesa (and. 49)', todos: true, porAndar: true,
       fonte: '/estrutura.json → censo e turnos de cada andar (a trabalhar agora / registados) + /vivo.json (eventos por andar)',
       reage: 'cada evento de um andar faz saltar a barra DESSE andar (e só essa); o pico fica marcado e desce devagar' },
-    risco: { titulo: 'Risco (anéis)', galeria: 'G8', onde: 'coluna da direita · Risco', esps: ['risco', 'vigilancia'],
+    risco: { titulo: 'Risco (anéis)', galeria: 'G8', naPagina: false, onde: 'coluna da direita · Risco', esps: ['risco', 'vigilancia'],
       programas: ['risco', 'trava_real', 'stop_do_dia', 'tecto_perda', 'stop_medir', 'concentracao', 'correlacao', 'hrp'],
       fonte: 'reactor.js → S.trava, S.limite, S.aloc (o que as travas usam de facto)', reage: 'cada evento do Risco (and. 50): os anéis acendem e o anel que mexeu dá um pulso' },
     turnos: { titulo: 'Relógio dos turnos', galeria: 'G27', onde: 'coluna perto da torre · Risco', esps: ['recrutamento', 'pessoal', 'risco', 'formacao', 'compras', 'logistica', 'continuidade'],
@@ -78,7 +78,7 @@
       programas: ['binance_real', 'papel_cripto', 'papel', 'alpaca', 'cambio', 'juros_fed', 'liquidez', 'macro', 'noticias_cripto', 'noticias_eua', 'noticias_brasil', 'noticias_macro', 'noticias_mundo', 'fluxo_binance', 'precos_extra', 'fluxo_etf'],
       tipos: ['cotacao'], fonte: 'reactor.js → as cotações da Binance ao segundo + /vivo.json (ordens da Mesa, Macro e Mundo, antenas de mercado)',
       reage: 'cada ordem ou cotação nova acende um arco do seu mercado (Binance, Nova Iorque, São Paulo, Londres) até à torre' },
-    ampulheta: { titulo: 'Ampulheta da cota', galeria: 'G31', onde: 'coluna perto da torre · ático', esps: [],
+    ampulheta: { titulo: 'Ampulheta da cota', galeria: 'G31', naPagina: false, onde: 'coluna perto da torre · ático', esps: [],
       programas: ['cota', 'regulador', 'cota_torre', 'regulador_cota', 'agente_claude', 'medidor_cota', 'dim_sonnet', 'arquiteto_andares'],
       fonte: 'torre.json → jarvis (sessão/semana) + /vivo.json → cota (modo e ritmo, dados/enxame/modo_cota.json)',
       reage: 'cada evento de quem gasta ou mede a cota faz cair um grão e acender o fio; a areia é o que resta da semana, a cor o modo' },
@@ -112,7 +112,8 @@
     if (!k || k === 'numero') return null;                         // 'numero' = o ecra a creditar um numero; nao e um evento real
     var f = FORCA[k] != null ? FORCA[k] : 0.5;
     if (k === 'genes') f = Math.min(1, 0.35 + (Number(ev.n) || 1) / 20);
-    if (h.todos) return k === 'cotacao' ? null : { forca: f, andar: ev.andar != null ? Number(ev.andar) : null, porque: 'toda a torre' };   // (uma cotacao da Binance e o mercado, nao um funcionario)
+    // 16/10 (medido: nas visitas o equalizador saltava a barra do andar de ORIGEM - a S.H.I.E.L.D. - e nao a do andar visitado)
+    if (h.todos) { var an = k === 'visita' && ev.para != null ? ev.para : ev.andar; return k === 'cotacao' ? null : { forca: f, andar: an != null ? Number(an) : null, porque: 'toda a torre' }; }   // (uma cotacao da Binance e o mercado, nao um funcionario)
     if (h.passagens) {
       if (k === 'recado' || k === 'visita') return { forca: f, de: ev.de, para: ev.para, porque: 'passagem ' + k };
       // 05/10 (ele: "o vortex nao ta reagindo nem animando como deveria"): so havia recados e visitas, e no feed quase so ha escritas. Uma
@@ -139,15 +140,17 @@
     return null;
   }
   // todas as reaccoes de um evento: [[nome, reaccao], ...]
+  // 16/10: os hologramas que sairam da pagina a 04/10 (ordem dele: velocimetro, risco, ampulheta e mesa) ficam na tabela, marcados,
+  // mas ja nao contam reaccoes que ninguem ve (medido: a mesa reagia 9-14 vezes em 3 min sem estar no ecra)
   function reacoes(ev) {
     var out = [];
-    for (var nome in H) { var r = liga(nome, ev); if (r) out.push([nome, r]); }
+    for (var nome in H) { if (H[nome].naPagina === false) continue; var r = liga(nome, ev); if (r) out.push([nome, r]); }
     return out;
   }
   // a tabela para a prova: holograma -> onde -> fonte -> o que o faz reagir
   function tabela() {
     return Object.keys(H).map(function (nome) { var h = H[nome]; return { id: nome, titulo: h.titulo, galeria: h.galeria, onde: h.onde, fonte: h.fonte, reage: h.reage,
-      andares: h.todos ? 'todos' : ((h.esps || []).join(', ') + (h.andares && h.andares.length ? ' (and. ' + h.andares.join(', ') + ')' : '')), programas: (h.programas || []).join(', '), tipos: (h.tipos || []).join(', ') + (h.passagens ? ' (passagens)' : '') }; });
+      andares: h.todos ? 'todos' : ((h.esps || []).join(', ') + (h.andares && h.andares.length ? ' (and. ' + h.andares.join(', ') + ')' : '')), programas: (h.programas || []).join(', '), tipos: (h.tipos || []).join(', ') + (h.passagens ? ' (passagens)' : ''), naPagina: h.naPagina !== false }; });
   }
   // um evento sintetico "do sector certo" e um "de outro sector" para cada holograma (os testes e a pagina de prova)
   function provas(nome) {

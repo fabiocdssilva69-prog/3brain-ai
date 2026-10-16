@@ -265,7 +265,15 @@
   var COR_NUC = { recado: '#3fd69a', visita: '#ffdc6a', resposta: '#b265f5', dados: '#2dd4e8' };
   var GIRO_BASE = 0.4;            // a espiral nunca para (rad/s por unidade de velocidade de cada particula)
   for (var iv = 0; iv < 600; iv++) { var sv = U.semente('v' + iv); NUC.p.push({ a: (sv % 6283) / 1000, y: ((sv >> 3) % 2000) / 1000 - 1, r: 0.2 + ((sv >> 7) % 800) / 1000, v: 0.4 + ((sv >> 11) % 800) / 1000, b: (sv >> 5) % 8, f: ((sv >> 13) % 628) / 100 }); }
-  function yDoAndar(n) { n = Number(n); return isFinite(n) ? clamp(1 - (n - 1) / 58 * 2, -1, 1) : 0.8; }
+  // 16/10 (medido: o predio tem 72 andares e o vortex assumia 59 - o P&L, a Mesa, o Risco e o executivo caiam no fundo da espiral ou
+  // num ponto ao acaso): a altura e pelos andares de HOJE (/estrutura.json); o radar tambem
+  var NMAX = 72;
+  function yDoAndar(n) { n = Number(n); return isFinite(n) ? clamp(1 - (n - 1) / Math.max(1, NMAX - 1) * 2, -1, 1) : 0.8; }
+  T3B.on('estrutura', function (d) {
+    var m = 0; ((d && d.andares) || []).forEach(function (a) { m = Math.max(m, Number(a && a.n) || 0); });
+    if (m && m !== NMAX) { NMAX = m; FAIXAS = null; }
+    if (m && typeof RAD !== 'undefined' && RAD) RAD.maxAndar = Math.max(RAD.maxAndar || 0, m);
+  });
   // 07/10 (Q5 B7, ele: "ela tem que reagir a cada pulso da torre... igual o coracao, cada pontinho brilha no momento em que reage e
   // com a cor do setor; a cada pulso tem que pulsar o nome do setor no coracao; esses 2 cards interligados e sincronizados"):
   // UMA lista de pulsos partilhada - o coracao escreve-a a cada batida, o vortex e o coracao desenham-na pela mesma hora
@@ -276,7 +284,7 @@
   // (pelo numero do evento: eventos diferentes do mesmo andar acendem pontos diferentes)
   var PULSOS = [], FAIXAS = null, PULSOS_MAX = 240;
   function pontoDoAndar(n, sem) {
-    if (!FAIXAS) { FAIXAS = {}; for (var a = 1; a <= 63; a++) { var ya = yDoAndar(a), l = []; for (var i = 0; i < NUC.p.length; i++) if (Math.abs(NUC.p[i].y - ya) < 0.06) l.push(i); FAIXAS[a] = l; } }
+    if (!FAIXAS) { FAIXAS = {}; for (var a = 1; a <= NMAX; a++) { var ya = yDoAndar(a), l = []; for (var i = 0; i < NUC.p.length; i++) if (Math.abs(NUC.p[i].y - ya) < 0.06) l.push(i); FAIXAS[a] = l; } }
     var fx = n != null ? FAIXAS[Math.round(n)] : null;
     return fx && fx.length ? fx[sem % fx.length] : sem % NUC.p.length;
   }
@@ -583,7 +591,7 @@
     var f = clamp(r.forca || 0.5, 0.2, 1) * (ev.k === 'batimento' ? 1.4 : 1), ag = agoraMs();
     // 08/10 (OBRA 11): o que chega JUNTO (o mesmo lote do /vivo.json) e UMA batida, mais forte quanto mais coisas mexem. Antes cada
     // evento punha uma batida inteira (0,3 s) na fila: uma rajada de 10 deixava o coracao 3,5 s atrasado do vortex e dos cartoes
-    if (ECG.lote && ag - ECG.lote.t0 < 150) { ECG.lote.n++; ECG.lote.f = Math.max(ECG.lote.f, f); }
+    if (ECG.lote && ag - ECG.lote.t0 < 90) { ECG.lote.n++; ECG.lote.f = Math.max(ECG.lote.f, f); }   // 16/10: 150 -> 90 ms (os segundos espalhados batem cada um)
     else { ECG.lote = { n: 1, f: f, t0: ag, feito: false }; ECG.lotes.push([Date.now(), 1]); }
     ECG.lotes[ECG.lotes.length - 1][1] = ECG.lote.n;
     ECG.bat.push(Date.now()); ECG.n++;
@@ -653,7 +661,10 @@
       ctx.fillStyle = bt > 0.05 ? '#ff7b7f' : 'rgba(255,90,95,.75)';
       ctx.beginPath(); ctx.moveTo(hx, hy + hs * 0.9); ctx.bezierCurveTo(hx - hs * 1.6, hy - hs * 0.2, hx - hs * 0.6, hy - hs * 1.3, hx, hy - hs * 0.45); ctx.bezierCurveTo(hx + hs * 0.6, hy - hs * 1.3, hx + hs * 1.6, hy - hs * 0.2, hx, hy + hs * 0.9); ctx.fill();
       if (bt > 0.05) luz(ctx, C.mau, hx, hy, 11, bt * 0.8);
-      if (s.desenhos % 30 === 0) mini('hm_coracao', [['', fmt(bpm, 0), 'eventos/min'], ['total', fmt(ECG.n, 0)]]);
+      // 16/10 (medido: 24 eventos/min davam 11 batidas - os do mesmo segundo batem juntos): as batidas aparecem ao lado dos eventos
+      if (s.desenhos % 30 === 0) { var cbt = Date.now() - 60000, nbt = 0; (ECG.lotes || []).forEach(function (x) { if (x[0] > cbt) nbt++; });
+        mini('hm_coracao', [['', fmt(bpm, 0), 'eventos/min'], ['', fmt(nbt, 0), 'batidas/min'], ['total', fmt(ECG.n, 0)]]);
+        var blc = $('bl_coracao'); if (blc) blc.title = bpm + ' eventos no último minuto em ' + nbt + ' batidas (os eventos do mesmo segundo batem juntos)'; }
     } });
   })();
 

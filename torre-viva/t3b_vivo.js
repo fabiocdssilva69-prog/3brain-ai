@@ -138,10 +138,14 @@
   function buscar(f, agora) {
     f.emVoo = true; f.ult = agora;
     var u = f.url(); u += (u.indexOf('?') >= 0 ? '&' : '?') + 't=' + agora;
-    fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) { if (f.opcional) return null; throw new Error(r.status); } return r.json(); })
+    // 16/10 (medido 15/10 23:35: um /vivo.json pendurado deixou a fonte 'em voo' 170 s e os contadores congelados no ultimo valor):
+    // cada pedido tem tempo-limite - o vivo 4 s no PC (10 s na copia publica, o ficheiro e maior), os outros 15 s
+    var ctl = window.AbortController ? new AbortController() : null;
+    var tm = ctl ? setTimeout(function () { try { ctl.abort(); } catch (e) { } }, f.nome === 'vivo' ? (window.T3B_PUBLICADO ? 10000 : 4000) : 15000) : null;
+    fetch(u, ctl ? { cache: 'no-store', signal: ctl.signal } : { cache: 'no-store' }).then(function (r) { if (!r.ok) { if (f.opcional) return null; throw new Error(r.status); } return r.json(); })
       .then(function (d) { f.falhas = 0; f.feito = true; f.aplicar(d); })
       .catch(function (e) { f.falhas++; if (f.falhas === 3 && window.console) console.warn('t3b: ' + f.nome + ' falha', String(e).slice(0, 80)); })
-      .then(function () { f.emVoo = false; });
+      .then(function () { if (tm) clearTimeout(tm); f.emVoo = false; });
   }
   function tique() {
     var agora = Date.now(), lento = document.hidden ? 5 : 1;
@@ -183,7 +187,20 @@
     if (!d || d.seq == null) return;
     if (d.seq < E.vivoSeq) E.vivoSeq = 0;                     // o servidor reiniciou: o anel e outro
     var historia = !E.vivoSeq;                                // a 1.a leitura traz os ultimos 60 (passado): nao e um enxame de agora
-    var evs = lista(d.eventos).filter(function (e) { return e.s > E.vivoSeq; });
+    // 16/10 (medido na copia publica 15/10 23:39: depois do reinicio do servidor, 96 eventos do anel antigo tinham o s MAIOR que o
+    // seq novo e entravam outra vez a cada leitura - 57 eventos tocados 2 a 8 vezes): na copia publica cada evento entra UMA vez
+    // (a chave e o proprio evento: s, hora, quem, tipo); no PC continua o s (o anel e um so)
+    var JA = E.jaTocados || (E.jaTocados = {}), msAgora = Date.now();
+    var evs = lista(d.eventos).filter(function (e) {
+      if (!window.T3B_PUBLICADO) return e.s > E.vivoSeq;
+      var k = e.s + '|' + e.t + '|' + e.id + '|' + e.k;
+      if (JA[k]) return false;
+      JA[k] = msAgora; return true;
+    });
+    if (window.T3B_PUBLICADO) {
+      if (!(E.jaLimpo > msAgora - 60000)) { E.jaLimpo = msAgora; Object.keys(JA).forEach(function (k) { if (msAgora - JA[k] > 30 * 60000) delete JA[k]; }); }
+      if (d.publicado_em !== E.pubEm) { E.pubEm = d.publicado_em; E.pubEmMudou = msAgora; }   // 16/10: para dizer quando a fotografia parou
+    }
     E.vivoSeq = d.seq;
     // 15/10: o ritmo do SERVIDOR fica so para diagnostico (o cabecalho, o coracao e o vortex usam o dos eventos TOCADOS, abaixo)
     E.ritmoServidor = { n: d.ritmo_60s || 0, quem: d.quem_60s || 0, porAndar: obj(d.por_andar_60s), agora: d.agora };
@@ -232,8 +249,13 @@
   function repetirNoRitmo(evs) {
     var grupos = [], porT = {}, m0 = Infinity, teto = (window.T3B_PUBLICADO ? 15000 : 1000) - 100;
     evs.forEach(function (e) { var k = String(e.t || ''); if (!porT[k]) { porT[k] = []; grupos.push(porT[k]); } porT[k].push(e); if (e.ms && e.ms < m0) m0 = e.ms; });
-    grupos.forEach(function (g) {
-      var atraso = isFinite(m0) && g[0].ms ? Math.min(teto, Math.max(0, g[0].ms - m0)) : 0;
+    // 16/10 (medido 15/10 23:38: o servidor demorou e chegaram 28 eventos com 170 s de idade, espremidos em 900 ms - 2 batidas para
+    // 28 pontos): um lote que abarca MAIS do que a janela espalha os seus segundos a >= 170 ms cada (no maximo 5 s no total) - cada
+    // segundo real tem a sua batida. O lote normal (1 s) nao muda.
+    var span = 0; grupos.forEach(function (g) { if (g[0].ms && isFinite(m0)) span = Math.max(span, g[0].ms - m0); });
+    var n1 = grupos.length - 1, passo = n1 > 0 ? Math.min(5000, Math.max(170 * n1, Math.min(span, 5000))) / n1 : 0;
+    grupos.forEach(function (g, i) {
+      var atraso = span <= teto ? (isFinite(m0) && g[0].ms ? Math.min(teto, Math.max(0, g[0].ms - m0)) : 0) : Math.min(5000, i * passo);
       var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); };
       if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
     });
@@ -274,7 +296,9 @@
     var r = ritmoDosTocados(TOCADOS, agora);
     r.agora = new Date(agora).toISOString(); r.servidor = E.ritmoServidor ? E.ritmoServidor.n : null;
     E.ritmo = r;
-    txt($('b_ritmo'), r.n + ' ev · ' + r.quem + ' func.');
+    // 16/10: na copia publica, a fotografia parada (o servidor do PC nao responde ao publicar) diz-se - nunca um numero velho calado
+    var parada = window.T3B_PUBLICADO && E.pubEmMudou && agora - E.pubEmMudou > 4 * 60000 && E.pubEm;
+    txt($('b_ritmo'), r.n + ' ev · ' + r.quem + ' func.' + (parada ? ' · fotografia parada desde ' + String(E.pubEm).slice(-8, -3) : ''));
     T3B.emit('ritmo', r);
   }, 1000);
 
