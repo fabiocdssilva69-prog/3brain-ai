@@ -195,13 +195,16 @@
   // (eventos por minuto para o aro cheio) sobe na mesma proporcao, senao ficavam sempre no maximo
   var ACT = {}, CB = {}, ELS = {}, ESCALA = { coracao: 140, equalizador: 140, vortex: 30, numeros: 35, radar: 30, lab: 40, globo: 40, turnos: 15 };
   var JANELA_MS = 180000;
-  function act(id) { return ACT[id] || (ACT[id] = { reacoes: 0, janela: [], pulso: 0, tPulso: 0, ultimo: null, base: 0, porAndar: {} }); }
+  // 16/10 (ele: "muito pouca actividade para tanto funcionario que cada um tem"): um evento pode juntar n accoes reais (os genes de um
+  // lab num minuto, as regras de um ficheiro de testes, as linhas novas de um contratado) - o holograma conta as n, nao 1
+  function nDe(e) { return T3B.nDoEvento ? T3B.nDoEvento(e) : (function (v) { return isFinite(v) && v >= 1 ? Math.floor(v) : 1; })(Number(e && e.n)); }
+  function act(id) { return ACT[id] || (ACT[id] = { reacoes: 0, accoes: 0, janela: [], pulso: 0, tPulso: 0, ultimo: null, base: 0, porAndar: {} }); }
   function pulsoDe(id, agora) { var A = ACT[id]; if (!A || !A.tPulso) return 0; return clamp(1 - ((agora || agoraMs()) - A.tPulso) / 1200, 0, 1); }
   function reagir(id, ev, r) {
-    var A = act(id), agora = agoraMs();
-    A.reacoes++; A.janela.push(Date.now()); A.tPulso = agora; A.ultimo = { t: ev.t || null, k: ev.k, quem: ev.quem || ev.id, andar: r && r.andar != null ? r.andar : ev.andar };
-    if (r && r.andar != null) A.porAndar[r.andar] = (A.porAndar[r.andar] || 0) + 1;
-    if (A.janela.length > 600) A.janela.splice(0, A.janela.length - 600);
+    var A = act(id), agora = agoraMs(), w = nDe(ev);
+    A.reacoes++; A.accoes += w; A.janela.push([Date.now(), w]); A.tPulso = agora; A.ultimo = { t: ev.t || null, k: ev.k, quem: ev.quem || ev.id, andar: r && r.andar != null ? r.andar : ev.andar, n: w };
+    if (r && r.andar != null) A.porAndar[r.andar] = (A.porAndar[r.andar] || 0) + w;
+    if (A.janela.length > 1200) A.janela.splice(0, A.janela.length - 1200);
     // o aro do painel acende (opacidade animada pelo compositor: nao refaz o layout nem a pintura do painel)
     var el = ELS[id];
     // 16/10 (ele: "trava quando muitas actividades se activam"): numa rajada o aro acendia uma vez por evento no mesmo quadro - agora no
@@ -230,18 +233,28 @@
   }
   T3B.on('eventos', receber);
   // a base: os ultimos 3 minutos do sector, de 0 a 1 (escala por holograma); vai para o CSS (--act) - o brilho do aro
+  // 16/10: as ACCOES reais por minuto (soma dos n) e uma curva que satura devagar (1 - e^-x): quem tem mais funcionarios a trabalhar
+  // brilha mais, e um lab com centenas de genes a calcular nao fica preso no maximo ao lado de um com dez. PURA: baseDaActividade.
+  // <base-puro>
+  function baseDaActividade(janela, agoraMs_, janelaMs, escala) {
+    var soma = 0, corte = agoraMs_ - janelaMs;
+    for (var i = 0; i < (janela || []).length; i++) { var x = janela[i]; if (x && x[0] >= corte) soma += x[1] || 1; }
+    var porMin = soma / (janelaMs / 60000);
+    return { porMin: porMin, base: Math.max(0, Math.min(1, 1 - Math.exp(-porMin / (escala || 8)))) };
+  }
+  // </base-puro>
   function bases() {
-    var corte = Date.now() - JANELA_MS;
+    var agora = Date.now(), corte = agora - JANELA_MS;
     Object.keys(ACT).forEach(function (id) {
-      var A = ACT[id]; while (A.janela.length && A.janela[0] < corte) A.janela.shift();
-      var porMin = A.janela.length / (JANELA_MS / 60000), b = clamp(porMin / (ESCALA[id] || 8), 0, 1);
+      var A = ACT[id]; while (A.janela.length && A.janela[0][0] < corte) A.janela.shift();
+      var r = baseDaActividade(A.janela, agora, JANELA_MS, ESCALA[id] || 8), b = r.base; A.porMin = r.porMin;
       if (Math.abs(b - A.base) > 0.02) { A.base = b; var el = ELS[id]; if (el) el.style.setProperty('--act', b.toFixed(2)); }
     });
   }
   setInterval(bases, 1000);
   // a prova (sala/sonda_t3b.js e a pagina de prova): o estado de cada holograma e a injeccao de eventos sinteticos
   window.__t3bHolo = {
-    estado: function () { var o = {}; Object.keys(ACT).forEach(function (id) { var A = ACT[id]; o[id] = { reacoes: A.reacoes, base: Math.round(A.base * 100) / 100, pulso: Math.round(pulsoDe(id) * 100) / 100, ultimo: A.ultimo, porAndar: A.porAndar, desenhos: (cenas.filter(function (s) { return s.id === id; })[0] || {}).desenhos || 0, extra: EXTRA[id] ? EXTRA[id]() : null }; }); return o; },
+    estado: function () { var o = {}; Object.keys(ACT).forEach(function (id) { var A = ACT[id]; o[id] = { reacoes: A.reacoes, accoes: A.accoes, accoes_min: Math.round((A.porMin || 0) * 10) / 10, base: Math.round(A.base * 100) / 100, pulso: Math.round(pulsoDe(id) * 100) / 100, ultimo: A.ultimo, porAndar: A.porAndar, desenhos: (cenas.filter(function (s) { return s.id === id; })[0] || {}).desenhos || 0, extra: EXTRA[id] ? EXTRA[id]() : null }; }); return o; },
     injectar: function (evs) { receber(evs); return true; },
     base: function (id) { return (ACT[id] || {}).base || 0; },
     ligacoes: function () { return LG.tabela(); },
@@ -305,10 +318,10 @@
     var fx = n != null ? FAIXAS[Math.round(n)] : null;
     return fx && fx.length ? fx[sem % fx.length] : sem % NUC.p.length;
   }
-  function pulsoDoEvento(ev) {
+  function pulsoDoEvento(ev, i) {   // 16/10: i = o funcionario i de um evento de grupo (cada um o seu ponto)
     var n = ev && ev.andar != null && isFinite(Number(ev.andar)) ? Number(ev.andar) : null, an = n != null && T3B.andar ? T3B.andar(n) : null;
     var div = n != null && U.divisaoDoAndar ? U.divisaoDoAndar(n) : '', nome = TX.limpar((an && (an.sector || an.nome)) || div || '');
-    return { n: n, t: agoraMs(), ip: pontoDoAndar(n, U.semente(String(ev && ev.s) + '|' + (ev && ev.id))), cor: n != null && U.corDoAndar ? U.corDoAndar(n) : '#ffdc6a',
+    return { n: n, t: agoraMs(), ip: pontoDoAndar(n, U.semente(String(ev && ev.s) + '|' + (ev && ev.id) + (i ? '|' + i : ''))), cor: n != null && U.corDoAndar ? U.corDoAndar(n) : '#ffdc6a',
       nome: nome ? (div && nome !== div ? div + ' · ' + nome : nome) + (n != null ? ' · and. ' + n : '') : '' };
   }
   aoReagir('vortex', function (ev, r) {
@@ -327,7 +340,7 @@
     var pm = NUC.passagens.length;
     NUC.giroMinuto = GIRO_BASE + Math.min(1.8, pm / 12);         // o ritmo do ultimo minuto: para onde o giro volta
     var r = NUC.ritmo || {}, u = NUC.ultimo, leg = $('nu_leg');
-    var LT = ECG ? ECG.lotes : [], evm = r.n != null ? r.n : (ECG ? ECG.bat.length : 0), enx = 0, corteE = Date.now() - 60000;   // (o ECG do coracao e declarado mais abaixo)
+    var LT = ECG ? ECG.lotes : [], evm = r.n != null ? r.n : (ECG ? somaBat() : 0), enx = 0, corteE = Date.now() - 60000;   // (o ECG do coracao e declarado mais abaixo)
     while (LT.length && LT[0][0] < corteE) LT.shift();
     LT.forEach(function (x) { if (x[1] > enx) enx = x[1]; });
     U.txt($('nu_kn'), evm + ' eventos/min');
@@ -604,18 +617,25 @@
   var ECG = { y: null, fila: [], bat: [], ultimo: 0, n: 0, acc: 0, tBat: 0, lote: null, lotes: [], nLotes: 0, normal: null, batT: [] };
   var PQRST = [0, 0.04, 0.08, 0.04, 0, 0, -0.1, 1, -0.42, -0.08, 0, 0.06, 0.12, 0.16, 0.12, 0.05, 0];
   var PQRST_CURTO = PQRST.filter(function (v, i) { return i % 2 === 0; });   // 16/10: a batida curta de uma rajada (9 amostras, 0,15 s)
+  // 16/10: ECG.bat guarda [hora, n] - um evento com n accoes (um lote de regras, os genes de um lab) conta n
+  function somaBat() { var s = 0; for (var i = 0; i < ECG.bat.length; i++) s += ECG.bat[i][1] || 1; return s; }
   aoReagir('coracao', function (ev, r) {
-    if (ev.historia) { ECG.bat.push(ev.ms || Date.now()); ECG.n++; return; }   // o passado (a 1.a leitura): conta, mas nao bate nem acende
+    var w = nDe(ev);
+    if (ev.historia) { ECG.bat.push([ev.ms || Date.now(), w]); ECG.n += w; return; }   // o passado (a 1.a leitura): conta, mas nao bate nem acende
     var f = clamp(r.forca || 0.5, 0.2, 1) * (ev.k === 'batimento' ? 1.4 : 1), ag = agoraMs();
     // 08/10 (OBRA 11): o que chega JUNTO (o mesmo lote do /vivo.json) e UMA batida, mais forte quanto mais coisas mexem. Antes cada
     // evento punha uma batida inteira (0,3 s) na fila: uma rajada de 10 deixava o coracao 3,5 s atrasado do vortex e dos cartoes
-    if (ECG.lote && ag - ECG.lote.t0 < 90) { ECG.lote.n++; ECG.lote.f = Math.max(ECG.lote.f, f); }   // 16/10: 150 -> 90 ms (os segundos espalhados batem cada um)
-    else { ECG.lote = { n: 1, f: f, t0: ag, feito: false }; ECG.lotes.push([Date.now(), 1]); }
+    // 16/10: o lote conta as ACCOES (n de cada evento) - 30 regras que correram juntas sao 8 batidas curtas e a ultima mais forte
+    if (ECG.lote && ag - ECG.lote.t0 < 90) { ECG.lote.n += w; ECG.lote.f = Math.max(ECG.lote.f, f); }   // 16/10: 150 -> 90 ms (os segundos espalhados batem cada um)
+    else { ECG.lote = { n: w, f: f, t0: ag, feito: false }; ECG.lotes.push([Date.now(), w]); }
     ECG.lotes[ECG.lotes.length - 1][1] = ECG.lote.n;
-    ECG.bat.push(Date.now()); ECG.n++;
-    var pz = pulsoDoEvento(ev); pz.f = f; PULSOS.push(pz); NUC.nPontos = (NUC.nPontos || 0) + 1; if (PULSOS.length > PULSOS_MAX) PULSOS.shift();   // o ponto deste evento no vortex
+    ECG.bat.push([Date.now(), w]); ECG.n += w;
+    // o ponto deste evento no vortex; 16/10: um evento de GRUPO (n funcionarios diferentes) acende ate 8 pontos - o enxame que ele pediu
+    var np = ev.grupo ? Math.min(8, w) : 1;
+    for (var ipz = 0; ipz < np; ipz++) { var pz = pulsoDoEvento(ev, ipz); pz.f = f; PULSOS.push(pz); }
+    NUC.nPontos = (NUC.nPontos || 0) + np; if (PULSOS.length > PULSOS_MAX) PULSOS.splice(0, PULSOS.length - PULSOS_MAX);
   });
-  EXTRA.coracao = function () { return { eventos: ECG.n, batidas: ECG.nLotes, na_fila: ECG.fila.length, bpm: ECG.bat.length, ultimo_lote: ECG.lote ? ECG.lote.n : 0 }; };
+  EXTRA.coracao = function () { return { eventos: ECG.n, batidas: ECG.nLotes, na_fila: ECG.fila.length, bpm: somaBat(), ultimo_lote: ECG.lote ? ECG.lote.n : 0 }; };
   T3B.on('ritmo', function (r) { if (ECG.normal == null && r && r.n > 0) ECG.normal = Math.max(20, r.n); });   // o ritmo normal da torre: comeca no do servidor
   var cenaEcg = null;
   (function () {
@@ -653,7 +673,7 @@
         ECG.acc -= 1; ECG.y.shift();
         ECG.y.push(ECG.fila.length ? ECG.fila.shift() : 0.012 * Math.sin(t * 9.1) + 0.008 * Math.sin(t * 23.7) + 0.006 * Math.sin(t * 2.3));
       }
-      var corte = Date.now() - 60000; while (ECG.bat.length && ECG.bat[0] < corte) ECG.bat.shift();
+      var corte = Date.now() - 60000; while (ECG.bat.length && ECG.bat[0][0] < corte) ECG.bat.shift();
       while (ECG.batT.length && ECG.batT[0] < corte) ECG.batT.shift();
       ctx.clearRect(0, 0, w, h);
       porCamada(ctx, s, 'grelha', '', grelha);
@@ -662,7 +682,7 @@
       // 05/10 (ele: "vai mudar de cores quando a velocidade muda"): verde calmo, ouro activo, vermelho acelerado (batidas por minuto)
       // 08/10 (OBRA 11): a cor pela MUDANCA de velocidade (ele: "vai mudar de cores quando a velocidade muda") - contra o ritmo normal da
       // torre (media dos ultimos ~20 min), nao contra numeros fixos (de dia a torre fica sempre acima de 90/min e era sempre vermelho)
-      var bpm = NUC.ritmo && NUC.ritmo.n != null ? NUC.ritmo.n : ECG.bat.length;
+      var bpm = NUC.ritmo && NUC.ritmo.n != null ? NUC.ritmo.n : somaBat();
       if (ECG.normal != null) ECG.normal += (Math.max(20, bpm) - ECG.normal) * Math.min(1, dt / 1200);
       var nor = ECG.normal || 40, estado = bpm >= nor * 1.5 ? 2 : bpm >= nor * 0.7 ? 1 : 0, RGB3 = ['63,214,154', '242,194,48', '255,90,95'], g = ECG.grad;
       if (!g || ECG.gradW !== w || ECG.gradE !== estado) { g = ECG.grad = ctx.createLinearGradient(X0, 0, w, 0); g.addColorStop(0, 'rgba(' + RGB3[estado] + ',0)'); g.addColorStop(0.35, 'rgba(' + RGB3[estado] + ',.55)'); g.addColorStop(1, 'rgba(' + RGB3[estado] + ',1)'); ECG.gradW = w; ECG.gradE = estado; }
@@ -1264,7 +1284,8 @@
   });
   aoReagir('equalizador', function (ev, r) {
     var n = r.andar; if (n == null) return;
-    EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.35 * (r.forca || 0.5)); EQ.ultimoAndar = n;
+    // 16/10: o salto cresce com as accoes reais do evento (log: 1 -> x1, 8 -> x4 no maximo) - 30 regras que correram no andar saltam mais
+    EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.35 * (r.forca || 0.5) * Math.min(4, 1 + Math.log2(nDe(ev)))); EQ.ultimoAndar = n;
     sujar(cenaEq, 2500);
   });
   EXTRA.equalizador = function () { var o = {}; Object.keys(EQ.salto).forEach(function (n) { if (EQ.salto[n] > 0.01) o[n] = Math.round(EQ.salto[n] * 100) / 100; }); return { saltos: o, ultimo: EQ.ultimoAndar }; };

@@ -28,7 +28,8 @@
   // antenas, imprensa e dados -> globo; ideias, inovacao, pesquisa, ensaios, validacao, treino e ciclo de vida -> laboratorio;
   // formacao, compras, logistica e continuidade -> turnos (as pessoas); o atrio (a propria pagina e o predio) -> numeros.
   var LAB_EXTRA = ['ideias', 'inovacao', 'comite_produto', 'pesquisa', 'registo_ensaios', 'validacao', 'treinamento', 'ciclo_vida'];
-  var FORCA = { mudou: 1, falou: 0.85, escreveu: 0.6, recado: 0.75, visita: 0.9, batimento: 0.5, avaria: 1, consertou: 1, genes: 0.8, turno: 0.7, cotacao: 0.35 };
+  var FORCA = { mudou: 1, falou: 0.85, escreveu: 0.6, recado: 0.75, visita: 0.9, batimento: 0.5, avaria: 1, consertou: 1, genes: 0.8, turno: 0.7, cotacao: 0.35,
+    regras: 0.7, tratou: 0.7, frota: 0.55, claude: 0.8, ensaio: 0.75 };   // 16/10: as fontes novas (regras que correram, pedidos tratados, frota gratis, andares Claude, laboratorio de selecao)
   var H = {
     velocimetro: { titulo: 'Velocímetro (o dia)', galeria: 'G18', naPagina: false, onde: 'coluna da esquerda · P&L (and. 47)', esps: ['pnl'],
       programas: ['numeros_reais', 'binance_real', 'cotas_real', 'painel', 'realizado', 'papel_cripto', 'fecho', 'resultados'],

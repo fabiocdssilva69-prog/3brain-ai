@@ -223,22 +223,33 @@
   // sai a hora em que aconteceu MAIS um atraso fixo PUB.D (o relogio diferido). A 1.a leitura toca ja os ultimos 6 min; se uma
   // fotografia chegar tarde, o atraso estica (nunca encolhe: a ordem mantem-se). A torre no PC (ao vivo) nao muda.
   var PUB = { D: null }, PUB_ARRANQUE_MS = 6 * 60 * 1000;
+  // 16/10: a hora a que cada evento CHEGOU a torre (c, do servidor) - e por ela que a copia publica toca, como a torre do PC: um lote
+  // que chegou de uma vez (os genes da previa, calculados ao longo de 10 min e escritos no fim) toca quando chegou, nao espalhado
+  // pelo passado (antes esticava o atraso de tudo o resto). Um evento que chegou ate 10 s depois de acontecer toca a SUA hora (o
+  // segundo exacto dentro da volta do varrimento); sem c (fotografias antigas): a hora do evento. PURA (testes_t3b.js).
+  // <chegada-puro>
+  function msDeChegada(e) {
+    var c = Number(e && e.c) * 1000, m = Number(e && e.ms);
+    if (!(isFinite(c) && c > 0)) return isFinite(m) && m > 0 ? m : 0;
+    return (isFinite(m) && m > 0 && c - m >= -2000 && c - m <= 10000) ? m : c;
+  }
+  // </chegada-puro>
   function tocarPublicado(evs, primeira) {
-    var agora = Date.now(), ok = evs.filter(function (e) { return isFinite(e.ms) && e.ms > 0; });
+    var agora = Date.now(), ok = evs.filter(function (e) { e.mc = msDeChegada(e); return isFinite(e.mc) && e.mc > 0; });
     if (!ok.length) return;
-    ok.sort(function (a, b) { return a.ms - b.ms; });
-    var maxMs = ok[ok.length - 1].ms;
+    ok.sort(function (a, b) { return a.mc - b.mc; });
+    var maxMs = ok[ok.length - 1].mc;
     if (primeira) {                                           // o que e mais velho que a janela de arranque fica como historia
-      var velhos = ok.filter(function (e) { return e.ms < maxMs - PUB_ARRANQUE_MS; });
+      var velhos = ok.filter(function (e) { return e.mc < maxMs - PUB_ARRANQUE_MS; });
       if (velhos.length) { velhos.forEach(function (e) { e.historia = true; }); filaDeCartoes(velhos); T3B.emit('eventos', velhos); }
-      ok = ok.filter(function (e) { return e.ms >= maxMs - PUB_ARRANQUE_MS; });
+      ok = ok.filter(function (e) { return e.mc >= maxMs - PUB_ARRANQUE_MS; });
       if (!ok.length) return;
     }
-    if (PUB.D == null || ok[0].ms + PUB.D < agora - 2000) PUB.D = agora - ok[0].ms;
+    if (PUB.D == null || ok[0].mc + PUB.D < agora - 2000) PUB.D = agora - ok[0].mc;
     var grupos = [], porT = {};
-    ok.forEach(function (e) { var k = String(e.t || ''); if (!porT[k]) { porT[k] = []; grupos.push(porT[k]); } porT[k].push(e); });
+    ok.forEach(function (e) { var k = String(Math.floor(e.mc / 1000)); if (!porT[k]) { porT[k] = []; grupos.push(porT[k]); } porT[k].push(e); });
     grupos.forEach(function (g) {
-      var atraso = g[0].ms + PUB.D - agora;
+      var atraso = g[0].mc + PUB.D - agora;
       var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); };
       if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
     });
@@ -267,26 +278,36 @@
   // fotografia de 2 em 2 min e as batidas tocam em diferido) nao batiam. Agora ha UM contador: os eventos que a pagina tocou no
   // ultimo minuto, quantos funcionarios diferentes e por andar - o cabecalho, o coracao, o vortex, o equalizador e o predio mostram
   // o mesmo, e e o das batidas que se veem. O passado que a 1.a leitura traz (na torre do PC) conta pela hora dele. PURA: ritmoDosTocados.
+  // 16/10 (ele: "vejo 10, 15 eventos por minuto, quando era para ter bem mais"): cada evento traz n = as accoes reais que junta (os
+  // genes de um lab num minuto, as regras de um ficheiro de testes, as linhas novas de um contratado) e grupo = 1 quando sao n
+  // funcionarios diferentes. O numero e a SOMA dos n (o servidor conta igual: torre_vivo.ritmo_do_anel) e os funcionarios contam os
+  // n dos grupos; um funcionario que age varias vezes conta uma. Os registos (eventos no fio) ficam ao lado, para diagnostico.
   // <ritmo-puro>
+  function nDoEvento(e) { var v = Number(e && e.n); return isFinite(v) && v >= 1 ? Math.floor(v) : 1; }
   function ritmoDosTocados(log, agora, janelaMs) {
     janelaMs = janelaMs || 60000;
-    var n = 0, ids = {}, nIds = 0, porAndar = {};
+    var n = 0, reg = 0, ids = {}, nIds = 0, extra = 0, porAndar = {};
     (log || []).forEach(function (x) {
       if (!x || !(agora - x.t <= janelaMs) || x.t > agora + 1000) return;
-      n++;
-      if (x.id != null && !ids[x.id]) { ids[x.id] = 1; nIds++; }
-      if (x.andar != null) porAndar[x.andar] = (porAndar[x.andar] || 0) + 1;
+      var k = nDoEvento(x);
+      n += k; reg++;
+      if (x.g) extra += k;
+      else if (x.id != null && !ids[x.id]) { ids[x.id] = 1; nIds++; }
+      if (x.andar != null) porAndar[x.andar] = (porAndar[x.andar] || 0) + k;
     });
-    return { n: n, quem: nIds, porAndar: porAndar };
+    return { n: n, registos: reg, quem: nIds + extra, porAndar: porAndar };
   }
   // </ritmo-puro>
+  T3B.nDoEvento = nDoEvento;
   var TOCADOS = [];
   T3B.on('eventos', function (g) {
     var agora = Date.now();
     (g || []).forEach(function (e) {
       if (!e) return;
-      if (e.historia) { if (window.T3B_PUBLICADO || !(e.ms > 0)) return; TOCADOS.push({ t: e.ms, id: e.id, andar: e.andar }); }
-      else TOCADOS.push({ t: agora, id: e.id, andar: e.andar });
+      var x = { t: agora, id: e.id, andar: e.andar, n: nDoEvento(e), g: e.grupo ? 1 : 0 };
+      // o passado que a 1.a leitura traz (torre do PC) conta pela hora a que CHEGOU a torre (c; sem ele, a do evento) - igual ao servidor
+      if (e.historia) { if (window.T3B_PUBLICADO) return; var c = Number(e.c) * 1000; x.t = isFinite(c) && c > 0 ? c : e.ms; if (!(x.t > 0)) return; }
+      TOCADOS.push(x);
     });
     if (TOCADOS.length > 4000) TOCADOS.splice(0, TOCADOS.length - 4000);
   });
@@ -299,6 +320,7 @@
     // 16/10: na copia publica, a fotografia parada (o servidor do PC nao responde ao publicar) diz-se - nunca um numero velho calado
     var parada = window.T3B_PUBLICADO && E.pubEmMudou && agora - E.pubEmMudou > 4 * 60000 && E.pubEm;
     txt($('b_ritmo'), r.n + ' ev · ' + r.quem + ' func.' + (parada ? ' · fotografia parada desde ' + String(E.pubEm).slice(-8, -3) : ''));
+    var br = $('b_ritmo'); if (br) br.title = r.n + ' acções de funcionários no último minuto (' + r.registos + ' eventos no fio; um lote de genes ou de regras conta cada um) · ' + r.quem + ' funcionários diferentes' + (r.servidor != null ? ' · servidor: ' + r.servidor : '');
     T3B.emit('ritmo', r);
   }, 1000);
 
@@ -1099,7 +1121,8 @@
     var bw = w / 20;
     caixas.forEach(function (v, i) { var bh = v ? Math.max(3, v / mx * (h - 4)) : 1; g.fillStyle = i === 19 ? '#ffdc6a' : v ? 'rgba(242,194,48,.75)' : 'rgba(255,255,255,.08)'; g.fillRect(i * bw + 1, h - 1 - bh, bw - 2, bh); });
   }
-  function rotuloDoTipo(k) { return ({ escreveu: 'escreveu', mudou: 'mudou', falou: 'falou', visita: 'visita', recado: 'recado', batimento: 'bateu', numero: 'número', avaria: 'avaria', consertou: 'consertou', genes: 'genes', turno: 'turno' })[k] || k || ''; }
+  function rotuloDoTipo(k) { return ({ escreveu: 'escreveu', mudou: 'mudou', falou: 'falou', visita: 'visita', recado: 'recado', batimento: 'bateu', numero: 'número', avaria: 'avaria', consertou: 'consertou', genes: 'genes', turno: 'turno',
+    regras: 'regras correram', tratou: 'tratou pedidos', frota: 'frota grátis', claude: 'andar Claude', ensaio: 'mediu regras' })[k] || k || ''; }   // 16/10: as fontes novas
   function identidade(id, e) {
     var q = T3B.quem(id);
     if (q) return q;
