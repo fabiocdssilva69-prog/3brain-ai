@@ -345,7 +345,8 @@
     LT.forEach(function (x) { if (x[1] > enx) enx = x[1]; });
     U.txt($('nu_kn'), evm + ' eventos/min');
     // 08/10 (OBRA 11): o vortex passou a ser CADA evento (um ponto cada); as passagens continuam (os fios)
-    if (leg) leg.innerHTML = '<i><b>' + evm + '</b> eventos/min · 1 ponto cada</i><i>maior enxame <b>' + enx + '</b> · ' + pm + ' passagens</i><i>' + (r.quem || 0) + ' funcionários mexeram</i>' +
+    // 16/10 17h: eventos/min na media de 5 min (cada evento uma batida); as accoes (os genes, as regras) ao lado
+    if (leg) leg.innerHTML = '<i><b>' + (Number(evm) || 0) + '</b> eventos/min · ' + (Number(r.acoes != null ? r.acoes : evm) || 0) + ' acções/min</i><i>maior enxame <b>' + (Number(enx) || 0) + '</b> · ' + (Number(pm) || 0) + ' passagens</i><i>' + (Number(r.quem) || 0) + ' funcionários mexeram</i>' +
       (u ? '<i>última: <b>' + U.escH(TX.cortar(TX.limpar(u.k === 'recado' ? (u.de_nome || u.quem || '') + ' → ' + (u.para_nome || u.para_sector || '') : (u.quem || u.id) + (u.para_nome ? ' → ' + u.para_nome : '')), 44)) + '</b></i>' : '');
     mini('hm_nucleo', [['', fmt(evm, 0), 'eventos/min'], ['', fmt(pm, 0), 'passagens/min'], ['', fmt(r.quem || 0, 0), 'funcionários']]);
   }
@@ -617,19 +618,20 @@
   var ECG = { y: null, fila: [], bat: [], ultimo: 0, n: 0, acc: 0, tBat: 0, lote: null, lotes: [], nLotes: 0, normal: null, batT: [] };
   var PQRST = [0, 0.04, 0.08, 0.04, 0, 0, -0.1, 1, -0.42, -0.08, 0, 0.06, 0.12, 0.16, 0.12, 0.05, 0];
   var PQRST_CURTO = PQRST.filter(function (v, i) { return i % 2 === 0; });   // 16/10: a batida curta de uma rajada (9 amostras, 0,15 s)
-  // 16/10: ECG.bat guarda [hora, n] - um evento com n accoes (um lote de regras, os genes de um lab) conta n
-  function somaBat() { var s = 0; for (var i = 0; i < ECG.bat.length; i++) s += ECG.bat[i][1] || 1; return s; }
+  // 16/10 17h (ele: "o coracao bate errado, as vezes 300/min, as vezes 10/min"): CADA EVENTO E UMA BATIDA - ECG.bat guarda [hora,
+  // 1] e o lote conta EVENTOS; as accoes de um evento (os 300 genes de um lab, as 30 regras de um ficheiro) fazem a batida mais FORTE,
+  // nao mais batidas (um lote de 300 genes dava 8 batidas seguidas e o numero saltava para 345)
+  function somaBat() { return ECG.bat.length; }
   aoReagir('coracao', function (ev, r) {
     var w = nDe(ev);
-    if (ev.historia) { ECG.bat.push([ev.ms || Date.now(), w]); ECG.n += w; return; }   // o passado (a 1.a leitura): conta, mas nao bate nem acende
+    if (ev.historia) { ECG.bat.push([ev.ms || Date.now(), 1]); ECG.n += 1; return; }   // o passado (a 1.a leitura): conta, mas nao bate nem acende
     var f = clamp(r.forca || 0.5, 0.2, 1) * (ev.k === 'batimento' ? 1.4 : 1), ag = agoraMs();
     // 08/10 (OBRA 11): o que chega JUNTO (o mesmo lote do /vivo.json) e UMA batida, mais forte quanto mais coisas mexem. Antes cada
     // evento punha uma batida inteira (0,3 s) na fila: uma rajada de 10 deixava o coracao 3,5 s atrasado do vortex e dos cartoes
-    // 16/10: o lote conta as ACCOES (n de cada evento) - 30 regras que correram juntas sao 8 batidas curtas e a ultima mais forte
-    if (ECG.lote && ag - ECG.lote.t0 < 90) { ECG.lote.n += w; ECG.lote.f = Math.max(ECG.lote.f, f); }   // 16/10: 150 -> 90 ms (os segundos espalhados batem cada um)
-    else { ECG.lote = { n: w, f: f, t0: ag, feito: false }; ECG.lotes.push([Date.now(), w]); }
+    if (ECG.lote && ag - ECG.lote.t0 < 90) { ECG.lote.n += 1; ECG.lote.acoes += w; ECG.lote.f = Math.max(ECG.lote.f, f); }   // 16/10: 150 -> 90 ms (os segundos espalhados batem cada um)
+    else { ECG.lote = { n: 1, acoes: w, f: f, t0: ag, feito: false }; ECG.lotes.push([Date.now(), 1]); }
     ECG.lotes[ECG.lotes.length - 1][1] = ECG.lote.n;
-    ECG.bat.push([Date.now(), w]); ECG.n += w;
+    ECG.bat.push([Date.now(), 1]); ECG.n += 1;
     // o ponto deste evento no vortex; 16/10: um evento de GRUPO (n funcionarios diferentes) acende ate 8 pontos - o enxame que ele pediu
     var np = ev.grupo ? Math.min(8, w) : 1;
     for (var ipz = 0; ipz < np; ipz++) { var pz = pulsoDoEvento(ev, ipz); pz.f = f; PULSOS.push(pz); }
@@ -658,13 +660,15 @@
         // 16/10 (ele: "o ritmo ainda nao esta certo"; medido: 24 eventos/min davam 11 batidas): cada evento do lote BATE - ate 8 por
         // lote, em batidas curtas seguidas; numa rajada maior a ultima e mais forte. O numero e as batidas que se veem sao os mesmos.
         var Lb = ECG.lote, k = Math.min(8, Math.max(1, Lb.n)), ampB = clamp(Math.max(0.75, Lb.f), 0.75, 1.2);
+        // 16/10 17h: muitas accoes num evento (um lab de 300 genes) = a batida mais forte, nunca mais batidas
+        var ampA = Lb.acoes > Lb.n ? Math.min(1.55, ampB * (1 + 0.15 * Math.log2(Lb.acoes / Math.max(1, Lb.n)))) : ampB;
         Lb.feito = true; ECG.nLotes += k; ECG.ultimo = agoraMs();
         for (var ibt = 0, agB = Date.now(); ibt < k; ibt++) ECG.batT.push(agB);
         if (ECG.fila.length > 60) ECG.fila.length = 60;          // no maximo 1 s de batidas por desenhar (nunca fica para tras)
         if (ECG.fila.length) ECG.fila.push(0);
-        if (k === 1) PQRST.forEach(function (v) { ECG.fila.push(v * ampB); });
+        if (k === 1) PQRST.forEach(function (v) { ECG.fila.push(v * ampA); });
         else for (var jb = 0; jb < k; jb++) {
-          var a2 = jb === k - 1 && Lb.n > 8 ? Math.min(1.55, ampB * (1 + 0.32 * Math.log2(Lb.n / 8 + 1))) : ampB;
+          var a2 = jb === k - 1 ? Math.max(ampA, Lb.n > 8 ? Math.min(1.55, ampB * (1 + 0.32 * Math.log2(Lb.n / 8 + 1))) : ampB) : ampB;
           PQRST_CURTO.forEach(function (v) { ECG.fila.push(v * a2); }); ECG.fila.push(0);
         }
       }
@@ -701,16 +705,16 @@
       rot(ctx, ['calmo', 'activo', 'acelerado'][estado], 46, h * 0.5 + 5, 'rgba(' + RGB3[estado] + ',.85)', 7.5, 'left', 600);
       var ulP = PULSOS[PULSOS.length - 1];                                     // (Q5 B7) o nome do sector pulsa a cada batida
       if (ulP && ulP.nome) { var idU = (agoraMs() - ulP.t) / 1000; if (idU < 2.2) { ctx.globalAlpha = 1 - idU / 2.2; rot(ctx, TX.cortar(ulP.nome, 24), 8, h * 0.5 + 20, ulP.cor, 8 + 2.5 * Math.max(0, 1 - idU * 3), 'left', 700);
-        if (ECG.lote && ECG.lote.n > 1) rot(ctx, ECG.lote.n + ' ao mesmo tempo', 8, h * 0.5 + 31, 'rgba(255,255,255,.75)', 7.5, 'left', 600);   // o enxame
+        if (ECG.lote && (ECG.lote.n > 1 || ECG.lote.acoes > 1)) rot(ctx, ECG.lote.n > 1 ? ECG.lote.n + ' ao mesmo tempo' : ECG.lote.acoes + ' acções num evento', 8, h * 0.5 + 31, 'rgba(255,255,255,.75)', 7.5, 'left', 600);   // o enxame
         ctx.globalAlpha = 1; } }
       var hx = 70, hy = h * 0.5 - 2, hs = 5.2 * esc;
       ctx.fillStyle = bt > 0.05 ? '#ff7b7f' : 'rgba(255,90,95,.75)';
       ctx.beginPath(); ctx.moveTo(hx, hy + hs * 0.9); ctx.bezierCurveTo(hx - hs * 1.6, hy - hs * 0.2, hx - hs * 0.6, hy - hs * 1.3, hx, hy - hs * 0.45); ctx.bezierCurveTo(hx + hs * 0.6, hy - hs * 1.3, hx + hs * 1.6, hy - hs * 0.2, hx, hy + hs * 0.9); ctx.fill();
       if (bt > 0.05) luz(ctx, C.mau, hx, hy, 11, bt * 0.8);
       // 16/10 (medido: 24 eventos/min davam 11 batidas - os do mesmo segundo batem juntos): as batidas aparecem ao lado dos eventos
-      if (s.desenhos % 30 === 0) { var nbt = ECG.batT.length;   // 16/10: as batidas que se veem (cada evento bate)
-        mini('hm_coracao', [['', fmt(bpm, 0), 'eventos/min'], ['', fmt(nbt, 0), 'batidas/min'], ['total', fmt(ECG.n, 0)]]);
-        var blc = $('bl_coracao'); if (blc) blc.title = bpm + ' eventos no último minuto · ' + nbt + ' batidas (cada evento bate; numa rajada, até 8 batidas curtas)'; }
+      if (s.desenhos % 30 === 0) { var nbt = ECG.batT.length, acm = NUC.ritmo && NUC.ritmo.acoes != null ? NUC.ritmo.acoes : 0;   // 16/10: as batidas que se veem (cada evento bate)
+        mini('hm_coracao', [['', fmt(bpm, 0), 'eventos/min'], ['', fmt(acm, 0), 'acções/min'], ['', fmt(nbt, 0), 'batidas/min']]);
+        var blc = $('bl_coracao'); if (blc) blc.title = bpm + ' eventos por minuto (média dos últimos ' + ((NUC.ritmo && NUC.ritmo.janela_min) || 5) + ' min; cada evento é uma batida) · ' + acm + ' acções/min (um lote de genes conta cada um) · ' + nbt + ' batidas no último minuto (numa rajada, até 8 batidas curtas)'; }
     } });
   })();
 
