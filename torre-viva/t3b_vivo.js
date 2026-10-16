@@ -185,9 +185,9 @@
     var historia = !E.vivoSeq;                                // a 1.a leitura traz os ultimos 60 (passado): nao e um enxame de agora
     var evs = lista(d.eventos).filter(function (e) { return e.s > E.vivoSeq; });
     E.vivoSeq = d.seq;
-    E.ritmo = { n: d.ritmo_60s || 0, quem: d.quem_60s || 0, porAndar: obj(d.por_andar_60s), agora: d.agora };
+    // 15/10: o ritmo do SERVIDOR fica so para diagnostico (o cabecalho, o coracao e o vortex usam o dos eventos TOCADOS, abaixo)
+    E.ritmoServidor = { n: d.ritmo_60s || 0, quem: d.quem_60s || 0, porAndar: obj(d.por_andar_60s), agora: d.agora };
     if (d.cota) E.cota = d.cota;                                  // 04/10: o modo da cota (a ampulheta)
-    txt($('b_ritmo'), (d.ritmo_60s || 0) + ' ev · ' + (d.quem_60s || 0) + ' func.');
     evs.forEach(function (e) {
       e.ms = epoch(e.t);
       ultimoPorId[e.id] = Math.max(ultimoPorId[e.id] || 0, e.ms || Date.now());
@@ -199,7 +199,6 @@
       else if (historia) { evs.forEach(function (e) { e.historia = true; }); filaDeCartoes(evs); T3B.emit('eventos', evs); }
       else repetirNoRitmo(evs);
     }
-    T3B.emit('ritmo', E.ritmo);
   }
   // 09/10 00:3x (ele, a ver a torre-viva no PC-HuntAI: "os hologramas travam e nao sincronizam"). MEDIDO: a fotografia publica
   // trazia ~2 min de eventos e chegava de ~9 em 9 min; a 1.a leitura era "historia" (nada reagia) e cada lote novo era
@@ -239,6 +238,45 @@
       if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
     });
   }
+
+  // 15/10 (ele: "nao sei se a quantidade de eventos por minuto da torre esta sincronizada, precisa sincronizar esses eventos").
+  // MEDIDO: o numero (cabecalho, coracao, vortex) era o ritmo_60s do SERVIDOR e as batidas sao os eventos que a pagina TOCA - duas
+  // fontes. Com o servidor lento (23:38: 28 eventos tocados num minuto e o numero a dizer 2) e na copia publica (o numero era o da
+  // fotografia de 2 em 2 min e as batidas tocam em diferido) nao batiam. Agora ha UM contador: os eventos que a pagina tocou no
+  // ultimo minuto, quantos funcionarios diferentes e por andar - o cabecalho, o coracao, o vortex, o equalizador e o predio mostram
+  // o mesmo, e e o das batidas que se veem. O passado que a 1.a leitura traz (na torre do PC) conta pela hora dele. PURA: ritmoDosTocados.
+  // <ritmo-puro>
+  function ritmoDosTocados(log, agora, janelaMs) {
+    janelaMs = janelaMs || 60000;
+    var n = 0, ids = {}, nIds = 0, porAndar = {};
+    (log || []).forEach(function (x) {
+      if (!x || !(agora - x.t <= janelaMs) || x.t > agora + 1000) return;
+      n++;
+      if (x.id != null && !ids[x.id]) { ids[x.id] = 1; nIds++; }
+      if (x.andar != null) porAndar[x.andar] = (porAndar[x.andar] || 0) + 1;
+    });
+    return { n: n, quem: nIds, porAndar: porAndar };
+  }
+  // </ritmo-puro>
+  var TOCADOS = [];
+  T3B.on('eventos', function (g) {
+    var agora = Date.now();
+    (g || []).forEach(function (e) {
+      if (!e) return;
+      if (e.historia) { if (window.T3B_PUBLICADO || !(e.ms > 0)) return; TOCADOS.push({ t: e.ms, id: e.id, andar: e.andar }); }
+      else TOCADOS.push({ t: agora, id: e.id, andar: e.andar });
+    });
+    if (TOCADOS.length > 4000) TOCADOS.splice(0, TOCADOS.length - 4000);
+  });
+  setInterval(function () {
+    var agora = Date.now();
+    while (TOCADOS.length && agora - TOCADOS[0].t > 120000) TOCADOS.shift();
+    var r = ritmoDosTocados(TOCADOS, agora);
+    r.agora = new Date(agora).toISOString(); r.servidor = E.ritmoServidor ? E.ritmoServidor.n : null;
+    E.ritmo = r;
+    txt($('b_ritmo'), r.n + ' ev · ' + r.quem + ' func.');
+    T3B.emit('ritmo', r);
+  }, 1000);
 
   // A QUEM SE DA UM NUMERO QUE MUDOU: a quem produz o ficheiro de onde ele vem. Vence o candidato que escreveu mais
   // recentemente (3 min); sem nenhum, o Analista do torre.json - que foi, sem duvida, quem escreveu o numero no ecra.
