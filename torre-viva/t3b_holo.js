@@ -1275,7 +1275,7 @@
           ctx.strokeStyle = C.vi; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(2, ye); ctx.lineTo(L0 - 2, ye); ctx.stroke(); ctx.setLineDash([]);
           // (16/10 20h40: "amontoado" - a etiqueta comprida pisava os precos) curta, e no lado SEM precos: os de compra estao a direita
           // do centro (cx+4) e os de venda a esquerda (ate cx-4) - abaixo do meio vai a esquerda, acima vai a direita
-          var etqE = TX.cortar('ent. ' + (ent >= 1000 ? fmt(ent, 0) : px(ent)), Math.max(6, Math.floor((cx - 4) / 4.4))), yE = clamp(ye - 2.5, TOPO + 18, h - 4);
+          var vE = ent >= 1000 ? fmt(ent, 0) : px(ent), etqE = ('ent. ' + vE).length * 4.4 <= cx - 4 ? 'ent. ' + vE : vE, yE = clamp(ye - 2.5, TOPO + 18, h - 4);   // (sem lugar para 'ent.': so o preco - a linha violeta ja diz que e a entrada)
           if (ye > mid) rot(ctx, etqE, 4, yE, C.vi, 7.5, 'left', 700); else rot(ctx, etqE, L0 - 4, yE, C.vi, 7.5, 'right', 700);
         }
         // a linha do preco: corre sempre (a marcha da linha tracejada) e brilha ao meio
