@@ -1275,7 +1275,7 @@
           ctx.strokeStyle = C.vi; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(2, ye); ctx.lineTo(L0 - 2, ye); ctx.stroke(); ctx.setLineDash([]);
           // (16/10 20h40: "amontoado" - a etiqueta comprida pisava os precos) curta, e no lado SEM precos: os de compra estao a direita
           // do centro (cx+4) e os de venda a esquerda (ate cx-4) - abaixo do meio vai a esquerda, acima vai a direita
-          var etqE = TX.cortar('ent. ' + px(ent), Math.max(6, Math.floor((cx - 8) / 4.6))), yE = clamp(ye - 2.5, TOPO + 18, h - 4);
+          var etqE = TX.cortar('ent. ' + (ent >= 1000 ? fmt(ent, 0) : px(ent)), Math.max(6, Math.floor((cx - 4) / 4.4))), yE = clamp(ye - 2.5, TOPO + 18, h - 4);
           if (ye > mid) rot(ctx, etqE, 4, yE, C.vi, 7.5, 'left', 700); else rot(ctx, etqE, L0 - 4, yE, C.vi, 7.5, 'right', 700);
         }
         // a linha do preco: corre sempre (a marcha da linha tracejada) e brilha ao meio
@@ -1344,6 +1344,7 @@
     if (semente && vidaMin < jm / 60000) Object.keys(semente).forEach(function (n) { var v = Number(semente[n]) || 0; if (v > (fora[n] || 0)) fora[n] = v; });
     return fora;
   }
+  function nomeCurtoAndar(nm) { return String(nm || '').replace(/^Lab\.?\s+/i, '').replace(/\s+e\s+Mundo\b/i, '').replace(/^Laborat\S*\s+(de\s+|da\s+)?/i, '').trim(); }
   function alturaDoAndar(porMin, maxPorMin, salto) {
     var r = maxPorMin > 0 ? Math.sqrt(Math.max(0, porMin) / maxPorMin) : 0;
     return Math.max(0.02, Math.min(1, 0.03 + 0.85 * r + 0.35 * (salto || 0)));
@@ -1387,7 +1388,7 @@
       ctx.clearRect(0, 0, w, h);
       var N = EQ.ns.length; if (!N) { rot(ctx, 'a ler os andares…', w / 2, h / 2 + 8, C.dim, 9, 'center', 500); return; }
       // 07/10 (Q5 B5, ele: "as legendas embaixo pode tirar que buga"): sem a linha de baixo, as barras ganham a altura
-      var x0 = 6, bw = (w - 12) / N, base = h - 4, alt = base - TOPO - 14, act = (ACT.equalizador || {}).base || 0, larg = Math.max(1, bw - 1.2);
+      var x0 = 6, bw = (w - 12) / N, base = h - 4, alt = base - TOPO - 26, act = (ACT.equalizador || {}).base || 0, larg = Math.max(1, bw - 1.2);   // (2 linhas de nomes em cima)
       var picos = [], quentes = [], acimaSec = [];
       if (s.corEqChave !== EQ.ns.join(',')) { COR_EQ = {}; s.corEqChave = EQ.ns.join(','); }
       for (var i = 0; i < N; i++) {
@@ -1408,11 +1409,13 @@
       var top3 = Object.keys(EQ.rit).sort(function (a, b) { return EQ.rit[b] - EQ.rit[a]; }).slice(0, 3);
       var col3 = (w - 12) / 3, max3 = Math.max(6, Math.floor((col3 - 6) / 4.6));
       if (!top3.length) rot(ctx, 'à espera do primeiro trabalho…', 6, TOPO + 9, C.dim, 7.5, 'left', 500);
-      // (16/10 20h40: o numero do andar e o nome nao cabiam - "1 21/min At...") o NOME do sector cortado ao que cabe, e o ritmo inteiro
+      // (16/10 20h40: o numero do andar e o nome nao cabiam - "Lab... 99/min") o MAIS activo numa linha inteira, os 2 seguintes por
+      // baixo, cada um na sua metade; o nome curto do andar ("Lab. Celulas III" -> "Celulas III") e o ritmo sempre inteiro
+      var cheio = Math.max(8, Math.floor((w - 12) / 4.6)), meio = Math.max(6, Math.floor(((w - 12) / 2 - 6) / 4.6));
       top3.forEach(function (nn, i) {
-        var an = T3B.andar ? T3B.andar(Number(nn)) : null, nm = an ? TX.limpar(an.sector || an.nome || ('and. ' + nn)) : 'and. ' + nn, rit = ' ' + fmt(EQ.rit[nn], 0) + '/min';
-        var cab = Math.max(3, max3 - rit.length - (i ? 0 : 2));
-        rot(ctx, (i ? '' : '▲ ') + TX.cortar(nm, cab) + rit, 6 + i * col3, TOPO + 9, i ? C.mute : C.ouroHi, 7.5, 'left', i ? 500 : 700);
+        var an = T3B.andar ? T3B.andar(Number(nn)) : null, nm = nomeCurtoAndar(an ? TX.limpar(an.nome || an.sector || '') : '') || ('and. ' + nn), rit = ' ' + fmt(EQ.rit[nn], 0) + '/min';
+        var lim = i ? meio : cheio, cab = Math.max(3, lim - rit.length - (i ? 0 : 2));
+        rot(ctx, (i ? '' : '▲ ') + TX.cortar(nm, cab) + rit, i ? 6 + (i - 1) * (w - 12) / 2 : 6, TOPO + (i ? 19 : 9), i ? C.mute : C.ouroHi, 7.5, 'left', i ? 500 : 700);
       });
       // 07/10 (Q5 B5, eq_sector: "a legenda pode aparecer conforme a reacao de cada setor acima do limite das barras"): o nome do
       // SECTOR por cima da barra que acabou de reagir - as 3 mais fortes, arrumadas para nao se taparem
