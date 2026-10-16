@@ -636,6 +636,8 @@
   // CAPITAL DA CASA e o EM ABERTO ao segundo, para cima e para baixo. O realizado (hoje, desde o inicio, o livro da mesa) so
   // muda quando uma operacao FECHA - esse nao se inventa. As accoes ficam no preco do ficheiro (nao ha fluxo gratis ao segundo).
   var AOVIVO = { pos: [], fluxos: {}, mid: {}, base: null, ult: 0, tPreco: 0, aberto: null, delta: 0 };
+  // 16/10 20h: o livro de ofertas (t3b_holo.js) le o mesmo preco ao vivo de cada posicao real que o cartao 'em aberto' usa
+  T3B.precoVivo = function (sym) { var m = AOVIVO.mid[String(sym || '')]; return (m > 0 && Date.now() - AOVIVO.tPreco < 30000) ? m : null; };
   function marcarAoVivo(T) {
     var r = obj(T.reactor), c = obj(r.conta), rc = casaReal(T);
     if (rc) {                                       // 10/10: a conta REAL - o em aberto e o que cada posicao vale a mais do que custou

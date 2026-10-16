@@ -1144,13 +1144,48 @@
   // aberta (sem cripto: BTC). Liga-se so com o painel a vista e aberto, e fecha com a aba escondida. A FITA ao lado: as
   // execucoes em papel (torre.json -> movimentacoes) e cada evento da Mesa com o nome de quem o fez - o nivel mais perto do
   // preco pisca a cada um (a reaccao).
-  var LIV = { sym: null, ws: null, b: [], a: [], mid: null, fita: [], fl: null, t: 0, falhas: 0, ultMsg: 0 };
-  function simboloDaMesa() {
-    var pos = lista(obj(obj(T3B.estado.T).reactor).posicoes).filter(function (p) { return p.cripto; }).sort(function (x, y) { return (Number(y.valor_usd) || 0) - (Number(x.valor_usd) || 0); })[0];
-    return pos ? String(pos.simbolo).replace(/USD$/, 'USDT') : 'BTCUSDT';
+  var LIV = { sym: null, ws: null, b: [], a: [], mid: null, fita: [], ordens: [], fl: null, t: 0, falhas: 0, ultMsg: 0 };
+  // <livro-puro>
+  // 16/10 20h (ele: "o livro de ofertas... nao esta mostrando os dados do seu sector, nao esta sincronizado - PRINCIPALMENTE O
+  // LIVRO DE OFERTAS"). MEDIDO na pagina: "AS NOSSAS POSICOES" eram MSTR e INDA (accoes do PAPEL, reactor.posicoes) e, sem cripto
+  // no papel, o livro era o do BTC por omissao; a fita lia as execucoes do papel (vazias desde 12/10). O sector dele e a Mesa de
+  // Operacoes (and. 63), e a Mesa e a CONTA REAL: as posicoes do executor (torre.json -> real.posicoes) com o ganho/perda ao preco
+  // AO VIVO (o mesmo calculo do cartao "em aberto": quantidade x preco - custo com a comissao), o livro da Binance de CADA uma em
+  // roda (15 s cada) e as ordens reais (real.ordens). Sem conta real activa: nenhuma posicao (nunca o papel). PURAS (testes_t3b.js).
+  function posicoesDaMesa(T, precoDe) {
+    var rl = (T && T.real) || {}, fora = [];
+    if (!rl.ativo || !Array.isArray(rl.posicoes)) return fora;
+    rl.posicoes.forEach(function (p) {
+      var q = Number(p && p.qty), cu = Number(p && p.custo_usdt), e = Number(p && p.entrada), s = String((p && p.simbolo) || '');
+      if (!s || !(q > 0)) return;
+      if (!(e > 0) && cu > 0) e = cu / q;
+      if (!(e > 0)) return;
+      var vivo = precoDe ? Number(precoDe(s)) : NaN, ag = Number(p.agora), px = vivo > 0 ? vivo : (ag > 0 ? ag : e);
+      var custo = cu > 0 ? cu : q * e, pnl = q * px - custo;
+      fora.push({ sym: s, base: s.replace(/USDT$/, ''), qty: q, entrada: e, custo: custo, nucleo: String(p.nucleo || ''), preco: px,
+        vivo: vivo > 0, pnl: pnl, pct: custo > 0 ? pnl / custo * 100 : 0 });
+    });
+    return fora.sort(function (a, b) { return b.custo - a.custo; });
   }
+  function simboloEmRoda(pos, agoraMs, rodaMs) {
+    if (!pos || !pos.length) return null;
+    return pos[Math.floor(Number(agoraMs) / (rodaMs || 15000)) % pos.length].sym;
+  }
+  function textoOrdem(o) {
+    if (!o) return '';
+    var hh = String(o.t || '').slice(11, 16), lado = o.lado === 'BUY' ? 'compra' : o.lado === 'SELL' ? 'venda' : String(o.lado || '').toLowerCase();
+    var b = String(o.simbolo || '').replace(/USDT$/, ''), u = Number(o.usdt);
+    var est = /preench|feita|fill/i.test(o.estado || '') ? '' : ' ' + ({ saltada: 'adiada', recusada: 'recusada', falhou: 'falhou' }[o.estado] || o.estado);
+    return (hh ? hh + ' ' : '') + lado + ' ' + b + (u > 0 ? ' ' + u.toFixed(2) : '') + est + (o.vezes > 1 ? ' ×' + o.vezes : '');
+  }
+  // </livro-puro>
+  var LIVRO_RODA_MS = 15000;
+  function precoVivoDe(s) { return T3B.precoVivo ? T3B.precoVivo(s) : (s === LIV.sym ? LIV.mid : null); }
+  function posMesa() { return posicoesDaMesa(T3B.estado.T, precoVivoDe); }
+  function simboloDaMesa() { return simboloEmRoda(posMesa(), Date.now(), LIVRO_RODA_MS) || 'BTCUSDT'; }
   function livroVisivel() { var h = $('h_livro'); return !!(h && !h.classList.contains('min') && !document.hidden && !gavetaAberta && !T3B.pequeno && !(T3B.estado.perto && !$('palco').classList.contains('holos-de-volta'))); }
   function aoLivro(d) { if (!d) return; LIV.b = (d.bids || []).slice(0, 6).map(function (x) { return [Number(x[0]), Number(x[1])]; }); LIV.a = (d.asks || []).slice(0, 6).map(function (x) { return [Number(x[0]), Number(x[1])]; }); if (LIV.b.length && LIV.a.length) LIV.mid = (LIV.b[0][0] + LIV.a[0][0]) / 2; LIV.ultMsg = Date.now(); LIV.falhas = 0; sujar(cenaLivro, 0); }
+  function trocarSimbolo(sym) { if (LIV.sym !== sym) { LIV.b = []; LIV.a = []; LIV.mid = null; LIV.tTroca = agoraMs(); } LIV.sym = sym; }
   function ligarLivro() {
     var quer = livroVisivel(), sym = simboloDaMesa();
     // 04/10: pela ligacao UNICA da pagina (t3b_ws.js) - mudar de simbolo ou esconder o painel e um SUBSCRIBE/UNSUBSCRIBE, nunca um
@@ -1158,36 +1193,37 @@
     if (window.T3BBinance) {
       var fl = quer ? sym.toLowerCase() + '@depth10@100ms' : null;
       if (LIV.fluxo && LIV.fluxo !== fl) { window.T3BBinance.largar(LIV.fluxo); LIV.fluxo = null; LIV.ws = null; }
-      if (fl && !LIV.fluxo) { LIV.sym = sym; LIV.fluxo = fl; LIV.ws = true; window.T3BBinance.assinar(fl, aoLivro); }
+      if (fl && !LIV.fluxo) { trocarSimbolo(sym); LIV.fluxo = fl; LIV.ws = true; window.T3BBinance.assinar(fl, aoLivro); }
       return;
     }
     // (fechar so uma ligacao ABERTA: fechar uma que ainda esta a ligar escreve um erro vermelho na consola do browser)
     if (LIV.ws && (!quer || LIV.sym !== sym)) { var w0 = LIV.ws; LIV.ws = null; w0.onclose = null; w0.onmessage = null; if (w0.readyState === 1) { try { w0.close(); } catch (e) { } } else w0.onopen = function () { try { w0.close(); } catch (e) { } }; }
     if (!quer || LIV.ws || LIV.falhas > 6) return;
-    LIV.sym = sym;
+    trocarSimbolo(sym);
     try {
       var ws = new WebSocket('wss://stream.binance.com:9443/ws/' + sym.toLowerCase() + '@depth10@100ms');
-      ws.onmessage = function (m) { try { var d = JSON.parse(m.data); LIV.b = (d.bids || []).slice(0, 6).map(function (x) { return [Number(x[0]), Number(x[1])]; }); LIV.a = (d.asks || []).slice(0, 6).map(function (x) { return [Number(x[0]), Number(x[1])]; }); if (LIV.b.length && LIV.a.length) LIV.mid = (LIV.b[0][0] + LIV.a[0][0]) / 2; LIV.ultMsg = Date.now(); LIV.falhas = 0; sujar(cenaLivro, 0); } catch (e) { } };
+      ws.onmessage = function (m) { try { aoLivro(JSON.parse(m.data)); } catch (e) { } };
       ws.onclose = function () { LIV.ws = null; LIV.falhas++; };
       ws.onerror = function () { if (ws.readyState === 1) { try { ws.close(); } catch (e) { } } };
       LIV.ws = ws;
     } catch (e) { LIV.falhas++; }
   }
-  setInterval(ligarLivro, 3000);
+  setInterval(ligarLivro, 1000);
+  // as ordens REAIS do executor (torre.json -> real.ordens, mercado/numeros_reais.py): a fita. Uma ordem nova acende o livro.
   T3B.on('torre', function (T) {
-    var mv = lista(obj(T.reactor).movimentacoes).slice(-6);
-    mv.forEach(function (m) { var k = m.t + m.evento + m.simbolo; if (LIV.vistos && LIV.vistos[k]) return; LIV.vistos = LIV.vistos || {}; LIV.vistos[k] = 1; LIV.fita.unshift({ t: String(m.evento || '') + ' ' + String(m.simbolo || ''), p: Number(m.preco || m.preco_usd), c: /venda|sai|fech/i.test(m.evento || '') ? C.mau : C.ok, nossa: 1 }); });
-    if (LIV.fita.length > 9) LIV.fita.length = 9;
+    var ords = lista(obj(T.real).ordens), topo = ords[0] ? (ords[0].t + ords[0].simbolo + ords[0].lado + ords[0].vezes) : '';
+    if (LIV._topoOrd && topo && topo !== LIV._topoOrd) LIV.fl = { t0: agoraMs(), lado: ords[0].lado === 'SELL' ? 'a' : 'b' };
+    LIV._topoOrd = topo; LIV.ordens = ords;
     sujar(cenaLivro, 0);
   });
   aoReagir('livro', function (ev) {
     var quem = TX.cortar(TX.limpar(ev.quem || TX.nomeDeId(ev.id)), 16);
-    LIV.fita.unshift({ t: quem + ' · ' + ({ escreveu: 'escreveu', mudou: 'mudou', falou: 'falou', recado: 'recado', visita: 'visita' })[ev.k] || ev.k, c: C.ouroHi });
+    LIV.fita.unshift({ t: quem + ' · ' + ({ escreveu: 'escreveu', mudou: 'mudou', falou: 'falou', recado: 'recado', visita: 'visita' })[ev.k] || ev.k, c: C.ouroHi, t0: agoraMs() });
     if (LIV.fita.length > 9) LIV.fita.length = 9;
     LIV.fl = { t0: agoraMs(), lado: /venda|perda|-/.test(ev.txt || '') ? 'a' : 'b' };
     sujar(cenaLivro, 900);
   });
-  EXTRA.livro = function () { return { simbolo: LIV.sym, niveis: LIV.b.length + LIV.a.length, fita: LIV.fita.length, ligado: !!LIV.ws }; };
+  EXTRA.livro = function () { var P = posMesa(); return { simbolo: LIV.sym, niveis: LIV.b.length + LIV.a.length, posicoes: P.map(function (p) { return p.base; }), real: P.length > 0, ordens: LIV.ordens.length, fita: LIV.fita.length, ligado: !!LIV.ws }; };
   var cenaLivro = null;
   (function () {
     var cv = canvasDe('h_livro'); if (!cv) return;
@@ -1200,13 +1236,14 @@
     var px = function (v) { return v >= 1000 ? fmt(v, 1) : v >= 1 ? fmt(v, 3) : fmt(v, 5); };
     cenaLivro = cena(cv, { id: 'livro', holo: $('h_livro'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
-      // 07/10 (Q5 B3, li_lado): o livro a esquerda (46%), as nossas posicoes a direita
+      // 07/10 (Q5 B3, li_lado): o livro a esquerda (46%), a Mesa (a conta real) a direita
       var L0 = Math.max(110, w * 0.46), top = TOPO + 12, bot = h - 3, mid = (top + bot) / 2, n = clamp(Math.floor((bot - top) / 2 / 11), 2, 6), rh = (bot - top) / (n * 2), cx = L0 / 2, agora = agoraMs();
+      var POS = posMesa(), P = POS.filter(function (x) { return x.sym === LIV.sym; })[0], iP = POS.indexOf(P);
       if (!LIV.b.length) {
-        // sem o livro (a ligar, ou a Binance fora): o melhor preco do reactor, se houver; nunca um painel vazio
-        var cr = obj(obj(window.__md && window.__md.S).cr), sy = String(LIV.sym || simboloDaMesa()).replace(/USDT$/, 'USD'), c = obj(cr[sy]);
-        rot(ctx, (LIV.sym || simboloDaMesa()) + ' · a ligar ao livro da Binance…', 8, mid, C.dim, 9, 'left', 500);
-        if (c.bin != null) rot(ctx, 'último ' + px(c.bin), 8, mid + 14, C.ouroHi, 10, 'left', 600);
+        // sem o livro (a ligar, a trocar de moeda, ou a Binance fora): o ultimo preco que a pagina tem; nunca um painel vazio
+        var sy = LIV.sym || simboloDaMesa(), ult = P ? P.preco : null;
+        rot(ctx, sy.replace(/USDT$/, '') + (POS.length ? ' · ' + (iP + 1) + '/' + POS.length : '') + ' · a ligar ao livro…', 8, mid, C.dim, 9, 'left', 500);
+        if (ult) rot(ctx, 'último ' + px(ult), 8, mid + 14, C.ouroHi, 10, 'left', 600);
       } else {
         var mxq = 0; LIV.b.concat(LIV.a).forEach(function (x) { if (x[1] * x[0] > mxq) mxq = x[1] * x[0]; });
         for (var i = 0; i < n; i++) {
@@ -1219,66 +1256,52 @@
         }
         if (LIV.fl && agora - LIV.fl.t0 < 900) { var fa = 1 - (agora - LIV.fl.t0) / 900; ctx.globalAlpha = fa * 0.85; ctx.fillStyle = LIV.fl.lado === 'a' ? C.mau : C.ok; ctx.fillRect(2, LIV.fl.lado === 'a' ? mid - rh : mid + 1, L0 - 4, rh - 2); ctx.globalAlpha = 1; luz(ctx, LIV.fl.lado === 'a' ? C.mau : C.ok, cx, LIV.fl.lado === 'a' ? mid - rh / 2 : mid + rh / 2, 18, fa * 0.6); }
         // os precos e o titulo: camada guardada (so muda quando um preco muda)
-        var chave = n + '|' + LIV.sym + '|' + px(LIV.mid) + '|' + LIV.a.slice(0, n).map(function (x) { return x[0]; }).join(',') + '|' + LIV.b.slice(0, n).map(function (x) { return x[0]; }).join(',');
+        var chave = n + '|' + LIV.sym + '|' + iP + '/' + POS.length + '|' + px(LIV.mid) + '|' + LIV.a.slice(0, n).map(function (x) { return x[0]; }).join(',') + '|' + LIV.b.slice(0, n).map(function (x) { return x[0]; }).join(',');
         porCamada(ctx, s, 'precos', chave, function (g) {
           for (var k = 0; k < n; k++) {
             var aa = LIV.a[k], bb = LIV.b[k], yya = mid - (k + 1) * rh, yyb = mid + k * rh + 1;
             if (aa) rot(g, px(aa[0]), cx - 4, yya + rh - 2, C.mau, 8.5, 'right', 500);
             if (bb) rot(g, px(bb[0]), cx + 4, yyb + rh - 2, C.ok, 8.5, 'left', 500);
           }
-          rot(g, String(LIV.sym).replace(/USDT$/, '') + ' · ' + px(LIV.mid), 6, TOPO + 6, C.ouroHi, 8.5, 'left', 600);
+          rot(g, String(LIV.sym).replace(/USDT$/, '') + (POS.length ? ' ' + (iP + 1) + '/' + POS.length : '') + ' · ' + px(LIV.mid), 6, TOPO + 6, C.ouroHi, 8.5, 'left', 600);
         });
-        // 05/10 (ele: "as apostas que tao em andamento... mais detalhes pra identificar melhor"): a NOSSA posicao neste simbolo - a
-        // linha do preco a que entramos (no limite do livro, se estiver fora dele) e o ganho/perda dela ao preco do meio
-        var P = lista(obj(obj(T3B.estado.T).reactor).posicoes).filter(function (x) { return String(x.simbolo).replace(/USD$/, 'USDT') === LIV.sym; })[0];
-        if (P && isFinite(Number(P.entrada)) && LIV.a.length && LIV.b.length) {
-          var ent = Number(P.entrada), topoP = LIV.a[Math.min(n, LIV.a.length) - 1][0], baseP = LIV.b[Math.min(n, LIV.b.length) - 1][0];
+        // 05/10 (ele: "as apostas que tao em andamento... mais detalhes pra identificar melhor"): a NOSSA posicao REAL neste simbolo -
+        // a linha do preco a que entramos (no limite do livro, se estiver fora dele) e o ganho/perda dela ao preco do meio
+        if (P && LIV.a.length && LIV.b.length) {
+          var ent = P.entrada, topoP = LIV.a[Math.min(n, LIV.a.length) - 1][0], baseP = LIV.b[Math.min(n, LIV.b.length) - 1][0];
           var ye = ent >= LIV.mid ? mid - clamp((ent - LIV.mid) / Math.max(1e-9, topoP - LIV.mid), 0, 1.04) * (mid - top) : mid + clamp((LIV.mid - ent) / Math.max(1e-9, LIV.mid - baseP), 0, 1.04) * (bot - mid);
-          var plP = (LIV.mid - ent) * Number(P.qty || 0);
+          var plP = P.qty * LIV.mid - P.custo;
           ctx.strokeStyle = C.vi; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(2, ye); ctx.lineTo(L0 - 2, ye); ctx.stroke(); ctx.setLineDash([]);
-          rot(ctx, TX.cortar('entrada ' + px(ent) + ' · ' + sinal(plP, 2), Math.max(8, Math.floor((L0 - 8) / 4.6))), 4, clamp(ye - 3, TOPO + 18, h - 4), C.vi, 7.5, 'left', 700);   // (cabe no livro: nao invade a fita)
+          rot(ctx, TX.cortar('entrada ' + px(ent) + ' · ' + sinal(plP, 2), Math.max(8, Math.floor((L0 - 8) / 4.6))), 4, clamp(ye - 3, TOPO + 18, h - 4), C.vi, 7.5, 'left', 700);   // (cabe no livro: nao invade a direita)
         }
         // a linha do preco: corre sempre (a marcha da linha tracejada) e brilha ao meio
         ctx.strokeStyle = C.ouro; ctx.setLineDash([4, 4]); ctx.lineDashOffset = calmo ? 0 : -t * 14; ctx.beginPath(); ctx.moveTo(2, mid); ctx.lineTo(L0 - 2, mid); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
         luz(ctx, C.ouro, cx, mid, 10 + 2 * Math.sin(t * 2), 0.4);
       }
-      // 07/10 (Q5 B3, li_lado: "a direita cada posicao com nome, sigla e ganho/perda a mexer"): as POSICOES abertas, o P&L a
-      // deslizar para o valor novo; sem posicoes fica a fita da Mesa como antes
-      var POS = lista(obj(obj(T3B.estado.T).reactor).posicoes);
-      if (POS.length) {
-        LIV.pv = LIV.pv || {};
-        POS = POS.slice().sort(function (a, b) { return Math.abs(Number(b.pnl_aberto_usd) || 0) - Math.abs(Number(a.pnl_aberto_usd) || 0); });
-        rot(ctx, 'AS NOSSAS POSIÇÕES · ' + POS.length, L0 + 8, TOPO + 6, C.dim, 8, 'left', 600);
-        ctx.save(); ctx.beginPath(); ctx.rect(L0 + 4, TOPO + 9, w - L0 - 4, h - TOPO - 9); ctx.clip();
-        var cP = Math.max(8, Math.floor((w - L0 - 12) / 4.8)), rhP = h - TOPO - 20 > POS.length * 22 ? 22 : 12;
-        POS.forEach(function (ps, k) {
-          var y = TOPO + 19 + k * rhP; if (y > h - 2) return;
-          var sym = String(ps.simbolo || '?'), alvo = Number(ps.pnl_aberto_usd) || 0, v = LIV.pv[sym] = seguir(LIV.pv[sym] == null ? alvo : LIV.pv[sym], alvo, 3, dt);
-          var cor = v >= 0 ? C.ok : C.mau, pct = Number(ps.pnl_aberto_pct);
-          var linha = sym.replace(/USDT$/, '') + ' ' + sinal(v, 2) + ' US$' + (isFinite(pct) ? ' (' + sinal(pct, 1) + '%)' : '');
-          rot(ctx, TX.cortar(linha, cP), L0 + 8, y, cor, 8.5, 'left', 700);
-          if (rhP > 12) rot(ctx, TX.cortar(TX.limpar(ps.nome || '') + (ps.cripto ? ' · cripto' : ''), cP + 4), L0 + 8, y + 10, C.mute, 7, 'left', 500);
-        });
-        ctx.restore();
-        return;
-      }
-      // a fita: cada entrada nova entra por cima a deslizar (0,35 s) e as outras descem
-      if (LIV.fita[0] !== LIV._topo) { LIV._topo = LIV.fita[0]; LIV.tFita = agora; }
-      var sl = calmo ? 0 : 1 - ease(clamp((agora - (LIV.tFita || 0)) / 350, 0, 1));
-      rot(ctx, 'FITA', L0 + 8, TOPO + 6, C.dim, 8, 'left', 600);
-      if (!LIV.fita.length) rot(ctx, 'à espera da Mesa…', L0 + 8, TOPO + 18, C.dim, 8, 'left', 500);
-      ctx.save(); ctx.beginPath(); ctx.rect(L0 + 4, TOPO + 9, w - L0 - 4, h - TOPO - 9); ctx.clip();
-      var larg = Math.max(8, Math.floor((w - L0 - 10) / 5.4));
-      LIV.fita.forEach(function (f, k) {
-        var y = TOPO + 18 + (k - sl) * 11; if (y > h - 2) return;
-        ctx.globalAlpha = Math.max(0.25, 1 - k * 0.09) * (k === 0 ? 1 - sl : 1);
-        if (!f._txt) f._txt = TX.cortar(f.t + (isFinite(f.p) && f.p ? ' ' + px(f.p) : ''), larg);
-        rot(ctx, f._txt, L0 + 8, y, f.c, 8, 'left', 500);
+      // A DIREITA, A MESA: as posicoes REAIS (uma linha cada, o P&L a deslizar para o valor novo; a do livro de agora com a seta
+      // de ouro), as ordens reais e, por baixo, quem da Mesa mexeu agora (a reaccao)
+      var xR = L0 + 8, cP = Math.max(8, Math.floor((w - L0 - 12) / 4.8)), y = TOPO + 6;
+      ctx.save(); ctx.beginPath(); ctx.rect(L0 + 4, TOPO, w - L0 - 4, h - TOPO); ctx.clip();
+      rot(ctx, POS.length ? 'CONTA REAL · ' + POS.length : 'CONTA REAL · sem posições', xR, y, C.dim, 8, 'left', 600);
+      LIV.pv = LIV.pv || {};
+      POS.forEach(function (ps) {
+        y += 11; if (y > h - 40) return;
+        var v = LIV.pv[ps.sym] = seguir(LIV.pv[ps.sym] == null ? ps.pnl : LIV.pv[ps.sym], ps.pnl, 3, dt);
+        var agoraEle = ps.sym === LIV.sym, cor = v >= 0 ? C.ok : C.mau;
+        if (agoraEle) { ctx.fillStyle = 'rgba(242,194,48,.12)'; ctx.fillRect(L0 + 4, y - 8.5, w - L0 - 6, 11); }
+        rot(ctx, TX.cortar((agoraEle ? '▶ ' : '') + ps.base + ' ' + sinal(v, 2) + ' (' + sinal(ps.pct, 1) + '%)', cP), xR, y, agoraEle ? C.ouroHi : cor, 8, 'left', agoraEle ? 800 : 700);
       });
-      ctx.globalAlpha = 1; ctx.restore();
+      var ords = LIV.ordens || [];
+      if (ords.length && y < h - 30) {
+        y += 13; rot(ctx, 'ORDENS REAIS', xR, y, C.dim, 7.5, 'left', 600);
+        ords.forEach(function (o, k) { y += 10; if (y > h - 14) return; rot(ctx, TX.cortar(textoOrdem(o), cP + 2), xR, y, k === 0 && agora - (LIV.fl ? LIV.fl.t0 : 0) < 1500 ? C.ouroHi : (o.lado === 'SELL' ? '#e88a8d' : '#7fd8b4'), 7.5, 'left', 500); });
+      }
+      var f0 = LIV.fita[0];
+      if (f0) { var fr = clamp(1 - (agora - (f0.t0 || 0)) / 8000, 0.35, 1); ctx.globalAlpha = fr; rot(ctx, TX.cortar('agora: ' + f0.t, cP + 2), xR, h - 4, C.ouroHi, 7.5, 'left', 600); ctx.globalAlpha = 1; }
+      ctx.restore();
     } });
   })();
-  setInterval(function () { mini('hm_livro', [['', LIV.sym || simboloDaMesa()], ['meio', LIV.mid ? fmt(LIV.mid, LIV.mid >= 1000 ? 1 : 3) : 'a ligar'], ['fita', String(LIV.fita.length)]]); }, 2000);
+  setInterval(function () { var P = posMesa(), tot = 0; P.forEach(function (p) { tot += p.pnl; }); mini('hm_livro', [['', (LIV.sym || simboloDaMesa()).replace(/USDT$/, '')], ['meio', LIV.mid ? fmt(LIV.mid, LIV.mid >= 1000 ? 1 : 3) : 'a ligar'], ['em aberto', P.length ? sinal(tot, 2) : '—', '', tot < 0 ? 'dn' : '']]); }, 2000);
 
   // ================================================================ 10. EQUALIZADOR DOS ANDARES (G28, D.equal) — na Mesa de Operacoes
   // Uma barra por andar: a altura de base e quem esta A TRABALHAR AGORA nesse andar (o censo da obra 2: turnos por andar /
