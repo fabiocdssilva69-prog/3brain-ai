@@ -1171,12 +1171,13 @@
     if (!pos || !pos.length) return null;
     return pos[Math.floor(Number(agoraMs) / (rodaMs || 15000)) % pos.length].sym;
   }
+  // (16/10 20h40, ele: "as informacoes tao aparecendo tudo amontoadas"): curta - "13:41 +BTC 11,42" (compra), "20:11 −ZEC adiada ×7"
   function textoOrdem(o) {
     if (!o) return '';
-    var hh = String(o.t || '').slice(11, 16), lado = o.lado === 'BUY' ? 'compra' : o.lado === 'SELL' ? 'venda' : String(o.lado || '').toLowerCase();
+    var hh = String(o.t || '').slice(11, 16), sinalO = o.lado === 'BUY' ? '+' : o.lado === 'SELL' ? '−' : '';
     var b = String(o.simbolo || '').replace(/USDT$/, ''), u = Number(o.usdt);
     var est = /preench|feita|fill/i.test(o.estado || '') ? '' : ' ' + ({ saltada: 'adiada', recusada: 'recusada', falhou: 'falhou' }[o.estado] || o.estado);
-    return (hh ? hh + ' ' : '') + lado + ' ' + b + (u > 0 ? ' ' + u.toFixed(2) : '') + est + (o.vezes > 1 ? ' ×' + o.vezes : '');
+    return (hh ? hh + ' ' : '') + sinalO + b + (u > 0 && !est ? ' ' + u.toFixed(2).replace('.', ',') : '') + est + (o.vezes > 1 ? ' ×' + o.vezes : '');
   }
   // </livro-puro>
   var LIVRO_RODA_MS = 15000;
@@ -1272,32 +1273,48 @@
           var ye = ent >= LIV.mid ? mid - clamp((ent - LIV.mid) / Math.max(1e-9, topoP - LIV.mid), 0, 1.04) * (mid - top) : mid + clamp((LIV.mid - ent) / Math.max(1e-9, LIV.mid - baseP), 0, 1.04) * (bot - mid);
           var plP = P.qty * LIV.mid - P.custo;
           ctx.strokeStyle = C.vi; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(2, ye); ctx.lineTo(L0 - 2, ye); ctx.stroke(); ctx.setLineDash([]);
-          rot(ctx, TX.cortar('entrada ' + px(ent) + ' · ' + sinal(plP, 2), Math.max(8, Math.floor((L0 - 8) / 4.6))), 4, clamp(ye - 3, TOPO + 18, h - 4), C.vi, 7.5, 'left', 700);   // (cabe no livro: nao invade a direita)
+          // (16/10 20h40: "amontoado" - a etiqueta comprida pisava os precos) curta, e no lado SEM precos: os de compra estao a direita
+          // do centro (cx+4) e os de venda a esquerda (ate cx-4) - abaixo do meio vai a esquerda, acima vai a direita
+          var etqE = TX.cortar('ent. ' + px(ent), Math.max(6, Math.floor((cx - 8) / 4.6))), yE = clamp(ye - 2.5, TOPO + 18, h - 4);
+          if (ye > mid) rot(ctx, etqE, 4, yE, C.vi, 7.5, 'left', 700); else rot(ctx, etqE, L0 - 4, yE, C.vi, 7.5, 'right', 700);
         }
         // a linha do preco: corre sempre (a marcha da linha tracejada) e brilha ao meio
         ctx.strokeStyle = C.ouro; ctx.setLineDash([4, 4]); ctx.lineDashOffset = calmo ? 0 : -t * 14; ctx.beginPath(); ctx.moveTo(2, mid); ctx.lineTo(L0 - 2, mid); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
         luz(ctx, C.ouro, cx, mid, 10 + 2 * Math.sin(t * 2), 0.4);
       }
-      // A DIREITA, A MESA: as posicoes REAIS (uma linha cada, o P&L a deslizar para o valor novo; a do livro de agora com a seta
-      // de ouro), as ordens reais e, por baixo, quem da Mesa mexeu agora (a reaccao)
-      var xR = L0 + 8, cP = Math.max(8, Math.floor((w - L0 - 12) / 4.8)), y = TOPO + 6;
+      // A DIREITA, A MESA (16/10 20h40, ele: "as informacoes tao aparecendo tudo amontoadas"): DUAS colunas alinhadas - a moeda a
+      // esquerda, o ganho/perda a direita (a % so se couber) -, a do livro de agora com a seta e o fundo de ouro; por baixo, so as
+      // ordens reais que cabem inteiras (formato curto). A reaccao (quem da Mesa mexeu) e o aro de ouro e o lampejo no livro.
+      var xR = L0 + 8, xD = w - 5, larR = xD - xR, y = TOPO + 6, totP = 0;
+      POS.forEach(function (ps) { totP += ps.pnl; });
       ctx.save(); ctx.beginPath(); ctx.rect(L0 + 4, TOPO, w - L0 - 4, h - TOPO); ctx.clip();
-      rot(ctx, POS.length ? 'CONTA REAL · ' + POS.length : 'CONTA REAL · sem posições', xR, y, C.dim, 8, 'left', 600);
+      rot(ctx, POS.length ? 'CONTA REAL' : 'CONTA REAL · sem posições', xR, y, C.dim, 7.5, 'left', 600);
+      if (POS.length) rot(ctx, sinal(totP, 2), xD, y, totP >= 0 ? C.ok : C.mau, 7.5, 'right', 700);
       LIV.pv = LIV.pv || {};
-      POS.forEach(function (ps) {
-        y += 11; if (y > h - 40) return;
+      ctx.font = fonte(700, 8); ctx._f = ctx.font;
+      var cabePct = larR >= 118;
+      var linhasMax = Math.max(1, Math.floor((h - y - 6) / 11));
+      var nOrd = Math.min((LIV.ordens || []).length, 4), sobra = linhasMax - POS.length;
+      if (sobra < 3) nOrd = 0; else nOrd = Math.min(nOrd, Math.floor((sobra * 11 - 13) / 10));
+      POS.forEach(function (ps, k) {
+        if (k >= linhasMax) return;
+        y += 11;
         var v = LIV.pv[ps.sym] = seguir(LIV.pv[ps.sym] == null ? ps.pnl : LIV.pv[ps.sym], ps.pnl, 3, dt);
-        var agoraEle = ps.sym === LIV.sym, cor = v >= 0 ? C.ok : C.mau;
-        if (agoraEle) { ctx.fillStyle = 'rgba(242,194,48,.12)'; ctx.fillRect(L0 + 4, y - 8.5, w - L0 - 6, 11); }
-        rot(ctx, TX.cortar((agoraEle ? '▶ ' : '') + ps.base + ' ' + sinal(v, 2) + ' (' + sinal(ps.pct, 1) + '%)', cP), xR, y, agoraEle ? C.ouroHi : cor, 8, 'left', agoraEle ? 800 : 700);
+        var esta = ps.sym === LIV.sym, cor = v >= 0 ? C.ok : C.mau;
+        if (esta) { ctx.fillStyle = 'rgba(242,194,48,.14)'; ctx.fillRect(L0 + 4, y - 8.5, w - L0 - 6, 11); }
+        rot(ctx, (esta ? '▶' : ' ') + ps.base, xR - 2, y, esta ? C.ouroHi : C.txt, 8, 'left', esta ? 800 : 600);
+        rot(ctx, sinal(v, 2), xD, y, cor, 8, 'right', 700);
+        if (cabePct) rot(ctx, sinal(ps.pct, 1) + '%', xD - 34, y, cor, 7, 'right', 500);
       });
-      var ords = LIV.ordens || [];
-      if (ords.length && y < h - 30) {
-        y += 13; rot(ctx, 'ORDENS REAIS', xR, y, C.dim, 7.5, 'left', 600);
-        ords.forEach(function (o, k) { y += 10; if (y > h - 14) return; rot(ctx, TX.cortar(textoOrdem(o), cP + 2), xR, y, k === 0 && agora - (LIV.fl ? LIV.fl.t0 : 0) < 1500 ? C.ouroHi : (o.lado === 'SELL' ? '#e88a8d' : '#7fd8b4'), 7.5, 'left', 500); });
+      if (nOrd > 0) {
+        y += 13; rot(ctx, 'ORDENS REAIS', xR, y, C.dim, 7, 'left', 600);
+        var cO = Math.max(8, Math.floor(larR / 4.3));
+        LIV.ordens.slice(0, nOrd).forEach(function (o, k) {
+          y += 10;
+          var novaO = k === 0 && LIV.fl && agora - LIV.fl.t0 < 1500;
+          rot(ctx, TX.cortar(textoOrdem(o), cO), xR, y, novaO ? C.ouroHi : (o.lado === 'SELL' ? '#e88a8d' : '#7fd8b4'), 7, 'left', 500);
+        });
       }
-      var f0 = LIV.fita[0];
-      if (f0) { var fr = clamp(1 - (agora - (f0.t0 || 0)) / 8000, 0.35, 1); ctx.globalAlpha = fr; rot(ctx, TX.cortar('agora: ' + f0.t, cP + 2), xR, h - 4, C.ouroHi, 7.5, 'left', 600); ctx.globalAlpha = 1; }
       ctx.restore();
     } });
   })();
@@ -1391,7 +1408,12 @@
       var top3 = Object.keys(EQ.rit).sort(function (a, b) { return EQ.rit[b] - EQ.rit[a]; }).slice(0, 3);
       var col3 = (w - 12) / 3, max3 = Math.max(6, Math.floor((col3 - 6) / 4.6));
       if (!top3.length) rot(ctx, 'à espera do primeiro trabalho…', 6, TOPO + 9, C.dim, 7.5, 'left', 500);
-      top3.forEach(function (nn, i) { var an = T3B.andar ? T3B.andar(Number(nn)) : null, nm = an ? TX.limpar(an.sector || an.nome || '') : ''; rot(ctx, TX.cortar((i ? '' : '▲ ') + nn + ' ' + fmt(EQ.rit[nn], 0) + '/min' + (nm ? ' ' + nm : ''), max3), 6 + i * col3, TOPO + 9, i ? C.mute : C.ouroHi, 7.5, 'left', i ? 500 : 700); });
+      // (16/10 20h40: o numero do andar e o nome nao cabiam - "1 21/min At...") o NOME do sector cortado ao que cabe, e o ritmo inteiro
+      top3.forEach(function (nn, i) {
+        var an = T3B.andar ? T3B.andar(Number(nn)) : null, nm = an ? TX.limpar(an.sector || an.nome || ('and. ' + nn)) : 'and. ' + nn, rit = ' ' + fmt(EQ.rit[nn], 0) + '/min';
+        var cab = Math.max(3, max3 - rit.length - (i ? 0 : 2));
+        rot(ctx, (i ? '' : '▲ ') + TX.cortar(nm, cab) + rit, 6 + i * col3, TOPO + 9, i ? C.mute : C.ouroHi, 7.5, 'left', i ? 500 : 700);
+      });
       // 07/10 (Q5 B5, eq_sector: "a legenda pode aparecer conforme a reacao de cada setor acima do limite das barras"): o nome do
       // SECTOR por cima da barra que acabou de reagir - as 3 mais fortes, arrumadas para nao se taparem
       acimaSec.sort(function (a, b) { return b.sl - a.sl; });
