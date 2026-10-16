@@ -204,13 +204,30 @@
     if (A.janela.length > 600) A.janela.splice(0, A.janela.length - 600);
     // o aro do painel acende (opacidade animada pelo compositor: nao refaz o layout nem a pintura do painel)
     var el = ELS[id];
-    if (el && !calmo) { var aro = el.querySelector(':scope > .aro'); if (aro && aro.animate) aro.animate([{ opacity: 0.95 }, { opacity: 0 }], { duration: 900, easing: 'ease-out' }); }
+    // 16/10 (ele: "trava quando muitas actividades se activam"): numa rajada o aro acendia uma vez por evento no mesmo quadro - agora no
+    // maximo 1 vez a cada 250 ms por holograma (o evento conta na mesma: o pulso, a janela e as reaccoes do holograma)
+    if (el && !calmo && agora - (A.tAro || 0) > 250) { A.tAro = agora; var aro = el.querySelector(':scope > .aro'); if (aro && aro.animate) aro.animate([{ opacity: 0.95 }, { opacity: 0 }], { duration: 900, easing: 'ease-out' }); }
     (CB[id] || []).forEach(function (fn) { try { fn(ev, r || {}); } catch (e) { if (window.console) console.warn('reaccao ' + id, e); } });
     T3B.emit('holo:' + id, { ev: ev, r: r || {} });                  // os 3D (o globo, a fita) ouvem isto
   }
   function aoReagir(id, fn) { (CB[id] = CB[id] || []).push(fn); }
   function registar(id, el) { ELS[id] = el; act(id); if (el && !el.querySelector(':scope > .aro')) { var a = document.createElement('i'); a.className = 'aro'; a.setAttribute('aria-hidden', 'true'); el.appendChild(a); } }
-  function receber(evs) { (evs || []).forEach(function (e) { LG.reacoes(e).forEach(function (par) { reagir(par[0], e, par[1]); }); }); }
+  // 16/10 (ele: "trava quando muitas actividades se activam, causando lentidao"): uma rajada grande (o pulso, um lote de contratados)
+  // e servida em fatias de 12 eventos por quadro - o ecra nunca fica um quadro inteiro a tratar dezenas de reaccoes
+  var FILA_REAC = [], FATIA_REAC = 12, reacAgendada = false;
+  function tratarFatia() {
+    reacAgendada = false;
+    var fatia = FILA_REAC.splice(0, FATIA_REAC);
+    fatia.forEach(function (e) { LG.reacoes(e).forEach(function (par) { reagir(par[0], e, par[1]); }); });
+    if (FILA_REAC.length) { reacAgendada = true; (window.requestAnimationFrame || function (f) { return setTimeout(f, 16); })(tratarFatia); }
+  }
+  function receber(evs) {
+    var l = evs || []; if (!l.length) return;
+    if (!FILA_REAC.length && l.length <= FATIA_REAC) { l.forEach(function (e) { LG.reacoes(e).forEach(function (par) { reagir(par[0], e, par[1]); }); }); return; }
+    Array.prototype.push.apply(FILA_REAC, l);
+    if (FILA_REAC.length > 600) FILA_REAC.splice(0, FILA_REAC.length - 600);     // um atraso enorme nao se acumula sem fim
+    if (!reacAgendada) { reacAgendada = true; (window.requestAnimationFrame || function (f) { return setTimeout(f, 16); })(tratarFatia); }
+  }
   T3B.on('eventos', receber);
   // a base: os ultimos 3 minutos do sector, de 0 a 1 (escala por holograma); vai para o CSS (--act) - o brilho do aro
   function bases() {
