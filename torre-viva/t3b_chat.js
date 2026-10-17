@@ -36,7 +36,7 @@
   function tipoSocial(m) {
     if (!m || m.tipo !== 'recado') return null;
     var st = String(m.subtipo || ''), t = String(m.texto || '');
-    if (st === 'cumprimento' || st === 'agradecimento' || st === 'cobranca' || st === 'advertencia') return st;
+    if (st === 'cumprimento' || st === 'agradecimento' || st === 'cobranca' || st === 'advertencia' || st === 'conversa') return st;   // 16/10 21h: + a conversa solta
     if (/^QUEIXA de /.test(t)) return 'queixa';
     if (/^PERGUNTA-TESTE/.test(t)) return 'teste';
     if (/^Sobre 'PERGUNTA-TESTE/.test(t)) return 'teste_resposta';
@@ -44,21 +44,22 @@
   }
   // </social-puro>
   var ETQ_SOCIAL = { cumprimento: 'CUMPRIMENTO', agradecimento: 'AGRADECIMENTO', cobranca: 'COBRANÇA', advertencia: 'ADVERTÊNCIA',
-    queixa: 'QUEIXA', teste: 'PERGUNTA-TESTE', teste_resposta: 'RESPONDEU AO TESTE' };
+    queixa: 'QUEIXA', teste: 'PERGUNTA-TESTE', teste_resposta: 'RESPONDEU AO TESTE', conversa: 'CONVERSA' };
   (function () {                       // 16/10: o filtro 'conversas' e as cores das etiquetas sociais, sem mexer no html
     try {
       var bt = document.querySelector('button[data-f="todos"]');
       if (bt && bt.parentNode && !document.querySelector('button[data-f="conversas"]')) {
         var b = document.createElement('button');
         b.type = 'button'; b.setAttribute('data-f', 'conversas'); b.textContent = 'conversas';
-        b.title = 'cumprimentos, agradecimentos, cobranças, advertências, queixas e perguntas-teste entre os sectores';
+        b.title = 'conversas, cumprimentos, agradecimentos, cobranças, advertências, queixas e perguntas-teste entre os sectores';
         bt.parentNode.appendChild(b);
       }
       var css = document.createElement('style');
       css.textContent = '.tag.soc{border-radius:3px;padding:0 4px;letter-spacing:.04em}' +
         '.tag.cumprimento{background:#1f6f43;color:#dff7e8}.tag.agradecimento{background:#2c5d8a;color:#e1efff}' +
         '.tag.cobranca{background:#8a6a1f;color:#fff3d6}.tag.advertencia{background:#8a2c2c;color:#ffe1e1}' +
-        '.tag.queixa{background:#7a2f6a;color:#ffe3f6}.tag.teste,.tag.teste_resposta{background:#3d3d7a;color:#e6e6ff}';
+        '.tag.queixa{background:#7a2f6a;color:#ffe3f6}.tag.teste,.tag.teste_resposta{background:#3d3d7a;color:#e6e6ff}' +
+        '.tag.conversa{background:#245a5a;color:#dcfbfb}';
       document.head.appendChild(css);
     } catch (e) { }
   })();
