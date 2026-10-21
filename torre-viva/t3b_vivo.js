@@ -250,7 +250,8 @@
   function msDeChegada(e) {
     var c = Number(e && e.c) * 1000, m = Number(e && e.ms);
     if (!(isFinite(c) && c > 0)) return isFinite(m) && m > 0 ? m : 0;
-    return (isFinite(m) && m > 0 && c - m >= -2000 && c - m <= 10000) ? m : c;
+    // 21/10: chegou mais de 30 min depois de acontecer = o passado relido (um arranque do servidor), nao algo de agora: a hora dele
+    return (isFinite(m) && m > 0 && ((c - m >= -2000 && c - m <= 10000) || c - m > 1800000)) ? m : c;
   }
   // </chegada-puro>
   function tocarPublicado(evs, primeira) {
