@@ -1281,7 +1281,7 @@
     // Os precos sao uma camada guardada (refeita so quando um preco muda).
     var WA = [], WB = [];
     // 21/10: as moedas de preco minusculo (PEPE 0,0000081) davam 0,00000 - abaixo de 0,01, as casas que mostram 4 algarismos
-    var px = function (v) { return v >= 1000 ? fmt(v, 1) : v >= 1 ? fmt(v, 3) : v >= 0.01 || !(v > 0) ? fmt(v, 5) : fmt(v, Math.min(12, 3 - Math.floor(Math.log10(v)))); };
+    var px = function (v) { return v >= 1000 ? fmt(v, 2) : v >= 1 ? fmt(v, 3) : v >= 0.01 || !(v > 0) ? fmt(v, 5) : fmt(v, Math.min(12, 3 - Math.floor(Math.log10(v)))); };
     cenaLivro = cena(cv, { id: 'livro', holo: $('h_livro'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       // 07/10 (Q5 B3, li_lado): o livro a esquerda (46%), a Mesa (a conta real) a direita
