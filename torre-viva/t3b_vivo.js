@@ -226,6 +226,22 @@
   // sai a hora em que aconteceu MAIS um atraso fixo PUB.D (o relogio diferido). A 1.a leitura toca ja os ultimos 6 min; se uma
   // fotografia chegar tarde, o atraso estica (nunca encolhe: a ordem mantem-se). A torre no PC (ao vivo) nao muda.
   var PUB = { D: null }, PUB_ARRANQUE_MS = 6 * 60 * 1000;
+  // 21/10 19h (ele, print da copia publica: "os hologramas ainda nao estao sincronizados, parece mais bugado"): MEDIDO - a pagina
+  // aberta mostrava 0 eventos/min com o vivo.json publico fresco (203 eventos, 19:02); numa pagina aberta de novo tocava 100/min.
+  // O atraso PUB.D so esticava: um evento VELHO num lote que nao era o 1.o (o servidor da sala foi reiniciado as 17:4x) puxava
+  // o atraso para horas e tudo o que chegava depois ficava agendado para daqui a horas - a pagina muda ate ser recarregada.
+  // Agora: (1) em TODOS os lotes o que e mais velho que a janela de arranque (6 min antes do mais novo) e historia (conta, nao
+  // toca, nao estica o atraso); (2) o atraso nunca passa de PUB_ATRASO_MAX - se passar, volta a acertar pelo lote de agora.
+  // PURA: atrasoPublico (testes_t3b.js).
+  var PUB_ATRASO_MAX = 8 * 60 * 1000;
+  // <atraso-puro>
+  function atrasoPublico(D, agora, maisVelhoMs) {
+    var precisa = agora - maisVelhoMs;
+    if (D == null || maisVelhoMs + D < agora - 2000) D = precisa;          // chegou tarde: estica (a ordem mantem-se)
+    if (D > PUB_ATRASO_MAX) D = Math.min(Math.max(precisa, 0), PUB_ATRASO_MAX);   // nunca horas: volta a acertar
+    return D;
+  }
+  // </atraso-puro>
   // 16/10: a hora a que cada evento CHEGOU a torre (c, do servidor) - e por ela que a copia publica toca, como a torre do PC: um lote
   // que chegou de uma vez (os genes da previa, calculados ao longo de 10 min e escritos no fim) toca quando chegou, nao espalhado
   // pelo passado (antes esticava o atraso de tudo o resto). Um evento que chegou ate 10 s depois de acontecer toca a SUA hora (o
@@ -242,13 +258,12 @@
     if (!ok.length) return;
     ok.sort(function (a, b) { return a.mc - b.mc; });
     var maxMs = ok[ok.length - 1].mc;
-    if (primeira) {                                           // o que e mais velho que a janela de arranque fica como historia
-      var velhos = ok.filter(function (e) { return e.mc < maxMs - PUB_ARRANQUE_MS; });
-      if (velhos.length) { velhos.forEach(function (e) { e.historia = true; }); filaDeCartoes(velhos); T3B.emit('eventos', velhos); }
-      ok = ok.filter(function (e) { return e.mc >= maxMs - PUB_ARRANQUE_MS; });
-      if (!ok.length) return;
-    }
-    if (PUB.D == null || ok[0].mc + PUB.D < agora - 2000) PUB.D = agora - ok[0].mc;
+    // (21/10: em TODOS os lotes, nao so no 1.o) o que e mais velho que a janela de arranque fica como historia
+    var velhos = ok.filter(function (e) { return e.mc < maxMs - PUB_ARRANQUE_MS; });
+    if (velhos.length) { velhos.forEach(function (e) { e.historia = true; }); filaDeCartoes(velhos); T3B.emit('eventos', velhos); }
+    ok = ok.filter(function (e) { return e.mc >= maxMs - PUB_ARRANQUE_MS; });
+    if (!ok.length) return;
+    PUB.D = atrasoPublico(PUB.D, agora, ok[0].mc);
     var grupos = [], porT = {};
     ok.forEach(function (e) { var k = String(Math.floor(e.mc / 1000)); if (!porT[k]) { porT[k] = []; grupos.push(porT[k]); } porT[k].push(e); });
     grupos.forEach(function (g) {

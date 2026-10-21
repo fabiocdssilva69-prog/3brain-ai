@@ -46,7 +46,8 @@
     var alt = h - TOPO - 4, porCol = Math.max(1, Math.floor(alt / 21)), cols = Math.ceil(itens.length / porCol), cw = (x1 - x0) / cols;
     itens.forEach(function (it, i) {
       var c = Math.floor(i / porCol), l = i % porCol, x = x0 + c * cw, y = TOPO + 9 + l * 21;
-      rot(ctx, it[0], x, y, C.dim, 7, 'left', 600);
+      ctx.font = fonte(600, 7); ctx._f = null; var r0 = String(it[0]); while (r0.length > 3 && ctx.measureText(r0).width > cw - 4) r0 = r0.slice(0, -1);   // 21/10: o rotulo tambem cabe na coluna
+      rot(ctx, r0, x, y, C.dim, 7, 'left', 600);
       ctx.font = fonte(700, 9.5); ctx._f = null; var t = String(it[1]); while (t.length > 2 && ctx.measureText(t).width > cw - 4) t = t.slice(0, -1);
       rot(ctx, t, x, y + 10, it[2], 9.5, 'left', 700);
     });
@@ -1581,7 +1582,7 @@
       var hr = d.getUTCHours() + d.getUTCMinutes() / 60 + seg / 3600, tur = Math.floor(hr / 8) % 3;
       var cx = Math.min(w * 0.33, (h - TOPO) * 0.62 + 6), cy = TOPO + (h - TOPO) / 2 + 2, R = Math.min(w * 0.28, (h - TOPO) * 0.44), pt = clamp(1 - (agora - TUR.todos) / 1200, 0, 1);
       var v = function (x) { return x == null ? 'a ler' : fmt(x, 0); };
-      var itens = [['TURNO', NOMES[tur], CORES[tur]], ['EM TURNO', v(TUR.barra.em_turno), C.txt], ['A TRABALHAR NO TURNO', v(TUR.noTurno), C.ok], ['EXTRA · FORA DO TURNO', TUR.noTurno == null || TUR.barra.a_trabalhar_agora == null ? 'a ler' : fmt(Math.max(0, TUR.barra.a_trabalhar_agora - TUR.noTurno), 0), C.az], ['A EVOLUIR', v(TUR.barra.a_evoluir), C.vi], ['FALTARAM', v(TUR.barra.faltaram), (TUR.barra.faltaram || 0) > 0 ? C.am : C.ok], ['CARGA', TUR.carga == null ? 'a ler' : fmt(TUR.carga, 0) + '%', C.mute]];
+      var itens = [['TURNO', NOMES[tur], CORES[tur]], ['EM TURNO', v(TUR.barra.em_turno), C.txt], ['A TRABALHAR', v(TUR.noTurno), C.ok], ['EXTRA',  TUR.noTurno == null || TUR.barra.a_trabalhar_agora == null ? 'a ler' : fmt(Math.max(0, TUR.barra.a_trabalhar_agora - TUR.noTurno), 0), C.az], ['A EVOLUIR', v(TUR.barra.a_evoluir), C.vi], ['FALTARAM', v(TUR.barra.faltaram), (TUR.barra.faltaram || 0) > 0 ? C.am : C.ok], ['CARGA', TUR.carga == null ? 'a ler' : fmt(TUR.carga, 0) + '%', C.mute]];
       porCamada(ctx, s, 'fundo', itens.map(function (x) { return x[1]; }).join('|'), function (g) {
         for (var i = 0; i < 3; i++) { g.strokeStyle = CORES[i]; g.globalAlpha = 0.2; g.lineWidth = 7; g.beginPath(); g.arc(cx, cy, R, -Math.PI / 2 + i * TAU / 3 + 0.04, -Math.PI / 2 + (i + 1) * TAU / 3 - 0.04); g.stroke(); }
         g.globalAlpha = 1; g.lineWidth = 1;
@@ -2282,6 +2283,28 @@
     if (chave === 'lab') { var p = T3B.estado.programas.organismo; return p && p.andar != null ? p.andar : porEsp('tendencia') || 26; }
     return porEsp(chave) || ({ pnl: 47, estatistica: 46, mesa: 49, risco: 50 })[chave] || null;
   }
+  // 21/10 19h (ele: "em algumas paginas nao se ajusta a resolucao e deixa cards espremidos e pequenos; a prioridade e aparecer
+  // melhor os cards"): MEDIDO no print dele (janela com barra de favoritos e o aviso do Comet) - o livro (peso 2,3) comia a coluna
+  // de perto e o globo e o relogio ficavam com ~90 px. Agora cada cartao recebe PRIMEIRO o seu minimo legivel (data-min, 150 por
+  // omissao) e SO o que sobra vai pelo peso ate ao maximo (data-max); sem lugar para os minimos, todos encolhem por igual
+  // (nunca abaixo de 56). PURA: alturasDaColuna (testes_t3b.js).
+  // <alturas-puro>
+  var ALT_MIN_HOLO = 150;
+  function alturasDaColuna(specs, livre) {
+    var out = specs.map(function (s) { return s ? Math.min(s.max, s.min) : 42; });
+    var abertos = []; specs.forEach(function (s, i) { if (s) abertos.push(i); });
+    var somaMin = 0; abertos.forEach(function (i) { somaMin += out[i]; });
+    if (somaMin >= livre) { var f = livre / Math.max(1, somaMin); abertos.forEach(function (i) { out[i] = Math.max(56, out[i] * f); }); return out; }
+    var sobra = livre - somaMin;
+    for (var volta = 0; volta < 6 && sobra > 0.5; volta++) {
+      var ativos = abertos.filter(function (i) { return out[i] < specs[i].max - 0.5; }); if (!ativos.length) break;
+      var pesos = 0; ativos.forEach(function (i) { pesos += specs[i].peso; });
+      var usado = 0; ativos.forEach(function (i) { var d = Math.min(specs[i].max - out[i], sobra * specs[i].peso / pesos); out[i] += d; usado += d; });
+      sobra -= usado;
+    }
+    return out;
+  }
+  // </alturas-puro>
   var fios = $('fios'), ultAnc = null, alvos = {}, svgFios = { ass: '' };
   // 04/10 (obra 4, "trava ao rodar"): os retangulos do palco e das colunas leem-se UMA vez por mudanca de layout (nao a cada
   // ancora, 12 vezes por segundo, logo depois de os rotulos escreverem os seus transforms - era layout forcado em cada volta)
@@ -2306,9 +2329,10 @@
       var hs = Array.prototype.slice.call(col.querySelectorAll(':scope > .holo'));
       var nMin = hs.filter(function (h) { return h.classList.contains('min'); }).length, pesos = 0;
       hs.forEach(function (h) { if (!h.classList.contains('min')) pesos += Number(h.dataset.peso || 1); });
-      var unid = pesos ? Math.max(56, (Hc - gap * (hs.length - 1) - nMin * 42) / pesos) : 0;
+      var alts = alturasDaColuna(hs.map(function (h) { return h.classList.contains('min') ? null : { peso: Number(h.dataset.peso || 1), min: Number(h.dataset.min || ALT_MIN_HOLO), max: Number(h.dataset.max || 240) }; }),
+        Hc - gap * (hs.length - 1));
       var itens = hs.map(function (h, i) {
-        var n = andarDoHolo(h.dataset.andarChave), a = (!fora && n != null) ? anc[n + par[1]] : null, alt = h.classList.contains('min') ? 42 : Math.min(Number(h.dataset.max || 240), unid * Number(h.dataset.peso || 1));   // 21/10: data-max (o livro maior)
+        var n = andarDoHolo(h.dataset.andarChave), a = (!fora && n != null) ? anc[n + par[1]] : null, alt = alts[i];   // 21/10: o minimo legivel primeiro, o resto pelo peso (alturasDaColuna)
         if (n != null) presos[n] = 1;
         var quer = a && a.ok ? (a.y + pr.top - cr.top) - alt / 2 : null;
         return { h: h, n: n, a: a && a.ok ? a : null, alt: alt, quer: quer, i: i };
