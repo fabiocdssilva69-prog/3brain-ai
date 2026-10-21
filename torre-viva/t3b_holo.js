@@ -1280,7 +1280,8 @@
     // um pouco entre dois), a linha do preco corre, cada ordem acende a sua linha e cada entrada nova da fita entra a deslizar.
     // Os precos sao uma camada guardada (refeita so quando um preco muda).
     var WA = [], WB = [];
-    var px = function (v) { return v >= 1000 ? fmt(v, 1) : v >= 1 ? fmt(v, 3) : fmt(v, 5); };
+    // 21/10: as moedas de preco minusculo (PEPE 0,0000081) davam 0,00000 - abaixo de 0,01, as casas que mostram 4 algarismos
+    var px = function (v) { return v >= 1000 ? fmt(v, 1) : v >= 1 ? fmt(v, 3) : v >= 0.01 || !(v > 0) ? fmt(v, 5) : fmt(v, Math.min(12, 3 - Math.floor(Math.log10(v)))); };
     cenaLivro = cena(cv, { id: 'livro', holo: $('h_livro'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       // 07/10 (Q5 B3, li_lado): o livro a esquerda (46%), a Mesa (a conta real) a direita
@@ -1360,8 +1361,8 @@
       var bm = BALDE && LIV.sym ? String(LIV.sym).replace(/USDT$/, '') : null, bv = bm ? ((BALDE.moedas || {})[bm] || null) : null, bc = bm ? (BALDE.conselho || {})[bm] : null;
       var bx = bm ? (BALDE.explicacoes || []).filter(function (e) { return e.base === bm; })[0] : null;
       var linhasLivres = Math.floor((h - y - 6) / 11) - (nOrd > 0 ? nOrd + 2 : 0);
-      if (bm && (bv || bc != null || bx) && linhasLivres >= 2) {
-        y += 13; rot(ctx, TX.cortar('BALDE ' + bm + (bv ? ' · ' + bv.alta + '↑ ' + bv.baixa + '↓' : '') + (bc != null ? ' · conselho ' + sinal(bc, 2) : ''), Math.floor(larR / 4.3)), xR, y, C.cy, 7, 'left', 700);
+      if (bm && linhasLivres >= 2) {
+        y += 13; rot(ctx, TX.cortar('BALDE ' + bm + (bv ? ' · ' + bv.alta + '↑ ' + bv.baixa + '↓' : ' · nenhuma fonte hoje') + (bc != null ? ' · conselho ' + sinal(bc, 2) : ''), Math.floor(larR / 4.3)), xR, y, C.cy, 7, 'left', 700);
         if (bx && bx.explicacao) { var cX = Math.max(10, Math.floor(larR / 4.1)), txX = String(bx.explicacao), nl = Math.min(3, linhasLivres - 1);
           for (var lx = 0; lx < nl && txX; lx++) { var corte = txX.length <= cX ? txX.length : (txX.lastIndexOf(' ', cX) > 8 ? txX.lastIndexOf(' ', cX) : cX); y += 10; rot(ctx, (lx === nl - 1 && txX.length > corte ? TX.cortar(txX, cX) : txX.slice(0, corte)), xR, y, C.mute, 7, 'left', 500); txX = txX.slice(corte).trim(); } }
       }
