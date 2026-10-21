@@ -653,18 +653,15 @@
   // abaixo do pixel (amostras a 60 por segundo e o resto da conta empurra o desenho); a batida tem a forma PQRST; sem eventos a
   // linha fica quase plana mas viva (um ruido de 1-2%); o traco tem rasto (mais apagado a esquerda) e uma ponta que brilha; o
   // numero e o coracao pequeno batem a cada batida real; a grelha e uma camada guardada.
-  var ECG = { hr: null, fase: 0, acum: 0, acumAcoes: 0, y: null, fila: [], bat: [], ultimo: 0, n: 0, acc: 0, tBat: 0, lote: null, lotes: [], nLotes: 0, normal: null, batT: [] };
+  var ECG = { seg: null, minuto: null, bater: null, y: null, fila: [], bat: [], ultimo: 0, n: 0, acc: 0, tBat: 0, lote: null, lotes: [], nLotes: 0, normal: null, batT: [] };
   var PQRST = [0, 0.04, 0.08, 0.04, 0, 0, -0.1, 1, -0.42, -0.08, 0, 0.06, 0.12, 0.16, 0.12, 0.05, 0];
   var PQRST_CURTO = PQRST.filter(function (v, i) { return i % 2 === 0; });   // 16/10: a batida curta de uma rajada (9 amostras, 0,15 s)
-  // 21/10 (ele: "o coracao nao esta sincronizado e nem consegue organizar um ritmo"): MEDIDO - cada evento batia (ate 8 batidas
-  // curtas por lote) e os eventos chegam aos molhos (o vivo.json de segundo a segundo, os lotes de genes, as voltas da frota): o
-  // traco era rajada-silencio-rajada, nunca um ritmo. Agora o coracao tem MARCA-PASSO: bate a intervalos regulares, a frequencia
-  // segue (devagar, ~8 s) os eventos por minuto da torre, e a FORCA de cada batida e o que aconteceu desde a anterior (mais
-  // eventos = batida mais alta; sem nada, uma batida baixa - um coracao nao para). O nucleo do vortex bate com ele; os pontos do
-  // vortex continuam a acender a hora de cada evento (cada funcionario). PURAS (testes_t3b.js).
+  // 21/10 20h (ele: "a cada segundo o sistema tem que identificar quantas batidas da; o vortex e o coracao sao praticamente 1"):
+  // o coracao bate NO COMPASSO (t3b_vivo.js: batidaDoCompasso) - uma batida por segundo em que alguma coisa aconteceu, na virada do
+  // segundo, com a FORCA das accoes desse segundo; segundo vazio = linha plana. O nucleo do vortex bate na mesma batida, e os pontos
+  // dos eventos acendem nesse mesmo instante (os eventos saem todos na virada do segundo). PURA (testes_t3b.js).
   // <coracao-puro>
-  function freqCardiaca(eventosMin) { var e = Math.max(0, Number(eventosMin) || 0); return Math.max(48, Math.min(150, 48 + 18 * Math.log2(1 + e / 10))); }
-  function forcaDaBatida(n, acoes) { n = Number(n) || 0; acoes = Number(acoes) || 0; if (n <= 0) return 0.42; return Math.min(1.55, 0.72 + 0.14 * Math.log2(1 + n) + (acoes > n ? 0.06 * Math.log2(acoes / n) : 0)); }
+  function forcaDaBatida(n, acoes) { n = Number(n) || 0; acoes = Number(acoes) || 0; if (n <= 0) return 0; return Math.min(1.55, 0.72 + 0.14 * Math.log2(1 + n) + (acoes > n ? 0.06 * Math.log2(acoes / n) : 0)); }
   // </coracao-puro>
   // 16/10 17h (ele: "o coracao bate errado, as vezes 300/min, as vezes 10/min"): CADA EVENTO E UMA BATIDA - ECG.bat guarda [hora,
   // 1] e o lote conta EVENTOS; as accoes de um evento (os 300 genes de um lab, as 30 regras de um ficheiro) fazem a batida mais FORTE,
@@ -677,7 +674,6 @@
     // conta, mas nao bate: ao voltar a pagina, minutos de eventos acumulados disparavam de uma vez e o coracao ficava 'acelerado'
     if (ev.alvo_ms && Date.now() - ev.alvo_ms > 3000) { ECG.bat.push([ev.alvo_ms, 1]); ECG.n += 1; return; }
     var f = clamp(r.forca || 0.5, 0.2, 1) * (ev.k === 'batimento' ? 1.4 : 1), ag = agoraMs();
-    ECG.acum += 1; ECG.acumAcoes += w;                                  // 21/10: a forca da proxima batida do marca-passo
     // 08/10 (OBRA 11): o que chega JUNTO (o mesmo lote do /vivo.json) e UMA batida, mais forte quanto mais coisas mexem. Antes cada
     // evento punha uma batida inteira (0,3 s) na fila: uma rajada de 10 deixava o coracao 3,5 s atrasado do vortex e dos cartoes
     if (ECG.lote && ag - ECG.lote.t0 < 90) { ECG.lote.n += 1; ECG.lote.acoes += w; ECG.lote.f = Math.max(ECG.lote.f, f); }   // 16/10: 150 -> 90 ms (os segundos espalhados batem cada um)
@@ -693,6 +689,8 @@
   // o ritmo normal da torre (para a cor): 16/10 18h - so com 3+ min de medida (com a janela a encher comecava baixo e tudo parecia
   // 'acelerado' durante ~20 min); ate la a cor e a neutra
   T3B.on('ritmo', function (r) { if (ECG.normal == null && r && r.n > 0 && (r.janela_min || 0) >= 3) ECG.normal = Math.max(20, r.n); });
+  // 21/10 20h: a batida do compasso (a desenhar no proximo quadro: o mesmo instante dos eventos)
+  T3B.on('compasso', function (c) { var sg = c && c.segundo; ECG.seg = sg; ECG.minuto = c && c.minuto; if (sg && sg.n > 0) ECG.bater = { amp: forcaDaBatida(sg.n, sg.acoes), n: sg.n }; });
   var cenaEcg = null;
   (function () {
     var cv = $('cv_coracao'); if (!cv) return;
@@ -709,14 +707,11 @@
     cenaEcg = cena(cv, { id: 'coracao', bloco: $('bl_coracao'), desenhar: function (ctx, w, h, t, dt, s) {
       var N = Math.max(40, Math.ceil((w - X0) / PASSO) + 2);
       if (!ECG.y || ECG.y.length !== N) ECG.y = new Array(N).fill(0);
-      // 21/10: o MARCA-PASSO (ver freqCardiaca): a batida sai a intervalos regulares, com a forca do que aconteceu desde a anterior
+      // 21/10 20h: a batida do COMPASSO - uma por segundo com eventos, a forca das accoes desse segundo
       var bpm = NUC.ritmo && NUC.ritmo.n != null ? NUC.ritmo.n : somaBat();
       if (ECG.lote && !ECG.lote.feito) ECG.lote.feito = true;
-      var alvoHr = freqCardiaca(bpm); ECG.hr = ECG.hr == null ? alvoHr : ECG.hr + (alvoHr - ECG.hr) * Math.min(1, dt / 8);
-      if (!calmo) ECG.fase += dt * ECG.hr / 60;
-      if (ECG.fase >= 1) {
-        ECG.fase = ECG.fase >= 2 ? 0 : ECG.fase - 1;
-        var ampA = forcaDaBatida(ECG.acum, ECG.acumAcoes); ECG.acum = 0; ECG.acumAcoes = 0;
+      if (ECG.bater) {
+        var ampA = ECG.bater.amp; ECG.bater = null;
         ECG.nLotes += 1; ECG.ultimo = agoraMs(); ECG.batT.push(Date.now());
         NUC.bate = Math.min(1.3, (NUC.bate || 0) + 0.5 * Math.min(1.2, ampA));   // o nucleo do vortex bate com o coracao
         if (ECG.fila.length > 30) ECG.fila.length = 30;
@@ -752,7 +747,8 @@
       var bt = clamp(1 - (agoraMs() - ECG.ultimo) / 380, 0, 1), esc = 1 + 0.22 * bt;
       rot(ctx, String(bpm), 8, h * 0.5 + 6, 'rgb(' + RGB3[estado] + ')', 20, 'left', 700);
       rot(ctx, ['calmo', 'activo', 'acelerado'][estado], 46, h * 0.5 + 5, 'rgba(' + RGB3[estado] + ',.85)', 7.5, 'left', 600);
-      rot(ctx, '♥ ' + Math.round(ECG.hr || 0) + ' bpm · o ritmo da torre', 8, 12, 'rgba(255,123,127,.9)', 7.5, 'left', 700);   // 21/10: o marca-passo
+      var sgE = ECG.seg, mnE = ECG.minuto;   // 21/10 20h: o compasso - este segundo e o ultimo minuto, por tipo
+      rot(ctx, '♥ ' + (sgE ? sgE.n : 0) + ' neste segundo · ' + (mnE ? mnE.comBatida : 0) + ' batidas/min' + (mnE ? ' · trabalho ' + mnE.porTipo.trabalho + ' · chat ' + mnE.porTipo.chat + ' · mercado ' + mnE.porTipo.mercado : ''), 8, 12, 'rgba(255,123,127,.9)', 7.5, 'left', 700);
       var ulP = PULSOS[PULSOS.length - 1];                                     // (Q5 B7) o nome do sector pulsa a cada batida
       if (ulP && ulP.nome) { var idU = (agoraMs() - ulP.t) / 1000; if (idU < 2.2) { ctx.globalAlpha = 1 - idU / 2.2; rot(ctx, TX.cortar(ulP.nome, 24), 8, h * 0.5 + 20, ulP.cor, 8 + 2.5 * Math.max(0, 1 - idU * 3), 'left', 700);
         if (ECG.lote && (ECG.lote.n > 1 || ECG.lote.acoes > 1)) rot(ctx, ECG.lote.n > 1 ? ECG.lote.n + ' ao mesmo tempo' : ECG.lote.acoes + ' acções num evento', 8, h * 0.5 + 31, 'rgba(255,255,255,.75)', 7.5, 'left', 600);   // o enxame

@@ -272,7 +272,7 @@
       // 16/10 18h: a hora a que o grupo DEVIA tocar - o contador conta por ela (o telemovel congela os setTimeout com a pagina em
       // segundo plano e, ao voltar, disparam todos de uma vez: contados pela hora do disparo, o numero subia para 98 'acelerado')
       var alvo = g[0].mc + PUB.D; g.forEach(function (e) { e.alvo_ms = alvo; });
-      var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); };
+      var soltar = function () { soltarNoCompasso(g); };   // 21/10: sai na virada do segundo, com tudo o resto
       if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
     });
   }
@@ -291,7 +291,7 @@
     grupos.forEach(function (g, i) {
       var atraso = span <= teto ? (isFinite(m0) && g[0].ms ? Math.min(teto, Math.max(0, g[0].ms - m0)) : 0) : Math.min(5000, i * passo);
       var alvoR = agoraR + atraso; g.forEach(function (e) { e.alvo_ms = alvoR; });   // 16/10 18h: a hora a que devia tocar
-      var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); };
+      var soltar = function () { soltarNoCompasso(g); };   // 21/10: sai na virada do segundo, com tudo o resto
       if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
     });
   }
@@ -337,6 +337,55 @@
   // 16/10 18h: a hora com que um evento tocado entra no contador - a que devia tocar (alvo) quando ja passou; senao a de agora
   function tempoDoTocado(alvo, agora) { return isFinite(alvo) && alvo > 0 && alvo <= agora ? alvo : agora; }
   // </ritmo-puro>
+  // 21/10 20h (ele: "o vortex, o coracao, o equalizador, o livro e o laboratorio nao estao sincronizados aos eventos por minuto ou
+  // por segundo; a cada segundo o sistema tem que identificar quantas batidas da, para ser um ritmo facil de medir; os chats e os
+  // movimentos de mercado tambem; o vortex e o coracao sao praticamente 1"). O COMPASSO: tudo o que toca durante um segundo cai no
+  // balde desse segundo e, na virada do segundo do relogio, sai DE UMA VEZ para todos (coracao, vortex, equalizador, livro,
+  // laboratorio, radar, chat, cartoes, a torre 3D) - o mesmo instante para todos. Cada segundo e uma batida com o seu numero
+  // (quantos eventos, quantas accoes, por andar, por tipo: trabalho, chat, mercado); o 'por minuto' e a SOMA dos ultimos 60
+  // segundos - o mesmo numero no cabecalho, no coracao e no vortex. PURAS (testes_t3b.js).
+  // <compasso-puro>
+  var K_CHAT = { recado: 1, falou: 1, conversa: 1, resposta: 1, pergunta: 1, mensagem: 1 };
+  var RX_MERCADO = /numeros_reais|binance|liquidac|noticias_cripto|noticias_eua|mesa|executor|cotac|preco|ordens|pnl|realizado|fecho|nucleos|reactor|ouro/;
+  var RX_CHAT = /^(conversa|noticias_chat|chat|barramento|carteiro)/;
+  function tipoDoEvento(e) {
+    var k = String((e && e.k) || ''), id = String((e && e.id) || '').toLowerCase();
+    if (K_CHAT[k] || RX_CHAT.test(id)) return 'chat';
+    if (RX_MERCADO.test(id)) return 'mercado';
+    return 'trabalho';
+  }
+  function resumoDoSegundo(g, t) {
+    var r = { t: t, n: 0, acoes: 0, quem: 0, porAndar: {}, porTipo: { trabalho: 0, chat: 0, mercado: 0 } }, ids = {};
+    (g || []).forEach(function (e) {
+      if (!e) return;
+      var k = nDoEvento(e); r.n++; r.acoes += k; r.porTipo[tipoDoEvento(e)]++;
+      if (e.andar != null) r.porAndar[e.andar] = (r.porAndar[e.andar] || 0) + k;
+      if (e.id != null && !ids[e.id]) { ids[e.id] = 1; r.quem++; }
+    });
+    return r;
+  }
+  function somaDaSerie(serie, agora, janelaMs) {
+    var o = { n: 0, acoes: 0, segundos: 0, comBatida: 0, porTipo: { trabalho: 0, chat: 0, mercado: 0 } };
+    (serie || []).forEach(function (s) {
+      if (!s || agora - s.t > (janelaMs || 60000)) return;
+      o.segundos++; o.n += s.n; o.acoes += s.acoes; if (s.n > 0) o.comBatida++;
+      Object.keys(o.porTipo).forEach(function (k) { o.porTipo[k] += (s.porTipo || {})[k] || 0; });
+    });
+    return o;
+  }
+  // </compasso-puro>
+  var COMPASSO = { balde: [], serie: [], soma: null };
+  function soltarNoCompasso(g) { Array.prototype.push.apply(COMPASSO.balde, g || []); }
+  function batidaDoCompasso() {
+    var agora = Date.now(), g = COMPASSO.balde; COMPASSO.balde = [];
+    var s = resumoDoSegundo(g, agora);
+    COMPASSO.serie.push(s); while (COMPASSO.serie.length && agora - COMPASSO.serie[0].t > 61000) COMPASSO.serie.shift();
+    COMPASSO.soma = somaDaSerie(COMPASSO.serie, agora, 60000);
+    if (g.length) { filaDeCartoes(g); T3B.emit('eventos', g); }
+    T3B.emit('compasso', { segundo: s, minuto: COMPASSO.soma });
+  }
+  setTimeout(function () { batidaDoCompasso(); setInterval(batidaDoCompasso, 1000); }, 1000 - (Date.now() % 1000));   // na virada do segundo
+  T3B.compasso = function () { return { serie: COMPASSO.serie.slice(-60), minuto: COMPASSO.soma }; };
   T3B.nDoEvento = nDoEvento;
   var TOCADOS = [], PAGINA_DESDE = Date.now();
   T3B.on('eventos', function (g) {
@@ -357,11 +406,15 @@
     while (TOCADOS.length && agora - TOCADOS[0].t > RITMO_JANELA_MS + 60000) TOCADOS.shift();
     var r = ritmoDosTocados(TOCADOS, agora, RITMO_JANELA_MS, PAGINA_DESDE);
     r.agora = new Date(agora).toISOString(); r.servidor = E.ritmoServidor ? E.ritmoServidor.n : null;
+    // 21/10: o numero que se ve e o do COMPASSO - os eventos dos ultimos 60 segundos (o mesmo do coracao e do vortex); a media de
+    // 5 min fica no titulo
+    var cp = COMPASSO.soma;
+    if (cp && cp.segundos >= 5) { r.media5 = r.n; r.n = cp.n; r.acoes = cp.acoes; r.compasso = cp; }
     E.ritmo = r;
     // 16/10: na copia publica, a fotografia parada (o servidor do PC nao responde ao publicar) diz-se - nunca um numero velho calado
     var parada = window.T3B_PUBLICADO && E.pubEmMudou && agora - E.pubEmMudou > 4 * 60000 && E.pubEm;
-    txt($('b_ritmo'), r.n + ' ev/min · ' + r.quem + ' func.' + (parada ? ' · fotografia parada desde ' + String(E.pubEm).slice(-8, -3) : ''));
-    var br = $('b_ritmo'); if (br) br.title = r.n + ' eventos por minuto (média dos últimos ' + r.janela_min + ' min; cada evento é uma batida) · ' + r.acoes + ' acções/min (um lote de genes ou de regras conta cada uma) · no último minuto: ' + r.eventos_60s + ' eventos e ' + r.acoes_60s + ' acções de ' + r.quem + ' funcionários' + (r.servidor != null ? ' · servidor: ' + r.servidor : '');
+    txt($('b_ritmo'), r.n + ' ev/min · ' + (cp && cp.segundos ? Math.round(100 * cp.comBatida / cp.segundos) + '% dos seg. · ' : '') + r.quem + ' func.' + (parada ? ' · fotografia parada desde ' + String(E.pubEm).slice(-8, -3) : ''));
+    var br = $('b_ritmo'); if (br) br.title = r.n + ' eventos no último minuto (o compasso: soma dos últimos 60 segundos' + (cp ? '; ' + cp.comBatida + ' segundos com batida; trabalho ' + cp.porTipo.trabalho + ' · chat ' + cp.porTipo.chat + ' · mercado ' + cp.porTipo.mercado : '') + '; média de 5 min: ' + (r.media5 != null ? r.media5 : r.n) + ') · ' + r.acoes + ' acções/min (um lote de genes ou de regras conta cada uma) · no último minuto: ' + r.eventos_60s + ' eventos e ' + r.acoes_60s + ' acções de ' + r.quem + ' funcionários' + (r.servidor != null ? ' · servidor: ' + r.servidor : '');
     T3B.emit('ritmo', r);
   }, 1000);
 
