@@ -839,13 +839,17 @@
     // 21/10 (ele: "a torre so engorda, nada vira musculo"): o cartao passa a contar MUSCULO - sinais conferidos pelo juiz contra o
     // preco (so sobe, mas so com o que foi testado de verdade); por baixo, os de hoje, o balde, as fontes provadas e o conselho.
     var musculo = d.medida === 'musculo';
-    numeroVivo('org', 'c_org', 'n_org', d.total, function (v) { return fmt(v, 0); }, 'up', musculo ? 'músculo' : 'evolução');
+    // 21/10 20h (ele: "o musculo esta zerado e nao mostra nada ha um tempo"): o numero = conferidos AO VIVO + conferidos pelo juiz no
+    // PASSADO (as torneiras com historia, o ultimo ano, a mesma regua); por baixo, separados, e a hora da proxima conferencia ao vivo
+    var hi = obj(d.historico), totM = (Number(d.total) || 0) + (Number(hi.conferidos) || 0);
+    var pcf = d.proxima_conferencia ? new Date(d.proxima_conferencia) : null, pcfTxt = pcf && !isNaN(pcf) ? ('0' + pcf.getHours()).slice(-2) + ':' + ('0' + pcf.getMinutes()).slice(-2) + (brtDia(pcf.getTime()) !== brtDia(Date.now()) ? ' de amanhã' : '') : '';
+    numeroVivo('org', 'c_org', 'n_org', musculo ? totM : d.total, function (v) { return fmt(v, 0); }, 'up', musculo ? 'músculo' : 'evolução');
     txt($('n_org_s'), musculo
-      ? 'hoje +' + fmt(d.hoje, 0) + ' conferidos · ' + fmt(d.no_balde, 0) + ' no balde · ' + fmt(d.provadas, 0) + ' fontes provadas · conselho mexeu ' + fmt(d.conselho_mexeu, 0) + '×'
+      ? 'ao vivo ' + fmt(d.total, 0) + (Number(d.total) ? ' (hoje +' + fmt(d.hoje, 0) + ')' : (pcfTxt ? ' · 1.ª às ' + pcfTxt : '')) + ' · histórico ' + fmt(hi.conferidos || 0, 0) + ' em ' + fmt(hi.dias || 0, 0) + ' d · ' + fmt(d.no_balde, 0) + ' no balde · provadas ' + fmt(d.provadas, 0) + ' (histórico ' + lista(hi.provadas_estaveis).length + ')'
       : 'hoje +' + fmt(d.hoje, 0) + ' · próximas 3 h ≈ +' + fmt(d.proximas_3h, 0));
     txt($('bx_hoje'), '+' + fmt(d.hoje, 0));
     var pc = obj(d.por_canal_hoje), det = Object.keys(pc).sort(function (a, b) { return pc[b] - pc[a]; }).map(function (k) { return (NOME_CANAL[k] || k) + ' +' + fmt(pc[k], 0); }).join(' · ');
-    var c = $('c_org'); if (c) c.title = (musculo ? 'sinais conferidos hoje por fonte: ' : 'evolução de hoje por canal: ') + det + ' · total desde sempre (só sobe): ' + fmt(d.total, 0);
+    var c = $('c_org'); if (c) c.title = (musculo ? 'sinais conferidos pelo juiz contra o preço. Ao vivo: ' + fmt(d.total, 0) + (det ? ' (hoje: ' + det + ')' : '') + (pcfTxt ? ' · próxima conferência ' + pcfTxt : '') + ' · no passado (' + (hi.de || '?') + ' a ' + (hi.ate || '?') + '): ' + fmt(hi.conferidos || 0, 0) + ' de ' + fmt(hi.fontes || 0, 0) + ' torneiras; melhores: ' + lista(hi.melhores).map(function (m) { return m.fonte + ' h' + m.horizonte_d + ' t=' + m.t + (m.estavel ? ' estável' : ''); }).join(', ') : 'evolução de hoje por canal: ' + det + ' · total desde sempre (só sobe): ' + fmt(d.total, 0));
   }
   function pintarEvolucao(T) {
     if (E.evo) return;
