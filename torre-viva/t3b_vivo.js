@@ -719,8 +719,11 @@
   function pintarReais() {
     var el = $('n_cap_s'); if (!el || !AOVIVO.real) return;
     var cb = cotacaoBrl(), r = cb ? textoReais(E.capAgora, cb.v) : '';
-    txt(el, (r ? r + ' · ' : '') + LEG_CAP);
-    if (r) el.title = 'o capital da casa em reais: USDT a R$ ' + Number(cb.v).toFixed(3) + ' ' + cb.fonte;
+    txt(el, LEG_CAP);                                    // 21/10: os reais passaram para o cartao proprio, ao lado (amarelo)
+    var vb = $('n_brl'), sb = $('n_brl_s');
+    if (vb) txt(vb, r ? r.replace('≈ ', '') : '—');
+    if (sb) txt(sb, cb ? 'USDT a R$ ' + Number(cb.v).toFixed(3).replace('.', ',') + (cb.fonte.indexOf('segundo') >= 0 ? ' · ao segundo' : ' · de 15 em 15 s') : 'sem cotação do real ainda');
+    if (r && vb) vb.parentNode.title = 'o capital da casa em reais: USDT a R$ ' + Number(cb.v).toFixed(3) + ' ' + cb.fonte;
   }
   var REST_URL = 'https://data-api.binance.vision/api/v3/ticker/bookTicker?symbols=', REST_EM_VOO = false, BRL_EM_VOO = false;
   setInterval(function () {      // 16/10: sem o fluxo do USDT/BRL ha 30 s, o livro publico
