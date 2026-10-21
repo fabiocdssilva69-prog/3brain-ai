@@ -762,11 +762,16 @@
   function aplicarEvolucao(d) {
     if (!d || d.total == null || d.erro) return;
     E.evo = d;
-    numeroVivo('org', 'c_org', 'n_org', d.total, function (v) { return fmt(v, 0); }, 'up', 'evolução');
-    txt($('n_org_s'), 'hoje +' + fmt(d.hoje, 0) + ' · próximas 3 h ≈ +' + fmt(d.proximas_3h, 0));
+    // 21/10 (ele: "a torre so engorda, nada vira musculo"): o cartao passa a contar MUSCULO - sinais conferidos pelo juiz contra o
+    // preco (so sobe, mas so com o que foi testado de verdade); por baixo, os de hoje, o balde, as fontes provadas e o conselho.
+    var musculo = d.medida === 'musculo';
+    numeroVivo('org', 'c_org', 'n_org', d.total, function (v) { return fmt(v, 0); }, 'up', musculo ? 'músculo' : 'evolução');
+    txt($('n_org_s'), musculo
+      ? 'hoje +' + fmt(d.hoje, 0) + ' conferidos · ' + fmt(d.no_balde, 0) + ' no balde · ' + fmt(d.provadas, 0) + ' fontes provadas · conselho mexeu ' + fmt(d.conselho_mexeu, 0) + '×'
+      : 'hoje +' + fmt(d.hoje, 0) + ' · próximas 3 h ≈ +' + fmt(d.proximas_3h, 0));
     txt($('bx_hoje'), '+' + fmt(d.hoje, 0));
     var pc = obj(d.por_canal_hoje), det = Object.keys(pc).sort(function (a, b) { return pc[b] - pc[a]; }).map(function (k) { return (NOME_CANAL[k] || k) + ' +' + fmt(pc[k], 0); }).join(' · ');
-    var c = $('c_org'); if (c) c.title = 'evolução de hoje por canal: ' + det + ' · total desde sempre (só sobe): ' + fmt(d.total, 0);
+    var c = $('c_org'); if (c) c.title = (musculo ? 'sinais conferidos hoje por fonte: ' : 'evolução de hoje por canal: ') + det + ' · total desde sempre (só sobe): ' + fmt(d.total, 0);
   }
   function pintarEvolucao(T) {
     if (E.evo) return;
