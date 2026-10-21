@@ -1231,7 +1231,7 @@
   function posMesa() { return posicoesDaMesa(T3B.estado.T, precoVivoDe); }
   function simboloDaMesa() { return simboloEmRoda(posMesa(), Date.now(), LIVRO_RODA_MS) || 'BTCUSDT'; }
   function livroVisivel() { var h = $('h_livro'); return !!(h && !h.classList.contains('min') && !document.hidden && !gavetaAberta && !T3B.pequeno && !(T3B.estado.perto && !$('palco').classList.contains('holos-de-volta'))); }
-  function aoLivro(d) { if (!d) return; LIV.b = (d.bids || []).slice(0, 6).map(function (x) { return [Number(x[0]), Number(x[1])]; }); LIV.a = (d.asks || []).slice(0, 6).map(function (x) { return [Number(x[0]), Number(x[1])]; }); if (LIV.b.length && LIV.a.length) LIV.mid = (LIV.b[0][0] + LIV.a[0][0]) / 2; LIV.ultMsg = Date.now(); LIV.falhas = 0; sujar(cenaLivro, 0); }
+  function aoLivro(d) { if (!d) return; LIV.b = (d.bids || []).slice(0, 10).map(function (x) { return [Number(x[0]), Number(x[1])]; }); LIV.a = (d.asks || []).slice(0, 10).map(function (x) { return [Number(x[0]), Number(x[1])]; }); if (LIV.b.length && LIV.a.length) LIV.mid = (LIV.b[0][0] + LIV.a[0][0]) / 2; LIV.ultMsg = Date.now(); LIV.falhas = 0; sujar(cenaLivro, 0); }
   function trocarSimbolo(sym) { if (LIV.sym !== sym) { LIV.b = []; LIV.a = []; LIV.mid = null; LIV.tTroca = agoraMs(); } LIV.sym = sym; }
   function ligarLivro() {
     var quer = livroVisivel(), sym = simboloDaMesa();
@@ -1284,7 +1284,7 @@
     cenaLivro = cena(cv, { id: 'livro', holo: $('h_livro'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       // 07/10 (Q5 B3, li_lado): o livro a esquerda (46%), a Mesa (a conta real) a direita
-      var L0 = Math.max(110, w * 0.46), top = TOPO + 22, bot = h - 3, mid = (top + bot) / 2, n = clamp(Math.floor((bot - top) / 2 / 11), 2, 6), rh = (bot - top) / (n * 2), cx = L0 / 2, agora = agoraMs();
+      var L0 = Math.max(110, w * 0.46), top = TOPO + 22, bot = h - 3, mid = (top + bot) / 2, n = clamp(Math.floor((bot - top) / 2 / 11), 2, 10), rh = (bot - top) / (n * 2), cx = L0 / 2, agora = agoraMs();
       var POS = posMesa(), P = POS.filter(function (x) { return x.sym === LIV.sym; })[0], iP = POS.indexOf(P);
       if (!LIV.b.length) {
         // sem o livro (a ligar, a trocar de moeda, ou a Binance fora): o ultimo preco que a pagina tem; nunca um painel vazio
@@ -1655,6 +1655,7 @@
   function carregarLabs() {
     fetch('labs.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       if (!d || !d.labs) return;
+      LAB.tLabs = String(d.t_iso || '').slice(11, 16) || LAB.tLabs;   // 21/10: a hora da amostra (o estado do cartao)
       var porGrupo = GRUPOS.map(function () { return []; });
       LAB.tot = {}; LAB.rob = {}; LAB.dem = {};
       d.labs.forEach(function (l) { if (l.esp && GRUPO_DA_ESP[l.esp] != null) GRUPO_DO_ANDAR[l.n] = GRUPO_DA_ESP[l.esp]; var gi = GRUPO_DO_ANDAR[l.n]; if (gi == null) return; LAB.tot[gi] = (LAB.tot[gi] || 0) + l.total; LAB.rob[gi] = (LAB.rob[gi] || 0) + l.robustos; LAB.dem[gi] = (LAB.dem[gi] || 0) + l.demitidos; (l.amostra || []).forEach(function (s) { porGrupo[gi].push({ k: s.k, r: s.r, d: s.d, andar: l.n }); }); });
@@ -1674,7 +1675,8 @@
   aoReagir('lab', function (ev, r) {
     var agora = agoraMs(); LAB.nEv++; LAB.ultimo = ev;
     if (ev.k === 'genes') {
-      LAB.tGenes = agora; LAB.genesUlt = { n: nDe(ev), quem: ev.quem || '', tipo: ev.tipo || '' };   // 16/10 20h: o estado do cartao
+      // 21/10: a hora do PROPRIO evento (o passado que a 1.a leitura traz dizia 'agora mesmo'; sem ele, 'a espera' ate 15 min)
+      LAB.tGenes = agora - Math.max(0, Date.now() - (Number(ev.ms) > 0 ? Number(ev.ms) : Date.now())); LAB.genesUlt = { n: nDe(ev), quem: ev.quem || '', tipo: ev.tipo || '' };   // 16/10 20h: o estado do cartao
       var gi = GRUPO_DO_ANDAR[ev.andar]; if (gi == null) return;
       var rob = {}; (ev.robustas || []).forEach(function (k) { rob[k] = 1; });
       (ev.chaves || []).slice(0, 16).forEach(function (k) {
@@ -1710,7 +1712,7 @@
     var ha = LAB.tGenes ? agora - LAB.tGenes : null, g = LAB.genesUlt || {}, txt, cor;
     if (ha != null && ha < 12000) { txt = 'a calcular: ' + TX.limpar(g.quem || 'lab') + ' · ' + fmt(g.n || 1, 0) + ' genes'; cor = C.ouroHi; }
     else if (ha != null) { var m = Math.floor(ha / 60000); txt = 'último cálculo ' + (m < 1 ? 'agora mesmo' : 'há ' + m + ' min'); cor = m > 30 ? C.am : C.dim; }
-    else { txt = 'à espera do 1.º cálculo dos genes'; cor = C.dim; }
+    else { txt = 'genes lidos' + (LAB.tLabs ? ' às ' + LAB.tLabs : '') + ' · o próximo cálculo vem na prévia (de 15 em 15 min)'; cor = C.dim; }
     rot(ctx, TX.cortar(txt, Math.max(8, Math.floor((w - 12) / 4.6))), 6, TOPO + 9, cor, 7.5, 'left', 600);
     // 21/10 (ele: "o laboratorio esta bugado"; "tudo tem que ser do balde"): o que o laboratorio produz e posto a prova - o balde de
     // sinais (todas as fontes e os algoritmos da fabrica), quantos o juiz ja conferiu e a melhor fonte do placar
@@ -2305,7 +2307,7 @@
       hs.forEach(function (h) { if (!h.classList.contains('min')) pesos += Number(h.dataset.peso || 1); });
       var unid = pesos ? Math.max(56, (Hc - gap * (hs.length - 1) - nMin * 42) / pesos) : 0;
       var itens = hs.map(function (h, i) {
-        var n = andarDoHolo(h.dataset.andarChave), a = (!fora && n != null) ? anc[n + par[1]] : null, alt = h.classList.contains('min') ? 42 : Math.min(240, unid * Number(h.dataset.peso || 1));
+        var n = andarDoHolo(h.dataset.andarChave), a = (!fora && n != null) ? anc[n + par[1]] : null, alt = h.classList.contains('min') ? 42 : Math.min(Number(h.dataset.max || 240), unid * Number(h.dataset.peso || 1));   // 21/10: data-max (o livro maior)
         if (n != null) presos[n] = 1;
         var quer = a && a.ok ? (a.y + pr.top - cr.top) - alt / 2 : null;
         return { h: h, n: n, a: a && a.ok ? a : null, alt: alt, quer: quer, i: i };
