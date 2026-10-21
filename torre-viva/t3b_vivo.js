@@ -384,7 +384,8 @@
     if (g.length) { filaDeCartoes(g); T3B.emit('eventos', g); }
     T3B.emit('compasso', { segundo: s, minuto: COMPASSO.soma });
   }
-  setTimeout(function () { batidaDoCompasso(); setInterval(batidaDoCompasso, 1000); }, 1000 - (Date.now() % 1000));   // na virada do segundo
+  // na virada do segundo do relogio, re-agendada a cada batida (o setInterval derivava ate 700 ms dentro do segundo)
+  (function agendarCompasso() { setTimeout(function () { batidaDoCompasso(); agendarCompasso(); }, 1000 - (Date.now() % 1000) + 5); })();
   T3B.compasso = function () { return { serie: COMPASSO.serie.slice(-60), minuto: COMPASSO.soma }; };
   T3B.nDoEvento = nDoEvento;
   var TOCADOS = [], PAGINA_DESDE = Date.now();
