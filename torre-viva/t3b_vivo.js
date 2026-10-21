@@ -765,6 +765,7 @@
   function aplicarEvolucao(d) {
     if (!d || d.total == null || d.erro) return;
     E.evo = d;
+    if (d.balde) T3B.emit('balde', d.balde);       // 21/10: o laboratorio, o livro e o radar mostram o balde
     // 21/10 (ele: "a torre so engorda, nada vira musculo"): o cartao passa a contar MUSCULO - sinais conferidos pelo juiz contra o
     // preco (so sobe, mas so com o que foi testado de verdade); por baixo, os de hoje, o balde, as fontes provadas e o conselho.
     var musculo = d.medida === 'musculo';
