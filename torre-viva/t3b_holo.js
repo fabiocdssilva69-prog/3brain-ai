@@ -1361,9 +1361,11 @@
       // 21/10: o BALDE desta moeda - quantas fontes dizem alta/baixa hoje, a nota do conselho e porque o preco mexeu
       var bm = BALDE && LIV.sym ? String(LIV.sym).replace(/USDT$/, '') : null, bv = bm ? ((BALDE.moedas || {})[bm] || null) : null, bc = bm ? (BALDE.conselho || {})[bm] : null;
       var bx = bm ? (BALDE.explicacoes || []).filter(function (e) { return e.base === bm; })[0] : null;
+      var ba = bm ? (BALDE.analistas || {})[bm] : null;   // 21/10 19h: o analista desta moeda
       var linhasLivres = Math.floor((h - y - 6) / 11) - (nOrd > 0 ? nOrd + 2 : 0);
       if (bm && linhasLivres >= 2) {
         y += 13; rot(ctx, TX.cortar('BALDE ' + bm + (bv ? ' · ' + bv.alta + '↑ ' + bv.baixa + '↓' : ' · nenhuma fonte hoje') + (bc != null ? ' · conselho ' + sinal(bc, 2) : ''), Math.floor(larR / 4.3)), xR, y, C.cy, 7, 'left', 700);
+        if (ba && linhasLivres >= 3) { y += 10; linhasLivres--; rot(ctx, TX.cortar('analista: ' + (ba.direcao > 0 ? '▲ bate o mercado' : ba.direcao < 0 ? '▼ fica atrás' : '— sem sinal') + ' · ' + Math.round((ba.confianca || 0) * 100) + '% · ' + (ba.horizonte_d || 3) + ' d', Math.floor(larR / 4.2)), xR, y, ba.direcao > 0 ? C.ok : ba.direcao < 0 ? C.mau : C.mute, 7, 'left', 700); }
         if (bx && bx.explicacao) { var cX = Math.max(10, Math.floor(larR / 4.1)), txX = String(bx.explicacao), nl = Math.min(3, linhasLivres - 1);
           for (var lx = 0; lx < nl && txX; lx++) { var corte = txX.length <= cX ? txX.length : (txX.lastIndexOf(' ', cX) > 8 ? txX.lastIndexOf(' ', cX) : cX); y += 10; rot(ctx, (lx === nl - 1 && txX.length > corte ? TX.cortar(txX, cX) : txX.slice(0, corte)), xR, y, C.mute, 7, 'left', 500); txX = txX.slice(corte).trim(); } }
       }
