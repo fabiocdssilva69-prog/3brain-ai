@@ -48,9 +48,10 @@ body.t3b { background: var(--bg); color: var(--txt); font: 13px/1.45 var(--f-s);
 
 /* ===================== os numeros da casa (odometros) ===================== */
 .casa { height: var(--num-h); display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--line); background: var(--bg2); }
-.casa > div { padding: 7px 16px 6px; border-right: 1px solid var(--line); position: relative; overflow: hidden; min-width: 0; }
+.casa > div { padding: 7px 12px 6px; border-right: 1px solid var(--line); position: relative; overflow: hidden; min-width: 0; }
 .casa > div:last-child { border-right: 0; }
-.casa .v.brl { color: #ffd23f; text-shadow: 0 0 10px rgba(255,210,63,.25); }   /* 21/10: o capital em reais, em amarelo */
+.casa .v.brl { color: #ffd23f; text-shadow: 0 0 10px rgba(255,210,63,.25); white-space: nowrap; }
+.casa .v.brl .rs { font-size: 12px; margin-right: 5px; opacity: .85; }   /* 21/10: o capital em reais, em amarelo */
 .casa u { display: block; text-decoration: none; font: 500 9.5px var(--f-m); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
 .casa .v { font: 500 21px/1.15 var(--f-m); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; }
 .casa .s { font-size: 10.5px; color: var(--dim); white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }   /* 15/10 (ele: "texto comido"): ate 2 linhas */

@@ -721,7 +721,7 @@
     var cb = cotacaoBrl(), r = cb ? textoReais(E.capAgora, cb.v) : '';
     txt(el, LEG_CAP);                                    // 21/10: os reais passaram para o cartao proprio, ao lado (amarelo)
     var vb = $('n_brl'), sb = $('n_brl_s');
-    if (vb) txt(vb, r ? r.replace('≈ ', '') : '—');
+    if (vb) txt(vb, r ? r.replace('≈ R$ ', '') : '—');
     if (sb) txt(sb, cb ? 'USDT a R$ ' + Number(cb.v).toFixed(3).replace('.', ',') + (cb.fonte.indexOf('segundo') >= 0 ? ' · ao segundo' : ' · de 15 em 15 s') : 'sem cotação do real ainda');
     if (r && vb) vb.parentNode.title = 'o capital da casa em reais: USDT a R$ ' + Number(cb.v).toFixed(3) + ' ' + cb.fonte;
   }
