@@ -723,7 +723,7 @@
         ctx.globalAlpha = 1;
         luz(ctx, cor, x, y, 7 + 13 * forcaA + 4 * pulsoA * forcaA, Math.min(1, base * (fosforo + ecoA) * (0.45 + 0.55 * forcaA)));
         if (!p.ok) {                                                  // 21/10 23h: a avaria marcada em quadrado (radar de aeroporto), maior com mais peso
-          var qd = 5 + 4 * forcaA; ctx.strokeStyle = cor; ctx.globalAlpha = Math.min(1, 0.5 + 0.5 * fosforo); ctx.strokeRect(x - qd, y - qd, qd * 2, qd * 2); ctx.globalAlpha = 1;
+          var qd = 5 + 4 * forcaA;   // 22/10 (ele: "quadrados em volta das bolinhas, nao gostei"): sem o quadrado - fica o ponto, o brilho, o nome e o blip
           if (forcaA >= 0.55 || GR.lado) rot(ctx, TX.cortar(nomeDaAvaria(p), 14) + ' · ' + numAndar(p.andar), x + qd + 3, y + 3, cor, 7, 'left', 700);
         }
         if (idade < 3 && !p.ok) { ctx.strokeStyle = cor; ctx.globalAlpha = 1 - idade / 3; ctx.beginPath(); ctx.arc(x, y, 4 + idade * 5, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
@@ -1624,36 +1624,40 @@
     // Uma so gradacao para as barras; os rotulos sao uma camada guardada.
     var V = {}, FASE = {}, PK = {};
     cenaEq = cena(cv, { id: 'equalizador', holo: $('h_equalizador'), desenhar: function (ctx, w, h, t, dt, s) {
-      // 21/10 22h30: as 12 BANDAS (uma por sector) - sobe na hora da accao, desce devagar, pico marcado; cor verde -> ouro -> vermelho
+      // 22/10 (ele: "nao era para trocar as barras do equalizador, era so para mudar a reaccao das barrinhas"): volta UMA BARRA
+      // POR ANDAR (o desenho de 16/10: cor do andar, pico marcado, os 3 mais activos e o sector por cima da barra que reagiu).
+      // A reaccao e a nova: a altura e o ritmo do andar no ultimo minuto (servidor + eventos, raiz contra o maior) e a barra
+      // SALTA NA HORA da accao desse andar (EQ.salto, log das accoes), a descer devagar. As 12 bandas por sector saem.
       ctx.clearRect(0, 0, w, h);
-      var N = BANDAS.length, x0 = 8, top = TOPO + 22, base = h - 22, alt = Math.max(20, base - top), bw = (w - 16) / N, larg = Math.max(4, bw - 4);
-      var agoraE = Date.now(), corte = agoraE - 10000, maxAgora = 0, somas = [];
-      EQ.bandas.forEach(function (B, i) {
-        while (B.jan.length && B.jan[0][0] < corte) B.jan.shift();
-        var sm = 0; B.jan.forEach(function (x) { sm += x[1]; }); somas[i] = sm; if (sm > maxAgora) maxAgora = sm;
-      });
-      EQ.maxRef = Math.max(4, maxAgora, EQ.maxRef * Math.pow(0.5, dt / 120));     // a escala esquece devagar (meia-vida 2 min)
-      var maxE = 0; EQ.bandas.forEach(function (B) { B.e = (B.e || 0) * Math.pow(0.5, dt / 1.5); if (B.e > maxE) maxE = B.e; });
-      EQ.maxE = Math.max(6, maxE, (EQ.maxE || 6) * Math.pow(0.5, dt / 120));   // 21/10 22h50: o pico de energia dos ultimos minutos
-      var topo = -1, topoV = 0;
-      EQ.bandas.forEach(function (B, i) {
-        B.salto *= Math.pow(0.25, dt);
-        var alvo = nivelDaEnergia(B.e || 0, EQ.maxE) + (calmo ? 0 : 0.012 * (1 + Math.sin(t * 1.3 + i)));   // 21/10 22h50: a energia
-        B.v = seguir(B.v, alvo, alvo > B.v ? 18 : 2.2, dt);
-        if (B.v >= B.pk) { B.pk = B.v; B.tPk = t; } else if (t - B.tPk > 0.8) B.pk = Math.max(B.v, B.pk - dt * 0.25);
-        if (somas[i] > topoV) { topoV = somas[i]; topo = i; }
-        var x = x0 + i * bw + 2, hh = Math.max(2, B.v * alt), segs = Math.max(1, Math.round(hh / 5));
-        for (var k = 0; k < segs; k++) {                              // a barra em segmentos de VU (verde -> ouro -> vermelho)
-          var fr = (k + 1) * 5 / alt, cor = fr > 0.85 ? C.mau : fr > 0.6 ? C.ouro : C.ok;
-          ctx.globalAlpha = somas[i] > 0 ? 0.92 : 0.35; ctx.fillStyle = cor; ctx.fillRect(x, base - (k + 1) * 5 + 1, larg, 4);
-        }
-        ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(x, base - B.pk * alt - 2, larg, 1.5);
-        if (B.ult && agoraE - B.ult < 600) luz(ctx, C.ouroHi, x + larg / 2, base - hh, 10, 0.6 * (1 - (agoraE - B.ult) / 600));
-        rot(ctx, TX.cortar(BANDAS[i][0], Math.max(3, Math.floor(bw / 4.6))), x + larg / 2, h - 8, somas[i] > 0 ? C.txt : C.dim, 7, 'center', 600);
-      });
-      var tot10 = somas.reduce(function (a, b) { return a + b; }, 0);
-      rot(ctx, topo >= 0 && topoV > 0 ? '▲ ' + BANDAS[topo][0] + ' · ' + fmt(topoV * 6, 0) + ' acções/min' : 'à espera de trabalho…', 8, TOPO + 9, topo >= 0 ? C.ouroHi : C.dim, 8, 'left', 700);
-      rot(ctx, 'todos: ' + fmt(tot10 * 6, 0) + ' acções/min (últimos 10 s)', 8, TOPO + 19, C.mute, 7.5, 'left', 600);
+      var N = EQ.ns.length; if (!N) { rot(ctx, 'a ler os andares…', w / 2, h / 2 + 8, C.dim, 9, 'center', 500); return; }
+      var x0 = 6, bw = (w - 12) / N, base = h - 4, alt = base - TOPO - 14, larg = Math.max(1, bw - 1.2), rit = EQ.rit || {}, mx = EQ.max || 5;
+      var quentes = [], picos = [], acimaSec = [];
+      if (s.corEqChave !== EQ.ns.join(',')) { COR_EQ = {}; s.corEqChave = EQ.ns.join(','); }
+      for (var i = 0; i < N; i++) {
+        var n = EQ.ns[i], sl = (EQ.salto[n] || 0) * Math.exp(-dt * 0.9); EQ.salto[n] = sl < 0.004 ? 0 : sl;
+        if (!FASE[n]) { var sm = U.semente('eq' + n); FASE[n] = [(sm % 628) / 100, 0.7 + ((sm >> 4) % 100) / 90, 1.6 + ((sm >> 9) % 100) / 70]; }
+        var f = FASE[n], resp = 0.02 * (0.6 * Math.sin(t * f[1] + f[0]) + 0.4 * Math.sin(t * f[2] + f[0] * 1.7));
+        var alvo = clamp(alturaDoAndar(rit[n] || 0, mx, sl) + resp, 0.015, 1);
+        var v = V[n] = seguir(V[n] == null ? alvo : V[n], alvo, 7, dt), hh = Math.max(1, v * alt), x = x0 + i * bw;
+        ctx.fillStyle = COR_EQ[n] || (COR_EQ[n] = (U.corDoAndar ? U.corDoAndar(n) : '#2dd4e8')); ctx.globalAlpha = 0.86;
+        ctx.fillRect(x, base - hh, larg, hh); ctx.globalAlpha = 1;
+        var pk = PK[n] || (PK[n] = { v: 0, t: 0 }); if (v >= pk.v) { pk.v = v; pk.t = t; } else if (t - pk.t > 0.6) pk.v = Math.max(v, pk.v - dt * 0.16);
+        picos.push(x, base - pk.v * alt - 1.5);
+        if (sl > 0.1) { quentes.push(x, base - hh, sl); acimaSec.push({ n: n, x: x + larg / 2, y: base - hh, sl: sl }); }
+      }
+      ctx.fillStyle = 'rgba(255,255,255,.82)';
+      for (var p = 0; p < picos.length; p += 2) ctx.fillRect(picos[p], picos[p + 1], larg, 1.3);
+      for (var q = 0; q < quentes.length; q += 3) { ctx.fillStyle = 'rgba(242,194,48,' + (0.35 + 0.6 * quentes[q + 2]).toFixed(2) + ')'; ctx.fillRect(quentes[q], quentes[q + 1] - 1.5, larg, 2.5); }
+      var top3 = EQ.ns.slice().sort(function (a, b) { return ((EQ.salto[b] || 0) * 2 + (rit[b] || 0) / mx) - ((EQ.salto[a] || 0) * 2 + (rit[a] || 0) / mx); }).slice(0, 3);
+      var col3 = (w - 12) / 3, max3 = Math.max(6, Math.floor((col3 - 6) / 4.6));
+      top3.forEach(function (n, i) { var an = T3B.andar ? T3B.andar(n) : null; rot(ctx, TX.cortar((i ? '' : '▲ ') + n + (an && an.nome ? ' ' + TX.limpar(nomeCurtoAndar(an.nome)) : ''), max3), 6 + i * col3, TOPO + 19, i ? C.mute : C.ouroHi, 7.5, 'left', 600); });
+      acimaSec.sort(function (a, b) { return b.sl - a.sl; });
+      arrumarEtiquetas(ctx, 'equal_sec', acimaSec.slice(0, 3).map(function (e) {
+        var an = T3B.andar ? T3B.andar(e.n) : null, nm = an ? TX.limpar(an.sector || an.nome || ('and. ' + e.n)) : 'and. ' + e.n;
+        return { t: TX.cortar(nm, 18), x: e.x, y: Math.max(TOPO + 20, e.y - 4), dy: -9, cor: C.ouroHi, tam: 7.5 };
+      }), w, h);
+      var tot = 0; Object.keys(rit).forEach(function (k) { tot += rit[k]; });
+      rot(ctx, 'todos: ' + fmt(tot, 0) + ' acções/min', w - 6, TOPO + 19, C.mute, 7.5, 'right', 600);
     } });
   })();
   setInterval(function () { var top = Object.keys(EQ.rit).sort(function (a, b) { return EQ.rit[b] - EQ.rit[a]; })[0], an = top != null && T3B.andar ? T3B.andar(Number(top)) : null; mini('hm_equalizador', [['', fmt(EQ.tot, 0), 'acções/min'], ['mais ativo', top != null ? (an && (an.sector || an.nome) ? TX.cortar(TX.limpar(an.sector || an.nome), 16) : 'and. ' + top) : 'nenhum']]); }, 2000);
