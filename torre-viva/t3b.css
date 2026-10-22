@@ -51,6 +51,7 @@ body.t3b { background: var(--bg); color: var(--txt); font: 13px/1.45 var(--f-s);
 .casa > div { padding: 7px 12px 6px; border-right: 1px solid var(--line); position: relative; overflow: hidden; min-width: 0; }
 .casa > div:last-child { border-right: 0; }
 /* 21/10 22h40 (ele: "escolher o tamanho dos cards e movimenta-los na tela"): o cartao SOLTO fica onde o largaram, do tamanho escolhido */
+.lab-mod { display: none !important; }   /* 21/10 22h45: o laboratorio tem um so modelo (ele escolhe na pagina de exemplos) */
 .palco > .holo.solto { position: absolute !important; transform: none !important; z-index: 6; pointer-events: auto; }
 .holo > .redim { position: absolute; right: 1px; bottom: 1px; width: 14px; height: 14px; cursor: nwse-resize; z-index: 5; pointer-events: auto;
   background: linear-gradient(135deg, transparent 52%, rgba(242,194,48,.55) 52%, rgba(242,194,48,.55) 62%, transparent 62%, transparent 72%, rgba(242,194,48,.55) 72%); }

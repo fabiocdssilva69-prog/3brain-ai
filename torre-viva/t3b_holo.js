@@ -2196,6 +2196,7 @@
     var CHAVE_LAB = 't3b_lab_modelo3', LAB_OMISSAO = 'tubos';   // 21/10 22h: os tubos passam a ser o normal
     try { LAB.modelo = window.localStorage.getItem(CHAVE_LAB) || LAB_OMISSAO; } catch (e) { LAB.modelo = LAB_OMISSAO; }
     if (!MODELOS_LAB[LAB.modelo]) LAB.modelo = LAB_OMISSAO;
+    LAB.modelo = LAB_OMISSAO;   // 21/10 22h45 (ele: "nao quero ficar a escolher opcoes; um so"): sem botoes ate ele escolher o modelo novo
     EXTRA.lab_modelo = function () { return { modelo: LAB.modelo, modelos: ORDEM_LAB.length, nebulosa: MODELOS_LAB.nebulosa.estado(), tubos: MODELOS_LAB.tubos.estado() }; };
     (function () {          // os botoes 1-7 no canto do cartao (a pega de arrastar e so o titulo: nao chocam)
       var hl = $('h_lab'); if (!hl || hl.querySelector('.lab-mod')) return;
