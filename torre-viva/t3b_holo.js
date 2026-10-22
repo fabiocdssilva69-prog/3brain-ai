@@ -29,7 +29,10 @@
   // 21/10 23h55 (ele: "ta muito pesado e travando"; medido no radar: 7 fillText por quadro = 2,4 ms, ~330 us cada - a letra "JetBrains
   // Mono" mais a lista de recurso dos emoji, procurada a cada chamada para ● ▸ ·): um texto que aparece 3 vezes igual (mesma letra, cor e
   // escala do ecra) passa a ser uma imagem guardada e so se copia; o que muda a cada quadro (relogios, numeros a correr) vai direito.
-  var TXT_IMG = new Map();
+  // (22/10 00h, medido: a 1.a medida/escrita depois de trocar de letra num canvas custava 2-7 ms - o browser resolve a lista de recurso
+  //  outra vez. As imagens fazem-se num RASCUNHO partilhado: a letra so muda la, e o canvas do holograma nunca troca de letra.)
+  var TXT_IMG = new Map(), TXT_RASC = null;
+  function rascunhoTexto() { if (!TXT_RASC) { var c = document.createElement('canvas'); c.width = 1024; c.height = 96; TXT_RASC = c.getContext('2d'); TXT_RASC._f = null; } return TXT_RASC; }
   function rotDireito(ctx, t, x, y, cor, f, al) { if (ctx._f !== f) { ctx.font = f; ctx._f = f; } ctx.fillStyle = cor; ctx.textAlign = al || 'left'; ctx.fillText(t, x, y); }
   function rot(ctx, t, x, y, cor, tam, al, peso) {
     var f = fonte(peso, tam); t = String(t);
@@ -39,11 +42,14 @@
     if (++e.n < 3) return rotDireito(ctx, t, x, y, cor, f, al);
     var m = ctx.getTransform(), sc = Math.max(1, Math.round(Math.hypot(m.a, m.b) * 4) / 4);
     if (!e.cv || e.sc !== sc) {
-      if (ctx._f !== f) { ctx.font = f; ctx._f = f; }
-      var mt = ctx.measureText(t), asc = Math.ceil(mt.fontBoundingBoxAscent || tam * 1.05), desc = Math.ceil(mt.fontBoundingBoxDescent || tam * 0.35);
+      var r = rascunhoTexto(); r.setTransform(1, 0, 0, 1, 0, 0); if (r._f !== f) { r.font = f; r._f = f; }
+      var mt = r.measureText(t), asc = Math.ceil(mt.fontBoundingBoxAscent || tam * 1.05), desc = Math.ceil(mt.fontBoundingBoxDescent || tam * 0.35);
+      var W = Math.max(1, Math.ceil((Math.ceil(mt.width) + 2) * sc)), H = Math.max(1, Math.ceil((asc + desc + 2) * sc));
+      if (W > 1024 || H > 96) { e.n = -1e9; return rotDireito(ctx, t, x, y, cor, f, al); }   // (enorme: sempre direito)
       e.w = Math.ceil(mt.width) + 2; e.asc = asc + 1; e.alt = asc + desc + 2; e.sc = sc;
-      var cv = e.cv || document.createElement('canvas'); cv.width = Math.max(1, Math.ceil(e.w * sc)); cv.height = Math.max(1, Math.ceil(e.alt * sc));
-      var g = cv.getContext('2d'); g.setTransform(sc, 0, 0, sc, 0, 0); g.font = f; g.fillStyle = cor; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(t, 1, e.asc);
+      r.clearRect(0, 0, W + 2, H + 2); r.setTransform(sc, 0, 0, sc, 0, 0); r.fillStyle = cor; r.textAlign = 'left'; r.textBaseline = 'alphabetic'; r.fillText(t, 1, e.asc);
+      var cv = e.cv || document.createElement('canvas'); cv.width = W; cv.height = H;
+      cv.getContext('2d').drawImage(r.canvas, 0, 0, W, H, 0, 0, W, H);
       e.cv = cv;
     }
     var x0 = al === 'center' ? x - (e.w - 2) / 2 : al === 'right' ? x - (e.w - 2) : x;
@@ -54,7 +60,7 @@
   function rotCabe(ctx, t, x, y, cor, tam, al, peso, maxW) {
     var f = fonte(peso, tam); if (ctx._f !== f) { ctx.font = f; ctx._f = f; }
     var lw = ctx.measureText(String(t)).width;
-    rot(ctx, t, x, y, cor, lw > maxW && maxW > 0 ? Math.max(6, tam * maxW / lw) : tam, al, peso);
+    rot(ctx, t, x, y, cor, lw > maxW && maxW > 0 ? Math.max(6, Math.floor(tam * maxW / lw * 2) / 2) : tam, al, peso);   // (22/10: em meios pixeis)
   }
   function rr(ctx, x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
   function lerp(a, b, k) { return a + (b - a) * k; }
@@ -683,7 +689,7 @@
         var atr = (a - q) % TAU; if (atr < 0) atr += TAU;
         if (atr < 0.09 && agora - c.blip > RAD.intervalo * 0.5) { c.blip = agora; RAD.nBlips++; }
         var fos = Math.min(1, 0.14 + 0.86 * Math.exp(-atr * 2.4) + (Math.abs(rc - RAD.rOnda) < 6 ? 0.6 : 0)), corC = U.corDoAndar ? U.corDoAndar(Number(n)) : C.cy;   // + o eco da onda
-        if (fos > 0.55) rot(ctx, String(n), xc + 4, yc - 3, 'rgba(184,255,217,' + (0.35 + 0.6 * (fos - 0.55) / 0.45).toFixed(2) + ')', 7, 'left', 600);   // 21/10 23h: o andar, como no radar de aeroporto
+        if (fos > 0.55) { ctx.globalAlpha = 0.35 + 0.6 * (fos - 0.55) / 0.45; rot(ctx, String(n), xc + 4, yc - 3, '#b8ffd9', 7, 'left', 600); ctx.globalAlpha = 1; }   // 21/10 23h: o andar, como no radar de aeroporto
         ctx.globalAlpha = fos; ctx.fillStyle = fos > 0.75 ? '#ffffff' : corC;
         ctx.beginPath(); ctx.arc(xc, yc, 0.9 + 1.5 * nr + 0.8 * Math.exp(-atr * 3), 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
         if (fos > 0.5) luz(ctx, corC, xc, yc, 4 + 4 * nr, fos * 0.5);
