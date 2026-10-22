@@ -131,6 +131,11 @@
     if (s.holo && T3B.estado.perto && !document.getElementById('palco').classList.contains('holos-de-volta')) return true;
     return false;
   }
+  // 21/10 22h50 (ele: "quando mexemos no tamanho dos hologramas, a animacao de dentro nao aumenta"): o desenho de um holograma escala com
+  // o cartao - a referencia e o cartao normal (280 x 230); maior que isso, tudo (letras, pontos, linhas) cresce na mesma proporcao, ate 2,4x
+  // <escala-puro>
+  function escalaDoHolo(w, h) { return Math.max(1, Math.min(2.4, Math.min((Number(w) || 0) / 280, (Number(h) || 0) / 230))); }
+  // </escala-puro>
   function quadro(ms) {
     requestAnimationFrame(quadro);
     if (document.hidden || gavetaAberta) return;
@@ -147,7 +152,14 @@
       if (s.precisaTam) medir(s);
       if (s.w < 20 || s.h < 20) continue;
       var t0 = performance.now();
-      try { s.desenhar(s.ctx, s.w, s.h, t, dts, s); s.desenhos++; } catch (e) { if (window.console) console.warn('holo', e); }
+      var escH = s.holo ? escalaDoHolo(s.w, s.h) : 1;
+      try {
+        if (escH > 1.02) {                                         // desenha no tamanho de referencia e amplia (as camadas guardadas a resolucao inteira)
+          var w0 = s.w, h0 = s.h, d0 = s.d; s.w = w0 / escH; s.h = h0 / escH; s.d = d0 * escH; s.ctx.save(); s.ctx.scale(escH, escH);
+          try { s.desenhar(s.ctx, s.w, s.h, t, dts, s); } finally { s.ctx.restore(); s.w = w0; s.h = h0; s.d = d0; }
+        } else s.desenhar(s.ctx, s.w, s.h, t, dts, s);
+        s.desenhos++;
+      } catch (e) { if (window.console) console.warn('holo', e); }
       s.msDesenho = s.msDesenho * 0.95 + (performance.now() - t0) * 0.05;
     }
   }
@@ -1496,6 +1508,9 @@
   var BANDA_DA_ESP = {}; BANDAS.forEach(function (b, i) { b[1].forEach(function (e) { BANDA_DA_ESP[e] = i; }); });
   function bandaDoEsp(esp) { return BANDA_DA_ESP[esp] != null ? BANDA_DA_ESP[esp] : null; }
   function nivelDaBanda(soma10s, maxRef) { return maxRef > 0 ? Math.max(0, Math.min(1, Math.sqrt(Math.max(0, soma10s) / maxRef))) : 0; }
+  // 21/10 22h50: a ENERGIA da banda (cada accao soma, esquece com meia-vida 1,5 s) contra o pico dos ultimos minutos, em escala log -
+  // um equalizador que sobe e desce com o trabalho (o de 10 s ia ao maximo com 4 accoes e ficava parado)
+  function nivelDaEnergia(e, maxE) { return maxE > 0 ? Math.max(0, Math.min(1, Math.log(1 + Math.max(0, e)) / Math.log(1 + maxE))) : 0; }
   // </bandas-puro>
   var EQ = { bandas: BANDAS.map(function () { return { jan: [], v: 0, pk: 0, tPk: 0, salto: 0 }; }), maxRef: 4, pend: {}, ns: [], base: {}, salto: {}, pico: {}, t: 0, ultimoAndar: null, agora: 0, jan: {}, rit: {}, max: 0, tot: 0, desde: Date.now() };
   T3B.on('estrutura', function (d) {
@@ -1513,7 +1528,7 @@
     EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.3 * (r.forca || 0.5) * Math.min(4, 1 + Math.log2(w)));
     EQ.pend[n] = (EQ.pend[n] || 0) + w * (r.forca || 0.5); EQ.ultimoAndar = n; sujar(cenaEq, 2500);
     var anB = T3B.andar ? T3B.andar(Number(n)) : null, bi = bandaDoEsp(anB && anB.esp);   // 21/10 22h30: a banda do sector
-    if (bi != null && !ev.historia) { var B0 = EQ.bandas[bi]; B0.jan.push([Date.now(), w]); B0.salto = Math.min(1, B0.salto + 0.25 * Math.min(4, 1 + Math.log2(w)) / 4 + 0.12); B0.ult = Date.now(); }
+    if (bi != null && !ev.historia) { var B0 = EQ.bandas[bi]; B0.jan.push([Date.now(), w]); B0.e = (B0.e || 0) + w; B0.salto = Math.min(1, B0.salto + 0.25 * Math.min(4, 1 + Math.log2(w)) / 4 + 0.12); B0.ult = Date.now(); }
   });
   T3B.on('batida', function () {
     // 16/10: o salto cresce com as accoes reais (log: 1 -> x1, 8 -> x4 no maximo); 21/10 21h: na batida, com o que o andar fez desde a anterior
@@ -1549,10 +1564,12 @@
         var sm = 0; B.jan.forEach(function (x) { sm += x[1]; }); somas[i] = sm; if (sm > maxAgora) maxAgora = sm;
       });
       EQ.maxRef = Math.max(4, maxAgora, EQ.maxRef * Math.pow(0.5, dt / 120));     // a escala esquece devagar (meia-vida 2 min)
+      var maxE = 0; EQ.bandas.forEach(function (B) { B.e = (B.e || 0) * Math.pow(0.5, dt / 1.5); if (B.e > maxE) maxE = B.e; });
+      EQ.maxE = Math.max(6, maxE, (EQ.maxE || 6) * Math.pow(0.5, dt / 120));   // 21/10 22h50: o pico de energia dos ultimos minutos
       var topo = -1, topoV = 0;
       EQ.bandas.forEach(function (B, i) {
         B.salto *= Math.pow(0.25, dt);
-        var alvo = Math.max(nivelDaBanda(somas[i], EQ.maxRef), B.salto * 0.9) + (calmo ? 0 : 0.01 * Math.sin(t * 1.3 + i));
+        var alvo = nivelDaEnergia(B.e || 0, EQ.maxE) + (calmo ? 0 : 0.012 * (1 + Math.sin(t * 1.3 + i)));   // 21/10 22h50: a energia
         B.v = seguir(B.v, alvo, alvo > B.v ? 18 : 2.2, dt);
         if (B.v >= B.pk) { B.pk = B.v; B.tPk = t; } else if (t - B.tPk > 0.8) B.pk = Math.max(B.v, B.pk - dt * 0.25);
         if (somas[i] > topoV) { topoV = somas[i]; topo = i; }
@@ -2440,6 +2457,14 @@
   }
   // </alturas-puro>
   var fios = $('fios'), ultAnc = null, alvos = {}, svgFios = { ass: '' };
+  // 21/10 22h50 (ele: "so precisam de mostrar o andar num numero"): cada holograma diz o seu andar
+  setInterval(function () {
+    Array.prototype.forEach.call(document.querySelectorAll('.holo[data-andar-chave]'), function (h) {
+      var n = andarDoHolo(h.dataset.andarChave); if (n == null) return;
+      var b = h.querySelector(':scope > .and-n'); if (!b) { b = document.createElement('span'); b.className = 'and-n'; h.appendChild(b); }
+      var tx = 'and. ' + n; if (b.textContent !== tx) b.textContent = tx;
+    });
+  }, 3000);
   // 04/10 (obra 4, "trava ao rodar"): os retangulos do palco e das colunas leem-se UMA vez por mudanca de layout (nao a cada
   // ancora, 12 vezes por segundo, logo depois de os rotulos escreverem os seus transforms - era layout forcado em cada volta)
   var rectsH = null;

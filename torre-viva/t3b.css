@@ -52,6 +52,17 @@ body.t3b { background: var(--bg); color: var(--txt); font: 13px/1.45 var(--f-s);
 .casa > div:last-child { border-right: 0; }
 /* 21/10 22h40 (ele: "escolher o tamanho dos cards e movimenta-los na tela"): o cartao SOLTO fica onde o largaram, do tamanho escolhido */
 .lab-mod { display: none !important; }   /* 21/10 22h45: o laboratorio tem um so modelo (ele escolhe na pagina de exemplos) */
+/* 21/10 22h50: trocar com o rato - o fantasma que segue o ponteiro, o alvo realcado, as linhas escondidas enquanto se arrasta; o andar */
+.holo-fantasma { position: fixed; left: 0; top: 0; z-index: 90; pointer-events: none; font: 600 11px var(--f-m); color: #111; background: var(--ouro);
+  border-radius: 6px; padding: 3px 8px; box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+.holo.a-mover { opacity: .45; }
+.holo.alvo-mover { box-shadow: 0 0 0 2px var(--ouro), 0 0 24px rgba(242,194,48,.35) !important; }
+.a-arrastar-holo .fios { opacity: 0; }
+.a-arrastar-holo, .a-arrastar-holo * { cursor: grabbing !important; user-select: none; }
+.holo .ht { cursor: grab; }
+.holo > .and-n { position: absolute; top: 6px; right: 34px; z-index: 4; pointer-events: none; font: 600 9px var(--f-m); color: var(--ouro);
+  background: rgba(10,10,14,.82); border: 1px solid rgba(242,194,48,.35); border-radius: 4px; padding: 0 4px; line-height: 14px; }
+.holos.dir .holo > .redim, .holos.perto .holo > .redim { left: 1px; right: auto; transform: scaleX(-1); cursor: nesw-resize; }
 .palco > .holo.solto { position: absolute !important; transform: none !important; z-index: 6; pointer-events: auto; }
 .holo > .redim { position: absolute; right: 1px; bottom: 1px; width: 14px; height: 14px; cursor: nwse-resize; z-index: 5; pointer-events: auto;
   background: linear-gradient(135deg, transparent 52%, rgba(242,194,48,.55) 52%, rgba(242,194,48,.55) 62%, transparent 62%, transparent 72%, rgba(242,194,48,.55) 72%); }
