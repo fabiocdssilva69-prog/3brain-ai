@@ -26,6 +26,8 @@
   var FONTES = {};
   function fonte(peso, tam) { var k = (peso || 600) + '|' + (tam || 9); return FONTES[k] || (FONTES[k] = TX.fonteCanvas(peso || 600, tam || 9)); }
   // (o ctx guarda a ultima fonte: interpretar a fonte - com a lista de recurso - a cada texto era 2,5% do fio principal)
+  // (22/10 00h30: SO no radar - ctx._cacheTexto; A/B na mesma pagina: nos outros hologramas as imagens pequenas custavam mais que o texto,
+  //  stark 4,6 vs 1,8 ms, livro 4,8 vs 2,7: um canvas pequeno sobe para a placa a cada copia)
   // 21/10 23h55 (ele: "ta muito pesado e travando"; medido no radar: 7 fillText por quadro = 2,4 ms, ~330 us cada - a letra "JetBrains
   // Mono" mais a lista de recurso dos emoji, procurada a cada chamada para ● ▸ ·): um texto que aparece 3 vezes igual (mesma letra, cor e
   // escala do ecra) passa a ser uma imagem guardada e so se copia; o que muda a cada quadro (relogios, numeros a correr) vai direito.
@@ -47,7 +49,7 @@
   // aparece 3 vezes igual fica numa imagem guardada (feita no rascunho) e so se copia; o resto escreve-se direito
   function rot(ctx, t, x, y, cor, tam, al, peso) {
     var f = fonte(peso, tam); t = String(t);
-    if (SOFT || !t || ctx.textBaseline !== 'alphabetic' || typeof cor !== 'string') return rotDireito(ctx, t, x, y, cor, f, al);
+    if (SOFT || !ctx._cacheTexto || window.__t3bTextoDireito || !t || ctx.textBaseline !== 'alphabetic' || typeof cor !== 'string') return rotDireito(ctx, t, x, y, cor, f, al);
     var k = f + '|' + cor + '|' + t, e = TXT_IMG.get(k);
     if (!e) { if (TXT_IMG.size > 2500) TXT_IMG.clear(); TXT_IMG.set(k, e = { n: 0, cv: null, sc: 0, w: 0, asc: 0, alt: 0 }); }
     if (e.n < 0) return rotDireito(ctx, t, x, y, cor, f, al);                 // (enorme: sempre direito)
@@ -763,6 +765,7 @@
         }
       }
     } });
+    cenaRadar.ctx._cacheTexto = true;   // 22/10 00h30 (A/B medido na mesma pagina: radar 1,85 ms com as imagens do texto, 4,95 sem; nos outros pior)
   })();
 
   // ================================================================ 3. O CORACAO DA TORRE (G22) — cada evento e uma batida
