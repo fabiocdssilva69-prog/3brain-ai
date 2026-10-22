@@ -984,3 +984,7 @@ nav.dir .car-orig, nav.dir .car-copia { gap: 6px; padding-right: 6px; }
    ficam mais finos para os hologramas ganharem altura. */
 :root { --lado-w: clamp(330px, 21vw, 420px); --col-w: clamp(218px, 14.5vw, 300px); --perto-w: clamp(214px, 17vw, 360px); }
 @media (max-height: 860px) { :root { --cart-h: 88px; } }
+
+/* 21/10 23h: MEDIDO - o titulo do holograma tinha pointer-events:none e o canvas ficava por cima dele: o clique no titulo caia no desenho
+   e nunca dava para arrastar (nem a troca antiga). O titulo passa por cima e recebe o rato. */
+.holo .ht { pointer-events: auto; z-index: 6; cursor: grab; touch-action: none; }
