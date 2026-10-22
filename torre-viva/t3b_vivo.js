@@ -1107,11 +1107,14 @@
   function ligarCarrossel(idTr, pxPorSeg) {
     var tr = $(idTr); if (!tr || tr._car) return; tr._car = true;
     var orig = tr.querySelector('.car-orig'), copia = tr.querySelector('.car-copia'); if (!orig || !copia) return;
+    // 21/10 23h45 (medido: 'sinc' 3,7% do fio principal): a copia e a medida da largura (que obriga o browser a refazer o layout) so
+    // quando o texto mudou; de 2 em 2 s
     function sinc() {
-      var h = orig.innerHTML.replace(/\sid="[^"]*"/g, ''); if (copia._h !== h) { copia._h = h; copia.innerHTML = h; }
+      var h0 = orig.innerHTML; if (orig._h0 === h0) return; orig._h0 = h0;
+      var h = h0.replace(/\sid="[^"]*"/g, ''); if (copia._h !== h) { copia._h = h; copia.innerHTML = h; }
       var w = orig.scrollWidth; if (w && Math.abs(w - (tr._w || 0)) > 40) { tr._w = w; tr.style.setProperty('--dur', Math.max(30, Math.round(w / pxPorSeg)) + 's'); }
     }
-    sinc(); setInterval(function () { if (!document.hidden) sinc(); }, 1000);
+    sinc(); setInterval(function () { if (!document.hidden) sinc(); }, 2000);
   }
   ligarCarrossel('hud_tr', 45);
   // as celulas novas da barra (05/10): o que a torre tem aberto e o que evoluiu

@@ -982,7 +982,7 @@ nav.dir .car-orig, nav.dir .car-copia { gap: 6px; padding-right: 6px; }
    o maior, o globo e o relogio grandes; os numeros e o trilho podem ser menores"): as colunas dos hologramas crescem com o ecra (a de
    perto - livro, globo, relogio - mais), o chat fica mais estreito, a torre fica com o que sobra; em ecras baixos os cartoes de baixo
    ficam mais finos para os hologramas ganharem altura. */
-:root { --lado-w: clamp(330px, 21vw, 420px); --col-w: clamp(218px, 14.5vw, 300px); --perto-w: clamp(214px, 17vw, 360px); }
+:root { --lado-w: clamp(320px, 19.5vw, 400px); --col-w: clamp(230px, 16.5vw, 340px); --perto-w: clamp(230px, 19vw, 400px); }   /* 21/10 23h45: hologramas primeiro, a torre cabe no que sobra */
 @media (max-height: 860px) { :root { --cart-h: 88px; } }
 
 /* 21/10 23h: MEDIDO - o titulo do holograma tinha pointer-events:none e o canvas ficava por cima dele: o clique no titulo caia no desenho

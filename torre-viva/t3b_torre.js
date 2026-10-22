@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=d519b4543a';
+import * as ANDAR from './t3b_andar.js?v=c8d5eed860';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 
@@ -76,10 +76,17 @@ const CADENCIA = { interaccao: 0, vivo: 0, repouso: 160 };   // 05/10 (Q4 D1): v
 const degrau = { interaccao: 0, vivo: 0, repouso: 0 };
 let modoQ = 'vivo', modoDesde = 0, prPedido = 0, msQuadro = 33, custos = [], intervalos = [], ultQ = 0, desenhadosN = 0, msDesenho = [], cadPedida = 33.3;
 function pixelRatio() { const v = PR[modoQ]; return Math.max(1, v[Math.min(degrau[modoQ], v.length - 1)]); }
+// 21/10 23h45 (ele: "ta muito pesado e ta travando demais"; medido: setSize = 3,9% do fio principal): com ~500 eventos por minuto a torre
+// salta entre 'vivo' e 'repouso' varias vezes por segundo, e cada troca de nitidez refazia a imagem inteira da placa (setSize). Agora a
+// nitidez so sobe com o modo assente 6 s, e fora da interaccao muda no maximo uma vez a cada 2,5 s.
+var ultPR = -1e9;
 function aplicarPR(agora) {
   const alvo = pixelRatio(), actual = renderer.getPixelRatio();
   if (Math.abs(alvo - actual) < 0.01) return;
-  if (alvo > actual && agora - modoDesde < 450) return;                 // subir a nitidez so com o modo assente
+  const ag = performance.now(), forcado = agora - ag > 1e5;            // (agora + 1e6 = pedido forcado: a escada ou a sonda)
+  if (alvo > actual && !forcado && agora - modoDesde < 6000) return;    // subir a nitidez so com o modo assente
+  if (!forcado && modoQ !== 'interaccao' && ag - ultPR < 2500) return;
+  ultPR = ag;
   renderer.setPixelRatio(alvo); renderer.setSize(vistaW, vistaH, false); precisaDesenhar = true;
 }
 // a escada por modo: se os quadros pedidos nao chegam (intervalo real >> pedido), esse modo desce um degrau; com folga
@@ -123,6 +130,9 @@ function iniciar() {
   controles.addEventListener('end', () => { ultimoMexeu = performance.now(); interagindo = false; fimInteracao = performance.now(); });
   medirPalco(true);
   if (window.ResizeObserver) new ResizeObserver(() => medirPalco(false)).observe(palco);
+  // 21/10 23h45 (ele: "a torre nao ta se ajustando conforme o tamanho dos hologramas"): a pega do canto muda a largura das colunas
+  // sem mudar o palco - a torre volta a caber na faixa livre sempre que uma coluna de hologramas muda de tamanho
+  if (window.ResizeObserver) { const roH = new ResizeObserver(() => { deslocarVista(nivel); rectsSujos = true; }); document.querySelectorAll('.palco .holos').forEach(c => roH.observe(c)); }
   ligarRato(); ligarNiveis();
   T3B.on('estrutura', construirOuActualizar);
   T3B.on('eventos', receberEventos);
@@ -1307,18 +1317,29 @@ function enquadrar(k, animar) {
 // 04/10 (obra 4): com as tres colunas de hologramas, a torre (nivel 0 e 1) vai para o centro da FAIXA LIVRE entre a coluna da
 // esquerda e a de perto - um pouco a direita do meio, para os rotulos dos andares caberem a esquerda e o globo a direita. Faz-se
 // pelo DESLOCAMENTO DA VISTA (setViewOffset): o alvo continua no eixo da torre, por isso ao girar a torre nao foge do sitio.
+// 21/10 23h45 (ele: "os hologramas tem que ser prioridade a torre na visualizacao, porque a gente ja pode aproximar a torre se quiser"):
+// a torre CABE na faixa livre - quanto mais largos os hologramas, mais a vista se afasta (z < 1, a imagem inteira encolhe a volta do
+// centro da faixa); quem quiser a torre grande aproxima com a roda, como sempre. z = faixa livre / (1,05 x altura do palco), entre 0,42 e 1.
+// <vista-puro>
+function zDaFaixa(livre, altura) { return Math.max(0.42, Math.min(1, (Number(livre) || 0) / (Math.max(1, Number(altura) || 1) * 1.05))); }
+// </vista-puro>
+var vistaZ = 1, vistaL = 0, vistaR = 0;
 function deslocarVista(k) {
   if (!camara || !vistaW) return;
-  if (k >= 2 || T3B.pequeno) { if (camara.view && camara.view.enabled) { camara.clearViewOffset(); precisaDesenhar = true; } return; }
+  if (k >= 2 || T3B.pequeno) { vistaZ = 1; if (camara.view && camara.view.enabled) { camara.clearViewOffset(); precisaDesenhar = true; } return; }
   const pr = palco.getBoundingClientRect(), e = document.querySelector('.holos.esq'), p = document.querySelector('.holos.perto') || document.querySelector('.holos.dir');
   let l = 0, r = vistaW;
   if (e) { const q = e.getBoundingClientRect(); if (q.width > 4) l = q.right - pr.left; }
   if (p) { const q = p.getBoundingClientRect(); if (q.width > 4) r = q.left - pr.left; }
-  if (r - l < 200) { if (camara.view && camara.view.enabled) camara.clearViewOffset(); return; }
-  const alvoX = l + (r - l) * (k === 0 ? 0.56 : 0.6), dx = Math.round(alvoX - vistaW / 2);
-  if (camara.view && camara.view.enabled && camara.view.offsetX === -dx && camara.view.fullWidth === vistaW && camara.view.fullHeight === vistaH) return;
-  camara.setViewOffset(vistaW, vistaH, -dx, 0, vistaW, vistaH); precisaDesenhar = true; rotulosPendentes = true;
+  if (r - l < 120) { vistaZ = 1; if (camara.view && camara.view.enabled) camara.clearViewOffset(); return; }
+  const z = zDaFaixa(r - l, vistaH), fw = vistaW * z, fh = vistaH * z;
+  const alvoX = l + (r - l) * (k === 0 ? 0.56 : 0.6), ox = Math.round(fw / 2 - alvoX), oy = Math.round(fh / 2 - vistaH / 2);
+  vistaZ = z; vistaL = l; vistaR = r;
+  const v = camara.view;
+  if (v && v.enabled && v.offsetX === ox && v.offsetY === oy && Math.abs(v.fullWidth - fw) < 0.5 && Math.abs(v.fullHeight - fh) < 0.5 && v.width === vistaW && v.height === vistaH) return;
+  camara.setViewOffset(fw, fh, ox, oy, vistaW, vistaH); precisaDesenhar = true; rotulosPendentes = true; camaraMudou = true; rectsSujos = true;
 }
+window.__t3bTorreVista = function () { return { z: Math.round(vistaZ * 100) / 100, livre: Math.round(vistaR - vistaL), l: Math.round(vistaL), r: Math.round(vistaR), w: vistaW, h: vistaH, pr: renderer ? renderer.getPixelRatio() : 0 }; };
 function marcarNivel() {
   const pl = $('palco'), perto = nivel >= 2;
   document.body.classList.toggle('n3', nivel === 3); document.body.classList.toggle('n2', nivel === 2);

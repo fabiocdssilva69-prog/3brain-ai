@@ -61,6 +61,11 @@
   //  (3) nada de shadowBlur (o desfoque do canvas, o mais caro de tudo): o brilho e uma imagem pronta por cor e tamanho.
   // ?holosoft=1 volta ao desenho no CPU (para a sonda medir os dois).
   var FPS_MAX = 60, SOFT = /[?&]holosoft=1/.test(location.search);
+  // 21/10 23h45 (ele: "ta muito pesado e ta travando demais"; medido no ecra dele: 12 quadros/s, fio principal preso 260 ms por segundo,
+  // os 10 hologramas a desenhar TODOS os quadros do relogio de 30 Hz - ~450 ms de desenho por segundo): cada holograma ao ritmo que o
+  // olho precisa - os que pulsam a 30, os de numeros e texto a 10-20. Com a pagina lenta (quadro medio > 50 ms) todos descem a metade.
+  var FPS_DO_HOLO = { vortex: 30, coracao: 30, radar: 30, equalizador: 30, livro: 20, globo: 20, lab: 15, stark: 15, turnos: 12, trilho: 10 };
+  var emaQuadro = 33, msQuadroAnt = 0, cargaHolos = 1;
 
   // ================================================================ a maquinaria comum: cenas, tamanho, visibilidade
   var cenas = [], COLISOES = {};
@@ -69,7 +74,7 @@
   // uma cena: desenhar(ctx, w, h, t, dt, s); sempre (por omissao) = anda a 60 q/s enquanto esta a vista; vivo(agora) so para
   // as que ainda nao sao continuas
   function cena(canvas, opts) {
-    var s = { c: canvas, ctx: canvas.getContext('2d', SOFT ? { willReadFrequently: true } : { alpha: true }), w: 0, h: 0, vis: true, ultimo: 0, fps: Math.min(FPS_MAX, opts.fps || FPS_MAX), desenhar: opts.desenhar,
+    var s = { c: canvas, ctx: canvas.getContext('2d', SOFT ? { willReadFrequently: true } : { alpha: true }), w: 0, h: 0, vis: true, ultimo: 0, fps: Math.min(FPS_MAX, opts.fps || FPS_DO_HOLO[opts.id] || FPS_MAX), desenhar: opts.desenhar,
       vivo: opts.vivo || null, sempre: opts.sempre !== false, holo: opts.holo || null, bloco: opts.bloco || null, id: opts.id || null, precisaTam: true, sujo: true, ate: 0, desenhos: 0, estado: {}, camadas: {}, msDesenho: 0 };
     if (window.ResizeObserver) new ResizeObserver(function () { s.precisaTam = true; s.sujo = true; }).observe(canvas.parentElement);
     if (io) io.observe(canvas);
@@ -150,13 +155,15 @@
     requestAnimationFrame(quadro);
     if (document.hidden || gavetaAberta) return;
     var t = ms / 1000; tAnt = t;
+    if (msQuadroAnt) { var iq = ms - msQuadroAnt; if (iq > 0 && iq < 400) emaQuadro = emaQuadro * 0.94 + iq * 0.06; }
+    msQuadroAnt = ms; cargaHolos = emaQuadro > 50 ? 0.5 : emaQuadro < 40 ? 1 : cargaHolos;
     for (var i = 0; i < cenas.length; i++) {
       var s = cenas[i];
       if (T3B.pequeno && s.holo) continue;
       if (!s.vis || escondido(s)) continue;
       var precisa = s.sujo || ms < s.ate || (s.sempre && !calmo) || (s.vivo && !calmo && s.vivo(ms));
       if (!precisa) continue;
-      if (ms - s.ultimo < 1000 / s.fps - 4) continue;            // (-4: num ecra de 60 Hz o quadro chega a 16,7 ms; com -2 um quadro adiantado saltava um)
+      if (ms - s.ultimo < 1000 / (s.fps * cargaHolos) - 4) continue;            // (-4: num ecra de 60 Hz o quadro chega a 16,7 ms; com -2 um quadro adiantado saltava um)
       var dts = s.ultimo ? Math.min(0.1, (ms - s.ultimo) / 1000) : 1 / 60;
       s.ultimo = ms; s.sujo = false;
       if (s.precisaTam) medir(s);
@@ -619,9 +626,9 @@
           g.addColorStop(0, 'rgba(45,212,232,0)'); g.addColorStop(0.16, 'rgba(45,212,232,.30)'); g.addColorStop(0.1752, 'rgba(45,212,232,0)');
           gc.fillStyle = g; gc.beginPath(); gc.arc(R, R, R, 0, TAU); gc.fill();
         }
+        for (var rs = 1; rs < 14; rs++) { var ar = -rs * 0.035; gc.strokeStyle = 'rgba(45,212,232,' + (0.3 * (1 - rs / 14)).toFixed(3) + ')'; gc.beginPath(); gc.moveTo(R, R); gc.lineTo(R + Math.cos(ar) * R, R + Math.sin(ar) * R); gc.stroke(); }   // 21/10 23h: o rasto de fosforo (23h45: na imagem, nao a cada quadro)
       }
       ctx.save(); ctx.globalAlpha = vivoVigia ? 1 : 0.55; ctx.translate(cx, cy); ctx.rotate(a); ctx.drawImage(cun.cv, -R, -R, R * 2, R * 2); ctx.restore();
-      for (var rs = 1; rs < 14; rs++) { var ar = a - rs * 0.035; ctx.strokeStyle = 'rgba(45,212,232,' + (0.3 * (1 - rs / 14)).toFixed(3) + ')'; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ar) * R, cy + Math.sin(ar) * R); ctx.stroke(); }   // 21/10 23h: o rasto de fosforo
       ctx.strokeStyle = vivoVigia ? C.cy : 'rgba(45,212,232,.6)'; ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.stroke(); ctx.lineWidth = 1;
       luz(ctx, C.cy, cx + Math.cos(a) * R, cy + Math.sin(a) * R, 7, 0.9);
@@ -638,13 +645,19 @@
         ctx.globalAlpha = 0.25 * (1 - idOnda); ctx.beginPath(); ctx.arc(cx, cy, Math.max(0, rOnda - 7), 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = 1; }
       RAD.rOnda = rOnda;
       // 21/10: os CONTACTOS - os andares a trabalhar (3 min); piscam quando o feixe passa
-      var corteC = Date.now() - 180000, maxC = 1, contos = [];
-      Object.keys(RAD.cont).forEach(function (n) { var c = RAD.cont[n]; while (c.j.length && c.j[0][0] < corteC) c.j.shift(); if (!c.j.length) { delete RAD.cont[n]; return; } var sm = 0; c.j.forEach(function (x) { sm += x[1]; }); c.n = sm; if (sm > maxC) maxC = sm; contos.push(n); });
+      // (23h45: a soma dos 3 min de cada andar e a ordem fazem-se 2,5 vezes por segundo, nao a cada quadro - medido: o radar era 5-9 ms)
+      if (!RAD.agg || agora - RAD.agg.t > 400 || agora < RAD.agg.t) {
+        var corteC = Date.now() - 180000, maxC0 = 1, contos0 = [];
+        Object.keys(RAD.cont).forEach(function (n) { var c = RAD.cont[n]; while (c.j.length && c.j[0][0] < corteC) c.j.shift(); if (!c.j.length) { delete RAD.cont[n]; return; } var sm = 0; c.j.forEach(function (x) { sm += x[1]; }); c.n = sm; if (sm > maxC0) maxC0 = sm; contos0.push(n); if (c.rc == null) c.rc = (U.semente('rc' + n) % 100) / 100; });
+        contos0.sort(function (p1, p2) { return RAD.cont[p2].n - RAD.cont[p1].n; });
+        RAD.agg = { t: agora, contos: contos0, maxC: maxC0 };
+      }
+      var contos = RAD.agg.contos.filter(function (n) { return RAD.cont[n]; }), maxC = RAD.agg.maxC;
       RAD.nCont = contos.length;
-      var topC = contos.slice().sort(function (p1, p2) { return RAD.cont[p2].n - RAD.cont[p1].n; }).slice(0, RAD_CONTACTOS_MAX);
+      var topC = contos.slice(0, RAD_CONTACTOS_MAX);
       topC.forEach(function (n, iC) {
         var c = RAD.cont[n], q = anguloDoAndar(n), nr = Math.log(1 + c.n) / Math.log(1 + maxC);
-        var rc = R * (0.3 + 0.6 * ((U.semente('rc' + n) % 100) / 100)), xc = cx + Math.cos(q) * rc, yc = cy + Math.sin(q) * rc;
+        var rc = R * (0.3 + 0.6 * (c.rc != null ? c.rc : (U.semente('rc' + n) % 100) / 100)), xc = cx + Math.cos(q) * rc, yc = cy + Math.sin(q) * rc;
         var atr = (a - q) % TAU; if (atr < 0) atr += TAU;
         if (atr < 0.09 && agora - c.blip > RAD.intervalo * 0.5) { c.blip = agora; RAD.nBlips++; }
         var fos = Math.min(1, 0.14 + 0.86 * Math.exp(-atr * 2.4) + (Math.abs(rc - RAD.rOnda) < 6 ? 0.6 : 0)), corC = U.corDoAndar ? U.corDoAndar(Number(n)) : C.cy;   // + o eco da onda
@@ -704,7 +717,7 @@
       // 21/10: por baixo, os andares mais activos (o que os contactos sao)
       if (GR.lado && contos.length) {
         var yA = TOPO + 24 + (Math.min(foraV.length, cabem) + (foraV.length > cabem ? 1 : 0)) * 13 + 8;
-        var topA = contos.slice().sort(function (p1, p2) { return RAD.cont[p2].n - RAD.cont[p1].n; });
+        var topA = contos;                                              // (ja vem por ordem)
         var cabeA = Math.floor((h - 14 - yA) / 12);
         if (cabeA >= 2) {
           rot(ctx, 'A TRABALHAR · ' + contos.length + ' andares', xL, yA, C.cy, 7.5, 'left', 700);
