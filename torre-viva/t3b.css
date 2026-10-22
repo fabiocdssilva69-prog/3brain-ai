@@ -50,6 +50,13 @@ body.t3b { background: var(--bg); color: var(--txt); font: 13px/1.45 var(--f-s);
 .casa { height: var(--num-h); display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--line); background: var(--bg2); }
 .casa > div { padding: 7px 12px 6px; border-right: 1px solid var(--line); position: relative; overflow: hidden; min-width: 0; }
 .casa > div:last-child { border-right: 0; }
+/* 21/10 22h40 (ele: "escolher o tamanho dos cards e movimenta-los na tela"): o cartao SOLTO fica onde o largaram, do tamanho escolhido */
+.palco > .holo.solto { position: absolute !important; transform: none !important; z-index: 6; pointer-events: auto; }
+.holo > .redim { position: absolute; right: 1px; bottom: 1px; width: 14px; height: 14px; cursor: nwse-resize; z-index: 5; pointer-events: auto;
+  background: linear-gradient(135deg, transparent 52%, rgba(242,194,48,.55) 52%, rgba(242,194,48,.55) 62%, transparent 62%, transparent 72%, rgba(242,194,48,.55) 72%); }
+.holo > .volta { position: absolute; top: 4px; right: 30px; z-index: 5; display: none; width: 20px; height: 18px; padding: 0; border-radius: 5px;
+  border: 1px solid var(--line2); background: rgba(10,10,14,.85); color: var(--ouro); font-size: 11px; cursor: pointer; pointer-events: auto; }
+.holo.solto > .volta { display: block; }
 /* 21/10 22h (ele: "o livro esta pequeno, nao consigo ler nada"): duplo clique num holograma abre-o grande; Esc ou outro duplo clique fecha */
 .holo.grande { position: fixed !important; left: 50% !important; top: 50% !important; right: auto !important; bottom: auto !important;
   width: min(760px, 94vw) !important; height: min(600px, 86vh) !important; transform: translate(-50%, -50%) !important; z-index: 80 !important;

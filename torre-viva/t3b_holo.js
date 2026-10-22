@@ -2480,7 +2480,7 @@
       ord.forEach(function (it) {
         var top = Math.round(it.top), alt = Math.round(it.alt), velho = alvos[it.h.id];
         // (por transform: o compositor move o painel; o top mexia no layout da pagina a cada quadro da transicao)
-        if (!velho || Math.abs(velho.top - top) > 5 || velho.alt !== alt) { it.h.style.setProperty('--y', top + 'px'); if (!velho || velho.alt !== alt) it.h.style.height = alt + 'px'; alvos[it.h.id] = { top: top, alt: alt }; }
+        if (!velho || Math.abs(velho.top - top) > 5 || velho.alt !== alt || !it.h.style.height) { it.h.style.setProperty('--y', top + 'px'); if (!velho || velho.alt !== alt || !it.h.style.height) it.h.style.height = alt + 'px'; alvos[it.h.id] = { top: top, alt: alt }; }
         it.h.classList.toggle('ancorado', !!it.a);
       });
     });
