@@ -113,6 +113,16 @@
     g.fillStyle = gr; g.fillRect(0, 0, c.width, c.height);
     return (SPRITES[k] = c);
   }
+  // 21/10 23h (ele: "so quero o brilho que fizeste no vortex da galaxia"): o brilho das estrelas do vortex - um degrade CHEIO do centro
+  // ate a borda (o 'luz' normal cai depressa: a estrela via-se pequena); um sprite por raio, desenhado em 'lighter'
+  var SPRITES_E = {};
+  function luzEstrela(ctx, x, y, r, a) {
+    if (!(a > 0.01) || !(r > 0.5)) return;
+    var rr = Math.max(2, Math.min(32, Math.round(r))), sp = SPRITES_E[rr];
+    if (!sp) { var d = 2, c = document.createElement('canvas'); c.width = c.height = rr * 2 * d; var g = c.getContext('2d'), gr = g.createRadialGradient(rr * d, rr * d, 0, rr * d, rr * d, rr * d); gr.addColorStop(0, 'rgba(219,232,255,0.95)'); gr.addColorStop(1, 'rgba(219,232,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, c.width, c.height); sp = SPRITES_E[rr] = c; }
+    var ga = ctx.globalAlpha, op = ctx.globalCompositeOperation; ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, a);
+    ctx.drawImage(sp, x - rr, y - rr, rr * 2, rr * 2); ctx.globalAlpha = ga; ctx.globalCompositeOperation = op;
+  }
   function luz(ctx, cor, x, y, r, a) {
     if (!(a > 0.01) || !(r > 0.5)) return;
     var sp = sprite(cor, r), ga = ctx.globalAlpha, op = ctx.globalCompositeOperation;
@@ -439,7 +449,7 @@
         var brP = brilhoDaImportancia(im) * tw, tamP = im >= 0.85 ? 1.8 : 1.3;
         ctx.fillStyle = '#ffffff'; ctx.globalAlpha = Math.min(1, (0.6 + 0.4 * brP) * tw);
         ctx.fillRect(pa.sx - tamP / 2, pa.sy - tamP / 2, tamP, tamP);
-        luz(ctx, COR_ESTRELA, pa.sx, pa.sy, im >= 0.85 ? 6 : 3.5, Math.min(1, 0.3 * tw + 0.7 * brP)); vivos++;
+        luzEstrela(ctx, pa.sx, pa.sy, im >= 0.85 ? 7 : 3.5, Math.min(1, 0.3 * tw + 0.7 * brP)); vivos++;   // 21/10 23h: o brilho da galaxia (a escolha dele)
         if (im >= 0.85) {                                               // a cruz de cintilar das estrelas fortes (so as de topo)
           var lc = 6 * tw; ctx.strokeStyle = COR_ESTRELA; ctx.globalAlpha = Math.min(1, 0.7 * tw);
           ctx.beginPath(); ctx.moveTo(pa.sx - lc, pa.sy); ctx.lineTo(pa.sx + lc, pa.sy); ctx.moveTo(pa.sx, pa.sy - lc); ctx.lineTo(pa.sx, pa.sy + lc); ctx.stroke();
@@ -611,6 +621,7 @@
         }
       }
       ctx.save(); ctx.globalAlpha = vivoVigia ? 1 : 0.55; ctx.translate(cx, cy); ctx.rotate(a); ctx.drawImage(cun.cv, -R, -R, R * 2, R * 2); ctx.restore();
+      for (var rs = 1; rs < 14; rs++) { var ar = a - rs * 0.035; ctx.strokeStyle = 'rgba(45,212,232,' + (0.3 * (1 - rs / 14)).toFixed(3) + ')'; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ar) * R, cy + Math.sin(ar) * R); ctx.stroke(); }   // 21/10 23h: o rasto de fosforo
       ctx.strokeStyle = vivoVigia ? C.cy : 'rgba(45,212,232,.6)'; ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.stroke(); ctx.lineWidth = 1;
       luz(ctx, C.cy, cx + Math.cos(a) * R, cy + Math.sin(a) * R, 7, 0.9);
@@ -637,6 +648,7 @@
         var atr = (a - q) % TAU; if (atr < 0) atr += TAU;
         if (atr < 0.09 && agora - c.blip > RAD.intervalo * 0.5) { c.blip = agora; RAD.nBlips++; }
         var fos = Math.min(1, 0.14 + 0.86 * Math.exp(-atr * 2.4) + (Math.abs(rc - RAD.rOnda) < 6 ? 0.6 : 0)), corC = U.corDoAndar ? U.corDoAndar(Number(n)) : C.cy;   // + o eco da onda
+        if (fos > 0.55) rot(ctx, String(n), xc + 4, yc - 3, 'rgba(184,255,217,' + (0.35 + 0.6 * (fos - 0.55) / 0.45).toFixed(2) + ')', 7, 'left', 600);   // 21/10 23h: o andar, como no radar de aeroporto
         ctx.globalAlpha = fos; ctx.fillStyle = fos > 0.75 ? '#ffffff' : corC;
         ctx.beginPath(); ctx.arc(xc, yc, 0.9 + 1.5 * nr + 0.8 * Math.exp(-atr * 3), 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
         if (fos > 0.5) luz(ctx, corC, xc, yc, 4 + 4 * nr, fos * 0.5);
@@ -658,6 +670,10 @@
         ctx.beginPath(); ctx.arc(x, y, 2 + 2.4 * forcaA + 1.4 * Math.max(0, 1 - idade) + 0.8 * forcaA * pulsoA, 0, TAU); ctx.fill();
         ctx.globalAlpha = 1;
         luz(ctx, cor, x, y, 7 + 13 * forcaA + 4 * pulsoA * forcaA, Math.min(1, base * (fosforo + ecoA) * (0.45 + 0.55 * forcaA)));
+        if (!p.ok) {                                                  // 21/10 23h: a avaria marcada em quadrado (radar de aeroporto), maior com mais peso
+          var qd = 5 + 4 * forcaA; ctx.strokeStyle = cor; ctx.globalAlpha = Math.min(1, 0.5 + 0.5 * fosforo); ctx.strokeRect(x - qd, y - qd, qd * 2, qd * 2); ctx.globalAlpha = 1;
+          if (forcaA >= 0.55 || GR.lado) rot(ctx, TX.cortar(nomeDaAvaria(p), 14) + ' · ' + numAndar(p.andar), x + qd + 3, y + 3, cor, 7, 'left', 700);
+        }
         if (idade < 3 && !p.ok) { ctx.strokeStyle = cor; ctx.globalAlpha = 1 - idade / 3; ctx.beginPath(); ctx.arc(x, y, 4 + idade * 5, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
         if (!p.ok && atras < 0.09 && agora - (p.blip || 0) > RAD.intervalo * 0.5) p.blip = agora;   // 21/10: o blip da avaria
         var ibp = (agora - (p.blip || 0)) / 800; if (!p.ok && ibp < 1) { ctx.strokeStyle = cor; ctx.globalAlpha = 1 - ibp; ctx.beginPath(); ctx.arc(x, y, 3 + ibp * 13, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
@@ -2055,6 +2071,57 @@
     // totalmente diferente, com outras accoes e outras animacoes"): OS TUBOS DE ENSAIO - um tubo por especialidade; o nivel do liquido
     // dourado e a fraccao de genes ROBUSTOS do grupo; cada gene calculado sobe como uma BOLHA (dourada se robusto); por baixo de cada
     // tubo, os genes por minuto (3 min) desse grupo; no rodape, o total. O modelo por omissao passa a ser este.
+    // 21/10 23h (ele escolheu na pagina dos modelos: "o laboratorio pode ser o placar ao vivo do juiz completo"): cada fonte ou estrategia
+    // com o t do juiz (acima do mercado), a historia (acumula enquanto a pagina esta aberta), o acerto contra o acaso, n e dias, as duas
+    // metades do ano (estavel = as duas positivas), setas de quem subiu ou desceu, a porta do dinheiro (t = 3) e as ultimas conferencias.
+    // Os dados: o balde do /evolucao.json (placar_completo, juiz_recentes, juiz_vivo). O unico modelo do cartao.
+    function criarPlacar() {
+      var HIST = {}, ORDEM = [], SETA = {}, VER = null;
+      function desenhar(ctx, w, h, t) {
+        var b = BALDE || {}, L = (b.placar_completo || []).slice(0, Math.max(3, Math.floor((h - TOPO - 58) / 19))), jv = b.juiz_vivo || {}, rec = b.juiz_recentes || [];
+        if (!L.length) { rot(ctx, 'à espera do placar do juiz…', w / 2, h / 2, C.dim, 9, 'center', 500); return; }
+        var chaveV = L.map(function (r) { return r.fonte + r.horizonte_d + ':' + r.t; }).join('|');
+        if (chaveV !== VER) {
+          VER = chaveV;
+          var nova = L.map(function (r) { return r.fonte + '|' + r.horizonte_d; });
+          nova.forEach(function (k, i) { var a = ORDEM.indexOf(k); if (a >= 0 && a !== i) SETA[k] = { d: a > i ? 1 : -1, t0: t }; });
+          ORDEM = nova;
+          L.forEach(function (r) { var k = r.fonte + '|' + r.horizonte_d, hs = HIST[k] = HIST[k] || []; hs.push(r.t || 0); if (hs.length > 40) hs.shift(); });
+        }
+        var largo = w >= 420, top = TOPO + 30, lh = Math.max(15, Math.min(22, (h - top - 30) / L.length));
+        var xn = 8, xb = Math.max(118, w * (largo ? 0.27 : 0.43)), xe = largo ? w - 220 : w - 46, esc = (xe - xb - 30) / 3.6, xl = xb + 3 * esc;
+        rot(ctx, 'juiz: ' + fmt(jv.conferidos || 0, 0) + ' ao vivo' + (jv.conferidos ? '' : (jv.proxima ? ' · 1.ª às ' + String(jv.proxima).slice(11, 16) + ' UTC' : '')) + ' · ' + fmt(((((b.placar_completo || [])[0] || {}).n) || 0), 0) + ' no topo', 8, TOPO + 9, C.mute, 7.5, 'left', 600);
+        rot(ctx, '● ● = as duas metades do ano · ouro = estável', 8, TOPO + 19, C.dim, 7, 'left', 500);
+        ctx.strokeStyle = 'rgba(63,214,154,.75)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(xl, top - 4); ctx.lineTo(xl, top + lh * L.length); ctx.stroke(); ctx.setLineDash([]);
+        rot(ctx, 't=3 dinheiro', xl, top - 6, C.ok, 7, 'center', 700);
+        L.forEach(function (r, i) {
+          var k = r.fonte + '|' + r.horizonte_d, y = top + i * lh, yc = y + lh * 0.66, est = !!r.estavel || (r.ao_vivo && r.prova), tv = Number(r.t) || 0, bw = Math.max(2, Math.min(xe - xb - 26, tv * esc));
+          var s = SETA[k]; if (s && t - s.t0 < 4) rot(ctx, s.d > 0 ? '▲' : '▼', xn, yc, s.d > 0 ? C.ok : C.mau, 8, 'left', 700);
+          var nm = String(r.fonte || '').replace(/^classica:/, '').replace(/_/g, ' ');
+          rot(ctx, TX.cortar(nm, Math.max(8, Math.floor((xb - xn - 30) / 4.6))) + ' ' + r.horizonte_d + 'd', xn + 10, yc, est ? C.txt : C.dim, 8, 'left', 600);
+          ctx.fillStyle = r.t1 > 0 ? C.ok : C.mau; ctx.beginPath(); ctx.arc(xb - 14, y + lh * 0.48, 2.3, 0, TAU); ctx.fill();
+          ctx.fillStyle = r.t2 > 0 ? C.ok : C.mau; ctx.beginPath(); ctx.arc(xb - 7, y + lh * 0.48, 2.3, 0, TAU); ctx.fill();
+          var gr = ctx.createLinearGradient(xb, 0, xb + bw, 0); gr.addColorStop(0, est ? 'rgba(242,194,48,.35)' : 'rgba(90,90,100,.35)'); gr.addColorStop(1, est ? C.ouro : '#5b5b66');
+          ctx.fillStyle = gr; ctx.fillRect(xb, y + lh * 0.22, bw, lh * 0.52);
+          if (tv >= 2.6) luz(ctx, C.ouroHi, xb + bw, y + lh * 0.48, 8 + 3 * Math.sin(t * 4), 0.55);
+          rot(ctx, fmt(tv, 2) + (r.ao_vivo ? ' ●' : ''), xb + bw + 4, yc, est ? C.ouroHi : C.mute, 8, 'left', 700);
+          var hs = HIST[k] || [], hx = xe + 4, hw = largo ? 70 : 34;
+          if (hs.length > 1) { var mn = Math.min.apply(null, hs), mx = Math.max.apply(null, hs); ctx.strokeStyle = est ? C.ouro : C.mute; ctx.beginPath(); hs.forEach(function (v, j) { var px = hx + j * hw / (hs.length - 1), py = y + lh * 0.75 - (v - mn) / Math.max(0.05, mx - mn) * lh * 0.5; j ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.stroke(); }
+          else { ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.beginPath(); ctx.moveTo(hx, y + lh * 0.5); ctx.lineTo(hx + hw, y + lh * 0.5); ctx.stroke(); }
+          if (largo) {
+            var ax = xe + 82, aw = 70, ac = Number(r.acerto) || 0, aa = Number(r.acaso) || 0;
+            ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(ax, y + lh * 0.3, aw, lh * 0.4);
+            ctx.fillStyle = ac >= aa ? 'rgba(63,214,154,.7)' : 'rgba(255,90,95,.6)'; ctx.fillRect(ax, y + lh * 0.3, aw * ac, lh * 0.4);
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(ax + aw * aa, y + lh * 0.2, 1.5, lh * 0.6);
+            rot(ctx, Math.round(ac * 100) + '/' + Math.round(aa * 100) + '% · ' + fmt(r.n || 0, 0) + '·' + (r.dias || 0) + 'd', w - 6, yc, C.mute, 7.5, 'right', 500);
+          }
+        });
+        var yt = top + lh * L.length + 12;
+        if (rec.length) rec.slice(0, Math.max(1, Math.floor((h - yt) / 11))).forEach(function (rr, i) { rot(ctx, TX.cortar((rr.acerto ? '✓ ' : '✗ ') + 'juiz: ' + String(rr.fonte).replace(/^classica:/, '') + ' ' + rr.moeda + ' ' + rr.h + 'd ' + (rr.ganho_pct >= 0 ? '+' : '') + fmt(rr.ganho_pct, 1) + '%', Math.floor((w - 12) / 4.4)), 8, yt + i * 11, rr.acerto ? C.ok : C.mau, 7.5, 'left', 600); });
+        else rot(ctx, 'o juiz começa a conferir ao vivo de madrugada (6 h depois dos sinais)', 8, yt, C.dim, 7.5, 'left', 500);
+      }
+      return { nome: 'Placar vivo do juiz', desenhar: desenhar, estado: function () { return { linhas: ((BALDE || {}).placar_completo || []).length, historia: Object.keys(HIST).length }; } };
+    }
     function criarTubos() {
       var B = LAB.tubosB = [];
       function desenhar(ctx, w, h, t, dt) {
@@ -2092,8 +2159,9 @@
       }
       return { nome: 'Tubos de ensaio', desenhar: desenhar, estado: function () { return { bolhas: B.length }; } };
     }
-    var ORDEM_LAB = ['tubos', 'nebulosa', 'orbita', 'espiral', 'atomo', 'pulsar', 'enxame', 'relogio'];
+    var ORDEM_LAB = ['placar', 'tubos', 'nebulosa', 'orbita', 'espiral', 'atomo', 'pulsar', 'enxame', 'relogio'];
     var MODELOS_LAB = {
+      placar: criarPlacar(),
       tubos: criarTubos(),
       // 0. NEBULOSA ESPIRAL (10/10, a aprovada): desenha o cartao inteiro (o "desenhar" substitui o mover/quadro dos outros)
       nebulosa: criarNebulosa(),
@@ -2210,11 +2278,11 @@
           for (var a = 0; a < 4; a++) { var r = (0.32 + 0.22 * a) * c.R; ctx.strokeStyle = 'rgba(242,194,48,' + ((a ? 0.1 : 0.22) + 0.2 * nv).toFixed(3) + ')'; ctx.beginPath(); ctx.ellipse(c.x, c.y, r, r * 0.7, 0, 0, TAU); ctx.stroke(); }
         } }
     };
-    var CHAVE_LAB = 't3b_lab_modelo3', LAB_OMISSAO = 'tubos';   // 21/10 22h: os tubos passam a ser o normal
+    var CHAVE_LAB = 't3b_lab_modelo4', LAB_OMISSAO = 'placar';   // 21/10 23h: o placar vivo do juiz (a escolha dele)
     try { LAB.modelo = window.localStorage.getItem(CHAVE_LAB) || LAB_OMISSAO; } catch (e) { LAB.modelo = LAB_OMISSAO; }
     if (!MODELOS_LAB[LAB.modelo]) LAB.modelo = LAB_OMISSAO;
     LAB.modelo = LAB_OMISSAO;   // 21/10 22h45 (ele: "nao quero ficar a escolher opcoes; um so"): sem botoes ate ele escolher o modelo novo
-    EXTRA.lab_modelo = function () { return { modelo: LAB.modelo, modelos: ORDEM_LAB.length, nebulosa: MODELOS_LAB.nebulosa.estado(), tubos: MODELOS_LAB.tubos.estado() }; };
+    EXTRA.lab_modelo = function () { return { modelo: LAB.modelo, modelos: ORDEM_LAB.length, nebulosa: MODELOS_LAB.nebulosa.estado(), tubos: MODELOS_LAB.tubos.estado(), placar: MODELOS_LAB.placar.estado() }; };
     (function () {          // os botoes 1-7 no canto do cartao (a pega de arrastar e so o titulo: nao chocam)
       var hl = $('h_lab'); if (!hl || hl.querySelector('.lab-mod')) return;
       var bar = document.createElement('div'); bar.className = 'lab-mod'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'modelo do laboratorio');
@@ -2240,7 +2308,7 @@
         // 10/10: a Nebulosa espiral desenha o cartao inteiro (uma galaxia: um braco por especialidade, um aglomerado por lab). A luz
         // das estrelas do cartao e o brilho das nuvens continuam a apagar-se como nos outros modelos; as bolhas nao entram aqui
         MOV.desenhar(ctx, w, h, t, dt, agora, base);
-        estadoDoLab(ctx, w, agora);
+        if (LAB.modelo !== 'placar') estadoDoLab(ctx, w, agora);
         LAB.est.forEach(function (st) { st.luz *= Math.pow(0.45, dt); });
         GRUPOS.forEach(function (g, gi) { LAB.nuvem[gi] = (LAB.nuvem[gi] || 0) * Math.pow(0.5, dt); });
         LAB.bolhas.length = 0;
