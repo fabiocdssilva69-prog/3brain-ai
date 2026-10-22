@@ -313,7 +313,7 @@
   // 08/10 (OBRA 11, ele: "cada pontinho do vortex vai ser igual a cada 'batida' - as vezes mais de 1 pontinho vai reagir, as vezes
   // um ENXAME porque varias coisas na torre se mexem ao mesmo tempo"): cada evento escolhe UM ponto da espiral a altura do seu andar
   // (pelo numero do evento: eventos diferentes do mesmo andar acendem pontos diferentes)
-  var PULSOS = [], FAIXAS = null, PULSOS_MAX = 240;
+  var PULSOS = [], FAIXAS = null, PULSOS_MAX = 240, COR_ESTRELA = '#dbe8ff';   // 21/10 22h: a cor das estrelas do vortex
   function pontoDoAndar(n, sem) {
     if (!FAIXAS) { FAIXAS = {}; for (var a = 1; a <= NMAX; a++) { var ya = yDoAndar(a), l = []; for (var i = 0; i < NUC.p.length; i++) if (Math.abs(NUC.p[i].y - ya) < 0.06) l.push(i); FAIXAS[a] = l; } }
     var fx = n != null ? FAIXAS[Math.round(n)] : null;
@@ -408,15 +408,21 @@
       // os importantes tem brilho largo e anel; no maximo 160 desenhados por quadro (o vortex nao trava)
       var agP = agoraMs(), vivos = 0, VIDA_P = 1.8, desenhados = 0;
       ctx.lineWidth = 1.2;
+      // 21/10 22h (ele: "o vortex e uma constelacao a rodar a volta de uma estrela; cada pontinho, mesmo com pouca intensidade, brilha um
+      // pouco mais; uns como estrela, outros como estrela mais forte; nao precisa de cor diferente"): todas na mesma cor de estrela; o
+      // brilho e o tamanho pela importancia, com um minimo que se ve; as mais fortes ganham a cruz de cintilar. Acendem NA batida.
       for (var ip = PULSOS.length - 1; ip >= 0 && desenhados < 160; ip--) {
         var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > VIDA_P) break; if (idP < 0) continue;
         var pa = NUC.p[pu.ip]; if (!pa || pa.sx == null) continue;
-        var fP = 1 - idP / VIDA_P, im = pu.imp == null ? 0.3 : pu.imp; desenhados++;
-        if (im >= 0.35) { luz(ctx, pu.cor, pa.sx, pa.sy, (3 + 14 * im) * fP, Math.min(1, (0.35 + 0.75 * im) * fP)); vivos++; }
-        var tamP = (0.9 + 3.4 * im) * (0.6 + 0.4 * fP);
-        ctx.fillStyle = fP > 0.75 && im >= 0.5 ? '#ffffff' : pu.cor; ctx.globalAlpha = Math.min(1, (0.3 + 0.7 * im) * (0.4 + 0.6 * fP));
+        var fP = 1 - idP / VIDA_P, im = pu.imp == null ? 0.3 : pu.imp, tw = fP * (0.85 + 0.15 * Math.sin(t * 9 + ip)); desenhados++;
+        luz(ctx, COR_ESTRELA, pa.sx, pa.sy, (3 + 11 * im) * tw, Math.min(1, (0.45 + 0.55 * im) * tw)); vivos++;
+        var tamP = (1 + 2.6 * im) * (0.6 + 0.4 * fP);
+        ctx.fillStyle = '#ffffff'; ctx.globalAlpha = Math.min(1, (0.55 + 0.45 * im) * tw);
         ctx.fillRect(pa.sx - tamP / 2, pa.sy - tamP / 2, tamP, tamP);
-        if (im >= 0.6) { ctx.strokeStyle = pu.cor; ctx.globalAlpha = 0.6 * fP; ctx.beginPath(); ctx.arc(pa.sx, pa.sy, 3 + 14 * im * (idP / VIDA_P), 0, TAU); ctx.stroke(); }
+        if (im >= 0.45) {                                               // a cruz de cintilar das estrelas fortes
+          var lc = (3 + 9 * im) * tw; ctx.strokeStyle = COR_ESTRELA; ctx.globalAlpha = Math.min(1, 0.7 * tw);
+          ctx.beginPath(); ctx.moveTo(pa.sx - lc, pa.sy); ctx.lineTo(pa.sx + lc, pa.sy); ctx.moveTo(pa.sx, pa.sy - lc); ctx.lineTo(pa.sx, pa.sy + lc); ctx.stroke();
+        }
       }
       ctx.lineWidth = 1; ctx.globalAlpha = 1; NUC.acesos = vivos;
       // os FIOS das passagens: um cordao de particulas que desce/sobe a espiral do andar de quem envia ao de quem recebe
@@ -708,7 +714,12 @@
   // 'acelerado' durante ~20 min); ate la a cor e a neutra
   T3B.on('ritmo', function (r) { if (ECG.normal == null && r && r.n > 0 && (r.janela_min || 0) >= 3) ECG.normal = Math.max(20, r.n); });
   // 21/10 20h: a batida do compasso (a desenhar no proximo quadro: o mesmo instante dos eventos)
-  T3B.on('compasso', function (c) { ECG.seg = c && c.segundo; ECG.minuto = c && c.minuto; ECG.oxi = c ? { bpm: c.bpm, taxa: c.taxa, basal: c.basal } : null; });   // 21/10 21h: o oximetro
+  T3B.on('compasso', function (c) {
+    ECG.seg = c && c.segundo; ECG.minuto = c && c.minuto; ECG.oxi = c ? { bpm: c.bpm, taxa: c.taxa, basal: c.basal } : null;   // 21/10 21h: o oximetro
+    // 21/10 22h: cada valor de mercado que mudou neste segundo e uma estrela pequena no vortex (sai na proxima batida, com as outras)
+    var nv = Math.min(6, (c && c.segundo && c.segundo.valores) || 0);
+    for (var iv2 = 0; iv2 < nv && ECG.pendentes.length < 160; iv2++) ECG.pendentes.push({ n: null, t: 0, ip: Math.floor(Math.random() * NUC.p.length), cor: COR_ESTRELA, nome: '', imp: 0.12 });
+  });
   var cenaEcg = null;
   (function () {
     var cv = $('cv_coracao'); if (!cv) return;
@@ -1283,6 +1294,17 @@
     } catch (e) { LIV.falhas++; }
   }
   setInterval(ligarLivro, 1000);
+  // 21/10 22h (ele: "os numeros do livro nao mexem em tempo real"): numa rede que corta o fluxo da Binance (porta 9443) o livro ficava
+  // parado no ultimo valor - sem mensagem ha 4 s, o livro publico por REST (data-api.binance.vision) de 2 em 2 s, ate o fluxo voltar
+  var LIVRO_REST_EM_VOO = false;
+  setInterval(function () {
+    if (LIVRO_REST_EM_VOO || !window.fetch || !livroVisivel()) return;
+    var sym = LIV.sym || simboloDaMesa(); if (!sym || (LIV.ultMsg && Date.now() - LIV.ultMsg < 4000)) return;
+    LIVRO_REST_EM_VOO = true;
+    fetch('https://data-api.binance.vision/api/v3/depth?limit=10&symbol=' + encodeURIComponent(sym), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { if (d && d.bids && d.asks && (LIV.sym || sym) === sym) { aoLivro(d); LIV.fonte = 'rest'; } })
+      .catch(function () { }).then(function () { LIVRO_REST_EM_VOO = false; });
+  }, 2000);
   // as ordens REAIS do executor (torre.json -> real.ordens, mercado/numeros_reais.py): a fita. Uma ordem nova acende o livro.
   T3B.on('torre', function (T) {
     var ords = lista(obj(T.real).ordens), topo = ords[0] ? (ords[0].t + ords[0].simbolo + ords[0].lado + ords[0].vezes) : '';
@@ -1312,7 +1334,7 @@
     cenaLivro = cena(cv, { id: 'livro', holo: $('h_livro'), desenhar: function (ctx, w, h, t, dt, s) {
       ctx.clearRect(0, 0, w, h);
       // 07/10 (Q5 B3, li_lado): o livro a esquerda (46%), a Mesa (a conta real) a direita
-      var L0 = Math.max(110, w * 0.46), top = TOPO + 22, bot = h - 3, mid = (top + bot) / 2, n = clamp(Math.floor((bot - top) / 2 / 11), 2, 10), rh = (bot - top) / (n * 2), cx = L0 / 2, agora = agoraMs();
+      var L0 = Math.max(120, w * 0.46), top = TOPO + 28, bot = h - 3, mid = (top + bot) / 2, n = clamp(Math.floor((bot - top) / 2 / 13), 2, 10), rh = (bot - top) / (n * 2), cx = L0 / 2, agora = agoraMs();
       var POS = posMesa(), P = POS.filter(function (x) { return x.sym === LIV.sym; })[0], iP = POS.indexOf(P);
       if (!LIV.b.length) {
         // sem o livro (a ligar, a trocar de moeda, ou a Binance fora): o ultimo preco que a pagina tem; nunca um painel vazio
@@ -1335,10 +1357,10 @@
         porCamada(ctx, s, 'precos', chave, function (g) {
           for (var k = 0; k < n; k++) {
             var aa = LIV.a[k], bb = LIV.b[k], yya = mid - (k + 1) * rh, yyb = mid + k * rh + 1;
-            if (aa) rot(g, px(aa[0]), cx - 4, yya + rh - 2, C.mau, 8.5, 'right', 500);
-            if (bb) rot(g, px(bb[0]), cx + 4, yyb + rh - 2, C.ok, 8.5, 'left', 500);
+            if (aa) rot(g, px(aa[0]), cx - 4, yya + rh - 2, C.mau, 10.5, 'right', 600);   // 21/10 22h: legivel
+            if (bb) rot(g, px(bb[0]), cx + 4, yyb + rh - 2, C.ok, 10.5, 'left', 600);
           }
-          rot(g, String(LIV.sym).replace(/USDT$/, '') + (POS.length ? ' ' + (iP + 1) + '/' + POS.length : '') + ' · ' + px(LIV.mid), 6, TOPO + 6, C.ouroHi, 8.5, 'left', 600);
+          rot(g, String(LIV.sym).replace(/USDT$/, '') + (POS.length ? ' ' + (iP + 1) + '/' + POS.length : '') + ' · ' + px(LIV.mid), 6, TOPO + 7, C.ouroHi, 10.5, 'left', 700);
         });
         // 05/10 (ele: "as apostas que tao em andamento... mais detalhes pra identificar melhor"): a NOSSA posicao REAL neste simbolo -
         // a linha do preco a que entramos (no limite do livro, se estiver fora dele) e o ganho/perda dela ao preco do meio
@@ -1355,7 +1377,7 @@
         // 21/10 (ele: "o livro de ofertas poderia ser maior e com mais informacoes"): o spread e a forca de compra do livro
         var sB = 0, sA = 0; for (var kq = 0; kq < n; kq++) { if (LIV.b[kq]) sB += LIV.b[kq][0] * LIV.b[kq][1]; if (LIV.a[kq]) sA += LIV.a[kq][0] * LIV.a[kq][1]; }
         if (LIV.a[0] && LIV.b[0] && LIV.mid) { var pcB = sA + sB > 0 ? Math.round(100 * sB / (sA + sB)) : 50, spr = (LIV.a[0][0] - LIV.b[0][0]) / LIV.mid * 100;
-          rot(ctx, 'spread ' + spr.toFixed(3).replace('.', ',') + '% · compra ' + pcB + '%', 6, TOPO + 16, pcB >= 55 ? C.ok : pcB <= 45 ? C.mau : C.mute, 7.5, 'left', 600); }
+          rot(ctx, 'spread ' + spr.toFixed(3).replace('.', ',') + '% · compra ' + pcB + '%', 6, TOPO + 20, pcB >= 55 ? C.ok : pcB <= 45 ? C.mau : C.mute, 9, 'left', 600); }
         // a linha do preco: corre sempre (a marcha da linha tracejada) e brilha ao meio
         ctx.strokeStyle = C.ouro; ctx.setLineDash([4, 4]); ctx.lineDashOffset = calmo ? 0 : -t * 14; ctx.beginPath(); ctx.moveTo(2, mid); ctx.lineTo(L0 - 2, mid); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0;
         luz(ctx, C.ouro, cx, mid, 10 + 2 * Math.sin(t * 2), 0.4);
@@ -1366,23 +1388,23 @@
       var xR = L0 + 8, xD = w - 5, larR = xD - xR, y = TOPO + 6, totP = 0;
       POS.forEach(function (ps) { totP += ps.pnl; });
       ctx.save(); ctx.beginPath(); ctx.rect(L0 + 4, TOPO, w - L0 - 4, h - TOPO); ctx.clip();
-      rot(ctx, POS.length ? 'CONTA REAL' : 'CONTA REAL · sem posições', xR, y, C.dim, 7.5, 'left', 600);
+      rot(ctx, POS.length ? 'CONTA REAL' : 'CONTA REAL · sem posições', xR, y, C.dim, 9, 'left', 700);
       if (POS.length) rot(ctx, sinal(totP, 2), xD, y, totP >= 0 ? C.ok : C.mau, 7.5, 'right', 700);
       LIV.pv = LIV.pv || {};
       ctx.font = fonte(700, 8); ctx._f = ctx.font;
-      var cabePct = larR >= 118;
-      var linhasMax = Math.max(1, Math.floor((h - y - 6) / 11));
+      var cabePct = larR >= 140;
+      var linhasMax = Math.max(1, Math.floor((h - y - 6) / 13));
       var nOrd = Math.min((LIV.ordens || []).length, 4), sobra = linhasMax - POS.length;
-      if (sobra < 3) nOrd = 0; else nOrd = Math.min(nOrd, Math.floor((sobra * 11 - 13) / 10));
+      if (sobra < 3) nOrd = 0; else nOrd = Math.min(nOrd, Math.floor((sobra * 13 - 15) / 12));
       POS.forEach(function (ps, k) {
         if (k >= linhasMax) return;
-        y += 11;
+        y += 13;
         var v = LIV.pv[ps.sym] = seguir(LIV.pv[ps.sym] == null ? ps.pnl : LIV.pv[ps.sym], ps.pnl, 3, dt);
         var esta = ps.sym === LIV.sym, cor = v >= 0 ? C.ok : C.mau;
-        if (esta) { ctx.fillStyle = 'rgba(242,194,48,.14)'; ctx.fillRect(L0 + 4, y - 8.5, w - L0 - 6, 11); }
-        rot(ctx, (esta ? '▶' : ' ') + ps.base, xR - 2, y, esta ? C.ouroHi : C.txt, 8, 'left', esta ? 800 : 600);
-        rot(ctx, sinal(v, 2), xD, y, cor, 8, 'right', 700);
-        if (cabePct) rot(ctx, sinal(ps.pct, 1) + '%', xD - 34, y, cor, 7, 'right', 500);
+        if (esta) { ctx.fillStyle = 'rgba(242,194,48,.14)'; ctx.fillRect(L0 + 4, y - 10, w - L0 - 6, 13); }
+        rot(ctx, (esta ? '▶' : ' ') + ps.base, xR - 2, y, esta ? C.ouroHi : C.txt, 10, 'left', esta ? 800 : 600);
+        rot(ctx, sinal(v, 2), xD, y, cor, 10, 'right', 700);
+        if (cabePct) rot(ctx, sinal(ps.pct, 1) + '%', xD - 42, y, cor, 8.5, 'right', 600);
       });
       // 21/10: o BALDE desta moeda - quantas fontes dizem alta/baixa hoje, a nota do conselho e porque o preco mexeu
       var bm = BALDE && LIV.sym ? String(LIV.sym).replace(/USDT$/, '') : null, bv = bm ? ((BALDE.moedas || {})[bm] || null) : null, bc = bm ? (BALDE.conselho || {})[bm] : null;
@@ -1396,12 +1418,12 @@
           for (var lx = 0; lx < nl && txX; lx++) { var corte = txX.length <= cX ? txX.length : (txX.lastIndexOf(' ', cX) > 8 ? txX.lastIndexOf(' ', cX) : cX); y += 10; rot(ctx, (lx === nl - 1 && txX.length > corte ? TX.cortar(txX, cX) : txX.slice(0, corte)), xR, y, C.mute, 7, 'left', 500); txX = txX.slice(corte).trim(); } }
       }
       if (nOrd > 0) {
-        y += 13; rot(ctx, 'ORDENS REAIS', xR, y, C.dim, 7, 'left', 600);
-        var cO = Math.max(8, Math.floor(larR / 4.3));
+        y += 15; rot(ctx, 'ORDENS REAIS', xR, y, C.dim, 8.5, 'left', 700);
+        var cO = Math.max(8, Math.floor(larR / 5.2));
         LIV.ordens.slice(0, nOrd).forEach(function (o, k) {
-          y += 10;
+          y += 12;
           var novaO = k === 0 && LIV.fl && agora - LIV.fl.t0 < 1500;
-          rot(ctx, TX.cortar(textoOrdem(o), cO), xR, y, novaO ? C.ouroHi : (o.lado === 'SELL' ? '#e88a8d' : '#7fd8b4'), 7, 'left', 500);
+          rot(ctx, TX.cortar(textoOrdem(o), cO), xR, y, novaO ? C.ouroHi : (o.lado === 'SELL' ? '#e88a8d' : '#7fd8b4'), 8.5, 'left', 600);
         });
       }
       ctx.restore();
@@ -1451,11 +1473,13 @@
     var w = nDe(ev);
     (EQ.jan[n] = EQ.jan[n] || []).push([Date.now(), w]);
     // 21/10 21h (ele: "o equalizador nao mexe conforme o coracao"): o andar junta o que fez e SALTA NA BATIDA do coracao (abaixo)
-    EQ.pend[n] = (EQ.pend[n] || 0) + w * (r.forca || 0.5); EQ.ultimoAndar = n;
+    // 21/10 22h (ele: "o equalizador nao se move conforme a accao dos sectores"): volta a SALTAR NA HORA da accao do andar (log das accoes)
+    EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.3 * (r.forca || 0.5) * Math.min(4, 1 + Math.log2(w)));
+    EQ.pend[n] = (EQ.pend[n] || 0) + w * (r.forca || 0.5); EQ.ultimoAndar = n; sujar(cenaEq, 2500);
   });
   T3B.on('batida', function () {
     // 16/10: o salto cresce com as accoes reais (log: 1 -> x1, 8 -> x4 no maximo); 21/10 21h: na batida, com o que o andar fez desde a anterior
-    Object.keys(EQ.pend).forEach(function (n) { var w = Math.max(1, EQ.pend[n] * 2); EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.18 * Math.min(4, 1 + Math.log2(w))); });
+    Object.keys(EQ.pend).forEach(function (n) { EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.06); });   // 21/10 22h: so respira na batida
     EQ.pend = {}; sujar(cenaEq, 2500);
   });
   function recalcularEq() {
@@ -1577,14 +1601,16 @@
   // uma vez por minuto - e um relogio) e um PONTO POR ANDAR: brilhante = gente a trabalhar no turno desse andar, violeta = a
   // evoluir no descanso, apagado = parado. Cada evento do Pessoal/Recrutamento e do Risco faz piscar os pontos; cada evento de
   // um andar com ponto faz piscar esse ponto. Os numeros: os da barra da obra 2 (enxame.json -> pessoal.turnos.barra).
-  var TUR = { ands: [], barra: {}, flash: {}, todos: 0, carga: null };
+  var TUR = { ands: [], barra: {}, flash: {}, jan: {}, todos: 0, carga: null };
   T3B.on('estrutura', function (d) {
     TUR.ands = lista(d.andares).filter(function (a) { var t = a.turnos || a.censo; return t && (t.registados || 0) > 0; }).map(function (a) { var t = a.turnos || a.censo; return { n: a.n, em: t.em_turno || 0, trab: t.a_trabalhar_no_turno || 0, evol: t.em_descanso_a_evoluir || 0, reg: t.registados || 0 }; });
     sujar(cenaTur, 0);
   });
   T3B.on('enxame', function (e) { var tb = obj(obj(e.pessoal).turnos); lista(tb.barra).forEach(function (x) { TUR.barra[x.id] = x.valor; }); TUR.carga = tb.carga_horaria_pct; TUR.noTurno = tb.a_trabalhar_no_turno; TUR.esp = obj(tb.por_especie); sujar(cenaTur, 0); });
   // cada andar acende o SEU ponto quando la alguem trabalha (todos os eventos com andar)
-  T3B.on('eventos', function (evs) { evs.forEach(function (e) { if (e.andar != null && TUR.ands.length && e.k !== 'numero') TUR.flash[e.andar] = agoraMs(); }); });
+  // 21/10 22h (ele: "o relogio nao mostra como os funcionarios realmente trabalham; as bolinhas nao acendem com sincronia"): cada andar
+  // guarda as accoes do ultimo minuto - o ponto fica aceso enquanto o andar trabalha (mais forte com mais accoes), nao so 1,8 s
+  T3B.on('eventos', function (evs) { var ag = Date.now(); evs.forEach(function (e) { if (e.andar != null && TUR.ands.length && e.k !== 'numero' && !e.historia) { TUR.flash[e.andar] = agoraMs(); (TUR.jan[e.andar] = TUR.jan[e.andar] || []).push(ag); } }); });
   // 16/10 20h (ele: "o relogio do turno nao mostra os dados do seu sector"): o "agora:" de baixo era o ULTIMO evento da torre inteira
   // (um analista do Macro, da Mesa...). Agora e quem trabalhou nos sectores do relogio (Pessoal, Recrutamento, Formacao, Compras,
   // Logistica, Continuidade, os turnos, a frota dos contratados) - os mesmos eventos que o fazem reagir
@@ -1592,6 +1618,11 @@
   // <turnos-puro>
   // quem faltou ao turno, por especie (enxame.json -> pessoal.turnos.por_especie): "genes 1.541 · regras 853 · contratados 789"
   var NOME_ESP_TURNO = { algoritmo: 'genes', regra: 'regras', agente: 'contratados', posto: 'postos', script: 'scripts' };
+  // 21/10 22h: quem esta a trabalhar AGORA por especie (genes, regras, contratados...): os funcionarios que o relogio mostra
+  function aTrabalharPorEspecie(esp) {
+    return Object.keys(esp || {}).map(function (e) { return [NOME_ESP_TURNO[e] || e, Number((esp[e] || {}).agora) || 0]; })
+      .filter(function (x) { return x[1] > 0; }).sort(function (a, b) { return b[1] - a[1]; });
+  }
   function faltasPorEspecie(esp) {
     return Object.keys(esp || {}).map(function (e) { return [NOME_ESP_TURNO[e] || e, Number((esp[e] || {}).faltou) || 0]; })
       .filter(function (x) { return x[1] > 0; }).sort(function (a, b) { return b[1] - a[1]; });
@@ -1614,7 +1645,7 @@
       var hr = d.getUTCHours() + d.getUTCMinutes() / 60 + seg / 3600, tur = Math.floor(hr / 8) % 3;
       var cx = Math.min(w * 0.33, (h - TOPO) * 0.62 + 6), cy = TOPO + (h - TOPO) / 2 + 2, R = Math.min(w * 0.28, (h - TOPO) * 0.44), pt = clamp(1 - (agora - TUR.todos) / 1200, 0, 1);
       var v = function (x) { return x == null ? 'a ler' : fmt(x, 0); };
-      var itens = [['TURNO', NOMES[tur], CORES[tur]], ['EM TURNO', v(TUR.barra.em_turno), C.txt], ['A TRABALHAR', v(TUR.noTurno), C.ok], ['EXTRA',  TUR.noTurno == null || TUR.barra.a_trabalhar_agora == null ? 'a ler' : fmt(Math.max(0, TUR.barra.a_trabalhar_agora - TUR.noTurno), 0), C.az], ['A EVOLUIR', v(TUR.barra.a_evoluir), C.vi], ['FALTARAM', v(TUR.barra.faltaram), (TUR.barra.faltaram || 0) > 0 ? C.am : C.ok], ['CARGA', TUR.carga == null ? 'a ler' : fmt(TUR.carga, 0) + '%', C.mute]];
+      var itens = [['TURNO', NOMES[tur], CORES[tur]], ['EM TURNO', v(TUR.barra.em_turno), C.txt], ['A TRABALHAR', v(TUR.noTurno), C.ok], ['EXTRA',  TUR.noTurno == null || TUR.barra.a_trabalhar_agora == null ? 'a ler' : fmt(Math.max(0, TUR.barra.a_trabalhar_agora - TUR.noTurno), 0), C.az], ['ANDARES ATIVOS', (TUR.ativos == null ? 'a ler' : fmt(TUR.ativos, 0) + '/' + fmt(TUR.ands.length, 0)), C.cy], ['FALTARAM', v(TUR.barra.faltaram), (TUR.barra.faltaram || 0) > 0 ? C.am : C.ok], ['CARGA', TUR.carga == null ? 'a ler' : fmt(TUR.carga, 0) + '%', C.mute]];
       porCamada(ctx, s, 'fundo', itens.map(function (x) { return x[1]; }).join('|'), function (g) {
         for (var i = 0; i < 3; i++) { g.strokeStyle = CORES[i]; g.globalAlpha = 0.2; g.lineWidth = 7; g.beginPath(); g.arc(cx, cy, R, -Math.PI / 2 + i * TAU / 3 + 0.04, -Math.PI / 2 + (i + 1) * TAU / 3 - 0.04); g.stroke(); }
         g.globalAlpha = 1; g.lineWidth = 1;
@@ -1639,19 +1670,20 @@
       var qs = -Math.PI / 2 + seg / 60 * TAU, sx = cx + Math.cos(qs) * (R + 6), sy = cy + Math.sin(qs) * (R + 6);
       luz(ctx, CORES[tur], sx, sy, 7, 0.9); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(sx, sy, 1.7, 0, TAU); ctx.fill();
       // os andares: giram devagar a volta do centro
-      var n = TUR.ands.length, r2 = R * 0.62, gi = calmo ? 0 : t * 0.05;
+      var n = TUR.ands.length, r2 = R * 0.62, gi = calmo ? 0 : t * 0.05, corteJ = Date.now() - 60000, ativos = 0;
       for (var k2 = 0; k2 < n; k2++) {
         var a = TUR.ands[k2], an = -Math.PI / 2 + k2 / Math.max(1, n) * TAU + gi, fr = 0.78 + 0.22 * ((k2 * 7) % 5) / 4, x = cx + Math.cos(an) * r2 * fr, y = cy + Math.sin(an) * r2 * fr;
         // 07/10 (Q5 B4, "os pontos mais reagentes a torre e ao horario"): o tamanho segue quem trabalha, o piscar dura mais e
         // e mais forte, e quem esta no turno da hora respira com o ponteiro dos segundos
-        var fl = clamp(1 - (agora - (TUR.flash[a.n] || 0)) / 1800, 0, 1), trab = a.em ? a.trab / a.em : 0, cor = trab > 0.25 ? CORES[tur] : a.evol > 0 ? C.vi : C.dim;
+        var jA = TUR.jan[a.n] || []; while (jA.length && jA[0] < corteJ) jA.shift(); var actA = Math.min(1, jA.length / 4); if (jA.length) ativos++;
+        var fl = clamp(1 - (agora - (TUR.flash[a.n] || 0)) / 1800, 0, 1), trab = Math.max(a.em ? a.trab / a.em : 0, actA), cor = actA > 0 ? CORES[tur] : trab > 0.25 ? CORES[tur] : a.evol > 0 ? C.vi : C.dim;
         var resp2 = 0.5 + 0.5 * Math.sin(t * 2.4 + k2 * 0.9 + seg / 60 * TAU);
         var al = trab > 0.25 ? 0.7 + 0.3 * resp2 : a.evol > 0 ? 0.5 + 0.3 * Math.sin(t * 2 + k2) : 0.3 + 0.12 * Math.sin(t * 1.4 + k2 * 0.7);
         ctx.globalAlpha = Math.min(1, al + fl * 0.6 + pt * 0.35); ctx.fillStyle = fl > 0.05 ? '#fff' : cor;
         ctx.beginPath(); ctx.arc(x, y, 1.5 + 1.6 * clamp(trab, 0, 1) + fl * 2.6 + (trab > 0.25 ? 0.5 * resp2 : 0), 0, TAU); ctx.fill();
         if (fl > 0.05 || trab > 0.6) luz(ctx, cor, x, y, 7 + fl * 5, Math.max(fl, trab > 0.6 ? 0.35 * resp2 : 0));
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = 1; if (TUR.ativos !== ativos) { TUR.ativos = ativos; sujar(cenaTur, 0); }
       // o ponteiro das horas (continuo) e a hora ao centro
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(qh) * (R - 4), cy + Math.sin(qh) * (R - 4)); ctx.stroke(); ctx.lineWidth = 1;
       var hAt = Math.floor(hr) % 24, qa = -Math.PI / 2 + hAt / 24 * TAU, xa = cx + Math.cos(qa) * (R - 17), ya = cy + Math.sin(qa) * (R - 17);
@@ -1660,8 +1692,8 @@
       ctx.fillStyle = 'rgba(7,7,10,.82)'; ctx.beginPath(); ctx.arc(cx, cy + 3, Math.min(R * 0.42, 19), 0, TAU); ctx.fill();
       rot(ctx, String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0'), cx, cy + 3, '#fff', 11, 'center', 700);
       rot(ctx, String(Math.floor(seg)).padStart(2, '0'), cx, cy + 13, C.mute, 7.5, 'center', 600);
-      var fl3 = faltasPorEspecie(TUR.esp);
-      if (fl3.length) rot(ctx, TX.cortar('faltaram: ' + fl3.slice(0, 3).map(function (x) { return x[0] + ' ' + fmt(x[1], 0); }).join(' · '), Math.floor((w - 8) / 4.4)), 4, h - 13, C.am, 7.5, 'left', 600);
+      var at3 = aTrabalharPorEspecie(TUR.esp);   // 21/10 22h: os funcionarios a trabalhar agora, por especie
+      if (at3.length) rot(ctx, TX.cortar('a trabalhar agora: ' + at3.slice(0, 3).map(function (x) { return x[0] + ' ' + fmt(x[1], 0); }).join(' · '), Math.floor((w - 8) / 4.4)), 4, h - 13, C.ok, 7.5, 'left', 600);
       if (TUR.ult) { ctx.globalAlpha = clamp(1 - (agora - (TUR.tUlt || 0)) / 60000, 0.45, 1); rot(ctx, TX.cortar('agora: ' + TX.limpar(TUR.ult.quem || TX.nomeDeId(TUR.ult.id)) + (TUR.ult.andar != null ? ' · and. ' + TUR.ult.andar : ''), Math.floor((w - 8) / 4.4)), 4, h - 3, C.mute, 7.5, 'left', 500); ctx.globalAlpha = 1; }
     } });
   })();
@@ -1712,6 +1744,10 @@
       // 21/10: a hora do PROPRIO evento (o passado que a 1.a leitura traz dizia 'agora mesmo'; sem ele, 'a espera' ate 15 min)
       LAB.tGenes = agora - Math.max(0, Date.now() - (Number(ev.ms) > 0 ? Number(ev.ms) : Date.now())); LAB.genesUlt = { n: nDe(ev), quem: ev.quem || '', tipo: ev.tipo || '' };   // 16/10 20h: o estado do cartao
       var gi = GRUPO_DO_ANDAR[ev.andar]; if (gi == null) return;
+      // 21/10 22h: os tubos - a contagem por grupo (genes/min) e as bolhas (no maximo 12 por evento)
+      ((LAB.janG = LAB.janG || {})[gi] = LAB.janG[gi] || []).push([Date.now(), nDe(ev)]);
+      if (LAB.tubosB && !ev.historia) { var robs = {}; (ev.robustas || []).forEach(function (k) { robs[k] = 1; }); var nbo = Math.min(12, nDe(ev)), chs = ev.chaves || [];
+        for (var ibo = 0; ibo < nbo && LAB.tubosB.length < 300; ibo++) LAB.tubosB.push({ gi: gi, y: 0, jx: Math.random() * 2 - 1, v: 0.22 + 0.3 * Math.random(), r: 1.2 + 1.4 * Math.random(), rob: !!robs[chs[ibo]] }); }
       var rob = {}; (ev.robustas || []).forEach(function (k) { rob[k] = 1; });
       (ev.chaves || []).slice(0, 16).forEach(function (k) {
         var s = LAB.porChave[k];
@@ -1727,6 +1763,7 @@
     } else {
       // um funcionario de um lab escreveu (o organismo, a sombra, a revisao): a constelacao desse andar brilha
       var g2 = GRUPO_DO_ANDAR[r.andar]; LAB.est.forEach(function (s) { if (g2 == null || s.g === g2) s.luz = Math.max(s.luz, 0.35); }); if (g2 != null) LAB.nuvem[g2] = Math.max(LAB.nuvem[g2] || 0, 0.6);
+      if (g2 != null && LAB.tubosB && !ev.historia && LAB.tubosB.length < 300) LAB.tubosB.push({ gi: g2, y: 0, jx: Math.random() * 2 - 1, v: 0.35, r: 1, rob: false });   // 21/10 22h: o lab mexeu
     }
     sujar(cenaLab, 2200); pintarLegendaLab();
   });
@@ -1975,8 +2012,50 @@
       luz(ctx, '#ffdc6a', c.x, c.y, 7 + 5 * nv + Math.sin(t * 1.3 + gi), 0.55 + 0.4 * nv);
       ctx.fillStyle = '#ffe9a8'; ctx.beginPath(); ctx.arc(c.x, c.y, 2.4 + 1.2 * nv, 0, TAU); ctx.fill();
     }
-    var ORDEM_LAB = ['nebulosa', 'orbita', 'espiral', 'atomo', 'pulsar', 'enxame', 'relogio'];
+    // 21/10 22h (ele: "o laboratorio nao funciona direito, nao mostra a accao por minuto, esta totalmente bugado; fazer um tipo
+    // totalmente diferente, com outras accoes e outras animacoes"): OS TUBOS DE ENSAIO - um tubo por especialidade; o nivel do liquido
+    // dourado e a fraccao de genes ROBUSTOS do grupo; cada gene calculado sobe como uma BOLHA (dourada se robusto); por baixo de cada
+    // tubo, os genes por minuto (3 min) desse grupo; no rodape, o total. O modelo por omissao passa a ser este.
+    function criarTubos() {
+      var B = LAB.tubosB = [];
+      function desenhar(ctx, w, h, t, dt) {
+        var n = GRUPOS.length, top = TOPO + 42, bot = h - 40, esp = (w - 16) / n, tw = Math.max(10, Math.min(26, esp * 0.55)), alt = Math.max(30, bot - top);
+        var corte = Date.now() - 180000, totPm = 0, rob = 0, tot = 0, CX = [];
+        GRUPOS.forEach(function (g, gi) {
+          var j = (LAB.janG = LAB.janG || {})[gi] || []; while (j.length && j[0][0] < corte) j.shift();
+          var pm = 0; j.forEach(function (x) { pm += x[1]; }); pm /= 3; totPm += pm; rob += LAB.rob[gi] || 0; tot += LAB.tot[gi] || 0;
+          var cx = 8 + esp * (gi + 0.5), x0 = cx - tw / 2, tg = LAB.tot[gi] || 0, nivel = tg ? Math.max(0.06, Math.min(0.94, (LAB.rob[gi] || 0) / tg)) : 0.06;
+          var ativo = clamp(pm / 30, 0, 1); CX[gi] = { cx: cx, ly: bot - nivel * alt };
+          ctx.save(); ctx.beginPath(); ctx.moveTo(x0, top); ctx.lineTo(x0, bot - tw / 2); ctx.arc(cx, bot - tw / 2, tw / 2, Math.PI, 0, true); ctx.lineTo(x0 + tw, top); ctx.closePath(); ctx.clip();
+          var ly = CX[gi].ly, gr = ctx.createLinearGradient(0, ly, 0, bot);
+          gr.addColorStop(0, 'rgba(242,194,48,' + (0.55 + 0.35 * ativo).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(242,194,48,.18)');
+          ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(x0 - 2, bot + 2);
+          for (var k = 0; k <= 8; k++) { var xx = x0 - 2 + (tw + 4) * k / 8; ctx.lineTo(xx, ly + (calmo ? 0 : 1.6 * Math.sin(t * 2.2 + gi + k * 0.9))); }
+          ctx.lineTo(x0 + tw + 2, bot + 2); ctx.closePath(); ctx.fill();
+          ctx.restore();
+          ctx.strokeStyle = 'rgba(190,225,255,' + (0.38 + 0.4 * ativo).toFixed(2) + ')'; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.moveTo(x0, top); ctx.lineTo(x0, bot - tw / 2); ctx.arc(cx, bot - tw / 2, tw / 2, Math.PI, 0, true); ctx.lineTo(x0 + tw, top); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(x0 - 3, top); ctx.lineTo(x0 + tw + 3, top); ctx.stroke();
+          if (ativo > 0.05) luz(ctx, C.ouro, cx, ly, 8 + 6 * ativo, 0.35 * ativo);
+          rot(ctx, TX.cortar(g.nome, Math.max(4, Math.floor(esp / 4.6))), cx, bot + 12, C.mute, 7.5, 'center', 600);
+          rot(ctx, fmt(pm, 0) + '/min', cx, bot + 23, pm >= 1 ? C.ouroHi : C.dim, 8.5, 'center', 700);
+        });
+        ctx.lineWidth = 1;
+        for (var ib = B.length - 1; ib >= 0; ib--) {
+          var b = B[ib], c = CX[b.gi]; if (!c) { B.splice(ib, 1); continue; }
+          b.y += (calmo ? 0 : dt) * b.v;
+          var by = bot - tw / 2 - b.y * (alt - tw / 2), bx = c.cx + b.jx * tw * 0.32 + (calmo ? 0 : 1.2 * Math.sin(t * 5 + ib));
+          if (by < c.ly - 2 || b.y > 1) { if (b.rob) luz(ctx, C.ouroHi, bx, c.ly, 6, 0.6); B.splice(ib, 1); continue; }
+          ctx.globalAlpha = 0.85; ctx.fillStyle = b.rob ? C.ouroHi : 'rgba(200,235,255,.9)';
+          ctx.beginPath(); ctx.arc(bx, by, b.r, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+        }
+        rot(ctx, fmt(totPm, 0) + ' genes/min · robustos ' + fmt(rob, 0) + ' de ' + fmt(tot, 0), 8, h - 6, totPm >= 1 ? C.ouroHi : C.dim, 8, 'left', 700);
+      }
+      return { nome: 'Tubos de ensaio', desenhar: desenhar, estado: function () { return { bolhas: B.length }; } };
+    }
+    var ORDEM_LAB = ['tubos', 'nebulosa', 'orbita', 'espiral', 'atomo', 'pulsar', 'enxame', 'relogio'];
     var MODELOS_LAB = {
+      tubos: criarTubos(),
       // 0. NEBULOSA ESPIRAL (10/10, a aprovada): desenha o cartao inteiro (o "desenhar" substitui o mover/quadro dos outros)
       nebulosa: criarNebulosa(),
       // 1. ORBITAS (o de 07-08/10): cada gene na sua orbita, os de dentro mais depressa; quem calcula acelera
@@ -2092,10 +2171,10 @@
           for (var a = 0; a < 4; a++) { var r = (0.32 + 0.22 * a) * c.R; ctx.strokeStyle = 'rgba(242,194,48,' + ((a ? 0.1 : 0.22) + 0.2 * nv).toFixed(3) + ')'; ctx.beginPath(); ctx.ellipse(c.x, c.y, r, r * 0.7, 0, 0, TAU); ctx.stroke(); }
         } }
     };
-    var CHAVE_LAB = 't3b_lab_modelo2', LAB_OMISSAO = 'nebulosa';
+    var CHAVE_LAB = 't3b_lab_modelo3', LAB_OMISSAO = 'tubos';   // 21/10 22h: os tubos passam a ser o normal
     try { LAB.modelo = window.localStorage.getItem(CHAVE_LAB) || LAB_OMISSAO; } catch (e) { LAB.modelo = LAB_OMISSAO; }
     if (!MODELOS_LAB[LAB.modelo]) LAB.modelo = LAB_OMISSAO;
-    EXTRA.lab_modelo = function () { return { modelo: LAB.modelo, modelos: ORDEM_LAB.length, nebulosa: MODELOS_LAB.nebulosa.estado() }; };
+    EXTRA.lab_modelo = function () { return { modelo: LAB.modelo, modelos: ORDEM_LAB.length, nebulosa: MODELOS_LAB.nebulosa.estado(), tubos: MODELOS_LAB.tubos.estado() }; };
     (function () {          // os botoes 1-7 no canto do cartao (a pega de arrastar e so o titulo: nao chocam)
       var hl = $('h_lab'); if (!hl || hl.querySelector('.lab-mod')) return;
       var bar = document.createElement('div'); bar.className = 'lab-mod'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'modelo do laboratorio');
@@ -2414,6 +2493,15 @@
   ligarMinimizar();
   posicionar(null);
 
+  // 21/10 22h: AMPLIAR - duplo clique num holograma abre-o grande no meio do ecra (o canvas mede-se sozinho pelo ResizeObserver)
+  document.addEventListener('dblclick', function (ev) {
+    var h = ev.target && ev.target.closest ? ev.target.closest('.holo') : null; if (!h) return;
+    var ja = h.classList.contains('grande');
+    Array.prototype.forEach.call(document.querySelectorAll('.holo.grande'), function (x) { x.classList.remove('grande'); });
+    if (!ja) { h.classList.add('grande'); h.title = 'duplo clique ou Esc para fechar'; }
+    cenas.forEach(function (s2) { s2.precisaTam = true; s2.sujo = true; });
+  });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') Array.prototype.forEach.call(document.querySelectorAll('.holo.grande'), function (x) { x.classList.remove('grande'); cenas.forEach(function (s2) { s2.precisaTam = true; }); }); });
   // ---------------------------------------------------------------- blocos do painel do andar (usados pelo t3b_vivo.js)
   window.T3BHolo = {
     blocoDoAndar: function (a) {
