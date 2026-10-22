@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=091113d8db';
+import * as ANDAR from './t3b_andar.js?v=c2b54ac893';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 
@@ -74,8 +74,9 @@ const DPR = Math.max(1, window.devicePixelRatio || 1);
 const PR = { interaccao: [1, 1], vivo: [DPR, 1], repouso: [Math.max(DPR, Math.min(2, DPR * 1.6)), Math.max(DPR, 1.5)] };
 const CADENCIA = { interaccao: 0, vivo: 0, repouso: 160 };   // 05/10 (Q4 D1): vivo = todos os quadros do ecra (era 30/s; 20 a girar sozinha)
 const degrau = { interaccao: 0, vivo: 0, repouso: 0 };
-let modoQ = 'vivo', modoDesde = 0, prPedido = 0, msQuadro = 33, custos = [], intervalos = [], ultQ = 0, desenhadosN = 0, msDesenho = [], cadPedida = 33.3;
+let modoQ = 'vivo', modoDesde = 0, prPedido = 0, msQuadro = 33, custos = [], intervalos = [], ultQ = 0, desenhadosN = 0, msDesenho = [], cadPedida = 33.3, cadLenta = 0;
 function pixelRatio() { const v = PR[modoQ]; return Math.max(1, v[Math.min(degrau[modoQ], v.length - 1)]); }
+window.__t3bCadLenta = () => cadLenta;   // 22/10: a sonda le a escada de cadencia (0 = relogio da pagina; 50 = 20 quadros/s)
 // 21/10 23h45 (ele: "ta muito pesado e ta travando demais"; medido: setSize = 3,9% do fio principal): com ~500 eventos por minuto a torre
 // salta entre 'vivo' e 'repouso' varias vezes por segundo, e cada troca de nitidez refazia a imagem inteira da placa (setSize). Agora a
 // nitidez so sobe com o modo assente 6 s, e fora da interaccao muda no maximo uma vez a cada 2,5 s.
@@ -102,6 +103,10 @@ function medirCusto(ms, intervalo, agora) {
   const d = degrau[modoQ], n = PR[modoQ].length;
   if (med > pedido * 1.45 && d < n - 1) degrau[modoQ] = d + 1;
   else if (med < pedido * 1.1 && d > 0 && agora - ultQ > 12000) degrau[modoQ] = d - 1;
+  // 22/10 (ele 21/10: 'torre 3D a 20 quadros por segundo se ainda travar'): a nitidez ja esta no minimo e os quadros continuam a
+  // atrasar -> a propria CADENCIA desce para 50 ms (20 q/s) em 'vivo'; com folga longa (12 s) volta ao relogio da pagina
+  else if (med > pedido * 1.45 && modoQ === 'vivo' && cadLenta < 50) cadLenta = 50;
+  else if (med < pedido * 1.1 && cadLenta && agora - ultQ > 12000) cadLenta = 0;
   else return;
   ultQ = agora; intervalos.length = 0; aplicarPR(agora + 1e6);
 }
@@ -1522,7 +1527,8 @@ function quadro(agora) {
   // (a torre a girar sozinha e o letreiro: 20 quadros/s chegam - 0,1 grau por quadro; bonecos a andar dentro do andar: 30)
   const cad = calmo && modo === 'repouso' ? (precisaDesenhar ? 0 : 1e9) : modo === 'repouso' && precisaDesenhar ? 0 : CADENCIA[modo];
   cadPedida = Math.max(cad >= 1e9 ? 0 : cad, RIT && !RIT.livre() ? 1000 / (RIT.efectivo ? RIT.efectivo() : RIT.hz) : 0);   // 10/10: sem foco sao 20 de proposito (a escada nao borra)
-  if (ultimoDesenho && agora - ultimoDesenho < cad - 2) return;
+  if (modo === 'vivo' && cadLenta) cadPedida = Math.max(cadPedida, cadLenta);   // 22/10: pagina lenta -> 20 quadros/s de proposito (a escada mede contra isto)
+  if (ultimoDesenho && agora - ultimoDesenho < Math.max(cad, modo === 'vivo' ? cadLenta : 0) - 2) return;
   const dt = ultimo ? Math.min(0.1, (agora - ultimo) / 1000) : 0.016;
   const intervalo = ultimoDesenho ? agora - ultimoDesenho : 0;
   ultimo = agora;
