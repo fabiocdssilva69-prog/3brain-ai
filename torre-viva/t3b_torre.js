@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=632aba46c2';
+import * as ANDAR from './t3b_andar.js?v=425b738a0f';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 
@@ -699,7 +699,11 @@ function receberEventos(evs) {
     const a = e.andar != null ? torre.porN[e.andar] : null;
     if (e.k === 'batimento') { pulsoDoVigia(); if (aberto) ANDAR.eventoNoAndar(aberto, e, CTX); return; }
     if (a) {
-      a.actividade = Math.min(1.6, a.actividade + (e.k === 'mudou' ? 0.9 : 0.6)); a.actMin = Math.min(1, a.actMin + (e.k === 'mudou' ? 0.22 : 0.12)); ledsQuentes.add(a);
+      // 21/10 22h (ele: "as animacoes dentro da torre nao mexem conforme o comportamento; os numeros perto delas nao mudam em tempo
+      // real"): o andar guarda as accoes do ultimo minuto (o rotulo mostra-as ao vivo) e a animacao cresce com as accoes do evento
+      const nEv = T3B.nDoEvento ? T3B.nDoEvento(e) : 1, forcaEv = Math.min(2, 1 + Math.log2(nEv) / 3);
+      if (!e.historia) (a.jan = a.jan || []).push([Date.now(), nEv]);
+      a.actividade = Math.min(1.6, a.actividade + (e.k === 'mudou' ? 0.9 : 0.6) * forcaEv); a.actMin = Math.min(1, a.actMin + (e.k === 'mudou' ? 0.22 : 0.12) * forcaEv); ledsQuentes.add(a);
       if (torre.pulsos.length < 14) torre.pulsos.push({ pos: -3, alvo: a.i, vel: 26 + a.i * 0.15, forca: 1 });   // o pulso que sobe a torre ate ao andar
       const p = T3B.estado.programas[e.id], lista = p && p.sec != null ? torre.segPorSector[p.sec] : null;
       if (lista) lista.forEach(iS => aquecer(iS, 1)); else for (let k = a.segInicio; k < a.segFim; k++) aquecer(k, 0.35);
@@ -1357,7 +1361,9 @@ function nivelPelaDistancia() {
 
 // ---------------------------------------------------------------- rotulos dos andares (ao lado, como a antiga) e ANCORAS
 let rotCx = null, rotEls = [], rectCol = null;
-function htmlDoRotulo(a) { return '<b>' + a.n + '</b> ' + U.escH(a.nome) + ' <span>' + a.n_peoes + '</span>'; }
+// 21/10 22h: o numero ao lado do nome e o das ACCOES do andar no ultimo minuto (ao vivo); os funcionarios ficam no titulo
+function accoesDoMinuto(a, agora) { const j = a.jan || []; while (j.length && agora - j[0][0] > 60000) j.shift(); let s = 0; j.forEach(x => { s += x[1]; }); return s; }
+function htmlDoRotulo(a) { const pm = accoesDoMinuto(a, Date.now()); return '<b>' + a.n + '</b> ' + U.escH(a.nome) + ' <span class="' + (pm ? 'vivo' : '') + '">' + pm + '/min</span>'; }
 function rotulosDosAndares() {
   if (!rotCx) { rotCx = document.createElement('div'); rotCx.className = 'rotulos-andares'; rotCx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden;contain:strict'; palco.insertBefore(rotCx, palco.querySelector('.holos')); }
   if (!rotCx._clique) { rotCx._clique = true; rotCx.addEventListener('click', ev => { const r = ev.target.closest && ev.target.closest('.rot-andar[data-n]'); if (r) { ev.stopPropagation(); T3B.abrirAndar(Number(r.dataset.n), true); } }); }
@@ -1372,7 +1378,8 @@ function rotulosDosAndares() {
   });
 }
 // o texto de um rotulo so muda quando muda (o numero de funcionarios do andar); a largura mede-se UMA vez por texto
-function actualizarRotulos() { rotEls.forEach(r => { const h = htmlDoRotulo(r.a); if (r.html !== h) { r.html = h; r.el.innerHTML = h; r.w = 0; } }); }
+function actualizarRotulos() { rotEls.forEach(r => { const h = htmlDoRotulo(r.a); if (r.html !== h) { r.html = h; r.el.innerHTML = h; r.w = 0; r.el.title = 'andar ' + r.a.n + ' · ' + (r.a.n_peoes || 0) + ' funcionários · clique para abrir'; } }); }
+setInterval(() => { if (rotEls.length && !document.hidden) { actualizarRotulos(); rotulosPendentes = true; } }, 2000);   // 21/10 22h: os numeros ao vivo
 function projectar(x, y, z) { _v.set(x, y, z).project(camara); return { x: (_v.x * 0.5 + 0.5) * vistaW, y: (-_v.y * 0.5 + 0.5) * vistaH, z: _v.z }; }
 // 04/10 (obra 4, "trava ao rodar"): isto corria a CADA quadro e lia o layout (getBoundingClientRect, offsetWidth) no meio das
 // escritas dos transforms - o browser refazia o layout dezenas de vezes por segundo. Agora: no maximo 12x/s (o quadro), os

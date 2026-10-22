@@ -2019,7 +2019,7 @@
     function criarTubos() {
       var B = LAB.tubosB = [];
       function desenhar(ctx, w, h, t, dt) {
-        var n = GRUPOS.length, top = TOPO + 42, bot = h - 40, esp = (w - 16) / n, tw = Math.max(10, Math.min(26, esp * 0.55)), alt = Math.max(30, bot - top);
+        var n = GRUPOS.length, top = TOPO + 42, bot = h - 62, esp = (w - 16) / n, tw = Math.max(10, Math.min(26, esp * 0.55)), alt = Math.max(30, bot - top);
         var corte = Date.now() - 180000, totPm = 0, rob = 0, tot = 0, CX = [];
         GRUPOS.forEach(function (g, gi) {
           var j = (LAB.janG = LAB.janG || {})[gi] || []; while (j.length && j[0][0] < corte) j.shift();
@@ -2049,7 +2049,7 @@
           ctx.globalAlpha = 0.85; ctx.fillStyle = b.rob ? C.ouroHi : 'rgba(200,235,255,.9)';
           ctx.beginPath(); ctx.arc(bx, by, b.r, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
         }
-        rot(ctx, fmt(totPm, 0) + ' genes/min · robustos ' + fmt(rob, 0) + ' de ' + fmt(tot, 0), 8, h - 6, totPm >= 1 ? C.ouroHi : C.dim, 8, 'left', 700);
+        rot(ctx, fmt(totPm, 0) + ' genes/min · robustos ' + fmt(rob, 0) + ' de ' + fmt(tot, 0), 8, bot + 35, totPm >= 1 ? C.ouroHi : C.dim, 8, 'left', 700);
       }
       return { nome: 'Tubos de ensaio', desenhar: desenhar, estado: function () { return { bolhas: B.length }; } };
     }
