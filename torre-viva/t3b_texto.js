@@ -27,12 +27,22 @@
     return Array.from(s);
   }
   // corta em n grafemas (nunca ao meio de um emoji nem de uma letra com acento composto); "…" so se cortou
+  // 21/10 23h50 (ele: "ta muito pesado e travando"; medido: 256 us por chamada - o Intl.Segmenter - e so o radar chamava-o ~12 vezes por
+  // quadro, ~3 ms): texto so com letras latinas/gregas/cirilicas, pontuacao e simbolos de uma unidade (sem acento combinante, ZWJ, seletor
+  // de variante nem par substituto) tem 1 grafema por unidade - corta-se a direito; o resto guarda-se (as etiquetas repetem-se a cada quadro)
+  var SIMPLES = /^[\u0000-˿Ͱ-ӿ -‌‎-⯿]*$/, CORTES = new Map();
   function cortar(s, n, reticencias) {
     s = String(s == null ? '' : s);
     if (s.length <= n) return s;                         // (mais curto em unidades UTF-16 = mais curto em grafemas)
+    var fim = reticencias === false ? '' : '…';
+    if (SIMPLES.test(s)) return s.slice(0, Math.max(0, n - 1)).replace(/\s+$/, '') + fim;
+    var k = n + '|' + fim + '|' + s, v = CORTES.get(k);
+    if (v !== undefined) return v;
     var g = grafemas(s);
-    if (g.length <= n) return s;
-    return g.slice(0, Math.max(0, n - 1)).join('').replace(/\s+$/, '') + (reticencias === false ? '' : '…');
+    v = g.length <= n ? s : g.slice(0, Math.max(0, n - 1)).join('').replace(/\s+$/, '') + fim;
+    if (CORTES.size > 3000) CORTES.clear();
+    CORTES.set(k, v);
+    return v;
   }
 
   // ---------------------------------------------------------------- mojibake (UTF-8 lido como cp1252 / latin-1)
