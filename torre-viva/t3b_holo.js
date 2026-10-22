@@ -34,22 +34,31 @@
   var TXT_IMG = new Map(), TXT_RASC = null;
   function rascunhoTexto() { if (!TXT_RASC) { var c = document.createElement('canvas'); c.width = 1024; c.height = 96; TXT_RASC = c.getContext('2d'); TXT_RASC._f = null; } return TXT_RASC; }
   function rotDireito(ctx, t, x, y, cor, f, al) { if (ctx._f !== f) { ctx.font = f; ctx._f = f; } ctx.fillStyle = cor; ctx.textAlign = al || 'left'; ctx.fillText(t, x, y); }
+  // o texto escrito no rascunho (letra, cor e escala do ecra); devolve a medida, ou null se nao cabe (entao vai direito)
+  function textoNoRascunho(t, f, cor, sc, tam) {
+    var r = rascunhoTexto(); r.setTransform(1, 0, 0, 1, 0, 0); if (r._f !== f) { r.font = f; r._f = f; }
+    var mt = r.measureText(t), asc = Math.ceil(mt.fontBoundingBoxAscent || tam * 1.05), desc = Math.ceil(mt.fontBoundingBoxDescent || tam * 0.35);
+    var w = Math.ceil(mt.width) + 2, alt = asc + desc + 2, W = Math.max(1, Math.ceil(w * sc)), H = Math.max(1, Math.ceil(alt * sc));
+    if (W > 1024 || H > 96) return null;
+    r.clearRect(0, 0, Math.min(1024, W + 2), Math.min(96, H + 2)); r.setTransform(sc, 0, 0, sc, 0, 0); r.fillStyle = cor; r.textAlign = 'left'; r.textBaseline = 'alphabetic'; r.fillText(t, 1, asc + 1);
+    return { w: w, asc: asc + 1, alt: alt, W: W, H: H };
+  }
+  // 22/10 00h10 (medido no canvas do radar: ~6 ms por fillText no meio das imagens de brilho; num canvas a parte 20-70 us): o texto que
+  // aparece 3 vezes igual fica numa imagem guardada (feita no rascunho) e so se copia; o resto escreve-se direito
   function rot(ctx, t, x, y, cor, tam, al, peso) {
     var f = fonte(peso, tam); t = String(t);
     if (SOFT || !t || ctx.textBaseline !== 'alphabetic' || typeof cor !== 'string') return rotDireito(ctx, t, x, y, cor, f, al);
     var k = f + '|' + cor + '|' + t, e = TXT_IMG.get(k);
     if (!e) { if (TXT_IMG.size > 2500) TXT_IMG.clear(); TXT_IMG.set(k, e = { n: 0, cv: null, sc: 0, w: 0, asc: 0, alt: 0 }); }
-    if (++e.n < 3) return rotDireito(ctx, t, x, y, cor, f, al);
+    if (e.n < 0) return rotDireito(ctx, t, x, y, cor, f, al);                 // (enorme: sempre direito)
     var m = ctx.getTransform(), sc = Math.max(1, Math.round(Math.hypot(m.a, m.b) * 4) / 4);
+    if (++e.n < 3) return rotDireito(ctx, t, x, y, cor, f, al);              // (22/10 00h20: o que ainda nao se repetiu vai direito - pelo rascunho cada copia obrigava a placa a sincronizar)
     if (!e.cv || e.sc !== sc) {
-      var r = rascunhoTexto(); r.setTransform(1, 0, 0, 1, 0, 0); if (r._f !== f) { r.font = f; r._f = f; }
-      var mt = r.measureText(t), asc = Math.ceil(mt.fontBoundingBoxAscent || tam * 1.05), desc = Math.ceil(mt.fontBoundingBoxDescent || tam * 0.35);
-      var W = Math.max(1, Math.ceil((Math.ceil(mt.width) + 2) * sc)), H = Math.max(1, Math.ceil((asc + desc + 2) * sc));
-      if (W > 1024 || H > 96) { e.n = -1e9; return rotDireito(ctx, t, x, y, cor, f, al); }   // (enorme: sempre direito)
-      e.w = Math.ceil(mt.width) + 2; e.asc = asc + 1; e.alt = asc + desc + 2; e.sc = sc;
-      r.clearRect(0, 0, W + 2, H + 2); r.setTransform(sc, 0, 0, sc, 0, 0); r.fillStyle = cor; r.textAlign = 'left'; r.textBaseline = 'alphabetic'; r.fillText(t, 1, e.asc);
-      var cv = e.cv || document.createElement('canvas'); cv.width = W; cv.height = H;
-      cv.getContext('2d').drawImage(r.canvas, 0, 0, W, H, 0, 0, W, H);
+      var q2 = textoNoRascunho(t, f, cor, sc, tam);
+      if (!q2) { e.n = -1e9; return rotDireito(ctx, t, x, y, cor, f, al); }
+      e.w = q2.w; e.asc = q2.asc; e.alt = q2.alt; e.sc = sc;
+      var cv = e.cv || document.createElement('canvas'); cv.width = q2.W; cv.height = q2.H;
+      cv.getContext('2d').drawImage(TXT_RASC.canvas, 0, 0, q2.W, q2.H, 0, 0, q2.W, q2.H);
       e.cv = cv;
     }
     var x0 = al === 'center' ? x - (e.w - 2) / 2 : al === 'right' ? x - (e.w - 2) : x;
