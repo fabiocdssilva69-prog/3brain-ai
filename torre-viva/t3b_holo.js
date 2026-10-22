@@ -313,7 +313,7 @@
   // 08/10 (OBRA 11, ele: "cada pontinho do vortex vai ser igual a cada 'batida' - as vezes mais de 1 pontinho vai reagir, as vezes
   // um ENXAME porque varias coisas na torre se mexem ao mesmo tempo"): cada evento escolhe UM ponto da espiral a altura do seu andar
   // (pelo numero do evento: eventos diferentes do mesmo andar acendem pontos diferentes)
-  var PULSOS = [], FAIXAS = null, PULSOS_MAX = 240, COR_ESTRELA = '#dbe8ff';   // 21/10 22h: a cor das estrelas do vortex
+  var PULSOS = [], FAIXAS = null, PULSOS_MAX = 500, COR_ESTRELA = '#dbe8ff';   // 21/10 22h: a cor das estrelas do vortex
   function pontoDoAndar(n, sem) {
     if (!FAIXAS) { FAIXAS = {}; for (var a = 1; a <= NMAX; a++) { var ya = yDoAndar(a), l = []; for (var i = 0; i < NUC.p.length; i++) if (Math.abs(NUC.p[i].y - ya) < 0.06) l.push(i); FAIXAS[a] = l; } }
     var fx = n != null ? FAIXAS[Math.round(n)] : null;
@@ -332,6 +332,9 @@
     var n = Number(e && e.n); if (isFinite(n) && n > 1) v += Math.min(0.25, 0.06 * Math.log2(n));
     return Math.max(0.1, Math.min(1, v));
   }
+  // 21/10 22h15 (ele: "pela importancia aumenta primeiro o BRILHO, nao o tamanho: de 5% brilha 10, de 10% brilha 15"): o brilho sobe em
+  // degraus de 5% com a importancia (uma diferenca minima entre milhares de funcionarios)
+  function brilhoDaImportancia(im) { var d = Math.round(Math.max(0, Math.min(1, Number(im) || 0)) * 20) / 20; return Math.max(0.1, Math.min(1, d + 0.05)); }
   // </importancia-puro>
   function pulsoDoEvento(ev, i) {   // 16/10: i = o funcionario i de um evento de grupo (cada um o seu ponto)
     var n = ev && ev.andar != null && isFinite(Number(ev.andar)) ? Number(ev.andar) : null, an = n != null && T3B.andar ? T3B.andar(n) : null;
@@ -411,16 +414,20 @@
       // 21/10 22h (ele: "o vortex e uma constelacao a rodar a volta de uma estrela; cada pontinho, mesmo com pouca intensidade, brilha um
       // pouco mais; uns como estrela, outros como estrela mais forte; nao precisa de cor diferente"): todas na mesma cor de estrela; o
       // brilho e o tamanho pela importancia, com um minimo que se ve; as mais fortes ganham a cruz de cintilar. Acendem NA batida.
-      for (var ip = PULSOS.length - 1; ip >= 0 && desenhados < 160; ip--) {
+      // 21/10 22h15 (ele: "cada funcionario e um pontinho bem pequenino; pela importancia sobe PRIMEIRO o brilho, nao o tamanho; uns 500
+      // por minuto, tem de caber sem travar"): o ponto e sempre pequeno (1,2 px; 1,8 so nos de topo); o BRILHO sobe em degraus de 5%
+      // (brilhoDaImportancia); os pouco importantes so desenham o pixel (barato), os outros um brilho pequeno; a cruz de cintilar so nos
+      // de topo (>= 0,85). Ate 300 por quadro.
+      for (var ip = PULSOS.length - 1; ip >= 0 && desenhados < 300; ip--) {
         var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > VIDA_P) break; if (idP < 0) continue;
         var pa = NUC.p[pu.ip]; if (!pa || pa.sx == null) continue;
         var fP = 1 - idP / VIDA_P, im = pu.imp == null ? 0.3 : pu.imp, tw = fP * (0.85 + 0.15 * Math.sin(t * 9 + ip)); desenhados++;
-        luz(ctx, COR_ESTRELA, pa.sx, pa.sy, (3 + 11 * im) * tw, Math.min(1, (0.45 + 0.55 * im) * tw)); vivos++;
-        var tamP = (1 + 2.6 * im) * (0.6 + 0.4 * fP);
-        ctx.fillStyle = '#ffffff'; ctx.globalAlpha = Math.min(1, (0.55 + 0.45 * im) * tw);
+        var brP = brilhoDaImportancia(im) * tw, tamP = im >= 0.85 ? 1.8 : 1.2;
+        ctx.fillStyle = '#ffffff'; ctx.globalAlpha = Math.min(1, 0.25 + 0.75 * brP);
         ctx.fillRect(pa.sx - tamP / 2, pa.sy - tamP / 2, tamP, tamP);
-        if (im >= 0.45) {                                               // a cruz de cintilar das estrelas fortes
-          var lc = (3 + 9 * im) * tw; ctx.strokeStyle = COR_ESTRELA; ctx.globalAlpha = Math.min(1, 0.7 * tw);
+        if (im >= 0.3) { luz(ctx, COR_ESTRELA, pa.sx, pa.sy, im >= 0.85 ? 6 : 3.5, Math.min(1, brP)); vivos++; }
+        if (im >= 0.85) {                                               // a cruz de cintilar das estrelas fortes (so as de topo)
+          var lc = 6 * tw; ctx.strokeStyle = COR_ESTRELA; ctx.globalAlpha = Math.min(1, 0.7 * tw);
           ctx.beginPath(); ctx.moveTo(pa.sx - lc, pa.sy); ctx.lineTo(pa.sx + lc, pa.sy); ctx.moveTo(pa.sx, pa.sy - lc); ctx.lineTo(pa.sx, pa.sy + lc); ctx.stroke();
         }
       }
@@ -703,9 +710,9 @@
     ECG.bat.push([Date.now(), 1]); ECG.n += 1;
     // 21/10 21h (ele: "o vortex e o coracao sao 1; uma constelacao, o tamanho da estrela e a importancia"): o ponto deste evento ESPERA
     // a proxima batida do coracao (os dois acendem juntos); o tamanho e o brilho vem da importancia do evento (importanciaDoEvento)
-    var np = ev.grupo ? Math.min(8, w) : 1;
+    var np = ev.grupo ? Math.min(20, w) : 1;   // 21/10 22h15: um ponto por funcionario do grupo (ate 20)
     for (var ipz = 0; ipz < np; ipz++) { var pz = pulsoDoEvento(ev, ipz); pz.f = f; pz.imp = importanciaDoEvento(ev); ECG.pendentes.push(pz); }
-    if (ECG.pendentes.length > 160) ECG.pendentes.splice(0, ECG.pendentes.length - 160);
+    if (ECG.pendentes.length > 400) ECG.pendentes.splice(0, ECG.pendentes.length - 400);
     ECG.acum += w; if (ev.andar != null) ECG.acumAndar[ev.andar] = (ECG.acumAndar[ev.andar] || 0) + w;
     NUC.nPontos = (NUC.nPontos || 0) + np;
   });
@@ -718,7 +725,7 @@
     ECG.seg = c && c.segundo; ECG.minuto = c && c.minuto; ECG.oxi = c ? { bpm: c.bpm, taxa: c.taxa, basal: c.basal } : null;   // 21/10 21h: o oximetro
     // 21/10 22h: cada valor de mercado que mudou neste segundo e uma estrela pequena no vortex (sai na proxima batida, com as outras)
     var nv = Math.min(6, (c && c.segundo && c.segundo.valores) || 0);
-    for (var iv2 = 0; iv2 < nv && ECG.pendentes.length < 160; iv2++) ECG.pendentes.push({ n: null, t: 0, ip: Math.floor(Math.random() * NUC.p.length), cor: COR_ESTRELA, nome: '', imp: 0.12 });
+    for (var iv2 = 0; iv2 < nv && ECG.pendentes.length < 400; iv2++) ECG.pendentes.push({ n: null, t: 0, ip: Math.floor(Math.random() * NUC.p.length), cor: COR_ESTRELA, nome: '', imp: 0.12 });
   });
   var cenaEcg = null;
   (function () {
@@ -789,7 +796,7 @@
       rot(ctx, 'bpm · ' + ['normal', 'activo', 'acelerado'][estado], 46, h * 0.5 + 5, 'rgba(' + RGB3[estado] + ',.85)', 7.5, 'left', 600);
       var sgE = ECG.seg, mnE = ECG.minuto;   // 21/10 20h: o compasso - este segundo e o ultimo minuto, por tipo
       var ox = ECG.oxi || {}, spo2 = (RAD.verdes || 0) + (RAD.abertas || 0) > 0 ? Math.round(100 * (RAD.verdes || 0) / ((RAD.verdes || 0) + (RAD.abertas || 0))) : null;
-      rot(ctx, '♥ oxímetro · ' + String((ox.taxa || 0).toFixed(1)).replace('.', ',') + ' acções/s (basal ' + (ox.basal ? String(ox.basal.toFixed(1)).replace('.', ',') : '…') + ') · SpO₂ ' + (spo2 == null ? '…' : spo2 + '%') + (mnE ? ' · min: trabalho ' + mnE.porTipo.trabalho + ' · chat ' + mnE.porTipo.chat + ' · mercado ' + mnE.porTipo.mercado : ''), 8, 12, 'rgba(255,123,127,.9)', 7.5, 'left', 700);
+      rot(ctx, '♥ oxímetro · ' + String((ox.taxa || 0).toFixed(1)).replace('.', ',') + ' acções/s (normal da torre ' + (ox.basal ? String(ox.basal.toFixed(1)).replace('.', ',') : '…') + (ox.basal ? ' · ' + Math.round(100 * (ox.taxa || 0) / ox.basal) + '% do normal' : '') + ') · SpO₂ ' + (spo2 == null ? '…' : spo2 + '%') + (mnE ? ' · min: trabalho ' + mnE.porTipo.trabalho + ' · chat ' + mnE.porTipo.chat + ' · mercado ' + mnE.porTipo.mercado : ''), 8, 12, 'rgba(255,123,127,.9)', 7.5, 'left', 700);
       var ulP = PULSOS[PULSOS.length - 1];                                     // (Q5 B7) o nome do sector pulsa a cada batida
       if (ulP && ulP.nome) { var idU = (agoraMs() - ulP.t) / 1000; if (idU < 2.2) { ctx.globalAlpha = 1 - idU / 2.2; rot(ctx, TX.cortar(ulP.nome, 24), 8, h * 0.5 + 20, ulP.cor, 8 + 2.5 * Math.max(0, 1 - idU * 3), 'left', 700);
         if (ECG.lote && (ECG.lote.n > 1 || ECG.lote.acoes > 1)) rot(ctx, ECG.lote.n > 1 ? ECG.lote.n + ' ao mesmo tempo' : ECG.lote.acoes + ' acções num evento', 8, h * 0.5 + 31, 'rgba(255,255,255,.75)', 7.5, 'left', 600);   // o enxame
