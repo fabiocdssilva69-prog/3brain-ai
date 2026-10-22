@@ -319,6 +319,20 @@
     var fx = n != null ? FAIXAS[Math.round(n)] : null;
     return fx && fx.length ? fx[sem % fx.length] : sem % NUC.p.length;
   }
+  // <importancia-puro>
+  // 21/10 21h (ele: "quanto maior a importancia daquela batida, mais brilha e maior; normalmente sao pequenas"): o peso de um evento no
+  // vortex - o dinheiro e as decisoes (executor, nucleos, conselho, balde, analistas, Stark, mesa, risco) pesam mais; avarias e
+  // consertos tambem; muitas accoes juntas um pouco mais. O normal e pequeno.
+  var RX_IMPORTANTE = /binance_real|executor|nucleos|conselho|central_sinais|analista|stark|decis|ordem|mesa|risco|trava|stop/;
+  function importanciaDoEvento(e) {
+    var k = String((e && e.k) || ''), id = String((e && e.id) || '').toLowerCase(), v = 0.15;
+    if (RX_IMPORTANTE.test(id)) v += 0.45;
+    if (k === 'avaria' || k === 'consertou') v += 0.35;
+    if (k === 'claude' || k === 'visita' || k === 'batimento') v += 0.15;
+    var n = Number(e && e.n); if (isFinite(n) && n > 1) v += Math.min(0.25, 0.06 * Math.log2(n));
+    return Math.max(0.1, Math.min(1, v));
+  }
+  // </importancia-puro>
   function pulsoDoEvento(ev, i) {   // 16/10: i = o funcionario i de um evento de grupo (cada um o seu ponto)
     var n = ev && ev.andar != null && isFinite(Number(ev.andar)) ? Number(ev.andar) : null, an = n != null && T3B.andar ? T3B.andar(n) : null;
     var div = n != null && U.divisaoDoAndar ? U.divisaoDoAndar(n) : '', nome = TX.limpar((an && (an.sector || an.nome)) || div || '');
@@ -330,7 +344,7 @@
     // 08/10 (OBRA 11): as passagens de DADOS (2 em cada 3 eventos) eram cordoes grossos que tapavam os pontos - ficam finos e apagados
     if (NUC.fios.length < 16) NUC.fios.push({ de: yDoAndar(r.de != null ? r.de : ev.andar), para: yDoAndar(r.para != null ? r.para : (ev.para != null ? ev.para : 59)), a0: (U.semente(String(ev.s) + ev.id) % 6283) / 1000, t: 0, cor: COR_NUC[tipo], fr: tipo === 'dados' ? 0.4 : 1, nn: tipo === 'dados' ? 8 : 14 });
     NUC.passagens.push(Date.now()); NUC.nFios++;
-    NUC.giroAlvo = Math.min(2.6, NUC.giroAlvo + 0.18);         // cada passagem empurra a espiral (e o alvo volta devagar ao ritmo do minuto)
+    NUC.giroAlvo = Math.min(1.0, NUC.giroAlvo + 0.04);         // 21/10 21h: um empurrao leve (sem a explosao que travava o vortex)
     if (tipo === 'visita') NUC.ouro = Math.min(1.5, NUC.ouro + 0.6);
     NUC.ultimo = ev; pintarLegendaNucleo();
   });
@@ -339,7 +353,7 @@
   function pintarLegendaNucleo() {
     var corte = Date.now() - 60000; while (NUC.passagens.length && NUC.passagens[0] < corte) NUC.passagens.shift();
     var pm = NUC.passagens.length;
-    NUC.giroMinuto = GIRO_BASE + Math.min(1.8, pm / 12);         // o ritmo do ultimo minuto: para onde o giro volta
+    NUC.giroMinuto = GIRO_BASE + Math.min(0.5, pm / 40);         // o ritmo do ultimo minuto: para onde o giro volta (21/10 21h: mais calmo)
     var r = NUC.ritmo || {}, u = NUC.ultimo, leg = $('nu_leg');
     var LT = ECG ? ECG.lotes : [], evm = r.n != null ? r.n : (ECG ? somaBat() : 0), enx = 0, corteE = Date.now() - 60000;   // (o ECG do coracao e declarado mais abaixo)
     while (LT.length && LT[0][0] < corteE) LT.shift();
@@ -390,22 +404,19 @@
       // 08/10 noite (ele: "o vortex nao esta reagindo"): medido - reagia, mas um ponto de 2 px durante 1,6 s no meio de 600, com
       // 2-5 eventos por 10 s de noite, nao se via. Cada evento continua a ser UM ponto (o seu), agora visivel: nucleo maior,
       // brilho largo e uma ONDA que se expande a partir dele, 2,4 s. Um enxame = varias ondas ao mesmo tempo.
-      var agP = agoraMs(), vivos = 0, VIDA_P = 2.4;
-      for (var ip = PULSOS.length - 1; ip >= 0; ip--) {
-        var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > VIDA_P) break;
+      // 21/10 21h: CONSTELACAO - cada ponto acende na batida do coracao, do tamanho e brilho da sua importancia (o normal e pequeno); so
+      // os importantes tem brilho largo e anel; no maximo 160 desenhados por quadro (o vortex nao trava)
+      var agP = agoraMs(), vivos = 0, VIDA_P = 1.8, desenhados = 0;
+      ctx.lineWidth = 1.2;
+      for (var ip = PULSOS.length - 1; ip >= 0 && desenhados < 160; ip--) {
+        var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > VIDA_P) break; if (idP < 0) continue;
         var pa = NUC.p[pu.ip]; if (!pa || pa.sx == null) continue;
-        var fP = 1 - idP / VIDA_P;
-        luz(ctx, pu.cor, pa.sx, pa.sy, 9 + 18 * fP * (0.75 + 0.25 * (pu.f || 0.6)), Math.min(1, 1.1 * fP)); vivos++;
-      }
-      ctx.lineWidth = 1.6;
-      for (ip = PULSOS.length - 1; ip >= 0; ip--) {
-        pu = PULSOS[ip]; idP = (agP - pu.t) / 1000; if (idP > VIDA_P) break;
-        pa = NUC.p[pu.ip]; if (!pa || pa.sx == null) continue;
-        fP = 1 - idP / VIDA_P; var tamP = 2.6 + 3.6 * fP;
-        ctx.fillStyle = fP > 0.7 ? '#ffffff' : pu.cor; ctx.globalAlpha = Math.min(1, 0.45 + fP);
+        var fP = 1 - idP / VIDA_P, im = pu.imp == null ? 0.3 : pu.imp; desenhados++;
+        if (im >= 0.35) { luz(ctx, pu.cor, pa.sx, pa.sy, (3 + 14 * im) * fP, Math.min(1, (0.35 + 0.75 * im) * fP)); vivos++; }
+        var tamP = (0.9 + 3.4 * im) * (0.6 + 0.4 * fP);
+        ctx.fillStyle = fP > 0.75 && im >= 0.5 ? '#ffffff' : pu.cor; ctx.globalAlpha = Math.min(1, (0.3 + 0.7 * im) * (0.4 + 0.6 * fP));
         ctx.fillRect(pa.sx - tamP / 2, pa.sy - tamP / 2, tamP, tamP);
-        ctx.strokeStyle = pu.cor; ctx.globalAlpha = 0.75 * fP;                       // a onda
-        ctx.beginPath(); ctx.arc(pa.sx, pa.sy, 3 + 22 * (idP / VIDA_P), 0, TAU); ctx.stroke();
+        if (im >= 0.6) { ctx.strokeStyle = pu.cor; ctx.globalAlpha = 0.6 * fP; ctx.beginPath(); ctx.arc(pa.sx, pa.sy, 3 + 14 * im * (idP / VIDA_P), 0, TAU); ctx.stroke(); }
       }
       ctx.lineWidth = 1; ctx.globalAlpha = 1; NUC.acesos = vivos;
       // os FIOS das passagens: um cordao de particulas que desce/sobe a espiral do andar de quem envia ao de quem recebe
@@ -439,6 +450,7 @@
   // o feixe PARAVA sem batimento recente e saltava a cada batimento. Agora roda sempre (o periodo e a volta do vigia) e acerta
   // a fase pelo batimento devagar (sem saltos); os pontos sao FOSFORO - acendem quando o feixe passa e esmorecem ate a volta
   // seguinte; o aro tem um traco por andar (59) e os numeros 1/15/30/45; o centro pulsa; a camada parada e guardada.
+  var RAD_CONTACTOS_MAX = 8;   // 21/10 21h (ele: "a shield ficou a rastrear itens demais, poluicao visual")
   var RAD = { cont: {}, nCont: 0, nBlips: 0, pontos: {}, pings: [], tBat: 0, intervalo: 9000, seq: null, abertas: 0, verdes: 0, vermelhos: 0, volta: null, ang: -Math.PI / 2, corr: 0, maxAndar: 68 };
   // 10/10 (ele, print: "shield e essa luz de alerta nao estao sincronizados... a shield mostra uma coisa e ali mostra outra"):
   // a luz dizia o PROGRAMA (Sombra previa, Noticias chat...) pela ordem de chegada; a lista do radar dizia o FUNCIONARIO que o
@@ -581,16 +593,17 @@
       var corteC = Date.now() - 180000, maxC = 1, contos = [];
       Object.keys(RAD.cont).forEach(function (n) { var c = RAD.cont[n]; while (c.j.length && c.j[0][0] < corteC) c.j.shift(); if (!c.j.length) { delete RAD.cont[n]; return; } var sm = 0; c.j.forEach(function (x) { sm += x[1]; }); c.n = sm; if (sm > maxC) maxC = sm; contos.push(n); });
       RAD.nCont = contos.length;
-      contos.forEach(function (n) {
+      var topC = contos.slice().sort(function (p1, p2) { return RAD.cont[p2].n - RAD.cont[p1].n; }).slice(0, RAD_CONTACTOS_MAX);
+      topC.forEach(function (n, iC) {
         var c = RAD.cont[n], q = anguloDoAndar(n), nr = Math.log(1 + c.n) / Math.log(1 + maxC);
         var rc = R * (0.3 + 0.6 * ((U.semente('rc' + n) % 100) / 100)), xc = cx + Math.cos(q) * rc, yc = cy + Math.sin(q) * rc;
         var atr = (a - q) % TAU; if (atr < 0) atr += TAU;
         if (atr < 0.09 && agora - c.blip > RAD.intervalo * 0.5) { c.blip = agora; RAD.nBlips++; }
         var fos = 0.14 + 0.86 * Math.exp(-atr * 2.4), corC = U.corDoAndar ? U.corDoAndar(Number(n)) : C.cy;
         ctx.globalAlpha = fos; ctx.fillStyle = fos > 0.75 ? '#ffffff' : corC;
-        ctx.beginPath(); ctx.arc(xc, yc, 1.2 + 2.2 * nr + 1.2 * Math.exp(-atr * 3), 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
-        if (fos > 0.3) luz(ctx, corC, xc, yc, 6 + 6 * nr, fos * 0.7);
-        var ib2 = (agora - c.blip) / 700; if (ib2 < 1) { ctx.strokeStyle = corC; ctx.globalAlpha = (1 - ib2) * 0.8; ctx.beginPath(); ctx.arc(xc, yc, 2 + ib2 * 9, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
+        ctx.beginPath(); ctx.arc(xc, yc, 0.9 + 1.5 * nr + 0.8 * Math.exp(-atr * 3), 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+        if (fos > 0.5) luz(ctx, corC, xc, yc, 4 + 4 * nr, fos * 0.5);
+        var ib2 = (agora - c.blip) / 700; if (iC < 3 && ib2 < 1) { ctx.strokeStyle = corC; ctx.globalAlpha = (1 - ib2) * 0.8; ctx.beginPath(); ctx.arc(xc, yc, 2 + ib2 * 9, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
       });
       var LQ = leques(RAD.pontos);
       Object.keys(RAD.pontos).forEach(function (id) {
@@ -617,7 +630,7 @@
       // o centro pulsa ao ritmo do vigia
       var pul = 0.5 + 0.5 * Math.sin(t * TAU / Math.max(1.5, RAD.intervalo / 3000));
       luz(ctx, C.cy, cx, cy, 6 + 2 * pul, 0.55 + 0.25 * pul);
-      rot(ctx, 'AVARIAS ' + RAD.abertas + ' · CONTACTOS ' + (RAD.nCont || 0), 8, h - 6, RAD.abertas ? C.mau : C.ok, 9, 'left', 600);
+      rot(ctx, 'AVARIAS ' + RAD.abertas + ' · CONTACTOS ' + Math.min(RAD.nCont || 0, RAD_CONTACTOS_MAX) + '/' + (RAD.nCont || 0), 8, h - 6, RAD.abertas ? C.mau : C.ok, 9, 'left', 600);
       // 05/10 (ele: "mais detalhes e informacoes relevantes"): os 3 casos abertos mais antigos - quem e ha quanto tempo
       // 10/10: a MESMA lista da luz do cabecalho (avariasAbertas: vermelhos primeiro, depois os mais antigos), com o nome do
       // PROGRAMA e o andar (era o funcionario que o tem - "Analista Bruner" - e a luz dizia o programa: pareciam outros casos)
@@ -638,7 +651,7 @@
         var cabeA = Math.floor((h - 14 - yA) / 12);
         if (cabeA >= 2) {
           rot(ctx, 'A TRABALHAR · ' + contos.length + ' andares', xL, yA, C.cy, 7.5, 'left', 700);
-          topA.slice(0, cabeA - 1).forEach(function (n, i) { var an = T3B.andar ? T3B.andar(Number(n)) : null, nm = an ? TX.limpar(an.sector || an.nome || '') : '';
+          topA.slice(0, Math.min(3, cabeA - 1)).forEach(function (n, i) { var an = T3B.andar ? T3B.andar(Number(n)) : null, nm = an ? TX.limpar(an.sector || an.nome || '') : '';
             rot(ctx, TX.cortar('▸ ' + (nm || 'and. ' + n) + ' · ' + fmt(RAD.cont[n].n, 0), cL), xL, yA + 12 + i * 12, U.corDoAndar ? U.corDoAndar(Number(n)) : C.cy, 7.5, 'left', 600); });
         }
       }
@@ -653,7 +666,7 @@
   // abaixo do pixel (amostras a 60 por segundo e o resto da conta empurra o desenho); a batida tem a forma PQRST; sem eventos a
   // linha fica quase plana mas viva (um ruido de 1-2%); o traco tem rasto (mais apagado a esquerda) e uma ponta que brilha; o
   // numero e o coracao pequeno batem a cada batida real; a grelha e uma camada guardada.
-  var ECG = { seg: null, minuto: null, bater: null, y: null, fila: [], bat: [], ultimo: 0, n: 0, acc: 0, tBat: 0, lote: null, lotes: [], nLotes: 0, normal: null, batT: [] };
+  var ECG = { seg: null, minuto: null, oxi: null, fase: 0, acum: 0, acumAndar: {}, pendentes: [], y: null, fila: [], bat: [], ultimo: 0, n: 0, acc: 0, tBat: 0, lote: null, lotes: [], nLotes: 0, normal: null, batT: [] };
   var PQRST = [0, 0.04, 0.08, 0.04, 0, 0, -0.1, 1, -0.42, -0.08, 0, 0.06, 0.12, 0.16, 0.12, 0.05, 0];
   var PQRST_CURTO = PQRST.filter(function (v, i) { return i % 2 === 0; });   // 16/10: a batida curta de uma rajada (9 amostras, 0,15 s)
   // 21/10 20h (ele: "a cada segundo o sistema tem que identificar quantas batidas da; o vortex e o coracao sao praticamente 1"):
@@ -661,6 +674,8 @@
   // segundo, com a FORCA das accoes desse segundo; segundo vazio = linha plana. O nucleo do vortex bate na mesma batida, e os pontos
   // dos eventos acendem nesse mesmo instante (os eventos saem todos na virada do segundo). PURA (testes_t3b.js).
   // <coracao-puro>
+  // 21/10 21h: a forca da batida do oximetro = o que entrou desde a anterior contra o esperado no basal (a 'perfusao')
+  function perfusao(acum, esperado) { if (!(acum > 0)) return 0.4; return Math.max(0.45, Math.min(1.5, 0.55 + 0.45 * Math.sqrt(acum / Math.max(0.5, esperado || 1)))); }
   function forcaDaBatida(n, acoes) { n = Number(n) || 0; acoes = Number(acoes) || 0; if (n <= 0) return 0; return Math.min(1.55, 0.72 + 0.14 * Math.log2(1 + n) + (acoes > n ? 0.06 * Math.log2(acoes / n) : 0)); }
   // </coracao-puro>
   // 16/10 17h (ele: "o coracao bate errado, as vezes 300/min, as vezes 10/min"): CADA EVENTO E UMA BATIDA - ECG.bat guarda [hora,
@@ -680,17 +695,20 @@
     else { ECG.lote = { n: 1, acoes: w, f: f, t0: ag, feito: false }; ECG.lotes.push([Date.now(), 1]); }
     ECG.lotes[ECG.lotes.length - 1][1] = ECG.lote.n;
     ECG.bat.push([Date.now(), 1]); ECG.n += 1;
-    // o ponto deste evento no vortex; 16/10: um evento de GRUPO (n funcionarios diferentes) acende ate 8 pontos - o enxame que ele pediu
+    // 21/10 21h (ele: "o vortex e o coracao sao 1; uma constelacao, o tamanho da estrela e a importancia"): o ponto deste evento ESPERA
+    // a proxima batida do coracao (os dois acendem juntos); o tamanho e o brilho vem da importancia do evento (importanciaDoEvento)
     var np = ev.grupo ? Math.min(8, w) : 1;
-    for (var ipz = 0; ipz < np; ipz++) { var pz = pulsoDoEvento(ev, ipz); pz.f = f; PULSOS.push(pz); }
-    NUC.nPontos = (NUC.nPontos || 0) + np; if (PULSOS.length > PULSOS_MAX) PULSOS.splice(0, PULSOS.length - PULSOS_MAX);
+    for (var ipz = 0; ipz < np; ipz++) { var pz = pulsoDoEvento(ev, ipz); pz.f = f; pz.imp = importanciaDoEvento(ev); ECG.pendentes.push(pz); }
+    if (ECG.pendentes.length > 160) ECG.pendentes.splice(0, ECG.pendentes.length - 160);
+    ECG.acum += w; if (ev.andar != null) ECG.acumAndar[ev.andar] = (ECG.acumAndar[ev.andar] || 0) + w;
+    NUC.nPontos = (NUC.nPontos || 0) + np;
   });
   EXTRA.coracao = function () { return { eventos: ECG.n, batidas: ECG.nLotes, na_fila: ECG.fila.length, bpm: somaBat(), ultimo_lote: ECG.lote ? ECG.lote.n : 0 }; };
   // o ritmo normal da torre (para a cor): 16/10 18h - so com 3+ min de medida (com a janela a encher comecava baixo e tudo parecia
   // 'acelerado' durante ~20 min); ate la a cor e a neutra
   T3B.on('ritmo', function (r) { if (ECG.normal == null && r && r.n > 0 && (r.janela_min || 0) >= 3) ECG.normal = Math.max(20, r.n); });
   // 21/10 20h: a batida do compasso (a desenhar no proximo quadro: o mesmo instante dos eventos)
-  T3B.on('compasso', function (c) { var sg = c && c.segundo; ECG.seg = sg; ECG.minuto = c && c.minuto; if (sg && sg.n > 0) ECG.bater = { amp: forcaDaBatida(sg.n, sg.acoes), n: sg.n }; });
+  T3B.on('compasso', function (c) { ECG.seg = c && c.segundo; ECG.minuto = c && c.minuto; ECG.oxi = c ? { bpm: c.bpm, taxa: c.taxa, basal: c.basal } : null; });   // 21/10 21h: o oximetro
   var cenaEcg = null;
   (function () {
     var cv = $('cv_coracao'); if (!cv) return;
@@ -707,13 +725,23 @@
     cenaEcg = cena(cv, { id: 'coracao', bloco: $('bl_coracao'), desenhar: function (ctx, w, h, t, dt, s) {
       var N = Math.max(40, Math.ceil((w - X0) / PASSO) + 2);
       if (!ECG.y || ECG.y.length !== N) ECG.y = new Array(N).fill(0);
-      // 21/10 20h: a batida do COMPASSO - uma por segundo com eventos, a forca das accoes desse segundo
+      // 21/10 21h (ele: "o coracao detecta quantas accoes por segundo a torre faz, como um oximetro"): o MARCA-PASSO do oximetro - a
+      // frequencia vem do compasso (freqDoOximetro: as accoes/s da torre inteira contra o BASAL dela; 72 bpm no basal); cada batida leva
+      // o que entrou desde a anterior: os pontos do vortex acendem NESTA batida e o equalizador salta nesta batida
       var bpm = NUC.ritmo && NUC.ritmo.n != null ? NUC.ritmo.n : somaBat();
       if (ECG.lote && !ECG.lote.feito) ECG.lote.feito = true;
-      if (ECG.bater) {
-        var ampA = ECG.bater.amp; ECG.bater = null;
-        ECG.nLotes += 1; ECG.ultimo = agoraMs(); ECG.batT.push(Date.now());
-        NUC.bate = Math.min(1.3, (NUC.bate || 0) + 0.5 * Math.min(1.2, ampA));   // o nucleo do vortex bate com o coracao
+      var bpmO = ECG.oxi && ECG.oxi.bpm ? ECG.oxi.bpm : 72;
+      if (!calmo) ECG.fase += dt * bpmO / 60;
+      if (ECG.fase >= 1) {
+        ECG.fase = ECG.fase >= 2 ? 0 : ECG.fase - 1;
+        var esperado = Math.max(0.5, (ECG.oxi && ECG.oxi.basal ? ECG.oxi.basal : 1) * 60 / bpmO);
+        var ampA = perfusao(ECG.acum, esperado), agB = agoraMs(), pend = ECG.pendentes; ECG.pendentes = [];
+        pend.forEach(function (pz) { pz.t = agB; PULSOS.push(pz); });
+        if (PULSOS.length > PULSOS_MAX) PULSOS.splice(0, PULSOS.length - PULSOS_MAX);
+        T3B.emit('batida', { acoes: ECG.acum, porAndar: ECG.acumAndar, pontos: pend.length, amp: ampA });
+        ECG.acum = 0; ECG.acumAndar = {};
+        ECG.nLotes += 1; ECG.ultimo = agB; ECG.batT.push(Date.now());
+        NUC.bate = Math.min(1.3, (NUC.bate || 0) + 0.45 * Math.min(1.2, ampA));   // o nucleo do vortex bate com o coracao
         if (ECG.fila.length > 30) ECG.fila.length = 30;
         PQRST.forEach(function (v) { ECG.fila.push(v * ampA); });
       }
@@ -732,7 +760,8 @@
       // 08/10 (OBRA 11): a cor pela MUDANCA de velocidade (ele: "vai mudar de cores quando a velocidade muda") - contra o ritmo normal da
       // torre (media dos ultimos ~20 min), nao contra numeros fixos (de dia a torre fica sempre acima de 90/min e era sempre vermelho)
       if (ECG.normal != null) ECG.normal += (Math.max(20, bpm) - ECG.normal) * Math.min(1, dt / 1200);
-      var nor = ECG.normal || Math.max(20, bpm), estado = bpm >= nor * 1.5 ? 2 : bpm >= nor * 0.7 ? 1 : 0, RGB3 = ['63,214,154', '242,194,48', '255,90,95'], g = ECG.grad;
+      var bpmH = ECG.oxi && ECG.oxi.bpm ? ECG.oxi.bpm : 72, estado = bpmH > 130 ? 2 : bpmH >= 100 ? 1 : 0,   // 21/10 21h: as faixas do corpo humano
+       RGB3 = ['63,214,154', '242,194,48', '255,90,95'], g = ECG.grad;
       if (!g || ECG.gradW !== w || ECG.gradE !== estado) { g = ECG.grad = ctx.createLinearGradient(X0, 0, w, 0); g.addColorStop(0, 'rgba(' + RGB3[estado] + ',0)'); g.addColorStop(0.35, 'rgba(' + RGB3[estado] + ',.55)'); g.addColorStop(1, 'rgba(' + RGB3[estado] + ',1)'); ECG.gradW = w; ECG.gradE = estado; }
       ctx.save(); ctx.beginPath(); ctx.rect(X0, 0, w - X0, h); ctx.clip();
       ctx.beginPath();
@@ -745,10 +774,11 @@
       luz(ctx, 'rgb(' + RGB3[estado] + ')', px, py, 9, 0.9); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(px, py, 1.9, 0, TAU); ctx.fill();
       // o numero e o coracao pequeno: batem com cada batida real
       var bt = clamp(1 - (agoraMs() - ECG.ultimo) / 380, 0, 1), esc = 1 + 0.22 * bt;
-      rot(ctx, String(bpm), 8, h * 0.5 + 6, 'rgb(' + RGB3[estado] + ')', 20, 'left', 700);
-      rot(ctx, ['calmo', 'activo', 'acelerado'][estado], 46, h * 0.5 + 5, 'rgba(' + RGB3[estado] + ',.85)', 7.5, 'left', 600);
+      rot(ctx, String(bpmH), 8, h * 0.5 + 6, 'rgb(' + RGB3[estado] + ')', 20, 'left', 700);
+      rot(ctx, 'bpm · ' + ['normal', 'activo', 'acelerado'][estado], 46, h * 0.5 + 5, 'rgba(' + RGB3[estado] + ',.85)', 7.5, 'left', 600);
       var sgE = ECG.seg, mnE = ECG.minuto;   // 21/10 20h: o compasso - este segundo e o ultimo minuto, por tipo
-      rot(ctx, '♥ ' + (sgE ? sgE.n : 0) + ' neste segundo · ' + (mnE ? mnE.comBatida : 0) + ' batidas/min' + (mnE ? ' · trabalho ' + mnE.porTipo.trabalho + ' · chat ' + mnE.porTipo.chat + ' · mercado ' + mnE.porTipo.mercado : ''), 8, 12, 'rgba(255,123,127,.9)', 7.5, 'left', 700);
+      var ox = ECG.oxi || {}, spo2 = (RAD.verdes || 0) + (RAD.abertas || 0) > 0 ? Math.round(100 * (RAD.verdes || 0) / ((RAD.verdes || 0) + (RAD.abertas || 0))) : null;
+      rot(ctx, '♥ oxímetro · ' + String((ox.taxa || 0).toFixed(1)).replace('.', ',') + ' acções/s (basal ' + (ox.basal ? String(ox.basal.toFixed(1)).replace('.', ',') : '…') + ') · SpO₂ ' + (spo2 == null ? '…' : spo2 + '%') + (mnE ? ' · min: trabalho ' + mnE.porTipo.trabalho + ' · chat ' + mnE.porTipo.chat + ' · mercado ' + mnE.porTipo.mercado : ''), 8, 12, 'rgba(255,123,127,.9)', 7.5, 'left', 700);
       var ulP = PULSOS[PULSOS.length - 1];                                     // (Q5 B7) o nome do sector pulsa a cada batida
       if (ulP && ulP.nome) { var idU = (agoraMs() - ulP.t) / 1000; if (idU < 2.2) { ctx.globalAlpha = 1 - idU / 2.2; rot(ctx, TX.cortar(ulP.nome, 24), 8, h * 0.5 + 20, ulP.cor, 8 + 2.5 * Math.max(0, 1 - idU * 3), 'left', 700);
         if (ECG.lote && (ECG.lote.n > 1 || ECG.lote.acoes > 1)) rot(ctx, ECG.lote.n > 1 ? ECG.lote.n + ' ao mesmo tempo' : ECG.lote.acoes + ' acções num evento', 8, h * 0.5 + 31, 'rgba(255,255,255,.75)', 7.5, 'left', 600);   // o enxame
@@ -759,7 +789,7 @@
       if (bt > 0.05) luz(ctx, C.mau, hx, hy, 11, bt * 0.8);
       // 16/10 (medido: 24 eventos/min davam 11 batidas - os do mesmo segundo batem juntos): as batidas aparecem ao lado dos eventos
       if (s.desenhos % 30 === 0) { var nbt = ECG.batT.length, acm = NUC.ritmo && NUC.ritmo.acoes != null ? NUC.ritmo.acoes : 0;   // 16/10: as batidas que se veem (cada evento bate)
-        mini('hm_coracao', [['', fmt(bpm, 0), 'eventos/min'], ['', fmt(acm, 0), 'acções/min'], ['', fmt(nbt, 0), 'batidas/min']]);
+        mini('hm_coracao', [['', fmt(bpmH, 0), 'bpm'], ['', String(((ECG.oxi || {}).taxa || 0).toFixed(1)).replace('.', ','), 'acções/s'], ['', fmt(bpm, 0), 'eventos/min']]);
         var blc = $('bl_coracao'); if (blc) blc.title = bpm + ' eventos por minuto (média dos últimos ' + ((NUC.ritmo && NUC.ritmo.janela_min) || 5) + ' min; cada evento é uma batida) · ' + acm + ' acções/min (um lote de genes conta cada um) · ' + nbt + ' batidas no último minuto (numa rajada, até 8 batidas curtas)'; }
     } });
   })();
@@ -1409,7 +1439,7 @@
     return Math.max(0.02, Math.min(1, 0.03 + 0.85 * r + 0.35 * (salto || 0)));
   }
   // </equalizador-puro>
-  var EQ = { ns: [], base: {}, salto: {}, pico: {}, t: 0, ultimoAndar: null, agora: 0, jan: {}, rit: {}, max: 0, tot: 0, desde: Date.now() };
+  var EQ = { pend: {}, ns: [], base: {}, salto: {}, pico: {}, t: 0, ultimoAndar: null, agora: 0, jan: {}, rit: {}, max: 0, tot: 0, desde: Date.now() };
   T3B.on('estrutura', function (d) {
     var ands = lista(d.andares).filter(function (a) { return a.obra !== 'em_obras'; }).sort(function (x, y) { return x.n - y.n; });
     EQ.ns = ands.map(function (a) { return a.n; }); EQ.agora = 0;
@@ -1420,9 +1450,13 @@
     var n = r.andar; if (n == null) return;
     var w = nDe(ev);
     (EQ.jan[n] = EQ.jan[n] || []).push([Date.now(), w]);
-    // 16/10: o salto cresce com as accoes reais do evento (log: 1 -> x1, 8 -> x4 no maximo) - 30 regras que correram no andar saltam mais
-    EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.35 * (r.forca || 0.5) * Math.min(4, 1 + Math.log2(w))); EQ.ultimoAndar = n;
-    sujar(cenaEq, 2500);
+    // 21/10 21h (ele: "o equalizador nao mexe conforme o coracao"): o andar junta o que fez e SALTA NA BATIDA do coracao (abaixo)
+    EQ.pend[n] = (EQ.pend[n] || 0) + w * (r.forca || 0.5); EQ.ultimoAndar = n;
+  });
+  T3B.on('batida', function () {
+    // 16/10: o salto cresce com as accoes reais (log: 1 -> x1, 8 -> x4 no maximo); 21/10 21h: na batida, com o que o andar fez desde a anterior
+    Object.keys(EQ.pend).forEach(function (n) { var w = Math.max(1, EQ.pend[n] * 2); EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.18 * Math.min(4, 1 + Math.log2(w))); });
+    EQ.pend = {}; sujar(cenaEq, 2500);
   });
   function recalcularEq() {
     var agora = Date.now(), corte = agora - EQ_JANELA_MS;

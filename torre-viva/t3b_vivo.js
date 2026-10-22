@@ -272,7 +272,7 @@
       // 16/10 18h: a hora a que o grupo DEVIA tocar - o contador conta por ela (o telemovel congela os setTimeout com a pagina em
       // segundo plano e, ao voltar, disparam todos de uma vez: contados pela hora do disparo, o numero subia para 98 'acelerado')
       var alvo = g[0].mc + PUB.D; g.forEach(function (e) { e.alvo_ms = alvo; });
-      var soltar = function () { soltarNoCompasso(g); };   // 21/10: sai na virada do segundo, com tudo o resto
+      var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); medirNoCompasso(g); };   // 21/10 21h: sai a SUA hora; o compasso so conta
       if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
     });
   }
@@ -291,7 +291,7 @@
     grupos.forEach(function (g, i) {
       var atraso = span <= teto ? (isFinite(m0) && g[0].ms ? Math.min(teto, Math.max(0, g[0].ms - m0)) : 0) : Math.min(5000, i * passo);
       var alvoR = agoraR + atraso; g.forEach(function (e) { e.alvo_ms = alvoR; });   // 16/10 18h: a hora a que devia tocar
-      var soltar = function () { soltarNoCompasso(g); };   // 21/10: sai na virada do segundo, com tudo o resto
+      var soltar = function () { filaDeCartoes(g); T3B.emit('eventos', g); medirNoCompasso(g); };   // 21/10 21h: sai a SUA hora; o compasso so conta
       if (atraso < 30) soltar(); else setTimeout(soltar, atraso);
     });
   }
@@ -373,16 +373,36 @@
     });
     return o;
   }
+  // 21/10 21h (ele: "o coracao detecta quantas accoes por segundo a torre faz e converte, como um oximetro; o normal da torre e o
+  // basal dela; 60-100 e o normal do corpo humano"): o OXIMETRO - a taxa (accoes/s) e uma media que esquece devagar (como o
+  // oximetro media as ultimas batidas), o BASAL e a mediana das accoes por minuto da ultima hora, e a frequencia e 72 bpm no basal,
+  // a subir/descer com a raiz da razao (2x o basal = 102 bpm, 4x = 144, metade = 51), entre 35 e 190.
+  function emaTaxa(taxa, valor, dtS, tauS) { if (taxa == null || !isFinite(taxa)) return valor; return taxa + (valor - taxa) * (1 - Math.exp(-dtS / tauS)); }
+  function mediana(xs) { var v = (xs || []).filter(function (x) { return isFinite(x); }).slice().sort(function (a, b) { return a - b; }); if (!v.length) return null; var m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; }
+  function freqDoOximetro(taxa, basal) { if (!(basal > 0) || !(taxa >= 0)) return 72; return Math.max(35, Math.min(190, Math.round(72 * Math.sqrt(taxa / basal)))); }
   // </compasso-puro>
-  var COMPASSO = { balde: [], serie: [], soma: null };
-  function soltarNoCompasso(g) { Array.prototype.push.apply(COMPASSO.balde, g || []); }
+  // 21/10 21h (ele: "nao vamos sincronizar os sectores, nao quero que mude o ritmo dos laboratorios"): os eventos voltam a sair a SUA
+  // hora (cada sector no seu ritmo); o compasso so CONTA - as accoes de cada segundo, mais cada valor de mercado que mudou (1 por moeda
+  // por segundo: "algum valor que muda") - e mede o pulso da torre inteira (o oximetro). O coracao e o vortex batem por ele.
+  var COMPASSO = { balde: [], serie: [], soma: null, valores: {}, taxa: null, minutos: [], basal: null, nSeg: 0 };
+  try { var basalGuardado = Number(localStorage.getItem('t3b_basal')); if (basalGuardado > 0) COMPASSO.basal = basalGuardado; } catch (e) { }
+  function medirNoCompasso(g) { Array.prototype.push.apply(COMPASSO.balde, g || []); }
+  T3B.valorMudou = function (sym) { COMPASSO.valores[String(sym)] = 1; };
   function batidaDoCompasso() {
     var agora = Date.now(), g = COMPASSO.balde; COMPASSO.balde = [];
-    var s = resumoDoSegundo(g, agora);
+    var s = resumoDoSegundo(g, agora), nv = Object.keys(COMPASSO.valores).length; COMPASSO.valores = {};
+    s.valores = nv; s.acoes += nv; s.porTipo.mercado += nv;
     COMPASSO.serie.push(s); while (COMPASSO.serie.length && agora - COMPASSO.serie[0].t > 61000) COMPASSO.serie.shift();
     COMPASSO.soma = somaDaSerie(COMPASSO.serie, agora, 60000);
-    if (g.length) { filaDeCartoes(g); T3B.emit('eventos', g); }
-    T3B.emit('compasso', { segundo: s, minuto: COMPASSO.soma });
+    COMPASSO.taxa = emaTaxa(COMPASSO.taxa, s.acoes, 1, 8);
+    COMPASSO.nSeg++;
+    if (COMPASSO.nSeg % 60 === 0) {
+      COMPASSO.minutos.push(COMPASSO.soma.acoes); if (COMPASSO.minutos.length > 60) COMPASSO.minutos.shift();
+      if (COMPASSO.minutos.length >= 3) { COMPASSO.basal = mediana(COMPASSO.minutos) / 60; try { localStorage.setItem('t3b_basal', String(COMPASSO.basal)); } catch (e) { } }
+    }
+    var basal = COMPASSO.basal || (COMPASSO.nSeg >= 20 && COMPASSO.soma ? COMPASSO.soma.acoes / Math.max(1, COMPASSO.soma.segundos) : null);
+    E.oxi = { bpm: freqDoOximetro(COMPASSO.taxa, basal), taxa: COMPASSO.taxa || 0, basal: basal };
+    T3B.emit('compasso', { segundo: s, minuto: COMPASSO.soma, taxa: E.oxi.taxa, basal: basal, bpm: E.oxi.bpm });
   }
   // na virada do segundo do relogio, re-agendada a cada batida (o setInterval derivava ate 700 ms dentro do segundo)
   (function agendarCompasso() { setTimeout(function () { batidaDoCompasso(); agendarCompasso(); }, 1000 - (Date.now() % 1000) + 5); })();
@@ -414,7 +434,7 @@
     E.ritmo = r;
     // 16/10: na copia publica, a fotografia parada (o servidor do PC nao responde ao publicar) diz-se - nunca um numero velho calado
     var parada = window.T3B_PUBLICADO && E.pubEmMudou && agora - E.pubEmMudou > 4 * 60000 && E.pubEm;
-    txt($('b_ritmo'), r.n + ' ev/min · ' + (cp && cp.segundos ? Math.round(100 * cp.comBatida / cp.segundos) + '% dos seg. · ' : '') + r.quem + ' func.' + (parada ? ' · fotografia parada desde ' + String(E.pubEm).slice(-8, -3) : ''));
+    txt($('b_ritmo'), r.n + ' ev/min · ' + (E.oxi ? '♥ ' + E.oxi.bpm + ' bpm · ' + String((E.oxi.taxa || 0).toFixed(1)).replace('.', ',') + ' acções/s · ' : '') + r.quem + ' func.' + (parada ? ' · fotografia parada desde ' + String(E.pubEm).slice(-8, -3) : ''));
     var br = $('b_ritmo'); if (br) br.title = r.n + ' eventos no último minuto (o compasso: soma dos últimos 60 segundos' + (cp ? '; ' + cp.comBatida + ' segundos com batida; trabalho ' + cp.porTipo.trabalho + ' · chat ' + cp.porTipo.chat + ' · mercado ' + cp.porTipo.mercado : '') + '; média de 5 min: ' + (r.media5 != null ? r.media5 : r.n) + ') · ' + r.acoes + ' acções/min (um lote de genes ou de regras conta cada uma) · no último minuto: ' + r.eventos_60s + ' eventos e ' + r.acoes_60s + ' acções de ' + r.quem + ' funcionários' + (r.servidor != null ? ' · servidor: ' + r.servidor : '');
     T3B.emit('ritmo', r);
   }, 1000);
@@ -736,7 +756,8 @@
   function aoPreco(sym, d) {
     d = d && d.data ? d.data : d;
     var b = Number(d && d.b), a = Number(d && d.a); if (!(b > 0 && a > 0)) return;
-    AOVIVO.mid[sym] = (a + b) / 2; AOVIVO.tPreco = Date.now();
+    var midVelho = AOVIVO.mid[sym]; AOVIVO.mid[sym] = (a + b) / 2; AOVIVO.tPreco = Date.now();
+    if (midVelho !== AOVIVO.mid[sym] && T3B.valorMudou) T3B.valorMudou(sym);   // 21/10 21h: um valor que mudou conta no pulso da torre
     var agora = performance.now(); if (agora - AOVIVO.ult < 250) return; AOVIVO.ult = agora;     // 4 vezes por segundo chega
     var dl = 0; AOVIVO.pos.forEach(function (p) { var m = AOVIVO.mid[p.sym]; if (m) dl += p.qty * (m - p.ref); });
     AOVIVO.delta = dl;
