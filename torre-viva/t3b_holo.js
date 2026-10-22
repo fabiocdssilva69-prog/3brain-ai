@@ -422,10 +422,12 @@
         var pu = PULSOS[ip], idP = (agP - pu.t) / 1000; if (idP > VIDA_P) break; if (idP < 0) continue;
         var pa = NUC.p[pu.ip]; if (!pa || pa.sx == null) continue;
         var fP = 1 - idP / VIDA_P, im = pu.imp == null ? 0.3 : pu.imp, tw = fP * (0.85 + 0.15 * Math.sin(t * 9 + ip)); desenhados++;
-        var brP = brilhoDaImportancia(im) * tw, tamP = im >= 0.85 ? 1.8 : 1.2;
-        ctx.fillStyle = '#ffffff'; ctx.globalAlpha = Math.min(1, 0.25 + 0.75 * brP);
+        // 21/10 22h30 (ele: "o vortex ainda nao brilha conforme os eventos por segundo"): o pixel branco SEMPRE bem visivel (>= 60%) e
+        // um brilho pequeno em TODAS (o degrau de 5% por importancia sobre um minimo de 30%) - antes as pouco importantes nao se viam
+        var brP = brilhoDaImportancia(im) * tw, tamP = im >= 0.85 ? 1.8 : 1.3;
+        ctx.fillStyle = '#ffffff'; ctx.globalAlpha = Math.min(1, (0.6 + 0.4 * brP) * tw);
         ctx.fillRect(pa.sx - tamP / 2, pa.sy - tamP / 2, tamP, tamP);
-        if (im >= 0.3) { luz(ctx, COR_ESTRELA, pa.sx, pa.sy, im >= 0.85 ? 6 : 3.5, Math.min(1, brP)); vivos++; }
+        luz(ctx, COR_ESTRELA, pa.sx, pa.sy, im >= 0.85 ? 6 : 3.5, Math.min(1, 0.3 * tw + 0.7 * brP)); vivos++;
         if (im >= 0.85) {                                               // a cruz de cintilar das estrelas fortes (so as de topo)
           var lc = 6 * tw; ctx.strokeStyle = COR_ESTRELA; ctx.globalAlpha = Math.min(1, 0.7 * tw);
           ctx.beginPath(); ctx.moveTo(pa.sx - lc, pa.sy); ctx.lineTo(pa.sx + lc, pa.sy); ctx.moveTo(pa.sx, pa.sy - lc); ctx.lineTo(pa.sx, pa.sy + lc); ctx.stroke();
@@ -489,6 +491,11 @@
   }
   // </radar-puro>
   function nomeDaAvaria(p) { return TX.limpar(TX.nomeDeId(p.id)); }
+  // 21/10 22h30 (ele: "a shield tem de brilhar numa intensidade diferente conforme o tamanho da avaria e a importancia do sector"): o
+  // peso de um andar - o dinheiro e as decisoes 1, o controlo 0,7, o resto 0,45
+  var ESP_DINHEIRO = { mesa: 1, risco: 1, pnl: 1, tesouraria_preco: 1, sr_stark: 1, conselho: 1, socios_directores: 1 };
+  var ESP_CONTROLO = { auditoria: 1, vigilancia: 1, manutencao: 1, validacao: 1, estatistica: 1, continuidade: 1 };
+  function pesoDoAndar(n) { var a = T3B.andar ? T3B.andar(numAndar(n)) : null, e = a && a.esp; return ESP_DINHEIRO[e] ? 1 : ESP_CONTROLO[e] ? 0.7 : 0.45; }
   // 21/10 (ele: "a shield nao pisca os pontinhos quando a pinca do radar passa em cima; melhor movimento e mais informacoes"):
   // MEDIDO - o radar so tinha pontos para as AVARIAS (2 agora; com tudo verde, nenhum) e nada piscava a passagem do feixe. Agora
   // cada andar que TRABALHOU nos ultimos 3 min e um CONTACTO (no angulo do seu andar, maior com mais accoes, na cor do sector):
@@ -529,7 +536,7 @@
     var abertas = avariasAbertas(RAD.pontos), ab = abertas.length; RAD.abertas = ab;
     U.txt($('ra_kn'), ab + ' avaria' + (ab === 1 ? '' : 's') + ' · ' + RAD.verdes + ' verdes');
     var leg = $('ra_leg');
-    if (leg) leg.innerHTML = '<i><b style="color:' + (ab ? C.mau : C.ok) + '">' + ab + '</b> fora do verde</i><i><b>' + (RAD.nCont || 0) + '</b> andares a trabalhar</i><i>volta <b>' + U.escH(RAD.volta || '—') + '</b> do vigia</i>';
+    if (leg) leg.innerHTML = '<i><b style="color:' + (ab ? C.mau : C.ok) + '">' + ab + '</b> fora do verde</i><i><b>' + (RAD.nCont || 0) + '</b> andares a trabalhar</i><i>volta <b>' + U.escH(RAD.volta || '—') + '</b> do vigia</i>' + (abertas[0] ? '<i>pior: <b>' + U.escH(nomeDaAvaria(abertas[0])) + '</b> · and. ' + numAndar(abertas[0].andar) + (pesoDoAndar(abertas[0].andar) >= 1 ? ' · sector do dinheiro' : '') + '</i>' : '');
     mini('hm_radar', [['', fmt(ab, 0), 'avarias', ab ? 'dn' : 'up'], ['', fmt(RAD.verdes, 0), 'verdes'], ['volta', String(RAD.volta || '…')]]);
     // 09/10 (ele: "nao ta sincronizado a luz amarela/vermelha/verde com o radar da shield"): a luz do cabecalho sai DAQUI, dos
     // mesmos pontos do radar (vigia: fora_do_verde + avaria/consertou). Antes vinha dos 'programas em erro' da estrutura
@@ -602,6 +609,11 @@
       }
       // os pontos: FOSFORO - acendem quando o feixe passa e esmorecem ate a volta seguinte (nunca apagam de todo). 10/10: os do
       // mesmo andar em leque (angulo e raio) e uma avaria aberta nunca desce de 62% (a 35% sumia no fundo: 5 avarias, 2 pontos)
+      // 21/10 22h30: o SONAR - a cada volta do vigia sai uma onda do centro (2,5 s); os contactos e as avarias ecoam quando ela passa
+      var idOnda = RAD.tBat ? (agora - RAD.tBat) / 2500 : 9, rOnda = idOnda < 1 ? R * idOnda : -99;
+      if (idOnda < 1) { ctx.strokeStyle = C.cy; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.55 * (1 - idOnda); ctx.beginPath(); ctx.arc(cx, cy, rOnda, 0, TAU); ctx.stroke();
+        ctx.globalAlpha = 0.25 * (1 - idOnda); ctx.beginPath(); ctx.arc(cx, cy, Math.max(0, rOnda - 7), 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = 1; }
+      RAD.rOnda = rOnda;
       // 21/10: os CONTACTOS - os andares a trabalhar (3 min); piscam quando o feixe passa
       var corteC = Date.now() - 180000, maxC = 1, contos = [];
       Object.keys(RAD.cont).forEach(function (n) { var c = RAD.cont[n]; while (c.j.length && c.j[0][0] < corteC) c.j.shift(); if (!c.j.length) { delete RAD.cont[n]; return; } var sm = 0; c.j.forEach(function (x) { sm += x[1]; }); c.n = sm; if (sm > maxC) maxC = sm; contos.push(n); });
@@ -612,7 +624,7 @@
         var rc = R * (0.3 + 0.6 * ((U.semente('rc' + n) % 100) / 100)), xc = cx + Math.cos(q) * rc, yc = cy + Math.sin(q) * rc;
         var atr = (a - q) % TAU; if (atr < 0) atr += TAU;
         if (atr < 0.09 && agora - c.blip > RAD.intervalo * 0.5) { c.blip = agora; RAD.nBlips++; }
-        var fos = 0.14 + 0.86 * Math.exp(-atr * 2.4), corC = U.corDoAndar ? U.corDoAndar(Number(n)) : C.cy;
+        var fos = Math.min(1, 0.14 + 0.86 * Math.exp(-atr * 2.4) + (Math.abs(rc - RAD.rOnda) < 6 ? 0.6 : 0)), corC = U.corDoAndar ? U.corDoAndar(Number(n)) : C.cy;   // + o eco da onda
         ctx.globalAlpha = fos; ctx.fillStyle = fos > 0.75 ? '#ffffff' : corC;
         ctx.beginPath(); ctx.arc(xc, yc, 0.9 + 1.5 * nr + 0.8 * Math.exp(-atr * 3), 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
         if (fos > 0.5) luz(ctx, corC, xc, yc, 4 + 4 * nr, fos * 0.5);
@@ -626,10 +638,14 @@
         var fosforo = p.ok ? 0.35 + 0.65 * Math.exp(-atras * 0.9) : 0.5 + 0.5 * Math.exp(-atras * 1.8), cor, base = 1;   // 21/10: pisca mais a passagem
         if (p.ok) { var ida = (agora - p.ok) / 1000; if (ida > 9) { delete RAD.pontos[id]; return; } base = 1 - ida / 9; cor = C.ok; }
         else cor = p.sev === 'vermelho' ? C.mau : C.am;
-        ctx.globalAlpha = base * fosforo; ctx.fillStyle = cor;
-        ctx.beginPath(); ctx.arc(x, y, 2.6 + 1.6 * Math.max(0, 1 - idade) + (p.sev === 'vermelho' && !p.ok ? 0.5 * Math.sin(t * 4) : 0), 0, TAU); ctx.fill();
+        // 21/10 22h30: a avaria brilha pela GRAVIDADE (vermelho > amarelo) e pela IMPORTANCIA do sector (o dinheiro pesa mais); pulsa mais
+        // depressa e mais forte quanto mais pesa; ecoa quando a onda do sonar passa
+        var gravA = p.ok ? 0.4 : (p.sev === 'vermelho' ? 1 : 0.6), pesoA = pesoDoAndar(p.andar), forcaA = gravA * (0.5 + 0.5 * pesoA);
+        var pulsoA = p.ok ? 0 : 0.5 + 0.5 * Math.sin(t * (2 + 4 * forcaA)), ecoA = Math.abs(rr - (RAD.rOnda || -99)) < 6 ? 0.5 : 0;
+        ctx.globalAlpha = Math.min(1, base * (fosforo + ecoA)); ctx.fillStyle = cor;
+        ctx.beginPath(); ctx.arc(x, y, 2 + 2.4 * forcaA + 1.4 * Math.max(0, 1 - idade) + 0.8 * forcaA * pulsoA, 0, TAU); ctx.fill();
         ctx.globalAlpha = 1;
-        luz(ctx, cor, x, y, 10, base * fosforo * 0.85);
+        luz(ctx, cor, x, y, 7 + 13 * forcaA + 4 * pulsoA * forcaA, Math.min(1, base * (fosforo + ecoA) * (0.45 + 0.55 * forcaA)));
         if (idade < 3 && !p.ok) { ctx.strokeStyle = cor; ctx.globalAlpha = 1 - idade / 3; ctx.beginPath(); ctx.arc(x, y, 4 + idade * 5, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
         if (!p.ok && atras < 0.09 && agora - (p.blip || 0) > RAD.intervalo * 0.5) p.blip = agora;   // 21/10: o blip da avaria
         var ibp = (agora - (p.blip || 0)) / 800; if (!p.ok && ibp < 1) { ctx.strokeStyle = cor; ctx.globalAlpha = 1 - ibp; ctx.beginPath(); ctx.arc(x, y, 3 + ibp * 13, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
@@ -710,7 +726,7 @@
     ECG.bat.push([Date.now(), 1]); ECG.n += 1;
     // 21/10 21h (ele: "o vortex e o coracao sao 1; uma constelacao, o tamanho da estrela e a importancia"): o ponto deste evento ESPERA
     // a proxima batida do coracao (os dois acendem juntos); o tamanho e o brilho vem da importancia do evento (importanciaDoEvento)
-    var np = ev.grupo ? Math.min(20, w) : 1;   // 21/10 22h15: um ponto por funcionario do grupo (ate 20)
+    var np = Math.min(20, ev.grupo ? w : Math.max(1, Math.ceil(Math.sqrt(w))));   // 21/10 22h30: uma estrela por funcionario do grupo; num lote, mais estrelas com mais accoes (raiz, ate 20)
     for (var ipz = 0; ipz < np; ipz++) { var pz = pulsoDoEvento(ev, ipz); pz.f = f; pz.imp = importanciaDoEvento(ev); ECG.pendentes.push(pz); }
     if (ECG.pendentes.length > 400) ECG.pendentes.splice(0, ECG.pendentes.length - 400);
     ECG.acum += w; if (ev.andar != null) ECG.acumAndar[ev.andar] = (ECG.acumAndar[ev.andar] || 0) + w;
@@ -1468,7 +1484,20 @@
     return Math.max(0.02, Math.min(1, 0.03 + 0.85 * r + 0.35 * (salto || 0)));
   }
   // </equalizador-puro>
-  var EQ = { pend: {}, ns: [], base: {}, salto: {}, pico: {}, t: 0, ultimoAndar: null, agora: 0, jan: {}, rit: {}, max: 0, tot: 0, desde: Date.now() };
+  // 21/10 22h30 (ele: "o equalizador nao se move conforme o sector, esta estranho"): 76 barras de 3 px (uma por andar) - nao se via
+  // nenhum sector mexer. Agora 12 BANDAS, uma por sector (como um equalizador de som): cada uma sobe NA HORA em que o seu sector
+  // age (as accoes dos ultimos 10 s, raiz, contra o maior dos ultimos minutos) e desce devagar; o pico fica marcado.
+  // <bandas-puro>
+  var BANDAS = [['Direção', ['atrio', 'socios_directores', 'conselho', 'sr_stark', 'gerentes_operacoes', 'supervisores_operacoes']],
+    ['Dados', ['antenas_arquivo', 'aquisicao_dados', 'inventario_fontes', 'imprensa']], ['Pesquisa', ['pesquisa', 'ideias', 'inovacao', 'comite_produto']],
+    ['Macro', ['macro']], ['Células', ['celulas']], ['Cripto', ['cripto']], ['Tendência', ['tendencia', 'reversao_media', 'volume_fluxo', 'preco_accao']],
+    ['Validação', ['validacao', 'estatistica', 'registo_ensaios', 'ciclo_vida']], ['Mesa', ['mesa', 'pnl', 'tesouraria_preco']], ['Risco', ['risco', 'vigilancia']],
+    ['Auditoria', ['auditoria']], ['Pessoal', ['recrutamento', 'pessoal', 'formacao', 'treinamento', 'logistica', 'compras', 'continuidade', 'manutencao']]];
+  var BANDA_DA_ESP = {}; BANDAS.forEach(function (b, i) { b[1].forEach(function (e) { BANDA_DA_ESP[e] = i; }); });
+  function bandaDoEsp(esp) { return BANDA_DA_ESP[esp] != null ? BANDA_DA_ESP[esp] : null; }
+  function nivelDaBanda(soma10s, maxRef) { return maxRef > 0 ? Math.max(0, Math.min(1, Math.sqrt(Math.max(0, soma10s) / maxRef))) : 0; }
+  // </bandas-puro>
+  var EQ = { bandas: BANDAS.map(function () { return { jan: [], v: 0, pk: 0, tPk: 0, salto: 0 }; }), maxRef: 4, pend: {}, ns: [], base: {}, salto: {}, pico: {}, t: 0, ultimoAndar: null, agora: 0, jan: {}, rit: {}, max: 0, tot: 0, desde: Date.now() };
   T3B.on('estrutura', function (d) {
     var ands = lista(d.andares).filter(function (a) { return a.obra !== 'em_obras'; }).sort(function (x, y) { return x.n - y.n; });
     EQ.ns = ands.map(function (a) { return a.n; }); EQ.agora = 0;
@@ -1483,6 +1512,8 @@
     // 21/10 22h (ele: "o equalizador nao se move conforme a accao dos sectores"): volta a SALTAR NA HORA da accao do andar (log das accoes)
     EQ.salto[n] = Math.min(1, (EQ.salto[n] || 0) + 0.3 * (r.forca || 0.5) * Math.min(4, 1 + Math.log2(w)));
     EQ.pend[n] = (EQ.pend[n] || 0) + w * (r.forca || 0.5); EQ.ultimoAndar = n; sujar(cenaEq, 2500);
+    var anB = T3B.andar ? T3B.andar(Number(n)) : null, bi = bandaDoEsp(anB && anB.esp);   // 21/10 22h30: a banda do sector
+    if (bi != null && !ev.historia) { var B0 = EQ.bandas[bi]; B0.jan.push([Date.now(), w]); B0.salto = Math.min(1, B0.salto + 0.25 * Math.min(4, 1 + Math.log2(w)) / 4 + 0.12); B0.ult = Date.now(); }
   });
   T3B.on('batida', function () {
     // 16/10: o salto cresce com as accoes reais (log: 1 -> x1, 8 -> x4 no maximo); 21/10 21h: na batida, com o que o andar fez desde a anterior
@@ -1509,50 +1540,34 @@
     // Uma so gradacao para as barras; os rotulos sao uma camada guardada.
     var V = {}, FASE = {}, PK = {};
     cenaEq = cena(cv, { id: 'equalizador', holo: $('h_equalizador'), desenhar: function (ctx, w, h, t, dt, s) {
+      // 21/10 22h30: as 12 BANDAS (uma por sector) - sobe na hora da accao, desce devagar, pico marcado; cor verde -> ouro -> vermelho
       ctx.clearRect(0, 0, w, h);
-      var N = EQ.ns.length; if (!N) { rot(ctx, 'a ler os andares…', w / 2, h / 2 + 8, C.dim, 9, 'center', 500); return; }
-      // 07/10 (Q5 B5, ele: "as legendas embaixo pode tirar que buga"): sem a linha de baixo, as barras ganham a altura
-      var x0 = 6, bw = (w - 12) / N, base = h - 4, alt = base - TOPO - 38, act = (ACT.equalizador || {}).base || 0, larg = Math.max(1, bw - 1.2);   // (2 linhas de nomes em cima)
-      var picos = [], quentes = [], acimaSec = [];
-      if (s.corEqChave !== EQ.ns.join(',')) { COR_EQ = {}; s.corEqChave = EQ.ns.join(','); }
-      for (var i = 0; i < N; i++) {
-        var n = EQ.ns[i], sl = (EQ.salto[n] || 0) * Math.exp(-dt * 0.9); EQ.salto[n] = sl < 0.004 ? 0 : sl;
-        if (!FASE[n]) { var sm = U.semente('eq' + n); FASE[n] = [(sm % 628) / 100, 0.7 + ((sm >> 4) % 100) / 90, 1.6 + ((sm >> 9) % 100) / 70]; }
-        var f = FASE[n], pm = EQ.rit[n] || 0, resp = calmo ? 0 : (0.012 + 0.04 * Math.min(1, pm / EQ.max)) * (0.6 * Math.sin(t * f[1] + f[0]) + 0.4 * Math.sin(t * f[2] + f[0] * 1.7));
-        var alvo = clamp(alturaDoAndar(pm, EQ.max, sl) + resp, 0.015, 1);
-        var vAnt = V[n] == null ? alvo : V[n], v = V[n] = seguir(vAnt, alvo, alvo > vAnt ? 16 : 2.6, dt), hh = Math.max(1, v * alt), x = x0 + i * bw;   // 21/10: sobe depressa, desce devagar (um equalizador)
-        ctx.fillStyle = COR_EQ[n] || (COR_EQ[n] = (U.corDoAndar ? U.corDoAndar(n) : '#2dd4e8')); ctx.globalAlpha = pm > 0 ? 0.9 : 0.35;   // 07/10 (Q5 B5, eq_sector); parado = apagado
-        ctx.fillRect(x, base - hh, larg, hh); ctx.globalAlpha = 1;
-        var pk = PK[n] || (PK[n] = { v: 0, t: 0 }); if (v >= pk.v) { pk.v = v; pk.t = t; } else if (t - pk.t > 0.6) pk.v = Math.max(v, pk.v - dt * 0.16);
-        picos.push(x, base - pk.v * alt - 1.5);
-        if (sl > 0.1) { quentes.push(x, base - hh, sl); acimaSec.push({ n: n, x: x + larg / 2, y: base - hh, sl: sl }); }
-      }
-      ctx.fillStyle = 'rgba(255,255,255,.82)';
-      for (var p = 0; p < picos.length; p += 2) ctx.fillRect(picos[p], picos[p + 1], larg, 1.3);
-      // os 3 andares com MAIS accoes agora (3 min), pelo nome e com o numero por minuto
-      var top3 = Object.keys(EQ.rit).sort(function (a, b) { return EQ.rit[b] - EQ.rit[a]; }).slice(0, 3);
-      var col3 = (w - 12) / 3, max3 = Math.max(6, Math.floor((col3 - 6) / 4.6));
-      if (!top3.length) rot(ctx, 'à espera do primeiro trabalho…', 6, TOPO + 9, C.dim, 7.5, 'left', 500);
-      // (16/10 20h40: o numero do andar e o nome nao cabiam - "Lab... 99/min") o MAIS activo numa linha inteira, os 2 seguintes por
-      // baixo, cada um na sua metade; o nome curto do andar ("Lab. Celulas III" -> "Celulas III") e o ritmo sempre inteiro
-      var cheio = Math.max(8, Math.floor((w - 12) / 4.6)), meio = Math.max(6, Math.floor(((w - 12) / 2 - 6) / 4.6));
-      top3.forEach(function (nn, i) {
-        var an = T3B.andar ? T3B.andar(Number(nn)) : null, nm = nomeCurtoAndar(an ? TX.limpar(an.nome || an.sector || '') : '') || ('and. ' + nn), rit = ' ' + fmt(EQ.rit[nn], 0) + '/min';
-        var lim = i ? meio : cheio, cab = Math.max(3, lim - rit.length - (i ? 0 : 2));
-        rot(ctx, (i ? '' : '▲ ') + TX.cortar(nm, cab) + rit, i ? 6 + (i - 1) * (w - 12) / 2 : 6, TOPO + (i ? 19 : 9), i ? C.mute : C.ouroHi, 7.5, 'left', i ? 500 : 700);
+      var N = BANDAS.length, x0 = 8, top = TOPO + 22, base = h - 22, alt = Math.max(20, base - top), bw = (w - 16) / N, larg = Math.max(4, bw - 4);
+      var agoraE = Date.now(), corte = agoraE - 10000, maxAgora = 0, somas = [];
+      EQ.bandas.forEach(function (B, i) {
+        while (B.jan.length && B.jan[0][0] < corte) B.jan.shift();
+        var sm = 0; B.jan.forEach(function (x) { sm += x[1]; }); somas[i] = sm; if (sm > maxAgora) maxAgora = sm;
       });
-      // 07/10 (Q5 B5, eq_sector: "a legenda pode aparecer conforme a reacao de cada setor acima do limite das barras"): o nome do
-      // SECTOR por cima da barra que acabou de reagir - as 3 mais fortes, arrumadas para nao se taparem
-      acimaSec.sort(function (a, b) { return b.sl - a.sl; });
-      arrumarEtiquetas(ctx, 'equal_sec', acimaSec.slice(0, 3).map(function (e) {
-        var an = T3B.andar ? T3B.andar(e.n) : null, nm = an ? TX.limpar(an.sector || an.nome || ('and. ' + e.n)) : 'and. ' + e.n;
-        return { t: TX.cortar(nm, 18), x: e.x, y: TOPO + 31, dy: 0, cor: C.ouroHi, tam: 7.5 };   // 21/10: numa fila propria (no meio das barras tapava-as)
-      }), w, h);
-      for (var q = 0; q < quentes.length; q += 3) {                    // o andar que acabou de agir: a ponta a ouro e o brilho
-        var qa = Math.min(1, quentes[q + 2] * 1.5);
-        ctx.fillStyle = 'rgba(242,194,48,' + qa.toFixed(2) + ')'; ctx.fillRect(quentes[q], quentes[q + 1], larg, Math.min(10, base - quentes[q + 1]));
-        luz(ctx, C.ouro, quentes[q] + larg / 2, quentes[q + 1], 9, qa * 0.8);
-      }
+      EQ.maxRef = Math.max(4, maxAgora, EQ.maxRef * Math.pow(0.5, dt / 120));     // a escala esquece devagar (meia-vida 2 min)
+      var topo = -1, topoV = 0;
+      EQ.bandas.forEach(function (B, i) {
+        B.salto *= Math.pow(0.25, dt);
+        var alvo = Math.max(nivelDaBanda(somas[i], EQ.maxRef), B.salto * 0.9) + (calmo ? 0 : 0.01 * Math.sin(t * 1.3 + i));
+        B.v = seguir(B.v, alvo, alvo > B.v ? 18 : 2.2, dt);
+        if (B.v >= B.pk) { B.pk = B.v; B.tPk = t; } else if (t - B.tPk > 0.8) B.pk = Math.max(B.v, B.pk - dt * 0.25);
+        if (somas[i] > topoV) { topoV = somas[i]; topo = i; }
+        var x = x0 + i * bw + 2, hh = Math.max(2, B.v * alt), segs = Math.max(1, Math.round(hh / 5));
+        for (var k = 0; k < segs; k++) {                              // a barra em segmentos de VU (verde -> ouro -> vermelho)
+          var fr = (k + 1) * 5 / alt, cor = fr > 0.85 ? C.mau : fr > 0.6 ? C.ouro : C.ok;
+          ctx.globalAlpha = somas[i] > 0 ? 0.92 : 0.35; ctx.fillStyle = cor; ctx.fillRect(x, base - (k + 1) * 5 + 1, larg, 4);
+        }
+        ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(x, base - B.pk * alt - 2, larg, 1.5);
+        if (B.ult && agoraE - B.ult < 600) luz(ctx, C.ouroHi, x + larg / 2, base - hh, 10, 0.6 * (1 - (agoraE - B.ult) / 600));
+        rot(ctx, TX.cortar(BANDAS[i][0], Math.max(3, Math.floor(bw / 4.6))), x + larg / 2, h - 8, somas[i] > 0 ? C.txt : C.dim, 7, 'center', 600);
+      });
+      var tot10 = somas.reduce(function (a, b) { return a + b; }, 0);
+      rot(ctx, topo >= 0 && topoV > 0 ? '▲ ' + BANDAS[topo][0] + ' · ' + fmt(topoV * 6, 0) + ' acções/min' : 'à espera de trabalho…', 8, TOPO + 9, topo >= 0 ? C.ouroHi : C.dim, 8, 'left', 700);
+      rot(ctx, 'todos: ' + fmt(tot10 * 6, 0) + ' acções/min (últimos 10 s)', 8, TOPO + 19, C.mute, 7.5, 'left', 600);
     } });
   })();
   setInterval(function () { var top = Object.keys(EQ.rit).sort(function (a, b) { return EQ.rit[b] - EQ.rit[a]; })[0], an = top != null && T3B.andar ? T3B.andar(Number(top)) : null; mini('hm_equalizador', [['', fmt(EQ.tot, 0), 'acções/min'], ['mais ativo', top != null ? (an && (an.sector || an.nome) ? TX.cortar(TX.limpar(an.sector || an.nome), 16) : 'and. ' + top) : 'nenhum']]); }, 2000);
