@@ -345,6 +345,9 @@
   // (quantos eventos, quantas accoes, por andar, por tipo: trabalho, chat, mercado); o 'por minuto' e a SOMA dos ultimos 60
   // segundos - o mesmo numero no cabecalho, no coracao e no vortex. PURAS (testes_t3b.js).
   // <compasso-puro>
+  // 21/10 22h20: para o OXIMETRO um evento conta no maximo 20 accoes (um lote de 300 genes inflava o normal da torre e o coracao
+  // ficava a 35 bpm com a torre a trabalhar normalmente)
+  var OXI_TETO_EVENTO = 20;
   var K_CHAT = { recado: 1, falou: 1, conversa: 1, resposta: 1, pergunta: 1, mensagem: 1 };
   var RX_MERCADO = /numeros_reais|binance|liquidac|noticias_cripto|noticias_eua|mesa|executor|cotac|preco|ordens|pnl|realizado|fecho|nucleos|reactor|ouro/;
   var RX_CHAT = /^(conversa|noticias_chat|chat|barramento|carteiro)/;
@@ -355,20 +358,20 @@
     return 'trabalho';
   }
   function resumoDoSegundo(g, t) {
-    var r = { t: t, n: 0, acoes: 0, quem: 0, porAndar: {}, porTipo: { trabalho: 0, chat: 0, mercado: 0 } }, ids = {};
+    var r = { t: t, n: 0, acoes: 0, acoesOxi: 0, quem: 0, porAndar: {}, porTipo: { trabalho: 0, chat: 0, mercado: 0 } }, ids = {};
     (g || []).forEach(function (e) {
       if (!e) return;
-      var k = nDoEvento(e); r.n++; r.acoes += k; r.porTipo[tipoDoEvento(e)]++;
+      var k = nDoEvento(e); r.n++; r.acoes += k; r.acoesOxi += Math.min(OXI_TETO_EVENTO, k); r.porTipo[tipoDoEvento(e)]++;
       if (e.andar != null) r.porAndar[e.andar] = (r.porAndar[e.andar] || 0) + k;
       if (e.id != null && !ids[e.id]) { ids[e.id] = 1; r.quem++; }
     });
     return r;
   }
   function somaDaSerie(serie, agora, janelaMs) {
-    var o = { n: 0, acoes: 0, segundos: 0, comBatida: 0, porTipo: { trabalho: 0, chat: 0, mercado: 0 } };
+    var o = { n: 0, acoes: 0, acoesOxi: 0, segundos: 0, comBatida: 0, porTipo: { trabalho: 0, chat: 0, mercado: 0 } };
     (serie || []).forEach(function (s) {
       if (!s || agora - s.t > (janelaMs || 60000)) return;
-      o.segundos++; o.n += s.n; o.acoes += s.acoes; if (s.n > 0) o.comBatida++;
+      o.segundos++; o.n += s.n; o.acoes += s.acoes; o.acoesOxi += s.acoesOxi || 0; if (s.n > 0) o.comBatida++;
       Object.keys(o.porTipo).forEach(function (k) { o.porTipo[k] += (s.porTipo || {})[k] || 0; });
     });
     return o;
@@ -385,22 +388,24 @@
   // hora (cada sector no seu ritmo); o compasso so CONTA - as accoes de cada segundo, mais cada valor de mercado que mudou (1 por moeda
   // por segundo: "algum valor que muda") - e mede o pulso da torre inteira (o oximetro). O coracao e o vortex batem por ele.
   var COMPASSO = { balde: [], serie: [], soma: null, valores: {}, taxa: null, minutos: [], basal: null, nSeg: 0 };
-  try { var basalGuardado = Number(localStorage.getItem('t3b_basal')); if (basalGuardado > 0) COMPASSO.basal = basalGuardado; } catch (e) { }
+  // 21/10 22h20: chave nova (o basal antigo vinha inflado pela rajada do arranque e pelos lotes de genes)
+  try { var basalGuardado = Number(localStorage.getItem('t3b_basal2')); if (basalGuardado > 0) COMPASSO.basal = basalGuardado; } catch (e) { }
   function medirNoCompasso(g) { Array.prototype.push.apply(COMPASSO.balde, g || []); }
   T3B.valorMudou = function (sym) { COMPASSO.valores[String(sym)] = 1; };
   function batidaDoCompasso() {
     var agora = Date.now(), g = COMPASSO.balde; COMPASSO.balde = [];
     var s = resumoDoSegundo(g, agora), nv = Object.keys(COMPASSO.valores).length; COMPASSO.valores = {};
-    s.valores = nv; s.acoes += nv; s.porTipo.mercado += nv;
+    s.valores = nv; s.acoes += nv; s.acoesOxi += nv; s.porTipo.mercado += nv;
     COMPASSO.serie.push(s); while (COMPASSO.serie.length && agora - COMPASSO.serie[0].t > 61000) COMPASSO.serie.shift();
     COMPASSO.soma = somaDaSerie(COMPASSO.serie, agora, 60000);
-    COMPASSO.taxa = emaTaxa(COMPASSO.taxa, s.acoes, 1, 8);
+    COMPASSO.taxa = emaTaxa(COMPASSO.taxa, s.acoesOxi, 1, 8);
     COMPASSO.nSeg++;
-    if (COMPASSO.nSeg % 60 === 0) {
-      COMPASSO.minutos.push(COMPASSO.soma.acoes); if (COMPASSO.minutos.length > 60) COMPASSO.minutos.shift();
-      if (COMPASSO.minutos.length >= 3) { COMPASSO.basal = mediana(COMPASSO.minutos) / 60; try { localStorage.setItem('t3b_basal', String(COMPASSO.basal)); } catch (e) { } }
+    // 21/10 22h20: os 2 primeiros minutos da pagina (a rajada do arranque) nao entram no normal; o normal so com 3 minutos limpos
+    if (COMPASSO.nSeg % 60 === 0 && COMPASSO.nSeg > 120) {
+      COMPASSO.minutos.push(COMPASSO.soma.acoesOxi); if (COMPASSO.minutos.length > 60) COMPASSO.minutos.shift();
+      if (COMPASSO.minutos.length >= 3) { COMPASSO.basal = mediana(COMPASSO.minutos) / 60; try { localStorage.setItem('t3b_basal2', String(COMPASSO.basal)); } catch (e) { } }
     }
-    var basal = COMPASSO.basal || (COMPASSO.nSeg >= 20 && COMPASSO.soma ? COMPASSO.soma.acoes / Math.max(1, COMPASSO.soma.segundos) : null);
+    var basal = COMPASSO.basal || (COMPASSO.nSeg >= 20 && COMPASSO.soma ? COMPASSO.soma.acoesOxi / Math.max(1, COMPASSO.soma.segundos) : null);
     E.oxi = { bpm: freqDoOximetro(COMPASSO.taxa, basal), taxa: COMPASSO.taxa || 0, basal: basal };
     T3B.emit('compasso', { segundo: s, minuto: COMPASSO.soma, taxa: E.oxi.taxa, basal: basal, bpm: E.oxi.bpm });
   }
