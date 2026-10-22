@@ -26,7 +26,29 @@
   var FONTES = {};
   function fonte(peso, tam) { var k = (peso || 600) + '|' + (tam || 9); return FONTES[k] || (FONTES[k] = TX.fonteCanvas(peso || 600, tam || 9)); }
   // (o ctx guarda a ultima fonte: interpretar a fonte - com a lista de recurso - a cada texto era 2,5% do fio principal)
-  function rot(ctx, t, x, y, cor, tam, al, peso) { var f = fonte(peso, tam); if (ctx._f !== f) { ctx.font = f; ctx._f = f; } ctx.fillStyle = cor; ctx.textAlign = al || 'left'; ctx.fillText(t, x, y); }
+  // 21/10 23h55 (ele: "ta muito pesado e travando"; medido no radar: 7 fillText por quadro = 2,4 ms, ~330 us cada - a letra "JetBrains
+  // Mono" mais a lista de recurso dos emoji, procurada a cada chamada para ● ▸ ·): um texto que aparece 3 vezes igual (mesma letra, cor e
+  // escala do ecra) passa a ser uma imagem guardada e so se copia; o que muda a cada quadro (relogios, numeros a correr) vai direito.
+  var TXT_IMG = new Map();
+  function rotDireito(ctx, t, x, y, cor, f, al) { if (ctx._f !== f) { ctx.font = f; ctx._f = f; } ctx.fillStyle = cor; ctx.textAlign = al || 'left'; ctx.fillText(t, x, y); }
+  function rot(ctx, t, x, y, cor, tam, al, peso) {
+    var f = fonte(peso, tam); t = String(t);
+    if (SOFT || !t || ctx.textBaseline !== 'alphabetic' || typeof cor !== 'string') return rotDireito(ctx, t, x, y, cor, f, al);
+    var k = f + '|' + cor + '|' + t, e = TXT_IMG.get(k);
+    if (!e) { if (TXT_IMG.size > 2500) TXT_IMG.clear(); TXT_IMG.set(k, e = { n: 0, cv: null, sc: 0, w: 0, asc: 0, alt: 0 }); }
+    if (++e.n < 3) return rotDireito(ctx, t, x, y, cor, f, al);
+    var m = ctx.getTransform(), sc = Math.max(1, Math.round(Math.hypot(m.a, m.b) * 4) / 4);
+    if (!e.cv || e.sc !== sc) {
+      if (ctx._f !== f) { ctx.font = f; ctx._f = f; }
+      var mt = ctx.measureText(t), asc = Math.ceil(mt.fontBoundingBoxAscent || tam * 1.05), desc = Math.ceil(mt.fontBoundingBoxDescent || tam * 0.35);
+      e.w = Math.ceil(mt.width) + 2; e.asc = asc + 1; e.alt = asc + desc + 2; e.sc = sc;
+      var cv = e.cv || document.createElement('canvas'); cv.width = Math.max(1, Math.ceil(e.w * sc)); cv.height = Math.max(1, Math.ceil(e.alt * sc));
+      var g = cv.getContext('2d'); g.setTransform(sc, 0, 0, sc, 0, 0); g.font = f; g.fillStyle = cor; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(t, 1, e.asc);
+      e.cv = cv;
+    }
+    var x0 = al === 'center' ? x - (e.w - 2) / 2 : al === 'right' ? x - (e.w - 2) : x;
+    ctx.drawImage(e.cv, x0 - 1, y - e.asc, e.w, e.alt);
+  }
   // 07/10 (ele: "as informacoes no card do sr stark estao se sobrepondo... quero mostrar tudo"): o texto cabe na largura dada -
   // se nao couber, a letra encolhe (ate 6 px) em vez de cortar ou tapar o vizinho
   function rotCabe(ctx, t, x, y, cor, tam, al, peso, maxW) {
