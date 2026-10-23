@@ -1,0 +1,14 @@
+{
+ "versao": 1,
+ "dispositivos": {
+  "PC-Biel": {
+   "pausado": false,
+   "sessao_max_pct": 50.0,
+   "semana_max_pct": 55.0,
+   "pedidos_dia_max": 40,
+   "mensagem": ""
+  }
+ },
+ "atualizado": "2026-10-23T18:24:50-03:00",
+ "nota": "Limites de uso do Claude Code nos dispositivos da equipa 3BRAIN. So numeros; muda-os o administrador."
+}
