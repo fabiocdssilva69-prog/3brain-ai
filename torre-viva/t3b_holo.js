@@ -1051,6 +1051,7 @@
   var ROBO = { parecer: '', decisao: '', t: '', mod: '', tf: -9, fala: -9, olho: 0, linhas: null, chaveL: '' };
   function primeiraFrase(p) { var s = String(p || '').replace(/\s+/g, ' ').trim(); var m = /^(.{12,}?[.;!?])(\s|$)/.exec(s); return (m ? m[1] : s).slice(0, 200); }
   T3B.on('enxame', function (e) {
+    ROBO.fv = lista(e.fora_do_verde); ROBO.fvT = 1;      // 25/10: as avarias abertas de AGORA (as mesmas do radar) para as frases
     var s = obj(e.stark), p = TX.semMarkdown(TX.limpar(String(s.parecer || ''))); if (!p) return;
     // 16/10 (ele: "os hologramas nao mostram os dados certos"): o parecer em vigor ainda falava do PAPEL ("o dinheiro em papel vai bem:
     // +72,59") - o briefing do Stark so lhe dava o papel. Com a conta real activa, um parecer do papel nao se mostra como se fosse real
@@ -1101,10 +1102,47 @@
   // 07/10 (Q5 B1, ele: "ali onde ta 'noite de rede, nao de bugs' isso pode ficar mudando e aparecendo outras mensagens relevantes,
   // importante ser no maximo de duas linhas pra nao ficar cortado"): a decisao + as frases do parecer, cada uma em ate 2 linhas
   // (uma frase maior vira blocos de 2 linhas pelas palavras - nunca cortada a meio)
+  // 25/10 (ele: "os avisos do Sr. Stark... muita coisa repetida, muita coisa antiga... quero coisa atualizada e coisa importante, que vai
+  // servir pra gente saber naquele momento"): primeiro os FACTOS DE AGORA (o BTC contra os niveis do plano, a conta real, as avarias
+  // abertas), depois o parecer do Stark SO se tiver menos de 3 h, com a hora; um parecer velho vira uma linha (antes: 8 blocos a rodar)
+  var PARECER_FRESCO_MS = 3 * 3600 * 1000;
+  function numOk(v) { return v != null && v !== '' && isFinite(Number(v)); }
+  function factosDeAgora() {
+    var T = obj(T3B.estado.T), rl = realDaCasa(T), o = [];
+    if (rl) {
+      var pl = obj(rl.plano), nv = obj(pl.niveis), pb = obj(obj(pl.protecao).BTCUSDT), ag = obj(pl.aguarda_analise), btc = null;
+      lista(rl.posicoes).forEach(function (q) { if (q && q.simbolo === 'BTCUSDT') btc = q; });
+      var px = Number((btc && btc.agora) || pb.preco);
+      if (px > 0) {
+        var a = obj(ag.BTCUSDT), f = 'BTC ' + fmt(px, 0);
+        if (a.motivo === 'protecao') f += ' · fora desde a venda a ' + fmt(a.preco, 0) + (numOk(nv.recompra) ? ' · recompra em ' + fmt(nv.recompra, 0) : '');
+        else if (a.motivo) f += ' · vendido pelo stop de catástrofe · espera a tua análise';
+        else if (pb.armada) f += ' · proteção ARMADA · vende se cair a ' + fmt(pb.nivel, 0);
+        else if (numOk(nv.ativa || pb.ativa)) f += ' · vende a partir de ' + fmt(nv.ativa || pb.ativa, 0) + (numOk(nv.gatilho) ? ' · compra grande em ' + fmt(nv.gatilho, 0) : '');
+        o.push(f + '.');
+      }
+      if (numOk(rl.hoje_usd)) {
+        var c = 'Conta real hoje ' + sinal(rl.hoje_usd, 2) + ' US$' + (numOk(rl.aberto_usd) ? ' · em aberto ' + sinal(rl.aberto_usd, 2) + ' US$' : '') +
+          (numOk(rl.usdt_livre) ? ' · caixa ' + fmt(rl.usdt_livre, 2) + ' US$' : '');
+        o.push(c + (rl.patrimonio_t ? ' (' + String(rl.patrimonio_t).slice(11, 16) + ').' : '.'));
+      }
+    }
+    if (ROBO.fvT) {
+      var fv = lista(ROBO.fv), vm = fv.filter(function (x) { return x && x.sev === 'vermelho'; }), am = fv.filter(function (x) { return x && x.sev === 'amarelo'; });
+      o.push(!fv.length ? 'S.H.I.E.L.D.: tudo verde agora.' : 'S.H.I.E.L.D. agora: ' + vm.length + ' vermelho' + (vm.length === 1 ? '' : 's') +
+        (vm.length ? ' (' + vm.slice(0, 3).map(function (x) { return x.id; }).join(', ') + ')' : '') + ' e ' + am.length + ' amarelo' + (am.length === 1 ? '' : 's') + '.');
+    }
+    return o;
+  }
   function frasesDoStark(ctx, larg, quebrar) {      // (o quebrar vive dentro da cena do Stark: vem como argumento)
-    var chave = (ROBO.decisao || '') + '|' + (ROBO.parecer || '') + '|' + larg;
+    var vivos = factosDeAgora(), idade = ROBO.t ? Date.now() - U.epoch(ROBO.t) : Infinity, fresco = idade < PARECER_FRESCO_MS;
+    var chave = vivos.join('|') + '|' + (fresco ? (ROBO.decisao || '') + '|' + (ROBO.parecer || '') : 'velho:' + (ROBO.t || '')) + '|' + larg;
     if (ROBO.chaveF === chave) return ROBO.frases;
-    var fontes = [ROBO.decisao || 'a ler o parecer do Sr. Stark…'].concat(String(TX.semMarkdown(TX.limpar(String(ROBO.parecer || '')))).split(/(?<=[.!?])\s+/));
+    var fontes = vivos.slice();
+    if (fresco) fontes = fontes.concat(['Sr. Stark às ' + String(ROBO.t).slice(11, 16) + ': ' + (ROBO.decisao || '…')],
+      String(TX.semMarkdown(TX.limpar(String(ROBO.parecer || '')))).split(/(?<=[.!?])\s+/).filter(function (f) { return f.trim() !== ROBO.decisao; }));
+    else if (ROBO.t) fontes.push('O último parecer do Sr. Stark é de há ' + U.haQuanto(idade) + ': fica de fora até chegar um novo.');
+    if (!fontes.length) fontes.push('a ler o parecer do Sr. Stark…');
     var out = [], vistas = {};
     fontes.forEach(function (f) {
       f = String(f || '').trim(); if (f.length < 12 || vistas[f]) return; vistas[f] = 1;
