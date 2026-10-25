@@ -1109,7 +1109,7 @@
     fontes.forEach(function (f) {
       f = String(f || '').trim(); if (f.length < 12 || vistas[f]) return; vistas[f] = 1;
       var ls = quebrar(ctx, f, larg);
-      for (var i = 0; i < ls.length && out.length < 8; i += 2) out.push(ls.slice(i, i + 2));
+      for (var i = 0; i < ls.length && out.length < 8; i += 3) out.push(ls.slice(i, i + 3));   // 25/10 (ele): ate 3 linhas, nao 2
     });
     ROBO.frases = out.length ? out : [[ROBO.decisao || 'a ler o parecer do Sr. Stark…']]; ROBO.chaveF = chave;
     return ROBO.frases;
@@ -1123,7 +1123,9 @@
     cv.setAttribute('aria-label', 'o Sr. Stark: os olhos acendem quando ele decide; por baixo, a decisão dele');
     var rb = $('h_stark_robo'); if (rb) rb.parentNode.removeChild(rb);           // os 3 robos em HTML sairam (ordem dele)
     // 07/10: o robo abaixo dos dois blocos de cima (que acabam a TOPO+26) e acima das 2 linhas de baixo - deixou de tapar o texto
-    function geo(w, h) { var top0 = TOPO + 30, bot0 = h - 32, r = Math.max(12, Math.min(w * 0.18, (bot0 - top0) * 0.42)); return { cx: w / 2, cy: (top0 + bot0) / 2, r: r }; }
+    // 25/10 (ele: "o texto esta a ser cortado; da para subir um pouquinho a animacao do robo para caber mais texto"): mais 12 px por baixo
+    // para uma 3.a linha - o robo sobe meia linha e fica ~10% menor; o resto do desenho igual
+    function geo(w, h) { var top0 = TOPO + 30, bot0 = h - 44, r = Math.max(12, Math.min(w * 0.18, (bot0 - top0) * 0.42)); return { cx: w / 2, cy: (top0 + bot0) / 2, r: r }; }
     function corpo(g, w, h) {
       var G = geo(w, h), cx = G.cx, cy = G.cy, r = G.r;
       var ch = g.createRadialGradient(cx, cy + r * 1.25, 0, cx, cy + r * 1.25, r * 1.6); ch.addColorStop(0, 'rgba(242,194,48,.16)'); ch.addColorStop(1, 'rgba(242,194,48,0)');
@@ -1134,7 +1136,7 @@
       rr(g, cx - r, cy - r * 0.8, r * 2, r * 1.6, r * 0.45); g.fillStyle = gr; g.fill(); g.strokeStyle = C.ouro; g.lineWidth = 1.6; g.stroke();
       rr(g, cx - r * 0.78, cy - r * 0.48, r * 1.56, r * 0.78, r * 0.3); g.fillStyle = '#070a12'; g.fill(); g.strokeStyle = 'rgba(45,212,232,.25)'; g.lineWidth = 1; g.stroke();
       g.fillStyle = 'rgba(255,255,255,.06)'; rr(g, cx - r * 0.7, cy - r * 0.72, r * 1.4, r * 0.14, r * 0.07); g.fill();
-      rot(g, 'DECISÃO', w / 2, h - 34, C.dim, 8, 'center', 600);   // (05/10: por cima das 2 linhas, nunca por cima delas)
+      rot(g, 'DECISÃO', w / 2, h - 46, C.dim, 8, 'center', 600);   // (05/10: por cima das 2 linhas, nunca por cima delas)
     }
     function quebrar(ctx, txt, larg) {
       ctx.font = fonte(600, 10); ctx._f = ctx.font;
@@ -1143,7 +1145,7 @@
         var tenta = cur ? cur + ' ' + pal[i] : pal[i];
         if (!cur || ctx.measureText(tenta).width <= larg) { cur = tenta; continue; }
         lin.push(cur); cur = pal[i];
-        if (lin.length === 2) { sobra = true; break; }
+        if (lin.length === 3) { sobra = true; break; }
       }
       if (!sobra) lin.push(cur);
       return lin.map(function (l, k) {                         // nada passa da largura; a 2.a linha leva '…' se o texto continuar
@@ -1183,14 +1185,14 @@
       for (var i = 0; i <= 18; i++) { var x = cx - r * 0.45 + i / 18 * r * 0.9, y = cy + r * 0.42 + Math.sin(i * 1.25 + t * (fala ? 17 : 2.2)) * am * Math.sin(i / 18 * Math.PI); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
       ctx.stroke(); ctx.lineWidth = 1; ctx.lineCap = 'butt';
       if (fala) luz(ctx, C.ouro, cx, cy + r * 0.42, r * 0.5, 0.25);
-      // a decisao, a escrever-se (28 letras/s) em ate 2 linhas
+      // a decisao, a escrever-se (28 letras/s) em ate 3 linhas
       var FR = frasesDoStark(ctx, w - 16, quebrar), kf = Math.floor(t / 7) % FR.length;
       if (ROBO.kf !== kf) { ROBO.kf = kf; ROBO.tfr = t; }
       ROBO.linhas = FR[kf];
       var k = ROBO.tf > 0 && t - ROBO.tf < 7 ? Math.floor((t - ROBO.tf) * 28) : Math.floor((t - (ROBO.tfr || 0)) * 28), ja = 0;
       ROBO.linhas.forEach(function (l, i) {
         var mostra = l.slice(0, Math.max(0, k - ja)); ja += l.length + 1;
-        if (mostra) rot(ctx, mostra, w / 2, h - (ROBO.linhas.length > 1 ? 20 : 14) + i * 12, ROBO.decisao ? C.ouroHi : C.dim, 10, 'center', 600);
+        if (mostra) rot(ctx, mostra, w / 2, h - 8 - (ROBO.linhas.length - 1) * 12 + i * 12, ROBO.decisao ? C.ouroHi : C.dim, 10, 'center', 600);
       });
       var SD = statsDireita();
       if (SD.length) {
