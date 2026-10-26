@@ -1121,6 +1121,10 @@
         else if (numOk(nv.ativa || pb.ativa)) f += ' · vende a partir de ' + fmt(nv.ativa || pb.ativa, 0) + (numOk(nv.gatilho) ? ' · compra grande em ' + fmt(nv.gatilho, 0) : '');
         o.push(f + '.');
       }
+      var te = obj(pl.trava_eth), ae = obj(ag.ETHUSDT);          // 26/10: a trava do dia do ETH
+      if (ae.motivo === 'trava_dia') o.push('ETH vendido pela trava do dia a ' + fmt(ae.preco, 0) + ' · volta a entrar amanhã.');
+      else if (te.armada) o.push('ETH: trava do dia ARMADA · vende se cair a ' + fmt(te.nivel, 0) + ' (máximo ' + fmt(te.maximo, 0) + ').');
+      else if (te.ligada && numOk(te.abertura)) o.push('ETH: a trava do dia arma a ' + fmt(te.abertura * 1.015, 0) + ' (+1,5% sobre ' + fmt(te.abertura, 0) + ').');
       if (numOk(rl.hoje_usd)) {
         var c = 'Conta real hoje ' + sinal(rl.hoje_usd, 2) + ' US$' + (numOk(rl.aberto_usd) ? ' · em aberto ' + sinal(rl.aberto_usd, 2) + ' US$' : '') +
           (numOk(rl.usdt_livre) ? ' · caixa ' + fmt(rl.usdt_livre, 2) + ' US$' : '');
