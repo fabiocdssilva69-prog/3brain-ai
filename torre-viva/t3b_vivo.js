@@ -560,6 +560,17 @@
 
   // ---------------------------------------------------------------- torre.json (o dinheiro)
   var assTorre = '';
+  // 30/10 (ele: "cards da micro explicando o ganho e a perda, o tanto de capital"): o micro ao vivo (torre.py: cartao_micro)
+  function pintarMicro(T) {
+    var mi = obj(T && T.micro);
+    if (mi.capital == null) { txt($('n_micro_s'), 'à espera do capital (depósito)'); return; }
+    var r = Number(mi.resultado_usd), s2 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 2) : '—'; };
+    numeroVivo('micro', 'c_micro', 'n_micro', isFinite(r) ? r : NaN, function (v) { return sinal(v, 2) + ' US$'; }, cls(r), 'micro');
+    txt($('n_micro_s'), 'ganho ' + s2(mi.realizado_usd) + ' · em aberto ' + s2(mi.aberto_usd) + ' · ' + (mi.ops || 0) + ' operações (' +
+      (mi.ops_hoje || 0) + ' hoje) · capital ' + fmt(Number(mi.capital), 2) + ' · ' + (mi.estado || ''));
+    var c = $('c_micro'); if (c) c.title = (mi.posicao || '') + ' · hoje ' + s2(mi.hoje_usd) + ' US$ · variante ' + (mi.variante || '') +
+      ' · a ' + (obj(mi.params).a) + ' b ' + (obj(mi.params).b);
+  }
   function aplicarTorre(T) {
     if (!T) return;
     E.idadeT = T.t_iso ? epoch(T.t_iso) : null;
@@ -567,6 +578,7 @@
     assTorre = T.t_iso; E.T = T;
     try { if (window.__torrePintar) window.__torrePintar(T); } catch (e) { }
     pintarCasa(T);
+    pintarMicro(T);                                // 30/10: o micro ao vivo
     marcarAoVivo(T);
     pintarExtrasHUD(T);
     pintarHUDTorre(T);
