@@ -236,6 +236,7 @@ window.medidorVivo=function(v){ try{
   const novo={}; pos.filter(p=>p.cripto&&p.qty).forEach(p=>{ const s=String(p.simbolo), ant=S.cr[s]||{}; novo[s]={bin:ant.bin,basis:ant.bin!=null?Number(p.agora)-ant.bin:null,agora:Number(p.agora)}; });
   S.pat=v.patrimonio||{}; S.gv=((v.gv||{}).garantido)||{};   // 20/09: o bloco O dinheiro e os tres cartoes
   S.cr=novo; S.pos=pos; S.plano=pl; S.gn=gn; S.je=v.ja_entrou||{}; S.aloc=v.alocacao||{}; S.nAcoes=pos.filter(p=>!p.cripto).length; S.bolsa=!!(v.precos||{}).bolsa_aberta;
+  S.micro=v.micro||null;   // 30/10: o cartao do micro ao vivo (torre.py: cartao_micro)
   S.taxaEnt=((v.cartao_fechar||{}).taxa_entrada_pb)||{};   // 24/09: a taxa de entrada gravada, por simbolo
   S.alvoPor={}; (pl.posicoes||[]).forEach(x=>{ if(x.alvo) S.alvoPor[x.simbolo]=Number(x.alvo); });
   if(S.fech!=null&&S.pronto){ if(fech>S.fech+0.005) evento('fecho_ganho',fech-S.fech); else if(fech<S.fech-0.005) evento('fecho_perda',fech-S.fech); }
@@ -283,6 +284,13 @@ function textos(){ if(S.real==null) return; const ab=S.contaReal?abertoReal():S.
   kv('k_gan',gv.ganhos_usd); put('k_gan_det',(gv.n_ganhos||0)+' opera\u00e7\u00f5es com lucro'+(gv.ganho_medio_usd!=null?' \u00b7 m\u00e9dia '+US(gv.ganho_medio_usd):''));
   kv('k_per',gv.perdas_usd); put('k_per_det',(gv.n_perdas||0)+' opera\u00e7\u00f5es com preju\u00edzo'+(gv.perda_media_usd!=null?' \u00b7 m\u00e9dia '+US(gv.perda_media_usd):''));
   put('k_res',gv.valor_usd!=null?'resultado '+US(gv.valor_usd)+' (com a taxa)'+(gv.acerto_pct!=null?' \u00b7 acerto '+Number(gv.acerto_pct).toFixed(1)+'%':''):'');
+  // 30/10 (ele: "um card sobre a negociacao da micro: quanto negociamos, quanto ganhamos, quanto perdemos")
+  const mi=S.micro||{};
+  if(mi.capital!=null){ kv('k_micro',mi.resultado_usd);
+    put('k_micro_det','capital '+Number(mi.capital).toFixed(2)+' \u00b7 agora '+(mi.patrimonio!=null?Number(mi.patrimonio).toFixed(2):'\u2014')+' \u00b7 hoje '+US(mi.hoje_usd));
+    put('k_micro_det2','ganho realizado '+US(mi.realizado_usd)+' \u00b7 em aberto '+US(mi.aberto_usd)+' \u00b7 '+(mi.ops||0)+' idas e voltas ('+(mi.ops_hoje||0)+' hoje)');
+    put('k_micro_det3',(mi.posicao||'')+' \u00b7 '+(mi.estado||'')); }
+  else { put('k_micro_det','\u00e0 espera do capital (dep\u00f3sito)'); }
   const pt=S.pat||{};
   kv('k_vol',(pt.total||{}).em_aberto); put('k_vol_det','a\u00e7\u00f5es '+US((pt.acoes||{}).em_aberto)+' \u00b7 cripto '+US((pt.cripto||{}).em_aberto));
   // a TABELA e a linha do 'comecamos com' - o que ele deu por falta na foto de 20/09
