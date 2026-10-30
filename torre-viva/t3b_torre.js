@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=c84b775cbd';
+import * as ANDAR from './t3b_andar.js?v=b2f99deb9a';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 

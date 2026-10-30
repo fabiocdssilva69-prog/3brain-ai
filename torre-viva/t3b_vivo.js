@@ -560,16 +560,30 @@
 
   // ---------------------------------------------------------------- torre.json (o dinheiro)
   var assTorre = '';
+  // <micro-puro>
+  // 30/10 17:4x (ele: "o card mostra so a operacao atual - quero o saldo do dia acumulativo, igual o outro que tem em cima; e o capital
+  // da micro junto no capital da casa"): o patrimonio do micro (0 sem ele) e o DIA de Brasilia (torre.py: micro_hoje). PURAS.
+  function microPat(T) {
+    var m = (T && T.micro) || {}, p = Number(m.patrimonio);
+    return (m.capital != null && isFinite(p) && p > 0) ? p : 0;
+  }
+  function microDia(T) {
+    var m = (T && T.micro) || {}, h = m.hoje_brt_usd != null ? Number(m.hoje_brt_usd) : Number(m.resultado_usd);
+    return isFinite(h) ? h : null;
+  }
+  // </micro-puro>
   // 30/10 (ele: "cards da micro explicando o ganho e a perda, o tanto de capital"): o micro ao vivo (torre.py: cartao_micro)
   function pintarMicro(T) {
     var mi = obj(T && T.micro);
+    E.microPat = microPat(T);
     if (mi.capital == null) { txt($('n_micro_s'), 'à espera do capital (depósito)'); return; }
-    var r = Number(mi.resultado_usd), s2 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 2) : '—'; };
-    numeroVivo('micro', 'c_micro', 'n_micro', isFinite(r) ? r : NaN, function (v) { return sinal(v, 2) + ' US$'; }, cls(r), 'micro');
-    txt($('n_micro_s'), 'ganho ' + s2(mi.realizado_usd) + ' · em aberto ' + s2(mi.aberto_usd) + ' · ' + (mi.ops || 0) + ' operações (' +
-      (mi.ops_hoje || 0) + ' hoje) · capital ' + fmt(Number(mi.capital), 2) + ' · ' + (mi.estado || ''));
-    var c = $('c_micro'); if (c) c.title = (mi.posicao || '') + ' · hoje ' + s2(mi.hoje_usd) + ' US$ · variante ' + (mi.variante || '') +
-      ' · a ' + (obj(mi.params).a) + ' b ' + (obj(mi.params).b);
+    var d = microDia(T), s2 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 2) : '—'; };
+    numeroVivo('micro', 'c_micro', 'n_micro', d != null ? d : NaN, function (v) { return sinal(v, 2) + ' US$'; }, cls(d), 'micro hoje');
+    txt($('n_micro_s'), 'realizado ' + s2(mi.realizado_hoje_usd != null ? mi.realizado_hoje_usd : mi.realizado_usd) + ' · em aberto ' +
+      s2(mi.aberto_usd) + ' · ' + (mi.ops_hoje_brt != null ? mi.ops_hoje_brt : (mi.ops_hoje || 0)) + ' operações hoje · desde o depósito ' +
+      s2(mi.resultado_usd) + ' · ' + (mi.estado || ''));
+    var c = $('c_micro'); if (c) c.title = (mi.posicao || '') + ' · capital ' + fmt(Number(mi.capital), 2) + ' US$ (somado ao capital da casa)' +
+      ' · variante ' + (mi.variante || '');
   }
   function aplicarTorre(T) {
     if (!T) return;
@@ -677,9 +691,10 @@
       // 10/10 19:0x: com o preco ao vivo a chegar, o capital, o hoje e o desde o inicio sao os do aoPreco (ao segundo) - o
       // ficheiro (de hora a hora) nao os puxa para tras a cada leitura; sem preco ao vivo, valem os do ficheiro
       var aoVivoOk = !!(AOVIVO.real && AOVIVO.tPreco && Date.now() - AOVIVO.tPreco < 15000), seg = aoVivoOk ? ' · ao segundo' : ' · do ficheiro';
-      if (!aoVivoOk) numeroVivo('cap', 'c_cap', 'n_cap', rc.cap, fUS, '', 'capital');
+      var mp = microPat(T); E.microPat = mp;   // 30/10 17:4x (ele): o capital do micro SOMADO ao da casa (o hoje e o desde o inicio nao)
+      if (!aoVivoOk) numeroVivo('cap', 'c_cap', 'n_cap', rc.cap + mp, fUS, '', 'capital');
       var lg = legendasReal(rc, seg, function (x) { return fmt(x, 2); });
-      LEG_CAP = lg.cap; if (!aoVivoOk) E.capAgora = rc.cap; pintarReais();   // 15/10: curto; 16/10: com o valor em reais por cima
+      LEG_CAP = lg.cap + (mp > 0 ? ' · + micro ' + fmt(mp, 2) + ' US$' : ''); if (!aoVivoOk) E.capAgora = rc.cap + mp; pintarReais();   // 15/10: curto; 16/10: com o valor em reais por cima
       if (!aoVivoOk) numeroVivo('dia', 'c_dia', 'n_dia', rc.hoje, sUS, cls(rc.hoje), 'hoje');
       T3B.estado.realActivo = true; if (!aoVivoOk && rc.hoje != null) tocarSerieReal(T, rc.hoje);     // 10/10 21:3x: o trilho real (de hora a hora, sem preco ao vivo)
       txt($('n_dia_s'), lg.dia);
@@ -778,8 +793,8 @@
     var agora = performance.now(); if (agora - AOVIVO.ult < 250) return; AOVIVO.ult = agora;     // 4 vezes por segundo chega
     var dl = 0; AOVIVO.pos.forEach(function (p) { var m = AOVIVO.mid[p.sym]; if (m) dl += p.qty * (m - p.ref); });
     AOVIVO.delta = dl;
-    if (AOVIVO.base && isFinite(AOVIVO.base.cap)) quieto('cap', AOVIVO.base.cap + dl, 700);
-    if (AOVIVO.real && AOVIVO.base && isFinite(AOVIVO.base.cap)) { E.capAgora = AOVIVO.base.cap + dl; if (Date.now() - (AOVIVO.tReais || 0) > 1000) { AOVIVO.tReais = Date.now(); pintarReais(); } }   // 16/10: os reais ao segundo
+    if (AOVIVO.base && isFinite(AOVIVO.base.cap)) quieto('cap', AOVIVO.base.cap + dl + (E.microPat || 0), 700);   // 30/10 17:4x: + o micro
+    if (AOVIVO.real && AOVIVO.base && isFinite(AOVIVO.base.cap)) { E.capAgora = AOVIVO.base.cap + dl + (E.microPat || 0); if (Date.now() - (AOVIVO.tReais || 0) > 1000) { AOVIVO.tReais = Date.now(); pintarReais(); } }   // 16/10: os reais ao segundo
     if (AOVIVO.real && AOVIVO.base && isFinite(AOVIVO.base.cap)) {      // 10/10 19:0x: no real, HOJE e DESDE O INICIO tambem ao segundo
       var vr = vivosDoReal(AOVIVO.base.cap + dl, AOVIVO.real);
       if (vr && vr.dia != null) quietoCls('dia', 'n_dia', vr.dia);
