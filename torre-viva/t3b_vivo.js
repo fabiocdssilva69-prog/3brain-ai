@@ -571,17 +571,24 @@
     var m = (T && T.micro) || {}, h = m.hoje_brt_usd != null ? Number(m.hoje_brt_usd) : Number(m.resultado_usd);
     return isFinite(h) ? h : null;
   }
+  // 31/10 10:5x (ele: "porque nao esta positivo se todas fecham com lucro?"): o numero grande e o LUCRO FECHADO de hoje; o em aberto (as
+  // fatias a espera de vender com lucro) vai por baixo, a parte
+  function microFechado(T) {
+    var m = (T && T.micro) || {}, h = m.realizado_hoje_usd != null ? Number(m.realizado_hoje_usd) : NaN;
+    return isFinite(h) ? h : microDia(T);
+  }
   // </micro-puro>
   // 30/10 (ele: "cards da micro explicando o ganho e a perda, o tanto de capital"): o micro ao vivo (torre.py: cartao_micro)
   function pintarMicro(T) {
     var mi = obj(T && T.micro);
     E.microPat = microPat(T);
     if (mi.capital == null) { txt($('n_micro_s'), 'à espera do capital (depósito)'); return; }
-    var d = microDia(T), s2 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 2) : '—'; };
-    numeroVivo('micro', 'c_micro', 'n_micro', d != null ? d : NaN, function (v) { return sinal(v, 2) + ' US$'; }, cls(d), 'micro hoje');
-    txt($('n_micro_s'), 'realizado ' + s2(mi.realizado_hoje_usd != null ? mi.realizado_hoje_usd : mi.realizado_usd) + ' · em aberto ' +
-      s2(mi.aberto_usd) + ' · ' + (mi.ops_hoje_brt != null ? mi.ops_hoje_brt : (mi.ops_hoje || 0)) + ' operações hoje · desde o depósito ' +
-      s2(mi.resultado_usd) + ' · ' + (mi.estado || ''));
+    var d = microFechado(T), s2 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 2) : '—'; };
+    var s4 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 4) : '—'; };
+    numeroVivo('micro', 'c_micro', 'n_micro', d != null ? d : NaN, function (v) { return sinal(v, 4) + ' US$'; }, cls(d), 'micro hoje');
+    txt($('n_micro_s'), (mi.ops_hoje_brt != null ? mi.ops_hoje_brt : (mi.ops_hoje || 0)) + ' operações fechadas hoje · em aberto ' +
+      s4(mi.aberto_usd) + ' (' + (mi.fatias_com_btc || 0) + ' à espera de vender com lucro) · desde o depósito ' + s2(mi.resultado_usd) +
+      ' · ' + (mi.estado || ''));
     var c = $('c_micro'); if (c) c.title = (mi.posicao || '') + ' · capital ' + fmt(Number(mi.capital), 2) + ' US$ (somado ao capital da casa)' +
       ' · variante ' + (mi.variante || '');
   }
