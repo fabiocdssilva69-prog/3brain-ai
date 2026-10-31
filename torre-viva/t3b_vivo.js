@@ -585,9 +585,10 @@
     if (mi.capital == null) { txt($('n_micro_s'), 'à espera do capital (depósito)'); return; }
     var d = microFechado(T), s2 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 2) : '—'; };
     var s4 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 4) : '—'; };
-    numeroVivo('micro', 'c_micro', 'n_micro', d != null ? d : NaN, function (v) { return sinal(v, 4) + ' US$'; }, cls(d), 'micro hoje');
+    // 31/10 13:3x (ele: "nao quero que mostre em centimos, so em dolares e centavos"): 2 casas
+    numeroVivo('micro', 'c_micro', 'n_micro', d != null ? d : NaN, function (v) { return sinal(v, 2) + ' US$'; }, cls(d), 'micro hoje');
     txt($('n_micro_s'), (mi.ops_hoje_brt != null ? mi.ops_hoje_brt : (mi.ops_hoje || 0)) + ' operações fechadas hoje · em aberto ' +
-      s4(mi.aberto_usd) + ' (' + (mi.fatias_com_btc || 0) + ' à espera de vender com lucro) · desde o depósito ' + s2(mi.resultado_usd) +
+      s2(mi.aberto_usd) + ' (' + (mi.fatias_com_btc || 0) + ' à espera de vender com lucro) · desde o depósito ' + s2(mi.resultado_usd) +
       ' · ' + (mi.estado || ''));
     var c = $('c_micro'); if (c) c.title = (mi.posicao || '') + ' · capital ' + fmt(Number(mi.capital), 2) + ' US$ (somado ao capital da casa)' +
       ' · variante ' + (mi.variante || '');
