@@ -593,6 +593,21 @@
     var c = $('c_micro'); if (c) c.title = (mi.posicao || '') + ' · capital ' + fmt(Number(mi.capital), 2) + ' US$ (somado ao capital da casa)' +
       ' · variante ' + (mi.variante || '');
   }
+  // 31/10 (ele: "e so adicionar mais um card com essa informacao, pode ser no instrumento do dia"): as VENDAS do mes em reais contra
+  // os R$ 35 mil de isencao (acima, o lucro do mes paga 15-22,5% e ha DARF) - o micro e a macro somados (torre.py: vendas_do_mes)
+  function pintarVendasMes(T) {
+    var v = obj(T && T.vendas_mes), c = $('c_vmes');
+    if (v.total_brl == null) { txt($('k_vmes_det'), v.estado === 'sem_cambio' ? 'sem o câmbio do dólar' : 'à espera das vendas do mês'); return; }
+    var brl = function (x) { x = Number(x); return isFinite(x) ? 'R$ ' + x.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '—'; };
+    txt($('k_vmes'), brl(v.total_brl) + ' de ' + brl(v.limite_brl));
+    txt($('k_vmes_det'), 'micro ' + brl(v.micro_brl) + ' (' + (v.vendas_micro || 0) + ' vendas) · macro ' + brl(v.macro_brl) + ' (' +
+      (v.vendas_macro || 0) + ') · faltam ' + brl(v.falta_brl) + ' · dólar a R$ ' + Number(v.cambio).toFixed(2));
+    if (c) {
+      c.style.borderLeft = '3px solid ' + (v.estado === 'acima' ? '#ff6b6b' : (v.estado === 'perto' ? '#ffd23f' : '#4ade80'));
+      c.title = 'vendas de ' + (v.mes || '') + ' (o valor vendido, não o lucro), cada uma ao dólar do seu dia; acima de ' +
+        brl(v.limite_brl) + ' o lucro do mês paga 15-22,5% e há DARF (segundo a Binance Brasil)';
+    }
+  }
   function aplicarTorre(T) {
     if (!T) return;
     E.idadeT = T.t_iso ? epoch(T.t_iso) : null;
@@ -601,6 +616,7 @@
     try { if (window.__torrePintar) window.__torrePintar(T); } catch (e) { }
     pintarCasa(T);
     pintarMicro(T);                                // 30/10: o micro ao vivo
+    pintarVendasMes(T);                            // 31/10: as vendas do mes x os R$ 35 mil (o imposto)
     marcarAoVivo(T);
     pintarExtrasHUD(T);
     pintarHUDTorre(T);
