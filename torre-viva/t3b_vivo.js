@@ -587,7 +587,11 @@
     var s4 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 4) : '—'; };
     // 31/10 13:3x (ele: "nao quero que mostre em centimos, so em dolares e centavos"): 2 casas
     numeroVivo('micro', 'c_micro', 'n_micro', d != null ? d : NaN, function (v) { return sinal(v, 2) + ' US$'; }, cls(d), 'micro hoje');
-    txt($('n_micro_s'), (mi.ops_hoje_brt != null ? mi.ops_hoje_brt : (mi.ops_hoje || 0)) + ' operações fechadas hoje · em aberto ' +
+    // 04/11 18:4x (ele: "zera o card da micro"): com o marco zero de hoje (torre.py: marco_de_hoje), o numero conta desde ele
+    var mz = mi.marco_t != null ? new Date(Number(mi.marco_t) * 1000) : null;
+    var desde = mz ? ' operações fechadas desde ' + ('0' + mz.getHours()).slice(-2) + ':' + ('0' + mz.getMinutes()).slice(-2) +
+      ' (marco zero)' : ' operações fechadas hoje';
+    txt($('n_micro_s'), (mi.ops_hoje_brt != null ? mi.ops_hoje_brt : (mi.ops_hoje || 0)) + desde + ' · em aberto ' +
       s2(mi.aberto_usd) + ' (' + (mi.fatias_com_btc || 0) + ' à espera de vender com lucro) · desde o depósito ' + s2(mi.resultado_usd) +
       ' · ' + (mi.estado || ''));
     var c = $('c_micro'); if (c) c.title = (mi.posicao || '') + ' · capital ' + fmt(Number(mi.capital), 2) + ' US$ (somado ao capital da casa)' +
