@@ -963,7 +963,8 @@
     txt($('b_func'), fmt(censo, 0) + ' · ' + (pt.funcionarios || lista(d.programas).length) + ' prog.');
     var b = $('b_func_c');
     if (b) b.title = fmt(censo, 0) + ' funcionários no censo = ' + Object.keys(ce).map(function (k) { return fmt(ce[k], 0) + ' ' + k + (ce[k] === 1 ? '' : 's'); }).join(' + ') +
-      '. Destes, ' + (pt.funcionarios || 0) + ' são PROGRAMAS do registo: os que escrevem ficheiros e por isso acendem os cartões ao segundo. Algoritmos e regras trabalham dentro deles.';
+      '. Destes, ' + (pt.funcionarios || 0) + ' são PROGRAMAS do registo: os que escrevem ficheiros e por isso acendem os cartões ao segundo. Algoritmos e regras trabalham dentro deles.' +
+      (pt.censo_retirados ? ' Fora do censo: ' + fmt(pt.censo_retirados, 0) + ' fichas da frota grátis RETIRADAS (13/11, a frota foi desligada; o trabalho que chega ao dinheiro passou ao Claude: Haiku e Sonnet).' : '');
     var maus = lista(d.programas).filter(function (p) { return p.estado === 'erro'; });
     estadoBase = maus.length ? (maus.length + ' em erro: ' + maus.slice(0, 2).map(function (p) { return limpo(p.curto || p.id); }).join(', ')) : 'torre de pé';
     // 05/10 22:xx (ele: "a parte '3 em erro' sai, fica so a luz vermelha quando tiver algum erro e verde quando ok"): o texto saiu do
