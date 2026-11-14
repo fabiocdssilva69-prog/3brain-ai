@@ -1206,9 +1206,11 @@
     var h = '';
     if (a.obra === 'em_obras') h += '<p>Andar em obras: ainda sem gente. Os contadores estão a zero porque o andar ainda não existe — um ecrã que lhe desse números seria um ecrã a mentir. O Arquiteto decide quando abre.</p>';
     h += '<div class="sect">' + lista(a.sectores).slice().sort(function (x, y) { return y.n - x.n; }).slice(0, 60).map(function (s) {
-      return '<span title="' + escH(s.id) + (s.lider ? ' · líder ' + escH(s.lider) : '') + '">' + escH(s.nome) + '<b>' + escH(s.n) + '</b></span>';
+      return '<span title="' + escH(s.id) + (s.lider ? ' · líder ' + escH(s.lider) : '') + (s.resp ? ' · responsável ' + escH(s.resp) + (s.dir != null ? ' · direcionado ' + escH(s.dir) + '%' : '') : '') + '">' + escH(s.nome) + '<b>' + escH(s.n) + '</b></span>';
     }).join('') + (lista(a.sectores).length > 60 ? '<span>+' + (lista(a.sectores).length - 60) + ' sectores</span>' : '') + '</div>';
     if (a.gerente) h += '<p style="color:var(--mute);font-size:11px">gerente do andar: <b style="color:var(--ouro)">' + escH(a.gerente) + '</b> · mínimo ' + escH(a.minimo || '—') + ' · tecto ' + escH(a.tecto || '—') + '</p>';
+    // 14/11 (Construtor R): o responsável de cada sector de trabalho do andar (o modelo pela importância) e o que chegou ao destino
+    if (a.responsavel && lista(a.responsavel.lista).length) h += '<p style="color:var(--mute);font-size:11px">responsáveis: ' + lista(a.responsavel.lista).map(function (r) { return '<b style="color:var(--ouro)">' + escH(r.nome || r.ws) + '</b> (' + escH(r.modelo || '?') + (r.direcionado_pct != null ? ' · ' + escH(r.direcionado_pct) + '% direcionado' : '') + ')'; }).join(' · ') + (a.responsavel.direcionado_pct != null ? ' · andar: <b>' + escH(a.responsavel.direcionado_pct) + '%</b> direcionado' : '') + '</p>';
     if (progs.length) {
       h += '<details><summary>' + progs.length + ' programas neste andar</summary><table><thead><tr><th>programa</th><th>cargo</th><th>estado</th><th>último</th></tr></thead><tbody>' + progs.map(function (x) {
         var t = ultimoPorId[x.id];
