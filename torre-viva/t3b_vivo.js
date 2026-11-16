@@ -121,19 +121,23 @@
   // ---------------------------------------------------------------- o agendador (um relogio so)
   var FONTES = [
     { nome: 'vivo', url: function () { return 'vivo.json?desde=' + E.vivoSeq + (document.hidden ? '' : '&vista=1') + (window.T3B_PUBLICADO ? '&_=' + Math.floor(Date.now() / 15000) : ''); }, cada: window.T3B_PUBLICADO ? 15000 : 1000, aplicar: aplicarVivo },   // 09/10: na copia publica o '&_=' fura a cache de 10 min do site (a mesma fotografia vinha repetida)   // 05/10: vista=1 liga o modo espectador (mercado/espectador.py)
-    { nome: 'torre', url: function () { return 'torre.json'; }, cada: 5000, aplicar: aplicarTorre },   // 13/10: era 2 s (78 KB; muda ~1x/min)
-    { nome: 'enxame', url: function () { return 'enxame.json'; }, cada: 10000, aplicar: aplicarEnxame },
-    { nome: 'estrutura', url: function () { return 'estrutura.json'; }, cada: 60000, aplicar: aplicarEstrutura, primeiro: true },
-    { nome: 'pend', url: function () { return 'pendencias.json'; }, cada: 60000, aplicar: aplicarPend },
-    { nome: 'evolucao', url: function () { return 'evolucao.json'; }, cada: 60000, aplicar: aplicarEvolucao, primeiro: true, opcional: true },   // 05/10: a evolucao de todos os canais
+    // 16/11 (ele: "tao pesados, travando demais"). MEDIDO com a torre parada: 79 pedidos e 2,6 MB de JSON por minuto (o torre.json 878 KB,
+    // as pendencias 735, a estrutura 466, o enxame 204). Cada fonte passa a vir ao ritmo a que o servidor a REESCREVE (o torre.py de 15 em
+    // 15 s, a estrutura de 3 em 3 min, a evolucao de 5 em 5) e com o ETag: o que nao mudou volta como 304, sem corpo nem JSON.parse.
+    { nome: 'torre', url: function () { return 'torre.json'; }, cada: 15000, aplicar: aplicarTorre, escondida: 60000 },   // 13/10: era 2 s (78 KB; muda ~1x/min); 16/11: 5 -> 15 s (o torre.py escreve de 15 em 15 s)
+    { nome: 'enxame', url: function () { return 'enxame.json'; }, cada: 20000, aplicar: aplicarEnxame },   // 16/11: 10 -> 20 s
+    { nome: 'estrutura', url: function () { return 'estrutura.json'; }, cada: 180000, aplicar: aplicarEstrutura, primeiro: true },   // 16/11: 1 -> 3 min (o mapa refaz-se de 3 em 3 min)
+    { nome: 'pend', url: function () { return 'pendencias.json'; }, cada: 300000, aplicar: aplicarPend },   // 16/11: 1 -> 5 min (735 KB; no PC o bloco nem aparece)
+    { nome: 'evolucao', url: function () { return 'evolucao.json'; }, cada: 300000, aplicar: aplicarEvolucao, primeiro: true, opcional: true },   // 05/10: a evolucao de todos os canais; 16/11: 1 -> 5 min (o servidor refaz de 5 em 5)
     { nome: 'conversa', url: function () { return 'conversa.json'; }, cada: 0, aplicar: function (c) { T3B.emit('conversa_historia', c); } },
     // 03/10: o ALERTA 3D. sala/alertas.json e escrito pelo conserto (mercado/conserto.py: alertas()) quando a escada inteira
     // nao resolveu; sem ficheiro (404) ou vazio = nada aparece, e isso NAO e erro (opcional).
     { nome: 'alertas', url: function () { return 'alertas.json'; }, cada: 15000, aplicar: aplicarAlertas, opcional: true },
     // 15/10 (ele: "tem muitos pedidos no chat que eu nao vejo se sao resolvidos"): o ponto do circuito de cada pedido do barramento
     // (mercado/barramento.py escrever_estados_chat, a cada volta do carteiro) - o chat mostra-o em cada pedido
-    { nome: 'pedidos', url: function () { return 'pedidos_estado.json'; }, cada: 60000, aplicar: function (d) { E.pedidos = d; T3B.emit('pedidos_estado', d); }, opcional: true }
+    { nome: 'pedidos', url: function () { return 'pedidos_estado.json'; }, cada: 120000, aplicar: function (d) { E.pedidos = d; T3B.emit('pedidos_estado', d); }, opcional: true }   // 16/11: 1 -> 2 min
   ];
+  var SEM_MUDANCA = {};   // 16/11: a resposta 304 (o ETag bateu): nada mudou, nada se aplica
   FONTES.forEach(function (f) { f.ult = 0; f.emVoo = false; f.falhas = 0; f.feito = false; });
   function buscar(f, agora) {
     f.emVoo = true; f.ult = agora;
@@ -145,8 +149,10 @@
     // pedido seguinte leva tudo desde o ultimo seq (nada se perde)
     var ctl = window.AbortController ? new AbortController() : null;
     var tm = ctl ? setTimeout(function () { try { ctl.abort(); } catch (e) { } }, f.nome === 'vivo' ? (window.T3B_PUBLICADO ? 10000 : 8000) : 15000) : null;
-    fetch(u, ctl ? { cache: 'no-store', signal: ctl.signal } : { cache: 'no-store' }).then(function (r) { if (!r.ok) { if (f.opcional) return null; throw new Error(r.status); } return r.json(); })
-      .then(function (d) { f.falhas = 0; f.feito = true; f.aplicar(d); })
+    // 16/11 (leve): o ETag da ultima resposta vai no pedido; sem mudanca, o servidor (mercado/servidor_sala.py) responde 304 sem corpo
+    var op = { cache: 'no-store' }; if (ctl) op.signal = ctl.signal; if (f.etag && f.feito) op.headers = { 'If-None-Match': f.etag };
+    fetch(u, op).then(function (r) { if (r.status === 304) return SEM_MUDANCA; if (!r.ok) { if (f.opcional) return null; throw new Error(r.status); } f.etag = r.headers.get('ETag') || null; return r.json(); })
+      .then(function (d) { f.falhas = 0; f.feito = true; if (d !== SEM_MUDANCA) f.aplicar(d); })
       .catch(function (e) { f.falhas++; if (f.falhas === 3 && window.console) console.warn('t3b: ' + f.nome + ' falha', String(e).slice(0, 80)); })
       .then(function () { if (tm) clearTimeout(tm); f.emVoo = false; });
   }
@@ -158,7 +164,10 @@
       if (f.cada === 0) { if (!f.feito && f.falhas < 3 && agora - f.ult > 4000) buscar(f, agora); continue; }
       // a estrutura chega primeiro: sem andares nao ha a quem dar os eventos
       if (!f.primeiro && !FONTES[3].feito && f.nome !== 'torre') continue;
-      var cada = f.cada * lento * (f.falhas > 2 ? 3 : 1);
+      // 16/11 (leve): com a aba ESCONDIDA so o vivo (de 5 em 5 s, para nao perder o fio) e o torre.json (de minuto a minuto) continuam;
+      // o resto espera - ao voltar a aba, o tique seguinte busca logo tudo o que venceu entretanto
+      if (document.hidden && f.nome !== 'vivo' && !f.escondida) continue;
+      var cada = (document.hidden && f.escondida ? f.escondida : f.cada * lento) * (f.falhas > 2 ? 3 : 1);
       if (agora - f.ult >= cada) buscar(f, agora);
     }
   }
@@ -1148,20 +1157,38 @@
   });
 
   // ---------------------------------------------------------------- pendencias
+  // 16/11 (ele: "tao pesados, travando demais"): MEDIDO - os 715 itens (~3 mil nos) eram refeitos a cada minuto DENTRO de um bloco que no
+  // PC nem aparece (t3b.css: .lado #bl_pend { display: none }). Agora a lista so se faz quando o bloco esta a vista e o conteudo mudou;
+  // mostra os primeiros PEND_MAX e um botao para o resto (nada se perde: e so a lista inteira quando ele a pedir).
+  var PEND_MAX = 120, PEND = { ass: '', todas: false };
   function aplicarPend(p) {
     E.PEND = p;
     var itens = lista(p && p.itens).filter(function (x) { return !/^\[(FEITO|RESOLVIDO)\b/.test(String(x.titulo || '')); });
+    var bl = $('bl_pend');
+    if (bl) bl.hidden = !itens.length;
+    var dele = itens.filter(function (x) { return x.quem === 'ele'; }).length;
+    txt($('pd_kn'), itens.length ? (itens.length + ' em aberto · ' + dele + ' dependem dele') : '');
+    pintarPend(itens);
+  }
+  function pintarPend(itens) {
     var cx = $('pendencias'), bl = $('bl_pend');
-    if (cx) cx.innerHTML = itens.map(function (x) {
+    if (!cx || (bl && bl.offsetParent === null && getComputedStyle(bl).display === 'none')) return;   // escondido: nada a desenhar
+    var mostra = PEND.todas ? itens : itens.slice(0, PEND_MAX);
+    var ass = (PEND.todas ? 'T' : 'P') + itens.length + '|' + mostra.map(function (x) { return (x.id || '') + ':' + String(x.titulo || '').length + ':' + String(x.falta || '').length; }).join(',');
+    if (ass === PEND.ass) return;                                                     // nada mudou: o DOM fica como esta
+    PEND.ass = ass;
+    cx.innerHTML = mostra.map(function (x) {
       var dele = String(x.quem || '') === 'ele', desde = desdeDoItem(x);   // 16/11: desde quando (a lista e de setembro e outubro)
       return '<div class="pd-it ' + escH(x.peso || 'media') + '"><i class="' + (dele ? 'dele' : '') + '">' + escH(x.peso || '') + ' · ' +
         (dele ? 'depende dele' : (x.quem === 'eu' ? 'é comigo' : 'dos dois')) + (desde ? ' · desde ' + escH(desde) : ' · sem data') + '</i><b>' + escH(TX ? TX.semMarkdown(limpo(x.titulo || '')) : x.titulo) + '</b>' +
         (x.falta ? '<em>' + escH(TX ? TX.semMarkdown(limpo(x.falta)) : x.falta) + '</em>' : '') + '</div>';
-    }).join('');
-    if (bl) bl.hidden = !itens.length;
-    var dele = itens.filter(function (x) { return x.quem === 'ele'; }).length;
-    txt($('pd_kn'), itens.length ? (itens.length + ' em aberto · ' + dele + ' dependem dele') : '');
+    }).join('') + (itens.length > mostra.length ? '<button type="button" class="pd-todas" data-pd-todas="1">mostrar as outras ' + (itens.length - mostra.length) + '</button>' : '');
   }
+  (function () {
+    var cx = $('pendencias');
+    if (cx) cx.addEventListener('click', function (ev) { if (ev.target && ev.target.getAttribute && ev.target.getAttribute('data-pd-todas')) { PEND.todas = true; PEND.ass = ''; aplicarPend(E.PEND); } });
+    window.addEventListener('resize', function () { if (E.PEND) { PEND.ass = ''; aplicarPend(E.PEND); } });   // o telemovel a rodar: o bloco pode aparecer
+  })();
 
   // ---------------------------------------------------------------- directorio dos andares
   function pintarDirectorio() {
@@ -1303,10 +1330,17 @@
   }
   // quem LE o que este escreveu (o 'le' do registo: para_ids) e ja tem cartao no ecra acende-o a AZUL no mesmo instante - nao toma o
   // lugar a ninguem (nao foi ele que agiu: recebeu)
+  // 16/11 (ele: "tao pesados, travando demais"): o aceso azul e uma sombra animada (repinta o cartao a cada quadro durante 1,3 s) e numa
+  // rajada cada leitor recomecava-a a cada evento. Agora: um cartao nao reacende antes de 1,5 s, e no maximo 3 por segundo na pagina
+  var LEIT = { n: 0, t0: 0 };
   function leitores(e) {
     if (calmo || !e || !e.para_ids || !e.para_ids.length) return;
+    var agoraL = performance.now();
+    if (agoraL - LEIT.t0 > 1000) { LEIT.t0 = agoraL; LEIT.n = 0; }
     e.para_ids.forEach(function (pid) {
       var l = porId[pid]; if (!l || pid === e.id || !l.el.animate) return;
+      if (agoraL - (l.tLeitor || 0) < 1500 || LEIT.n >= 3) return;
+      l.tLeitor = agoraL; LEIT.n++;
       l.el.animate([{ boxShadow: '0 0 0 1px rgba(45,212,232,.95), 0 0 16px rgba(45,212,232,.6)' }, { boxShadow: '0 0 0 1px rgba(45,212,232,0), 0 0 0 rgba(45,212,232,0)' }], { duration: 1300, easing: 'ease-out' });
       T3B.estado.sync.leitores++;
     });
@@ -1337,9 +1371,15 @@
     // e o aro dourado, 1,5 s) - pelo compositor, sem refazer o layout
     if (!semAnimar && !calmo) {
       l.acesos = (l.acesos || 0) + 1; T3B.estado.cartoesAcesos = (T3B.estado.cartoesAcesos || 0) + 1;
-      var br = l.el.querySelector('.brilho'), ar = l.el.querySelector('.aro-c');
-      if (br && br.animate) br.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1500, easing: 'ease-out' });
-      if (ar && ar.animate) ar.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1500, easing: 'ease-out' });
+      // 16/11 (leve): numa rajada o mesmo cartao recomecava as duas animacoes a cada evento (5 por segundo); dentro de 1 s do ultimo
+      // aceso ele ja esta aceso - nao se recomeca (a contagem e o grafico de cima continuam a mexer)
+      var agoraC = performance.now();
+      if (agoraC - (l.tAceso || 0) > 1000) {
+        l.tAceso = agoraC;
+        var br = l.el.querySelector('.brilho'), ar = l.el.querySelector('.aro-c');
+        if (br && br.animate) br.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1500, easing: 'ease-out' });
+        if (ar && ar.animate) ar.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1500, easing: 'ease-out' });
+      }
     }
     T3B.emit('cartao', { id: id, ev: e });
   }

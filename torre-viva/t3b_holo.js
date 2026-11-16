@@ -103,7 +103,11 @@
   // 21/10 23h45 (ele: "ta muito pesado e ta travando demais"; medido no ecra dele: 12 quadros/s, fio principal preso 260 ms por segundo,
   // os 10 hologramas a desenhar TODOS os quadros do relogio de 30 Hz - ~450 ms de desenho por segundo): cada holograma ao ritmo que o
   // olho precisa - os que pulsam a 30, os de numeros e texto a 10-20. Com a pagina lenta (quadro medio > 50 ms) todos descem a metade.
-  var FPS_DO_HOLO = { vortex: 30, coracao: 30, radar: 30, equalizador: 30, livro: 20, globo: 20, lab: 15, stark: 15, turnos: 12, trilho: 10 };
+  // 16/11 (ele: "tao pesados tambem, travando demais"): MEDIDO com a torre parada - o fio principal 67% ocupado, os quadros (hologramas
+  // e 3D) 23% dele. Os que pulsam passam de 30 a 15-20 q/s, os de texto a 6-12; sem foco na janela (ele esta noutro programa) todos
+  // a FPS_SEM_FOCO. O movimento continua a ser pelo relogio (nada salta): so ha menos quadros a desenha-lo.
+  var FPS_DO_HOLO = { vortex: 15, coracao: 15, radar: 12, equalizador: 12, livro: 10, globo: 8, lab: 8, stark: 8, turnos: 6, trilho: 5 };
+  var FPS_SEM_FOCO = 5;
   var emaQuadro = 33, msQuadroAnt = 0, cargaHolos = 1;
 
   // ================================================================ a maquinaria comum: cenas, tamanho, visibilidade
@@ -196,13 +200,19 @@
     var t = ms / 1000; tAnt = t;
     if (msQuadroAnt) { var iq = ms - msQuadroAnt; if (iq > 0 && iq < 400) emaQuadro = emaQuadro * 0.94 + iq * 0.06; }
     msQuadroAnt = ms; cargaHolos = emaQuadro > 50 ? 0.5 : emaQuadro < 40 ? 1 : cargaHolos;
+    // 16/11: a regra de cima media a lentidao contra 30 q/s; com a pagina parada a 20 (ou 10 sem foco) o quadro normal ja tem 50-100 ms
+    // e ela cortava sempre a metade, ora sim ora nao. Agora a lentidao e contra o ritmo que o relogio pediu: 40% acima dele.
+    var esperadoMs = 1000 / Math.max(1, window.T3BRitmo && window.T3BRitmo.efectivo ? window.T3BRitmo.efectivo() : 30);
+    if (emaQuadro > esperadoMs * 1.4) cargaHolos = 0.5; else if (emaQuadro < esperadoMs * 1.15) cargaHolos = 1;
+    var semFoco = !!(window.T3BRitmo && window.T3BRitmo.foco === false);
     for (var i = 0; i < cenas.length; i++) {
       var s = cenas[i];
       if (T3B.pequeno && s.holo) continue;
       if (!s.vis || escondido(s)) continue;
       var precisa = s.sujo || ms < s.ate || (s.sempre && !calmo) || (s.vivo && !calmo && s.vivo(ms));
       if (!precisa) continue;
-      if (ms - s.ultimo < 1000 / (s.fps * cargaHolos) - 4) continue;            // (-4: num ecra de 60 Hz o quadro chega a 16,7 ms; com -2 um quadro adiantado saltava um)
+      var fpsEf = Math.min(s.fps * cargaHolos, semFoco ? FPS_SEM_FOCO : 99);                // 16/11: sem foco, todos a 5 q/s
+      if (ms - s.ultimo < 1000 / fpsEf - 4) continue;            // (-4: num ecra de 60 Hz o quadro chega a 16,7 ms; com -2 um quadro adiantado saltava um)
       var dts = s.ultimo ? Math.min(0.1, (ms - s.ultimo) / 1000) : 1 / 60;
       s.ultimo = ms; s.sujo = false;
       if (s.precisaTam) medir(s);
@@ -1915,7 +1925,9 @@
     return { g: gi, k: gene.k, r: !!gene.r, d: !!gene.d, andar: gene.andar, ang: (sem % 6283) / 1000, raio: Math.sqrt(((sem >> 4) % 1000) / 1000), v: 0.12 + ((sem >> 9) % 300) / 1000, luz: 0, t: 0 };
   }
   function carregarLabs() {
-    fetch('labs.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    // 16/11 (leve): com o ETag da ultima resposta - sem mudanca o servidor responde 304, sem os ~170 KB nem o JSON.parse
+    fetch('labs.json?t=' + Date.now(), LAB.etag ? { cache: 'no-store', headers: { 'If-None-Match': LAB.etag } } : { cache: 'no-store' })
+      .then(function (r) { if (r.status === 304 || !r.ok) return null; LAB.etag = r.headers.get('ETag') || null; return r.json(); }).then(function (d) {
       if (!d || !d.labs) return;
       LAB.tLabs = String(d.t_iso || '').slice(11, 16) || LAB.tLabs;   // 21/10: a hora da amostra (o estado do cartao)
       var porGrupo = GRUPOS.map(function () { return []; });
@@ -1933,7 +1945,8 @@
       LAB.carregado = true; LAB.ver++; sujar(cenaLab, 0); pintarLegendaLab();
     }).catch(function () { });
   }
-  setTimeout(carregarLabs, 1500); setInterval(function () { if (!document.hidden && !($('h_lab') || {}).classList.contains('min')) carregarLabs(); }, 60000);
+  // 16/11 (leve): de 3 em 3 min (era 1) - os genes dos labs mudam com a previa da sombra (15 em 15 min); o "calculou" e pelos eventos
+  setTimeout(carregarLabs, 1500); setInterval(function () { if (!document.hidden && !($('h_lab') || {}).classList.contains('min')) carregarLabs(); }, 180000);
   aoReagir('lab', function (ev, r) {
     var agora = agoraMs(); LAB.nEv++; LAB.ultimo = ev;
     if (ev.k === 'genes') {
