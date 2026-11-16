@@ -51,7 +51,14 @@
   function lista(x) { return Object.prototype.toString.call(x) === '[object Array]' ? x : []; }
   function obj(x) { return (x && typeof x === 'object' && !lista(x).length) ? x : {}; }
   function semDado(v) { return v == null || v === '' ? 'sem dado' : String(v); }
-  function hora(iso) { var s = String(iso || ''); return s.length >= 16 ? s.slice(11, 16) : semDado(s); }
+  // 16/11 (ele: "tudo que tem ali no site da torre ta desatualizado"): os lideres e a meta-frota pararam a 13/11 e esta pagina escrevia so
+  // a HORA ("19:03") - parecia de hoje. Agora: de outro dia (Brasilia), 'DD/MM HH:MM'.
+  function hora(iso) {
+    var s = String(iso || ''); if (s.length < 16) return semDado(s);
+    var ms = Date.parse(s); if (!isFinite(ms)) return s.slice(11, 16);
+    var b = new Date(ms - 3 * 3600000).toISOString(), hoje = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+    return (b.slice(0, 10) === hoje ? '' : b.slice(8, 10) + '/' + b.slice(5, 7) + ' ') + b.slice(11, 16);
+  }
   function idadeS(iso) { var t = Date.parse(String(iso || '')); return isFinite(t) ? Math.max(0, Math.round((Date.now() - t) / 1000)) : null; }
   function haQuanto(s) { return s == null ? 'sem hora' : (s < 90 ? 'há ' + s + ' s' : (s < 5400 ? 'há ' + Math.round(s / 60) + ' min' : 'há ' + (s / 3600).toFixed(1) + ' h')); }
   function pior(a, b) { return (PESO[b] || -1) > (PESO[a] || -1) ? b : a; }
@@ -152,7 +159,8 @@
   }
   function secaoLideres() {
     var L = obj(E.lideres), esc = lista(L.escalados), ult = lista(L.ultimos);
-    var cab = '<div class="enx-sub">Líderes escalaram <em>' + esc.length + '</em></div>';
+    var cab = '<div class="enx-sub">Líderes escalaram <em>' + esc.length + '</em>' +
+      (L.parado_desde ? ' <s>parados desde ' + escH(hora(L.parado_desde)) + (L.porque_parou ? ' — ' + escH(L.porque_parou) : '') + '</s>' : '') + '</div>';   // 16/11
     var corpo = esc.length ? esc.map(function (e) {
       return '<div class="enx-it ' + escH(sevDe(e.funcionario) || 'sem') + '">' + pontoSev(sevDe(e.funcionario), 'hoje na vigia: ' + (NOME_SEV[sevDe(e.funcionario)] || 'sem dado')) + '<b>' + escH(e.funcionario) + '</b> <u>andar ' + escH(semDado(e.andar)) + ' · ' + escH(e.lider) + ' · ' + escH(hora(e.t_iso)) + '</u><em>' + escH(semDado(e.porque)) + '</em></div>';
     }).join('') : '<div class="enx-vazio">nada escalado</div>';
@@ -168,7 +176,7 @@
     if (!s.t_iso) return cab + '<div class="enx-vazio">o Sr. Stark ainda não deu parecer (sem dado)</div>';
     var ud = obj(s.ultima_decisao);
     var acc = lista(s.accoes).map(function (a) { return '<li><b>' + escH(a.tipo) + '</b> ' + escH(a.alvo) + ' → ' + escH(a.decisao) + (a.razao ? '<em>' + escH(a.razao) + '</em>' : '') + '</li>'; }).join('');
-    var props = lista(s.propostas).map(function (p) { return '<li><b>' + escH(p.titulo) + '</b><em>' + escH(p.porque) + '</em></li>'; }).join('');
+    var props = lista(s.propostas).map(function (p) { return '<li><b>' + escH(p.titulo) + '</b>' + (p.t_iso ? ' <u>' + escH(hora(p.t_iso)) + '</u>' : '') + '<em>' + escH(p.porque) + '</em></li>'; }).join('');   // 16/11: com a data
     return cab +
       '<div class="enx-parecer">' + escH(semDado(s.parecer)) + '</div>' +
       (lista(s.nao_funciona).length ? '<div class="enx-sub2">o que não funciona</div><ul class="enx-lst mau">' + itens(s.nao_funciona) + '</ul>' : '') +
@@ -180,7 +188,8 @@
   function secaoAuditorias() {
     var a = E.auditoria_claude, m = E.meta_frota, out = [];
     if (a) out.push('auditoria Claude ' + hora(a.t_iso) + ': ' + a.divergencias + ' divergência(s) em ' + a.amostra);
-    if (m) out.push('meta da frota ' + hora(m.t_iso) + (m.provedor ? ' (' + m.provedor + ')' : '') + ': ' + m.concordam + ' concordam, ' + m.discordam + ' discordam em ' + m.amostra);
+    if (m) out.push('meta da frota ' + hora(m.t_iso) + (m.provedor ? ' (' + m.provedor + ')' : '') + ': ' + m.concordam + ' concordam, ' + m.discordam + ' discordam em ' + m.amostra +
+      (m.parado_desde ? ' · PARADA desde ' + hora(m.parado_desde) + (m.porque_parou ? ' — ' + m.porque_parou : '') : ''));   // 16/11
     return out.length ? '<div class="enx-nota">' + out.map(escH).join(' · ') + '</div>' : '';
   }
   function pintarCorpo() {
