@@ -25,7 +25,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import * as ANDAR from './t3b_andar.js?v=4165dfcc18';
+import * as ANDAR from './t3b_andar.js?v=96e5775d26';
 
 const T3B = window.T3B, U = T3B.util, $ = U.$;
 
@@ -1522,7 +1522,7 @@ function quadro(agora) {
   // o relogio da pagina (t3b_ritmo.js): a interagir (ou a camara/gaveta a viajar) os quadros sao os do ecra; senao 20 por
   // segundo, 30 com bonecos a andar dentro do andar - e os outros ciclos (hologramas, numeros, reactor) vao no mesmo quadro
   const RIT = window.T3BRitmo;
-  if (RIT) { if (modo === 'interaccao') RIT.soltar(160); RIT.hz = 30; }   // 13/10 (ele: "aliviar"): 30 q/s parado, 45 a mexer (t3b_ritmo)
+  if (RIT) { if (modo === 'interaccao') RIT.soltar(160); RIT.hz = 20; }   // 13/10 (ele: "aliviar"): 30 q/s parado, 45 a mexer (t3b_ritmo); 16/11 ("tao pesados, travando demais"): 20 parado
   // a cadencia: interaccao todos os quadros; vivo 30/s; repouso 6/s (sem respiracao - reduced motion - so quando um dado muda)
   // (a torre a girar sozinha e o letreiro: 20 quadros/s chegam - 0,1 grau por quadro; bonecos a andar dentro do andar: 30)
   const cad = calmo && modo === 'repouso' ? (precisaDesenhar ? 0 : 1e9) : modo === 'repouso' && precisaDesenhar ? 0 : CADENCIA[modo];
@@ -1559,9 +1559,13 @@ function quadro(agora) {
   ultimoDesenho = agora;
   // os rotulos dos andares e as ancoras dos hologramas mexem o DOM: no maximo 12 vezes por segundo (era a cada quadro, com
   // leituras de layout no meio das escritas - o "trava ao rodar"), e uma ultima vez quando a camara para
+  // 16/11 (ele: "tao pesados, travando demais"; MEDIDO: os rotulos e as ancoras dos hologramas - e com elas os fios em SVG refeitos -
+  // eram 12 vezes por segundo com a torre a girar SOZINHA, uma volta por minuto): a girar sozinha passam a 6/s (150 ms; a torre anda
+  // menos de 1 grau entre dois); com ele a mexer continuam a 12/s
+  const passoRot = camaraMudou && !controles.autoRotate ? 80 : 150;
   if (camaraMudou || controles.autoRotate) {
     rotulosPendentes = true;
-    if (agora - ultRotulos > 80) { ultRotulos = agora; nivelPelaDistancia(); posicionarRotulos(); rotulosPendentes = false; }
+    if (agora - ultRotulos > passoRot) { ultRotulos = agora; nivelPelaDistancia(); posicionarRotulos(); rotulosPendentes = false; }
     camaraMudou = false;
   } else if (rotulosPendentes && agora - ultRotulos > 80) { ultRotulos = agora; nivelPelaDistancia(); posicionarRotulos(); rotulosPendentes = false; }
   tamanhoDosHalos();

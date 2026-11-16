@@ -979,13 +979,34 @@
 
   // 05/10 22:xx (ele: "as escritas que ficam ali embaixo [dos numeros] vao ficar em carrossel tambem"): cada linha que nao cabe corre
   // de um lado ao outro e volta (so a que nao cabe; medido de 2 em 2 s)
+  // 16/11 (ele: "tao pesados, travando demais"). MEDIDO (tracing, torre parada): 56 recalculos de estilo por SEGUNDO, 70% deles sem
+  // ninguem a pedi-los - eram estas legendas: a animacao CSS 'vaivem' tinha var(--falta) nos keyframes, e uma animacao com variavel nao
+  // vai para o compositor - o browser refazia o estilo (e as camadas) de 6 elementos a 60 q/s no fio principal, por cima do relogio de
+  // 20 q/s da pagina. Agora e a mesma ida e volta (0-12% parada, 88-100% parada, vai e volta) numa Web Animation com os pixeis escritos:
+  // o compositor anima-a sozinho. So se refaz quando a distancia muda (o texto mudou de tamanho). PURA a parte das contas: passosVaivem.
+  // <vaivem-puro>
+  function passosVaivem(falta) {
+    var x = 'translateX(' + (-Math.round(Number(falta) || 0)) + 'px)';
+    return [{ transform: 'translateX(0px)', offset: 0, easing: 'ease-in-out' }, { transform: 'translateX(0px)', offset: 0.12, easing: 'ease-in-out' },
+      { transform: x, offset: 0.88, easing: 'ease-in-out' }, { transform: x, offset: 1 }];
+  }
+  function duracaoVaivem(falta) { return Math.max(6, Math.round((Number(falta) || 0) / 18) + 4) * 1000; }
+  // </vaivem-puro>
+  function vaivem(s, falta) {
+    var k = Math.round(falta) + '|' + duracaoVaivem(falta);
+    if (s._vv && s._vvK === k) return;
+    if (s._vv) { try { s._vv.cancel(); } catch (e) { } s._vv = null; }
+    s._vvK = k; s.classList.remove('corre');
+    if (calmo || !s.animate) return;
+    s._vv = s.animate(passosVaivem(falta), { duration: duracaoVaivem(falta), iterations: Infinity, direction: 'alternate' });
+  }
+  function semVaivem(s) { if (s._vv) { try { s._vv.cancel(); } catch (e) { } s._vv = null; } s._vvK = ''; s.classList.remove('corre'); }
   setInterval(function () {
     if (document.hidden) return;
     Array.prototype.forEach.call(document.querySelectorAll('.casa .s'), function (s) {
       var cel = s.parentElement; if (!cel) return;
       var falta = Math.ceil(s.scrollWidth - (cel.clientWidth - 32));
-      if (falta > 4) { s.style.setProperty('--falta', falta + 'px'); s.style.setProperty('--dur', Math.max(6, Math.round(falta / 18) + 4) + 's'); s.classList.add('corre'); }
-      else s.classList.remove('corre');
+      if (falta > 4) vaivem(s, falta); else semVaivem(s);
     });
   }, 2000);
 
