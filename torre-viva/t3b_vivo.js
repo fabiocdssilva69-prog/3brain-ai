@@ -640,7 +640,7 @@
     (Array.isArray(rl.posicoes) ? rl.posicoes : []).forEach(function (p) {
       var q = num(p && p.qty), e = num(p && p.entrada), cu = num(p && p.custo_usdt);
       if (!(e > 0) && q > 0 && cu > 0) e = cu / q;          // 10/10: o executor nao guarda a entrada - custo / qty (com a comissao)
-      if (q && e) { pos.push({ sym: String(p.simbolo), qty: q, ref: e }); custo += cu != null ? cu : q * e; }
+      if (q && e) { pos.push({ sym: String(p.simbolo), qty: q, ref: e, ag: num(p && p.agora) }); custo += cu != null ? cu : q * e; }   // 16/11: + ag (o preco do ficheiro)
     });
     var usdt = num(rl.usdt_livre);
     return { cap: pat, hoje: num(rl.hoje_usd), aberto: num(rl.aberto_usd), ini: num(rl.desde_o_inicio_usd),
@@ -792,7 +792,7 @@
     var r = obj(T.reactor), c = obj(r.conta), rc = casaReal(T);
     if (rc) {                                       // 10/10: a conta REAL - o em aberto e o que cada posicao vale a mais do que custou
       AOVIVO.base = { cap: rc.baseCap, abe: 0 };
-      AOVIVO.pos = rc.pos.map(function (p) { return { sym: p.sym.replace(/USD$/, 'USDT'), qty: p.qty, ref: p.ref }; });
+      AOVIVO.pos = rc.pos.map(function (p) { return { sym: p.sym.replace(/USD$/, 'USDT'), qty: p.qty, ref: p.ref, ag: p.ag }; });
       AOVIVO.real = { pat: rc.cap, hoje: rc.hoje, ini: (rc.aportado != null ? rc.aportado : rc.inicial) };   // 12/10: os aportes nao sao ganho
     } else {
     AOVIVO.real = null;
@@ -819,7 +819,10 @@
     var midVelho = AOVIVO.mid[sym]; AOVIVO.mid[sym] = (a + b) / 2; AOVIVO.tPreco = Date.now();
     if (midVelho !== AOVIVO.mid[sym] && T3B.valorMudou) T3B.valorMudou(sym);   // 21/10 21h: um valor que mudou conta no pulso da torre
     var agora = performance.now(); if (agora - AOVIVO.ult < 250) return; AOVIVO.ult = agora;     // 4 vezes por segundo chega
-    var dl = 0; AOVIVO.pos.forEach(function (p) { var m = AOVIVO.mid[p.sym]; if (m) dl += p.qty * (m - p.ref); });
+    // 16/11 (MEDIDO na pagina: "pico +23,32" no Instrumento do dia com o dia a -0,24): no 1.o preco que chega (o do BTC), as moedas ainda
+    // sem preco ao vivo (DASH, HYPE) contavam ao preco de COMPRA - o capital subia 23 US$ por um instante e o pico ficava gravado o dia
+    // todo. Sem preco ao vivo, vale o preco do ficheiro (torre.json -> real.posicoes[].agora); so sem nenhum, o de compra.
+    var dl = 0; AOVIVO.pos.forEach(function (p) { var m = AOVIVO.mid[p.sym] || p.ag; if (m) dl += p.qty * (m - p.ref); });
     AOVIVO.delta = dl;
     if (AOVIVO.base && isFinite(AOVIVO.base.cap)) quieto('cap', AOVIVO.base.cap + dl + (E.microPat || 0), 700);   // 30/10 17:4x: + o micro
     if (AOVIVO.real && AOVIVO.base && isFinite(AOVIVO.base.cap)) { E.capAgora = AOVIVO.base.cap + dl + (E.microPat || 0); if (Date.now() - (AOVIVO.tReais || 0) > 1000) { AOVIVO.tReais = Date.now(); pintarReais(); } }   // 16/10: os reais ao segundo

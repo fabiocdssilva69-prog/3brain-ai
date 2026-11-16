@@ -1107,24 +1107,45 @@
   // abertas), depois o parecer do Stark SO se tiver menos de 3 h, com a hora; um parecer velho vira uma linha (antes: 8 blocos a rodar)
   var PARECER_FRESCO_MS = 3 * 3600 * 1000;
   function numOk(v) { return v != null && v !== '' && isFinite(Number(v)); }
+  // <plano-puro>
+  // 16/11 (ele: "parece que estao presos num loop de dias, com informacao velha"): MEDIDO - o Stark escrevia "ETH vendido pela trava do
+  // dia a 2.321 · volta a entrar amanha." todos os dias desde 26/10 (o plano guarda o ETH a espera da analise dele desde ai, e o ETH
+  // nunca voltou). Cada facto do plano leva a DATA quando nao e de hoje (Brasilia); a trava do ETH so se diz armada se for a de HOJE.
+  // PURA (sala/testes_t3b_idade.js): rl = torre.json -> real; agoraMs = o relogio; f0 = como escrever um preco.
+  function diaBrtDe(ms) { return new Date(Number(ms) - 3 * 3600000).toISOString().slice(0, 10); }
+  function quandoCurto(iso, agoraMs) {
+    var ms = Date.parse(String(iso || '')); if (!isFinite(ms)) return 'sem data';
+    var b = new Date(ms - 3 * 3600000).toISOString();
+    return diaBrtDe(ms) === diaBrtDe(agoraMs) ? 'hoje às ' + b.slice(11, 16) : 'em ' + b.slice(8, 10) + '/' + b.slice(5, 7);
+  }
+  function factosDoPlano(rl, agoraMs, f0) {
+    var fm = f0 || function (v) { return String(Math.round(Number(v))); }, ok = function (v) { return v != null && v !== '' && isFinite(Number(v)); };
+    var o = [], pl = (rl && rl.plano) || {}, nv = pl.niveis || {}, pb = (pl.protecao || {}).BTCUSDT || {}, ag = pl.aguarda_analise || {}, btc = null;
+    ((rl && rl.posicoes) || []).forEach(function (q) { if (q && q.simbolo === 'BTCUSDT') btc = q; });
+    var px = Number((btc && btc.agora) || pb.preco);
+    if (px > 0) {
+      var a = ag.BTCUSDT || {}, f = 'BTC ' + fm(px);
+      if (a.motivo === 'protecao') f += ' · fora desde a venda a ' + fm(a.preco) + ' (' + quandoCurto(a.t, agoraMs) + ')' + (ok(nv.recompra) ? ' · recompra em ' + fm(nv.recompra) : '');
+      else if (a.motivo) f += ' · vendido pelo stop de catástrofe ' + quandoCurto(a.t, agoraMs) + ' · espera a tua análise';
+      else if (pb.armada) f += ' · proteção ARMADA · vende se cair a ' + fm(pb.nivel);
+      else if (ok(nv.ativa || pb.ativa)) f += ' · vende a partir de ' + fm(nv.ativa || pb.ativa) + (ok(nv.gatilho) ? ' · compra grande em ' + fm(nv.gatilho) : '');
+      o.push(f + '.');
+    }
+    var te = pl.trava_eth || {}, ae = ag.ETHUSDT || {}, teHoje = !te.dia || String(te.dia) === diaBrtDe(agoraMs);          // 26/10: a trava do dia do ETH
+    if (ae.motivo === 'trava_dia') {
+      var msE = Date.parse(String(ae.t || '')), dd = isFinite(msE) ? Math.floor((Number(agoraMs) - msE) / 86400000) : null;
+      if (isFinite(msE) && diaBrtDe(msE) === diaBrtDe(agoraMs)) o.push('ETH vendido pela trava do dia a ' + fm(ae.preco) + ' (hoje) · volta a entrar amanhã.');
+      else o.push('ETH fora desde ' + quandoCurto(ae.t, agoraMs).replace(/^em /, '') + ' (vendido pela trava do dia a ' + fm(ae.preco) + ') · à espera da tua análise' + (dd != null && dd >= 1 ? ' há ' + dd + (dd === 1 ? ' dia' : ' dias') : '') + '.');
+    }
+    else if (teHoje && te.armada) o.push('ETH: trava do dia ARMADA · vende se cair a ' + fm(te.nivel) + ' (máximo ' + fm(te.maximo) + ').');
+    else if (teHoje && te.ligada && ok(te.abertura)) o.push('ETH: a trava do dia arma a ' + fm(te.abertura * 1.015) + ' (+1,5% sobre ' + fm(te.abertura) + ').');
+    return o;
+  }
+  // </plano-puro>
   function factosDeAgora() {
     var T = obj(T3B.estado.T), rl = realDaCasa(T), o = [];
     if (rl) {
-      var pl = obj(rl.plano), nv = obj(pl.niveis), pb = obj(obj(pl.protecao).BTCUSDT), ag = obj(pl.aguarda_analise), btc = null;
-      lista(rl.posicoes).forEach(function (q) { if (q && q.simbolo === 'BTCUSDT') btc = q; });
-      var px = Number((btc && btc.agora) || pb.preco);
-      if (px > 0) {
-        var a = obj(ag.BTCUSDT), f = 'BTC ' + fmt(px, 0);
-        if (a.motivo === 'protecao') f += ' · fora desde a venda a ' + fmt(a.preco, 0) + (numOk(nv.recompra) ? ' · recompra em ' + fmt(nv.recompra, 0) : '');
-        else if (a.motivo) f += ' · vendido pelo stop de catástrofe · espera a tua análise';
-        else if (pb.armada) f += ' · proteção ARMADA · vende se cair a ' + fmt(pb.nivel, 0);
-        else if (numOk(nv.ativa || pb.ativa)) f += ' · vende a partir de ' + fmt(nv.ativa || pb.ativa, 0) + (numOk(nv.gatilho) ? ' · compra grande em ' + fmt(nv.gatilho, 0) : '');
-        o.push(f + '.');
-      }
-      var te = obj(pl.trava_eth), ae = obj(ag.ETHUSDT);          // 26/10: a trava do dia do ETH
-      if (ae.motivo === 'trava_dia') o.push('ETH vendido pela trava do dia a ' + fmt(ae.preco, 0) + ' · volta a entrar amanhã.');
-      else if (te.armada) o.push('ETH: trava do dia ARMADA · vende se cair a ' + fmt(te.nivel, 0) + ' (máximo ' + fmt(te.maximo, 0) + ').');
-      else if (te.ligada && numOk(te.abertura)) o.push('ETH: a trava do dia arma a ' + fmt(te.abertura * 1.015, 0) + ' (+1,5% sobre ' + fmt(te.abertura, 0) + ').');
+      factosDoPlano(rl, Date.now(), function (v) { return fmt(v, 0); }).forEach(function (f) { o.push(f); });
       if (numOk(rl.hoje_usd)) {
         var c = 'Conta real hoje ' + sinal(rl.hoje_usd, 2) + ' US$' + (numOk(rl.aberto_usd) ? ' · em aberto ' + sinal(rl.aberto_usd, 2) + ' US$' : '') +
           (numOk(rl.usdt_livre) ? ' · caixa ' + fmt(rl.usdt_livre, 2) + ' US$' : '');
@@ -1402,12 +1423,28 @@
     return pos[Math.floor(Number(agoraMs) / (rodaMs || 15000)) % pos.length].sym;
   }
   // (16/10 20h40, ele: "as informacoes tao aparecendo tudo amontoadas"): curta - "13:41 +BTC 11,42" (compra), "20:11 −ZEC adiada ×7"
-  function textoOrdem(o) {
+  // 16/11 (ele: "parece que as informacoes que aparecem ali e tudo desatualizada"): MEDIDO - a ultima ordem real e de 29/10 e a fita
+  // escrevia so "23:21 +BTC 63,23", como se fosse de hoje. Com `agoraMs`, a ordem de OUTRO dia (Brasilia) leva a data: "29/10 23:21 ...".
+  function textoOrdem(o, agoraMs) {
     if (!o) return '';
-    var hh = String(o.t || '').slice(11, 16), sinalO = o.lado === 'BUY' ? '+' : o.lado === 'SELL' ? '−' : '';
+    var ms = Date.parse(String(o.t || '')), hh = String(o.t || '').slice(11, 16), dia = '';
+    if (isFinite(ms)) {
+      var b0 = new Date(ms - 3 * 3600000).toISOString(); hh = b0.slice(11, 16);
+      if (agoraMs != null && isFinite(Number(agoraMs)) && b0.slice(0, 10) !== new Date(Number(agoraMs) - 3 * 3600000).toISOString().slice(0, 10)) dia = b0.slice(8, 10) + '/' + b0.slice(5, 7) + ' ';
+    }
+    var sinalO = o.lado === 'BUY' ? '+' : o.lado === 'SELL' ? '−' : '';
     var b = String(o.simbolo || '').replace(/USDT$/, ''), u = Number(o.usdt);
     var est = /preench|feita|fill/i.test(o.estado || '') ? '' : ' ' + ({ saltada: 'adiada', recusada: 'recusada', falhou: 'falhou' }[o.estado] || o.estado);
-    return (hh ? hh + ' ' : '') + sinalO + b + (u > 0 && !est ? ' ' + u.toFixed(2).replace('.', ',') : '') + est + (o.vezes > 1 ? ' ×' + o.vezes : '');
+    return dia + (hh ? hh + ' ' : '') + sinalO + b + (u > 0 && !est ? ' ' + u.toFixed(2).replace('.', ',') : '') + est + (o.vezes > 1 ? ' ×' + o.vezes : '');
+  }
+  // 16/11: a idade de um dado do balde (o palpite do analista, a explicacao do preco) quando ja nao e fresco: '' ate `limiteH` horas;
+  // depois 'há 5 h' / 'há 3 d'. Sem hora legivel: 'sem hora' (nunca se finge que e de agora).
+  function idadeSeVelha(iso, agoraMs, limiteH) {
+    var ms = Date.parse(String(iso || '')), ag = Number(agoraMs);
+    if (!isFinite(ms) || !isFinite(ag)) return 'sem hora';
+    var h = (ag - ms) / 3600000;
+    if (h < (limiteH == null ? 3 : limiteH)) return '';
+    return h < 48 ? 'há ' + Math.round(h) + ' h' : 'há ' + Math.floor(h / 24) + ' d';
   }
   // </livro-puro>
   var LIVRO_RODA_MS = 15000;
@@ -1561,8 +1598,9 @@
       var linhasLivres = Math.floor((h - y - 6) / 11) - (nOrd > 0 ? nOrd + 2 : 0);
       if (bm && linhasLivres >= 2) {
         y += 13; rot(ctx, TX.cortar('BALDE ' + bm + (bv ? ' · ' + bv.alta + '↑ ' + bv.baixa + '↓' : ' · nenhuma fonte hoje') + (bc != null ? ' · conselho ' + sinal(bc, 2) : ''), Math.floor(larR / 4.3)), xR, y, C.cy, 7, 'left', 700);
-        if (ba && linhasLivres >= 3) { y += 10; linhasLivres--; rot(ctx, TX.cortar('analista: ' + (ba.direcao > 0 ? '▲ bate o mercado' : ba.direcao < 0 ? '▼ fica atrás' : '— sem sinal') + ' · ' + Math.round((ba.confianca || 0) * 100) + '% · ' + (ba.horizonte_d || 3) + ' d', Math.floor(larR / 4.2)), xR, y, ba.direcao > 0 ? C.ok : ba.direcao < 0 ? C.mau : C.mute, 7, 'left', 700); }
-        if (bx && bx.explicacao) { var cX = Math.max(10, Math.floor(larR / 4.1)), txX = String(bx.explicacao), nl = Math.min(3, linhasLivres - 1);
+        // 16/11: o palpite e a explicacao levam a idade quando ja tem mais de 3 h (o analista desta moeda pode ser de ha dias)
+        if (ba && linhasLivres >= 3) { var idA = idadeSeVelha(ba.t, Date.now(), 3); y += 10; linhasLivres--; rot(ctx, TX.cortar('analista' + (idA ? ' (' + idA + ')' : '') + ': ' + (ba.direcao > 0 ? '▲ bate o mercado' : ba.direcao < 0 ? '▼ fica atrás' : '— sem sinal') + ' · ' + Math.round((ba.confianca || 0) * 100) + '% · ' + (ba.horizonte_d || 3) + ' d', Math.floor(larR / 4.2)), xR, y, ba.direcao > 0 ? C.ok : ba.direcao < 0 ? C.mau : C.mute, 7, 'left', 700); }
+        if (bx && bx.explicacao) { var idX = idadeSeVelha(bx.t, Date.now(), 3), cX = Math.max(10, Math.floor(larR / 4.1)), txX = (idX ? '(' + idX + ') ' : '') + String(bx.explicacao), nl = Math.min(3, linhasLivres - 1);
           for (var lx = 0; lx < nl && txX; lx++) { var corte = txX.length <= cX ? txX.length : (txX.lastIndexOf(' ', cX) > 8 ? txX.lastIndexOf(' ', cX) : cX); y += 10; rot(ctx, (lx === nl - 1 && txX.length > corte ? TX.cortar(txX, cX) : txX.slice(0, corte)), xR, y, C.mute, 7, 'left', 500); txX = txX.slice(corte).trim(); } }
       }
       if (nOrd > 0) {
@@ -1571,7 +1609,7 @@
         LIV.ordens.slice(0, nOrd).forEach(function (o, k) {
           y += 12;
           var novaO = k === 0 && LIV.fl && agora - LIV.fl.t0 < 1500;
-          rot(ctx, TX.cortar(textoOrdem(o), cO), xR, y, novaO ? C.ouroHi : (o.lado === 'SELL' ? '#e88a8d' : '#7fd8b4'), 8.5, 'left', 600);
+          rot(ctx, TX.cortar(textoOrdem(o, Date.now()), cO), xR, y, novaO ? C.ouroHi : (o.lado === 'SELL' ? '#e88a8d' : '#7fd8b4'), 8.5, 'left', 600);   // 16/11: com a data se nao for de hoje
         });
       }
       ctx.restore();
@@ -2191,7 +2229,8 @@
         }
         var largo = w >= 420, top = TOPO + 30, lh = Math.max(15, Math.min(22, (h - top - 30) / L.length));
         var xn = 8, xb = Math.max(118, w * (largo ? 0.27 : 0.43)), xe = largo ? w - 220 : w - 46, esc = (xe - xb - 30) / 3.6, xl = xb + 3 * esc;
-        rot(ctx, 'juiz: ' + fmt(jv.conferidos || 0, 0) + ' ao vivo' + (jv.conferidos ? '' : (jv.proxima ? ' · 1.ª às ' + String(jv.proxima).slice(11, 16) + ' UTC' : '')) + ' · ' + fmt(((((b.placar_completo || [])[0] || {}).n) || 0), 0) + ' no topo', 8, TOPO + 9, C.mute, 7.5, 'left', 600);
+        // 16/11: + quando foi a ultima conferencia (as de baixo nao diziam de quando eram)
+        rot(ctx, 'juiz: ' + fmt(jv.conferidos || 0, 0) + ' ao vivo' + (jv.conferidos ? '' : (jv.proxima ? ' · 1.ª às ' + String(jv.proxima).slice(11, 16) + ' UTC' : '')) + (rec.length && rec[0].t ? ' · última ' + quandoCurto(rec[0].t, Date.now()) : '') + ' · ' + fmt(((((b.placar_completo || [])[0] || {}).n) || 0), 0) + ' no topo', 8, TOPO + 9, C.mute, 7.5, 'left', 600);
         rot(ctx, '● ● = as duas metades do ano · ouro = estável', 8, TOPO + 19, C.dim, 7, 'left', 500);
         ctx.strokeStyle = 'rgba(63,214,154,.75)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(xl, top - 4); ctx.lineTo(xl, top + lh * L.length); ctx.stroke(); ctx.setLineDash([]);
         rot(ctx, 't=3 dinheiro', xl, top - 6, C.ok, 7, 'center', 700);
