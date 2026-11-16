@@ -912,6 +912,28 @@
   // desde sempre (so sobe), o que entrou HOJE (as geracoes de hoje, hora de Brasilia) e a previsao das proximas 3 h pelo ritmo das
   // ultimas 6 h. (As fontes - Instagram, YouTube, noticias, GitHub - entram quando ele confirmar a conta: OBRA_9 ponto 5.)
   function brtDia(ms) { return new Date(ms - 3 * 3600000).toISOString().slice(0, 10); }
+  // <idade-puro>
+  // 16/11 (ele: "tudo que tem ali no site da torre ta desatualizado"). PURAS (sala/testes_t3b_idade.js).
+  // textoProxima: uma hora FUTURA para o ecra - 'HH:MM' se for hoje (Brasilia), 'DD/MM HH:MM' se for outro dia; passada ou lixo: ''.
+  function textoProxima(ms, agoraMs) {
+    ms = Number(ms); agoraMs = Number(agoraMs);
+    if (!isFinite(ms) || !isFinite(agoraMs) || ms < agoraMs) return '';
+    var b = new Date(ms - 3 * 3600000).toISOString(), hoje = new Date(agoraMs - 3 * 3600000).toISOString().slice(0, 10);
+    return (b.slice(0, 10) === hoje ? '' : b.slice(8, 10) + '/' + b.slice(5, 7) + ' ') + b.slice(11, 16);
+  }
+  // desdeDoItem: desde quando uma pendencia existe - a data mais antiga do item (os pedidos dele 'id@AAAA-MM-DDTHH:MM', criado_em,
+  // proposta_em, o que o sector disse) em 'DD/MM'; sem data nenhuma: ''. A lista tinha 715 itens de setembro e outubro sem data.
+  function desdeDoItem(x) {
+    if (!x || typeof x !== 'object') return '';
+    var ds = [], rx = /(20\d\d)-(\d\d)-(\d\d)/;
+    var poe = function (s) { var m = rx.exec(String(s || '')); if (m) ds.push(m[1] + m[2] + m[3]); };
+    (Array.isArray(x.pedidos) ? x.pedidos : []).forEach(poe);
+    poe(x.criado_em); poe(x.proposta_em); poe(x.confirmado_desde); poe(x.sector_diz && x.sector_diz.quando);
+    if (!ds.length) return '';
+    ds.sort(); var p = ds[0];
+    return p.slice(6, 8) + '/' + p.slice(4, 6);
+  }
+  // </idade-puro>
   // 05/10 21:4x (ele confirmou: "sim, de todos os canais que a gente evolui e consulta"): /evolucao.json (mercado/evolucao_canais.py)
   // - genes + pesquisa + agentes (YouTube...) + Instagram + prints + ideias + GitHub, num total que so sobe; o detalhe por canal
   // fica no title do cartao. Sem a rota (servidor antigo), vale o calculo so dos genes (abaixo).
@@ -926,14 +948,16 @@
     // 21/10 20h (ele: "o musculo esta zerado e nao mostra nada ha um tempo"): o numero = conferidos AO VIVO + conferidos pelo juiz no
     // PASSADO (as torneiras com historia, o ultimo ano, a mesma regua); por baixo, separados, e a hora da proxima conferencia ao vivo
     var hi = obj(d.historico), totM = (Number(d.total) || 0) + (Number(hi.conferidos) || 0);
-    var pcf = d.proxima_conferencia ? new Date(d.proxima_conferencia) : null, pcfTxt = pcf && !isNaN(pcf) ? ('0' + pcf.getHours()).slice(-2) + ':' + ('0' + pcf.getMinutes()).slice(-2) + (brtDia(pcf.getTime()) !== brtDia(Date.now()) ? ' de amanhã' : '') : '';
+    // 16/11 (MEDIDO: a 'proxima conferencia' era de 22/10 e a dica escrevia '23:14 de amanha' - todo o dia que nao fosse hoje virava
+    // "amanha"): passada, nao se escreve; de outro dia, com a data (mercado/torre_vivo.proxima_conferencia ja so da o futuro)
+    var pcf = d.proxima_conferencia ? new Date(d.proxima_conferencia) : null, pcfTxt = textoProxima(pcf ? pcf.getTime() : NaN, Date.now());
     numeroVivo('org', 'c_org', 'n_org', musculo ? totM : d.total, function (v) { return fmt(v, 0); }, 'up', musculo ? 'músculo' : 'evolução');
     txt($('n_org_s'), musculo
       ? 'ao vivo ' + fmt(d.total, 0) + (Number(d.total) ? ' (hoje +' + fmt(d.hoje, 0) + ')' : (pcfTxt ? ' · 1.ª às ' + pcfTxt : '')) + ' · histórico ' + fmt(hi.conferidos || 0, 0) + ' em ' + fmt(hi.dias || 0, 0) + ' d · ' + fmt(d.no_balde, 0) + ' no balde · provadas ' + fmt(d.provadas, 0) + ' (histórico ' + lista(hi.provadas_estaveis).length + ')'
       : 'hoje +' + fmt(d.hoje, 0) + ' · próximas 3 h ≈ +' + fmt(d.proximas_3h, 0));
     txt($('bx_hoje'), '+' + fmt(d.hoje, 0));
     var pc = obj(d.por_canal_hoje), det = Object.keys(pc).sort(function (a, b) { return pc[b] - pc[a]; }).map(function (k) { return (NOME_CANAL[k] || k) + ' +' + fmt(pc[k], 0); }).join(' · ');
-    var c = $('c_org'); if (c) c.title = (musculo ? 'sinais conferidos pelo juiz contra o preço. Ao vivo: ' + fmt(d.total, 0) + (det ? ' (hoje: ' + det + ')' : '') + (pcfTxt ? ' · próxima conferência ' + pcfTxt : '') + ' · no passado (' + (hi.de || '?') + ' a ' + (hi.ate || '?') + '): ' + fmt(hi.conferidos || 0, 0) + ' de ' + fmt(hi.fontes || 0, 0) + ' torneiras; melhores: ' + lista(hi.melhores).map(function (m) { return m.fonte + ' h' + m.horizonte_d + ' t=' + m.t + (m.estavel ? ' estável' : ''); }).join(', ') : 'evolução de hoje por canal: ' + det + ' · total desde sempre (só sobe): ' + fmt(d.total, 0));
+    var c = $('c_org'); if (c) c.title = (musculo ? 'sinais conferidos pelo juiz contra o preço. Ao vivo: ' + fmt(d.total, 0) + (det ? ' (hoje: ' + det + ')' : '') + (pcfTxt ? ' · próxima conferência ' + pcfTxt : '') + (d.conferencias_atrasadas ? ' · ' + fmt(d.conferencias_atrasadas, 0) + ' sinais com o prazo vencido ainda sem conferência' : '') + ' · no passado (' + (hi.de || '?') + ' a ' + (hi.ate || '?') + '): ' + fmt(hi.conferidos || 0, 0) + ' de ' + fmt(hi.fontes || 0, 0) + ' torneiras; melhores: ' + lista(hi.melhores).map(function (m) { return m.fonte + ' h' + m.horizonte_d + ' t=' + m.t + (m.estavel ? ' estável' : ''); }).join(', ') : 'evolução de hoje por canal: ' + det + ' · total desde sempre (só sobe): ' + fmt(d.total, 0));
   }
   function pintarEvolucao(T) {
     if (E.evo) return;
@@ -1129,9 +1153,9 @@
     var itens = lista(p && p.itens).filter(function (x) { return !/^\[(FEITO|RESOLVIDO)\b/.test(String(x.titulo || '')); });
     var cx = $('pendencias'), bl = $('bl_pend');
     if (cx) cx.innerHTML = itens.map(function (x) {
-      var dele = String(x.quem || '') === 'ele';
+      var dele = String(x.quem || '') === 'ele', desde = desdeDoItem(x);   // 16/11: desde quando (a lista e de setembro e outubro)
       return '<div class="pd-it ' + escH(x.peso || 'media') + '"><i class="' + (dele ? 'dele' : '') + '">' + escH(x.peso || '') + ' · ' +
-        (dele ? 'depende dele' : (x.quem === 'eu' ? 'é comigo' : 'dos dois')) + '</i><b>' + escH(TX ? TX.semMarkdown(limpo(x.titulo || '')) : x.titulo) + '</b>' +
+        (dele ? 'depende dele' : (x.quem === 'eu' ? 'é comigo' : 'dos dois')) + (desde ? ' · desde ' + escH(desde) : ' · sem data') + '</i><b>' + escH(TX ? TX.semMarkdown(limpo(x.titulo || '')) : x.titulo) + '</b>' +
         (x.falta ? '<em>' + escH(TX ? TX.semMarkdown(limpo(x.falta)) : x.falta) + '</em>' : '') + '</div>';
     }).join('');
     if (bl) bl.hidden = !itens.length;

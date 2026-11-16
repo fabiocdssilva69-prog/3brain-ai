@@ -194,10 +194,11 @@
     var m = $('ext_mark'); if (m && m.querySelector('small') === null) m.innerHTML = esc(m.textContent) + '<small>geração</small>';
     txt($('ext_kn'), (e.n_genes || 0) + ' genes · ' + (e.n_familias || 0) + ' linhas · ' + (e.n_avaliacoes || 0) + ' avaliações · SR₀ ' + num(e.sr0_anual, 2));
     var maxA = Math.max.apply(null, gs.map(function (g) { return g.avaliados || 0; }).concat([1]));
+    var agoraG = Date.now();
     var h = gs.map(function (g) {
       var alt = Math.round((g.avaliados || 0) / maxA * 62) + 4, rob = (g.avaliados ? (g.robustos || 0) / g.avaliados : 0);
       var mono = (g.monocultura_pct || 0) >= 60;
-      return '<div class="g' + (mono ? ' mono' : '') + '" title="MARK ' + g.geracao + ': ' + (g.avaliados || 0) + ' avaliados, ' +
+      return '<div class="g' + (mono ? ' mono' : '') + '" title="MARK ' + g.geracao + (g.quando ? ' (' + esc(horaComDia(g.quando, '', agoraG)) + ')' : '') + ': ' + (g.avaliados || 0) + ' avaliados, ' +
         (g.robustos || 0) + ' robustos' + (g.familia_maior ? ', ' + esc(g.familia_maior) + ' ' + num(g.monocultura_pct, 0) + '%' : '') + '">' +
         '<div class="col" style="height:' + alt + 'px"><i style="height:' + Math.round(rob * 100) + '%"></i></div><u>' + (g.geracao || '') + '</u></div>';
     }).join('');
@@ -205,7 +206,8 @@
     var u = gs.length ? gs[gs.length - 1] : null;
     // 🔴 MONOCULTURA: a percentagem da geracao numa SO familia. Foi assim que se apanhou a inundacao do
     // `distancia_media` em 12/09 — 122/122 robustos da mesma ideia nao sao 122 ideias.
-    txt($('ext_diag'), u ? ('MARK ' + u.geracao + ': ' + (u.robustos || 0) + '/' + (u.avaliados || 0) + ' robustos'
+    // 16/11: + a hora (e a data, se nao for de hoje) da ultima geracao - a evolucao corre por lotes e a ultima pode ser de ha horas
+    txt($('ext_diag'), u ? ('MARK ' + u.geracao + (u.quando ? ' (' + horaComDia(u.quando, '', agoraG) + ')' : '') + ': ' + (u.robustos || 0) + '/' + (u.avaliados || 0) + ' robustos'
       + (u.familia_maior ? ' · monocultura ' + num(u.monocultura_pct, 0) + '% em ' + u.familia_maior : '')
       + ((u.monocultura_pct || 0) >= 60 ? ' — uma geração dominada por uma família são variações da MESMA aposta.' : ''))
       : 'sem gerações lidas.');
@@ -259,11 +261,21 @@
     if (t.indexOf('recus') >= 0 || t.indexOf('esgotado') >= 0 || t === 'livro_roto' || t === 'spread_acima_do_tecto') return 'recusa';
     return '';
   }
+  // <hora-puro>
+  // 16/11 (ele: "tudo que tem ali no site da torre ta desatualizado"): o feed le os ficheiros de HOJE e de ONTEM (a cripto vira o dia a
+  // meia-noite UTC) e escrevia so a hora - uma linha de ontem as 23:50 parecia de agora. Com o t_iso (torre.py), a linha de OUTRO dia
+  // (Brasilia) leva a data antes da hora. PURA (sala/testes_t3b_idade.js).
+  function horaComDia(iso, hora, agoraMs) {
+    var ms = Date.parse(String(iso || '')); if (!isFinite(ms) || agoraMs == null) return String(hora || '');
+    var b = new Date(ms - 3 * 3600000).toISOString(), hoje = new Date(Number(agoraMs) - 3 * 3600000).toISOString().slice(0, 10);
+    return (b.slice(0, 10) === hoje ? '' : b.slice(8, 10) + '/' + b.slice(5, 7) + ' ') + String(hora || b.slice(11, 19));
+  }
+  // </hora-puro>
   function feed(d) {
-    var f = (d.feed || []).slice(0, telemovel ? MAX_FEED_TELEMOVEL : 60);
+    var f = (d.feed || []).slice(0, telemovel ? MAX_FEED_TELEMOVEL : 60), agoraMs = Date.now();
     var h = f.map(function (e) {
       return '<div class="e ' + classeFeed(e) + '" data-papel="' + esc(e.papel) + '">' +
-        '<time>' + esc(e.t_brt) + '</time>' +
+        '<time>' + esc(horaComDia(e.t_iso, e.t_brt, agoraMs)) + '</time>' +
         '<span class="pp">' + esc(e.papel === '—' ? e.origem : e.papel) + '</span>' +
         '<span class="ac">' + esc(e.texto_curto) + '</span>' +
         '<span class="vl">' + (e.valor === null || e.valor === undefined ? '' : num(e.valor, 2)) + '</span></div>';
@@ -281,7 +293,7 @@
         '<div class="cn"><i>' + ('0' + (i + 1)).slice(-2) + '</i>' + esc(c.nome) + '</div>' +
         '<div class="cp">' + esc(c.papel) + '</div>' +
         '<div class="ce">' + (c.estado === 'IDLE' ? '◦ ' : '● ') + esc(c.estado) + ' · ' + (c.hoje || 0) + ' hoje</div>' +
-        '<div class="cu"><span class="ct">' + esc(u.t || '—') + '</span> ' + esc(u.texto || 'sem eventos') + '</div></div>';
+        '<div class="cu"><span class="ct">' + esc(u.t ? horaComDia(u.t_iso, u.t, Date.now()) : '—') + '</span> ' + esc(u.texto || 'sem eventos') + '</div></div>';   // 16/11: com a data se nao for de hoje
     }).join('');
     var c = $('cadeiras'); if (c && c.innerHTML !== h) c.innerHTML = h;
   }
@@ -325,13 +337,22 @@
     });
     var s = (Array.isArray(serieReal) ? serieReal : []).filter(function (x) { return Array.isArray(x) && x[1] != null && isFinite(Number(x[1])); });
     var vs = s.map(function (x) { return Number(x[1]); }), pat = num(rl.patrimonio), usdt = num(rl.usdt_livre), rh = num(rl.realizado_hoje_usd);
+    // 16/11 (ele: "tudo que tem ali no site da torre ta desatualizado"). MEDIDO no Instrumento do dia: o cartao da micro dizia "a espera do
+    // capital (deposito)" (a micro tem capital desde 07/11 - o cartao dela, torre.json -> micro, nunca chegava aqui) e "O dinheiro" ficava
+    // vazio. Agora: o cartao da micro e o dinheiro da conta real (ja entrou = o realizado; em aberto = as posicoes contra o preco de compra).
+    var re = num(rl.realizado_usd), ab = num(rl.aberto_usd), ap = num(rl.capital_aportado) != null ? num(rl.capital_aportado) : num(rl.capital_inicial);
+    var cr = { ja_entrou: re, em_aberto: ab, soma: re != null && ab != null ? Math.round((re + ab) * 100) / 100 : null };
     return { conta_real: { hoje: num(rl.hoje_usd), aberto: num(rl.aberto_usd), realizado_hoje: rh, travado: !!rl.travado },
       ganho: { liquido_realista_usd: rh != null ? rh : 0, realizado_usd: rh != null ? rh : 0 },
       posicoes: pos, cartao_plano: {},
       medidor: { dia: String((d.reactor && d.reactor.dia) || String(d.t_iso || '').slice(0, 10)), serie: s,
         pico: vs.length ? Math.max.apply(null, vs) : 0, vale: vs.length ? Math.min.apply(null, vs) : 0 },
       limites: { capital_usd: pat }, alocacao: { em_uso_cripto: pat != null && usdt != null ? Math.max(0, pat - usdt) : 0, em_uso_acoes: 0 },
-      ja_entrou: { liquido: num(rl.realizado_usd) }, patrimonio: {}, gv: {}, precos: {}, t_iso: d.t_iso };
+      ja_entrou: { liquido: re },
+      patrimonio: { capital_inicial: ap, acoes: { ja_entrou: 0, em_aberto: 0, soma: 0 }, cripto: cr, total: cr, valor_agora: pat,
+        variacao_pct: num(rl.desde_o_inicio_pct), valor_so_realizado: ap != null && re != null ? Math.round((ap + re) * 100) / 100 : null,
+        variacao_realizada_pct: ap > 0 && re != null ? Math.round(re / ap * 10000) / 100 : null },
+      micro: (d && d.micro) || null, gv: {}, precos: {}, t_iso: d.t_iso };
   }
   // </reactor-real-puro>
 
@@ -342,6 +363,7 @@
     try {
       if (window.medidorVivo) {
         var rr = reactorDoReal(d, window.T3B && window.T3B.estado ? window.T3B.estado.serieReal : null);   // 16/10: a conta real, se activa
+        if (!rr && d.reactor && d.micro && !d.reactor.micro) d.reactor.micro = d.micro;   // 16/11: o cartao da micro tambem no papel
         window.medidorVivo(rr || d.reactor || {});
       }
     } catch (e) { if (window.console) console.warn('reactor', e); }
