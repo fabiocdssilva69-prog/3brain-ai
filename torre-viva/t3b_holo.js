@@ -1177,7 +1177,8 @@
     ROBO.frases = out.length ? out : [[ROBO.decisao || 'a ler o parecer do Sr. Stark…']]; ROBO.chaveF = chave;
     return ROBO.frases;
   }
-  EXTRA.stark = function () { return { olho: Math.round(ROBO.olho * 100) / 100, parecer: ROBO.parecer ? TX.cortar(ROBO.parecer, 60) : null, decisao: ROBO.decisao ? TX.cortar(ROBO.decisao, 60) : null, falou_ha_ms: ROBO.fala > 0 ? Math.round(agoraMs() - ROBO.fala * 1000) : null }; };
+  EXTRA.stark = function () { return { olho: Math.round(ROBO.olho * 100) / 100, parecer: ROBO.parecer ? TX.cortar(ROBO.parecer, 60) : null, decisao: ROBO.decisao ? TX.cortar(ROBO.decisao, 60) : null, falou_ha_ms: ROBO.fala > 0 ? Math.round(agoraMs() - ROBO.fala * 1000) : null,
+    factos: factosDeAgora() }; };   // 16/11: os factos que o Stark escreve agora (a sonda confere que nenhum e de outro dia sem a data)
   var cenaAnel = null;
   (function () {
     var cv = canvasDe('h_stark', 'canvas.anel'); if (!cv) return;
@@ -1504,7 +1505,8 @@
     LIV.fl = { t0: agoraMs(), lado: /venda|perda|-/.test(ev.txt || '') ? 'a' : 'b' };
     sujar(cenaLivro, 900);
   });
-  EXTRA.livro = function () { var P = posMesa(); return { simbolo: LIV.sym, niveis: LIV.b.length + LIV.a.length, posicoes: P.map(function (p) { return p.base; }), real: P.length > 0, ordens: LIV.ordens.length, fita: LIV.fita.length, ligado: !!LIV.ws }; };
+  EXTRA.livro = function () { var P = posMesa(); return { simbolo: LIV.sym, niveis: LIV.b.length + LIV.a.length, posicoes: P.map(function (p) { return p.base; }), real: P.length > 0, ordens: LIV.ordens.length, fita: LIV.fita.length, ligado: !!LIV.ws,
+    ordens_texto: (LIV.ordens || []).slice(0, 4).map(function (o) { return textoOrdem(o, Date.now()); }) }; };   // 16/11: como a fita as escreve
   var cenaLivro = null;
   (function () {
     var cv = canvasDe('h_livro'); if (!cv) return;
