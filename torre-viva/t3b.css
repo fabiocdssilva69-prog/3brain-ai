@@ -830,10 +830,13 @@ body.n2 .pc, body.n3 .pc, body.n2 .fita-cot, body.n3 .fita-cot { left: 16px; rig
 /* 04/10 (obra 4, a medir: as transicoes de top/height dos hologramas e as sombras animadas dos cartoes refaziam o layout ou a
    pintura a cada quadro): os paineis movem-se por transform; o aro dos cartoes e dos paineis e uma camada que so muda de opacidade */
 .palco .holos .holo { top: 0 !important; transform: translateY(var(--y, 0px)) !important; transition: transform .45s cubic-bezier(.2, .8, .2, 1) !important; will-change: transform; }
-.holo > .aro, .bl > .aro { will-change: opacity; }
+/* 16/11 (ele: "tao pesados, travando demais"; MEDIDO: 111 camadas compostas, 34 delas so pelo will-change: opacity destes aros e
+   brilhos, mais 36 criadas por se sobreporem a eles - e o browser refazia a arrumacao das camadas a cada quadro, 8% do fio principal):
+   o will-change sai; o aceso continua a ser uma animacao de opacidade, que o browser poe numa camada so enquanto ela corre */
+.holo > .aro, .bl > .aro { will-change: auto; }
 .cartao { transition: none !important; }
-.cartao .aro-c { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; box-shadow: inset 0 0 0 1px #f2c230, 0 0 18px rgba(242, 194, 48, .3); will-change: opacity; }
-.cartao .brilho { will-change: opacity; }
+.cartao .aro-c { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; box-shadow: inset 0 0 0 1px #f2c230, 0 0 18px rgba(242, 194, 48, .3); will-change: auto; }
+.cartao .brilho { will-change: auto; }
 
 /* 04/10 (c02): o "por Fulano" de quem mudou o dado ja nao tapa o titulo - o titulo encolhe (reticencias) enquanto ele esta aceso */
 .holo .quem { max-width: 55%; }
