@@ -273,6 +273,9 @@ function textos(){ if(S.real==null) return; const ab=S.contaReal?abertoReal():S.
   const gn=S.gn||{}, jea=S.je||{};   // jea: o nome je ja e usado mais abaixo nesta mesma funcao
   const kv=(id,v)=>{ const e=$(id); if(!e) return; const t=US(v); if(cacheTxt[id]!==t){ cacheTxt[id]=t; e.textContent=t; }
                      const k=v==null?'':(v>0.004?'p':(v<-0.004?'n':'')); if(cacheCls[id]!==k){ cacheCls[id]=k; e.className='v'+(k?' '+k:''); } };
+  // 16/11 (ele: "tudo que tem ali no site da torre ta desatualizado"): com a CONTA REAL estes cinco cartoes eram do PAPEL (desligado a
+  // 12/10) e mostravam "— · 0 entradas hoje", "0 operacoes com lucro" - a conta real nao tem estes numeros. Saem do ecra; voltam no papel.
+  for(const id of ['k_ent','k_sai','k_prev','k_gan','k_per']){ const e=$(id), c=e&&e.parentNode; if(c&&c.style){ const d=S.contaReal?'none':''; if(c.style.display!==d) c.style.display=d; } }
   kv('k_ent',gn.entrou_hoje_usd); put('k_ent_det',(gn.n_entrou_hoje||0)+' entrada(s) hoje');
   kv('k_sai',gn.saiu_hoje_usd); put('k_sai_det',(gn.n_saiu_hoje||0)+' saída(s) hoje');
   kv('k_hoje',S.fech);
@@ -339,9 +342,10 @@ function textos(){ if(S.real==null) return; const ab=S.contaReal?abertoReal():S.
   const nCr=Object.keys(S.cr).length, idade=S.ultTick?Math.round((Date.now()-S.ultTick)/1000):null, vivo=idade!=null&&idade<60;
   const lb=$('md_led_bin'); if(lb) lb.classList.toggle('ok',vivo||Object.keys(S.mercado).length>0); put('md_bin_idade',idade==null?(Object.keys(S.mercado).length?'mercado':'—'):idade+' s');
   const ls=$('md_led_bolsa'); if(ls) ls.classList.toggle('ok',S.bolsa); put('md_bolsa','NYSE '+(S.bolsa?'aberta':'fechada'));
-  put('md_fonte',(nCr?(vivo?'Cripto ao segundo pelo livro da Binance, ancorado ao preço da Alpaca.':'Cripto ao minuto (a ligar à Binance).'):'Sem posições de cripto.')+' '+(S.nAcoes?(S.bolsa?'Ações ao minuto.':'Ações: bolsa fechada, preço do último fecho.'):''));
+  // 16/11: com a conta real nao ha Alpaca nenhuma (a ancora era a do papel) - o texto diz de onde vem o preco
+  put('md_fonte',(nCr?(vivo?(S.contaReal?'Cripto ao segundo pelo livro da Binance (conta real).':'Cripto ao segundo pelo livro da Binance, ancorado ao preço da Alpaca.'):'Cripto ao minuto (a ligar à Binance).'):'Sem posições de cripto.')+' '+(S.nAcoes?(S.bolsa?'Ações ao minuto.':'Ações: bolsa fechada, preço do último fecho.'):''));
   if(vivo&&nCr){ const el=$('k_aberto'), tx=(typeof fmt==='function'?fmt(ab):sgn(ab))+' US$'; if(el&&cacheTxt.k_ab!==tx){ cacheTxt.k_ab=tx; el.textContent=tx; el.className='v '+(typeof cls==='function'?cls(ab):(ab>=0?'up':'dn')); }
-    put('k_aberto_seg','mexe ao segundo (Binance, ancorada ao preço da Alpaca)'); window.__mdVivo=true; } }
+    put('k_aberto_seg',S.contaReal?'mexe ao segundo (livro da Binance)':'mexe ao segundo (Binance, ancorada ao preço da Alpaca)'); window.__mdVivo=true; } }
 function relogio(){ const d=new Date(); put('md_rel_utc','UTC '+d.toISOString().slice(11,19)); put('md_rel_ny','NY '+d.toLocaleTimeString('en-GB',{timeZone:'America/New_York'})); }
 function tabelaPos(){ const tb=$('md_pos'); if(!tb) return; const planos={}; (S.plano&&S.plano.posicoes||[]).forEach(x=>{ planos[x.simbolo]=x; });
   let tot=0, tp=0; const linhas=[];
