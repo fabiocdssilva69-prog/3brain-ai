@@ -19,13 +19,16 @@
   var N = window.requestAnimationFrame.bind(window);
   var fila = [], seq = 0, temporizador = null, pedido = 0, ultimo = 0;
   var R = window.T3BRitmo = {
-    hz: 30,                 // 13/10 (ele: "pode fazer os ajustes pra aliviar"; a 05/10 tinha pedido 60): 30 parado (medido: -37% de CPU)
+    // 16/11 (ele: "tao pesados tambem, travando demais"). MEDIDO (sonda de peso, o ecra dele 1536x690@1,25, placa grafica): com a torre
+    // PARADA o fio principal da pagina ficava 67% ocupado - 23% nos quadros (hologramas + 3D), 10% em estilos, 13% a compor camadas.
+    // Parada passa a 20 q/s (era 30) e sem foco a 10 (era 20); a mexer continua nos 45 - leve parado, fluido a mexer.
+    hz: 20,                 // 13/10 (ele: "pode fazer os ajustes pra aliviar"; a 05/10 tinha pedido 60): 30 parado (medido: -37% de CPU)
     mexerHz: 45,            // 13/10: a mexer (rato, roda, camara) ate 45 q/s - antes eram TODOS os do ecra, e era a mexer que travava
     // 10/10 (ele: "melhora o desempenho dessa maquina ou deixa a torre mais fluida porque ta travando DEMAIS o computador";
     // medido as 15:3x: a aba da torre ~2,2 nucleos e a placa integrada a pintar 60 q/s enquanto ele usava o VS Code ao lado):
     // com a janela SEM FOCO a pagina inteira anda a semFocoHz - continua viva no canto do olho, mas larga o CPU e a placa para
     // o programa que ele esta a usar. Com foco (ou ele a mexer nela) volta aos 60 na hora. ?foco=sempre desliga isto (sondas).
-    semFocoHz: 20,
+    semFocoHz: 10,          // 16/11: era 20 - sem foco ele esta noutro programa; a torre fica viva no canto do olho a 10 q/s
     foco: true,
     // 10/10 (ele: "ta muito travado ainda o computador e a torre tambem"): quando ESTA maquina nao aguenta os 60 (os quadros
     // chegam a mais de 22 ms em media, ou o trabalho de cada um passa de 14 ms, durante 3 s) a pagina assenta nos 30: 30 certos
