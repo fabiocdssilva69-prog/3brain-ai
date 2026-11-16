@@ -1187,7 +1187,8 @@
   (function () {
     var cx = $('pendencias');
     if (cx) cx.addEventListener('click', function (ev) { if (ev.target && ev.target.getAttribute && ev.target.getAttribute('data-pd-todas')) { PEND.todas = true; PEND.ass = ''; aplicarPend(E.PEND); } });
-    window.addEventListener('resize', function () { if (E.PEND) { PEND.ass = ''; aplicarPend(E.PEND); } });   // o telemovel a rodar: o bloco pode aparecer
+    var tr = null;   // o telemovel a rodar: o bloco pode aparecer (uma vez, 400 ms depois do ultimo resize)
+    window.addEventListener('resize', function () { if (tr) clearTimeout(tr); tr = setTimeout(function () { tr = null; if (E.PEND) aplicarPend(E.PEND); }, 400); });
   })();
 
   // ---------------------------------------------------------------- directorio dos andares
