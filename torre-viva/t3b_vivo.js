@@ -652,7 +652,18 @@
       if (q && e) { pos.push({ sym: String(p.simbolo), qty: q, ref: e, ag: num(p && p.agora) }); custo += cu != null ? cu : q * e; }   // 16/11: + ag (o preco do ficheiro)
     });
     var usdt = num(rl.usdt_livre);
-    return { cap: pat, hoje: num(rl.hoje_usd), aberto: num(rl.aberto_usd), ini: num(rl.desde_o_inicio_usd),
+    // 22/11 ~20h (ele, com o print: "arruma todos esses numeros desses cards, parece que ta tudo errado"): os cartoes partiam de LIVROS
+    // (a casa, a micro somada, o USDT livre ao segundo) e de um registo de aportes com 3 dos 6 Pix. A CONTA INTEIRA (real.conta,
+    // mercado/conta_inteira.py: a vista + Funding contra os Pix reais) passa a mandar: capital = o total; hoje = total - o das 00h;
+    // desde o inicio = total - os Pix; realizado = desde o inicio - em aberto (a soma da legenda fecha sempre).
+    var ct = (rl.conta && typeof rl.conta === 'object') ? rl.conta : null, conta = null;
+    if (ct && num(ct.total_usd) != null) {
+      conta = { tot: num(ct.total_usd), aport: num(ct.aportado_usd), aportBrl: num(ct.aportado_brl), n: num(ct.n_aportes),
+        ini: num(ct.desde_inicio_usd), iniPct: num(ct.desde_inicio_pct), hoje: num(ct.hoje_usd),
+        ativos: (Array.isArray(ct.ativos) ? ct.ativos : []).filter(function (a) { return a && !a.estavel && num(a.q) > 0 && num(a.px) > 0; })
+          .map(function (a) { return { sym: String(a.a) + 'USDT', qty: num(a.q), ref: num(a.px), ag: num(a.px) }; }) };
+    }
+    var R = { cap: pat, hoje: num(rl.hoje_usd), aberto: num(rl.aberto_usd), ini: num(rl.desde_o_inicio_usd),
       iniPct: num(rl.desde_o_inicio_pct), inicial: num(rl.capital_inicial), realizado: num(rl.realizado_usd) || 0, pos: pos,
       aportado: num(rl.capital_aportado),        // 12/10 (ele): o capital depositado nao e ganho - o 'desde o inicio' conta-se dele
       usdt: usdt, baseCap: (usdt != null ? usdt : pat - custo) + custo, travado: !!rl.travado, velho: !!rl.da_ultima_volta_boa,
@@ -660,6 +671,12 @@
       // 15/10: o deposito que a conta ainda nao leu (ja somado ao patrimonio e ao USDT livre pelo numeros_reais.py) e a hora a
       // que o executor LEU a conta (com o executor parado, os numeros sao os dessa leitura x o preco de agora)
       pend: num(rl.aportes_pendentes_usd), pendT: rl.aportes_pendentes_t || null, medidoT: rl.patrimonio_hora_t || rl.patrimonio_t || null };
+    if (conta) {
+      R.conta = conta; R.cap = conta.tot; R.baseCap = conta.tot; R.hoje = conta.hoje; R.ini = conta.ini; R.iniPct = conta.iniPct;
+      R.aportado = conta.aport; R.pend = 0;
+      if (conta.ini != null && R.aberto != null) R.realizado = Math.round((conta.ini - R.aberto) * 100) / 100;
+    }
+    return R;
   }
   // 10/10 19:0x (ele: "nao vejo eles mexer faz tempo"): o executor real mede o patrimonio de HORA a HORA; o "Hoje" e o "Desde o
   // inicio" sao esse patrimonio menos uma base FIXA (o inicio do dia = pat - hoje; o capital inicial). Com o patrimonio AO VIVO
@@ -712,6 +729,7 @@
     f2 = f2 || function (x) { return (Math.round(Number(x) * 100) / 100).toFixed(2).replace('.', ','); };
     var parado = rc.travado ? ' · executor parado' : '';
     var cap = rc.aportado != null ? 'aportado ' + f2(rc.aportado) + ' US$' : 'começou com ' + f2(rc.inicial) + ' US$';
+    if (rc.conta && rc.conta.aport != null) cap = 'aportado ' + f2(rc.conta.aport) + ' US$ em ' + (rc.conta.n || 0) + ' Pix · a conta inteira (casa + micro + escada)';
     if (rc.pend > 0) cap += ' · depósito de ' + f2(rc.pend) + (horaBrt(rc.pendT) ? ' às ' + horaBrt(rc.pendT) : '');
     else if (!rc.travado) cap += ' · Binance';
     var lida = rc.travado && horaBrt(rc.medidoT) ? ' · conta lida às ' + horaBrt(rc.medidoT) : '';
@@ -728,7 +746,7 @@
       // 10/10 19:0x: com o preco ao vivo a chegar, o capital, o hoje e o desde o inicio sao os do aoPreco (ao segundo) - o
       // ficheiro (de hora a hora) nao os puxa para tras a cada leitura; sem preco ao vivo, valem os do ficheiro
       var aoVivoOk = !!(AOVIVO.real && AOVIVO.tPreco && Date.now() - AOVIVO.tPreco < 15000), seg = aoVivoOk ? ' · ao segundo' : ' · do ficheiro';
-      var mp = microPat(T); E.microPat = mp;   // 30/10 17:4x (ele): o capital do micro SOMADO ao da casa (o hoje e o desde o inicio nao)
+      var mp = rc.conta ? 0 : microPat(T); E.microPat = mp;   // 22/11: a conta inteira ja tem a micro dentro   // 30/10 17:4x (ele): o capital do micro SOMADO ao da casa (o hoje e o desde o inicio nao)
       if (!aoVivoOk) numeroVivo('cap', 'c_cap', 'n_cap', rc.cap + mp, fUS, '', 'capital');
       var lg = legendasReal(rc, seg, function (x) { return fmt(x, 2); });
       LEG_CAP = lg.cap + (mp > 0 ? ' · + micro ' + fmt(mp, 2) + ' US$' : ''); if (!aoVivoOk) E.capAgora = rc.cap + mp; pintarReais();   // 15/10: curto; 16/10: com o valor em reais por cima
@@ -750,7 +768,8 @@
     }
     if (rc) {      // 10/10 21:4x (ordem dele): o livro da mesa e das estrategias em PAPEL - com a conta real activa o card e o realizado REAL de hoje
       numeroVivo('mes', 'c_mes', 'n_mes', rc.realizado, sUS, cls(rc.realizado), 'realizado · conta real');
-      txt($('n_mes_s'), 'desde ' + dataCurta(rc.comecou) + ' · USDT livre ' + fmt(rc.usdt, 2) + legendasReal(rc).mes);
+      txt($('n_mes_s'), rc.conta ? 'o que ja fechou: casa + micro + escada · desde ' + dataCurta(rc.comecou)
+        : 'desde ' + dataCurta(rc.comecou) + ' · USDT livre ' + fmt(rc.usdt, 2) + legendasReal(rc).mes);
     } else {
     numeroVivo('mes', 'c_mes', 'n_mes', est.realizado, sUS, cls(est.realizado), 'livro da mesa');
     txt($('n_mes_s'), (est.n_linhas || 0) + ' estratégias · ' + (est.n || 0) + ' operações');
@@ -803,6 +822,13 @@
       AOVIVO.base = { cap: rc.baseCap, abe: 0 };
       AOVIVO.pos = rc.pos.map(function (p) { return { sym: p.sym.replace(/USD$/, 'USDT'), qty: p.qty, ref: p.ref, ag: p.ag }; });
       AOVIVO.real = { pat: rc.cap, hoje: rc.hoje, ini: (rc.aportado != null ? rc.aportado : rc.inicial) };   // 12/10: os aportes nao sao ganho
+      AOVIVO.posCasa = null;
+      if (rc.conta) {                               // 22/11: a conta inteira ao segundo; o em aberto continua o das posicoes da casa
+        AOVIVO.posCasa = AOVIVO.pos;
+        AOVIVO.pos = rc.conta.ativos.slice();
+        rc.pos.forEach(function (p) { var s2 = p.sym.replace(/USD$/, 'USDT'); if (!AOVIVO.pos.some(function (a) { return a.sym === s2; })) AOVIVO.pos.push({ sym: s2, qty: 0, ref: p.ag || p.ref, ag: p.ag }); });
+        AOVIVO.base = { cap: rc.conta.tot, abe: 0 };
+      }
     } else {
     AOVIVO.real = null;
     AOVIVO.base = { cap: Number(c.capital_escala), abe: Number(r.aberto_total_usd) };
@@ -842,6 +868,10 @@
       if (vr && vr.dia != null) tocarSerieReal(T3B.estado.T, vr.dia);                                    // 10/10 21:3x: o trilho real ao segundo
     }
     AOVIVO.aberto = AOVIVO.base && isFinite(AOVIVO.base.abe) ? AOVIVO.base.abe + dl : null;
+    if (AOVIVO.posCasa) {                             // 22/11: com a conta inteira, o em aberto = as posicoes da casa contra a compra
+      var da = 0; AOVIVO.posCasa.forEach(function (p) { var m = AOVIVO.mid[p.sym] || p.ag; if (m) da += p.qty * (m - p.ref); });
+      AOVIVO.aberto = da;
+    }
     T3B.estado.realAberto = AOVIVO.real ? AOVIVO.aberto : null;   // 16/10: o Instrumento do dia (reactor.js) le o mesmo em aberto
     if (AOVIVO.aberto != null) { var bx = $('bx_abe'); txt(bx, sinal(AOVIVO.aberto, 2) + ' US$'); if (bx) bx.className = cls(AOVIVO.aberto); }
     pintarAberto(true);
