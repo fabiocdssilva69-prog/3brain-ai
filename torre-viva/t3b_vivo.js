@@ -590,7 +590,8 @@
   // 30/10 (ele: "cards da micro explicando o ganho e a perda, o tanto de capital"): o micro ao vivo (torre.py: cartao_micro)
   function pintarMicro(T) {
     var mi = obj(T && T.micro);
-    E.microPat = microPat(T);
+    var contaInteira = !!(T && T.real && T.real.conta && T.real.conta.total_usd != null);   // 22/11: a micro ja esta dentro
+    E.microPat = contaInteira ? 0 : microPat(T);
     if (mi.capital == null) { txt($('n_micro_s'), 'à espera do capital (depósito)'); return; }
     var d = microFechado(T), s2 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 2) : '—'; };
     var s4 = function (v) { v = Number(v); return isFinite(v) ? sinal(v, 4) : '—'; };
