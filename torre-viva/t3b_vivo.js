@@ -659,7 +659,7 @@
     // desde o inicio = total - os Pix; realizado = desde o inicio - em aberto (a soma da legenda fecha sempre).
     var ct = (rl.conta && typeof rl.conta === 'object') ? rl.conta : null, conta = null;
     if (ct && num(ct.total_usd) != null) {
-      conta = { tot: num(ct.total_usd), aport: num(ct.aportado_usd), aportBrl: num(ct.aportado_brl), n: num(ct.n_aportes),
+      conta = { tot: num(ct.total_usd), aport: num(ct.aportado_usd), aportBrl: num(ct.aportado_brl), n: num(ct.n_aportes), saidas: num(ct.n_saidas),
         ini: num(ct.desde_inicio_usd), iniPct: num(ct.desde_inicio_pct), hoje: num(ct.hoje_usd),
         ativos: (Array.isArray(ct.ativos) ? ct.ativos : []).filter(function (a) { return a && !a.estavel && num(a.q) > 0 && num(a.px) > 0; })
           .map(function (a) { return { sym: String(a.a) + 'USDT', qty: num(a.q), ref: num(a.px), ag: num(a.px) }; }) };
@@ -730,7 +730,7 @@
     f2 = f2 || function (x) { return (Math.round(Number(x) * 100) / 100).toFixed(2).replace('.', ','); };
     var parado = rc.travado ? ' · executor parado' : '';
     var cap = rc.aportado != null ? 'aportado ' + f2(rc.aportado) + ' US$' : 'começou com ' + f2(rc.inicial) + ' US$';
-    if (rc.conta && rc.conta.aport != null) cap = 'aportado ' + f2(rc.conta.aport) + ' US$ em ' + (rc.conta.n || 0) + ' Pix · a conta inteira (casa + micro + escada)';
+    if (rc.conta && rc.conta.aport != null) cap = 'aportado ' + f2(rc.conta.aport) + ' US$ (' + (rc.conta.n || 0) + ' Pix' + (rc.conta.saidas ? ' − ' + rc.conta.saidas + ' venda(s) para reais' : '') + ') · a conta inteira (casa + micro + escada)';
     if (rc.pend > 0) cap += ' · depósito de ' + f2(rc.pend) + (horaBrt(rc.pendT) ? ' às ' + horaBrt(rc.pendT) : '');
     else if (!rc.travado) cap += ' · Binance';
     var lida = rc.travado && horaBrt(rc.medidoT) ? ' · conta lida às ' + horaBrt(rc.medidoT) : '';
